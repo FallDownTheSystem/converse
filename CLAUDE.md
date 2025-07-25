@@ -1,0 +1,269 @@
+# Claude Development Guide for Converse MCP Server
+
+This repository contains the **Converse MCP Server** - a simplified, functional Node.js implementation of an MCP server.
+
+## Repository Structure
+
+- **`src/`** - Main source code for the Converse MCP Server
+- **`docs/`** - Complete documentation (API, Architecture, Examples)
+- **`tests/`** - Comprehensive test suite (unit, integration, e2e)
+- **`backlog/`** - Project management and task tracking
+
+## Converse MCP Server (Node.js)
+
+The **Converse MCP Server** follows a simplified, functional architecture with two main tools:
+
+1. **Chat Tool** - Single-provider conversational AI with context support
+2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
+
+### Development Setup
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+```
+
+For detailed implementation guidance, see:
+- `docs/API.md` - Complete API reference
+- `docs/ARCHITECTURE.md` - System architecture and design principles
+- `docs/EXAMPLES.md` - Usage examples and patterns
+
+## Quick Reference Commands
+
+### Code Quality Checks
+
+Before making any changes or submitting PRs, always run the comprehensive quality checks:
+
+```bash
+# Run all quality checks (linting, formatting, tests)
+npm run validate
+
+# Run individual checks
+npm run lint
+npm run typecheck
+npm run test
+npm run format:check
+```
+
+### Development Commands
+
+```bash
+# Start development server with hot reload
+npm run dev
+
+# Run in debug mode
+npm run debug
+
+# Run specific test suites
+npm run test:unit
+npm run test:integration
+npm run test:providers
+npm run test:tools
+```
+
+### Server Management
+
+#### Setup/Update the Server
+```bash
+# Install dependencies and start
+npm install
+npm start
+```
+
+#### View Logs
+```bash
+# Follow logs in real-time with debug logging
+LOG_LEVEL=debug npm run dev
+
+# Or check specific log levels
+LOG_LEVEL=info npm start
+```
+
+### Testing
+
+#### Run All Tests
+```bash
+# Run full test suite
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+#### Run Specific Test Categories
+```bash
+# Unit tests only
+npm run test:unit
+
+# Integration tests only
+npm run test:integration
+
+# MCP client tests (HTTP-based client-server testing)
+npm run test:mcp-client
+
+# Provider tests
+npm run test:providers
+
+# Tool tests
+npm run test:tools
+```
+
+### Development Workflow
+
+#### Before Making Changes
+1. Install dependencies: `npm install`
+2. Run quality checks: `npm run validate`
+3. Start development server: `npm run dev`
+
+#### After Making Changes
+1. Run quality checks again: `npm run validate`
+2. Run tests: `npm test`
+3. Verify functionality: `npm start`
+4. Check logs for any issues
+
+#### Before Committing/PR
+1. Final quality check: `npm run validate`
+2. Verify all tests pass: `npm test`
+3. Check documentation is up to date
+
+### Available Tools
+
+This implementation includes two main tools:
+
+1. **Chat Tool** (`chat`)
+   - General conversational AI
+   - File and image support
+   - Continuation support for persistent conversations
+   - Uses functional architecture
+
+2. **Consensus Tool** (`consensus`)
+   - Parallel multi-model consensus gathering
+   - Two-phase workflow: initial responses + cross-model refinement
+   - All models consulted simultaneously for speed
+   - Models can see each other's responses and refine their answers
+   - Single tool call with simplified interface
+   - Robust error handling - partial failures don't stop other models
+   - Optional: disable cross-feedback for faster single-phase consensus
+
+### Using the Consensus Tool
+
+The consensus tool operates in a single call with parallel processing:
+
+```javascript
+// Example request structure:
+{
+  "prompt": "Should we implement real-time collaboration features?",
+  "models": [
+    {"model": "gemini-pro"},
+    {"model": "o3"},
+    {"model": "flash"}
+  ],
+  "relevant_files": ["/path/to/spec.md"],  // Optional
+  "enable_cross_feedback": true,           // Optional, defaults to true
+  "cross_feedback_prompt": null            // Optional custom refinement prompt
+}
+```
+
+The tool will:
+1. Send your question to all models simultaneously (parallel execution)
+2. Collect initial responses from each model
+3. Share each model's response with the others for refinement
+4. Allow models to refine their answers based on collective insights
+5. Return both initial and refined responses in a single result
+
+### Common Troubleshooting
+
+#### Server Issues
+```bash
+# Check if environment is set up correctly
+npm run validate
+
+# View recent errors
+LOG_LEVEL=debug npm start
+
+# Check dependencies
+npm install
+```
+
+#### Test Failures
+```bash
+# Run tests with verbose output
+npm run test -- --verbose
+
+# Run specific test file
+npm run test tests/tools/chat.test.js
+
+# Check for syntax issues
+npm run lint
+```
+
+#### Configuration Issues
+```bash
+# Verify API keys are configured
+cat .env
+
+# Check configuration loading
+LOG_LEVEL=debug npm start
+```
+
+### File Structure Context
+
+- `src/index.js` - Main entry point and MCP server setup
+- `src/config.js` - Configuration and environment management
+- `src/tools/` - MCP tool implementations (chat.js and consensus.js)
+- `src/providers/` - AI provider implementations (OpenAI, Google, XAI)
+- `src/utils/` - Utility functions (logging, context processing, etc.)
+- `tests/` - Comprehensive test suite
+- `docs/` - Complete documentation
+
+### Environment Requirements
+
+- Node.js 20.0.0+ (LTS recommended)
+- NPM or compatible package manager
+- API keys for at least one provider (OpenAI, Google, or XAI)
+- Environment variables configured in `.env` file
+
+### Configuration
+
+The server uses environment-driven configuration. Copy `.env.example` to `.env` and configure:
+
+```bash
+# Required: At least one API key
+OPENAI_API_KEY=sk-proj-your_key_here
+GOOGLE_API_KEY=your_google_key_here
+XAI_API_KEY=xai-your_key_here
+
+# Optional: Server settings
+MAX_MCP_OUTPUT_TOKENS=200000
+LOG_LEVEL=info
+PORT=3000
+```
+
+### Deployment
+
+The server can be deployed using:
+
+```bash
+# NPX (recommended)
+npx FallDownTheSystem/converse
+
+# Global installation
+npm install -g converse-mcp-server
+converse
+
+# From source
+git clone <repository>
+cd converse
+npm install
+npm start
+```
+
+This guide provides everything needed to efficiently work with the Converse MCP Server codebase using Claude.
