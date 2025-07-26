@@ -29,21 +29,21 @@ Converse MCP Server
 Usage: node src/index.js [OPTIONS]
 
 Options:
-  --transport <type>    Transport type: http (default) or stdio
+  --transport <type>    Transport type: stdio (default) or http
   --transport=<type>    Alternative format for transport type
   --help               Show this help message
 
 Environment Variables:
-  MCP_TRANSPORT        Transport type (http or stdio)
-  PORT                 HTTP server port (default: 3157)
-  HOST                 HTTP server host (default: localhost)
+  MCP_TRANSPORT        Transport type (stdio or http)
+  PORT                 HTTP server port (default: 3157, for HTTP transport)
+  HOST                 HTTP server host (default: localhost, for HTTP transport)
 
 Examples:
-  node src/index.js                    # Start with HTTP transport (default)
-  node src/index.js --transport http   # Start with HTTP transport
+  node src/index.js                    # Start with stdio transport (default)
   node src/index.js --transport stdio  # Start with stdio transport
-  npm start                           # Start with HTTP transport
-  MCP_TRANSPORT=stdio npm start       # Start with stdio transport
+  node src/index.js --transport http   # Start with HTTP transport
+  npm start                           # Start with stdio transport
+  MCP_TRANSPORT=http npm start        # Start with HTTP transport
 `);
 }
 
@@ -80,8 +80,8 @@ function getTransportType() {
     }
   }
 
-  // Default to HTTP for better development experience
-  return 'http';
+  // Default to stdio for standard MCP usage
+  return 'stdio';
 }
 
 async function main() {

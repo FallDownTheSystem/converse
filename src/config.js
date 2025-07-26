@@ -44,7 +44,7 @@ const CONFIG_SCHEMA = {
 
   // Transport configuration
   transport: {
-    MCP_TRANSPORT: { type: 'string', default: 'http', description: 'MCP transport type (http or stdio)' },
+    MCP_TRANSPORT: { type: 'string', default: 'stdio', description: 'MCP transport type (stdio or http)' },
 
     // HTTP server settings
     HTTP_PORT: { type: 'number', default: 3157, description: 'HTTP server port' },

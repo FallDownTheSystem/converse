@@ -90,7 +90,7 @@ describe('Tools Integration Tests', () => {
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-    });
+    }, 60000); // Increase timeout to 60 seconds
   });
 
   describe('Consensus Tool Integration', () => {

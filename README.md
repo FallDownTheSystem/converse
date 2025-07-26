@@ -182,13 +182,13 @@ There are several ways to add the Converse MCP Server to Claude:
 
 #### Option E: Local HTTP Development (Advanced)
 
-For local development with HTTP transport:
+For local development with HTTP transport (optional, for debugging):
 
-1. **First, start the server manually**:
+1. **First, start the server manually with HTTP transport**:
    ```bash
    # In a terminal, navigate to the project directory
    cd converse
-   npm run dev  # Starts server on http://localhost:3157/mcp
+   MCP_TRANSPORT=http npm run dev  # Starts server on http://localhost:3157/mcp
    ```
 
 2. **Then configure Claude to connect to it**:
@@ -380,9 +380,9 @@ npm start -- --transport=stdio
 ```
 
 **Transport Modes**: 
-- **HTTP Transport** (default): `http://localhost:3157/mcp` - Better for development and debugging
+- **Stdio Transport** (default): Traditional stdio communication (launched automatically by Claude)
+- **HTTP Transport**: Use `--transport=http` or set `MCP_TRANSPORT=http` for `http://localhost:3157/mcp` - Better for development and debugging
   - **Note**: When using HTTP transport, the server must be started manually (e.g., `npm start` or `npm run dev`) as it runs as a standalone process, unlike stdio which is launched as a subprocess by Claude
-- **Stdio Transport**: Use `--transport=stdio` or set `MCP_TRANSPORT=stdio` for traditional stdio communication (launched automatically by Claude)
 
 ### Testing with Real APIs
 
