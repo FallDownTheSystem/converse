@@ -126,6 +126,33 @@ function convertMessages(messages) {
       throw new XAIProviderError(`Message content is required at index ${index}`, 'MISSING_CONTENT');
     }
 
+    // Handle complex content structure (array with text and images)
+    if (Array.isArray(content)) {
+      const convertedContent = [];
+      
+      for (const item of content) {
+        if (item.type === 'text') {
+          convertedContent.push({
+            type: 'text',
+            text: item.text
+          });
+        } else if (item.type === 'image' && item.source) {
+          // Convert Anthropic/Claude format to OpenAI format for XAI
+          convertedContent.push({
+            type: 'image_url',
+            image_url: {
+              url: `data:${item.source.media_type};base64,${item.source.data}`,
+              detail: 'auto'
+            }
+          });
+          debugLog(`[XAI] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+        }
+      }
+      
+      return { role, content: convertedContent };
+    }
+
+    // Simple string content
     return { role, content };
   });
 }

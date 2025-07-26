@@ -164,18 +164,63 @@ function convertMessagesToGemini(messages) {
       // Google Gemini handles system prompts differently - they are typically prepended to the first user message
       systemPrompt = content;
     } else if (role === 'user') {
-      // Combine system prompt with user message if present
-      const userContent = systemPrompt ? `${systemPrompt}\n\n${content}` : content;
+      const parts = [];
+      
+      // Handle complex content structure (array with text and images)
+      if (Array.isArray(content)) {
+        let textContent = '';
+        
+        for (const item of content) {
+          if (item.type === 'text') {
+            textContent += item.text;
+          } else if (item.type === 'image' && item.source) {
+            // Convert Anthropic/Claude format to Google Gemini format
+            parts.push({
+              inlineData: {
+                mimeType: item.source.media_type,
+                data: item.source.data
+              }
+            });
+            debugLog(`[Google] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+          }
+        }
+        
+        // Combine system prompt with text content if present
+        const finalTextContent = systemPrompt ? `${systemPrompt}\n\n${textContent}` : textContent;
+        if (finalTextContent) {
+          parts.unshift({ text: finalTextContent });
+        }
+      } else {
+        // Simple string content
+        const userContent = systemPrompt ? `${systemPrompt}\n\n${content}` : content;
+        parts.push({ text: userContent });
+      }
+      
       contents.push({
         role: 'user',
-        parts: [{ text: userContent }]
+        parts: parts
       });
       systemPrompt = null; // Only use system prompt once
     } else if (role === 'assistant') {
-      contents.push({
-        role: 'model', // Google uses 'model' instead of 'assistant'
-        parts: [{ text: content }]
-      });
+      // Handle assistant messages
+      if (Array.isArray(content)) {
+        const parts = [];
+        for (const item of content) {
+          if (item.type === 'text') {
+            parts.push({ text: item.text });
+          }
+          // Assistant messages typically don't have images, but handle if needed
+        }
+        contents.push({
+          role: 'model', // Google uses 'model' instead of 'assistant'
+          parts: parts
+        });
+      } else {
+        contents.push({
+          role: 'model',
+          parts: [{ text: content }]
+        });
+      }
     }
   }
 

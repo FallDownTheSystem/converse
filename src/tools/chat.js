@@ -122,16 +122,22 @@ export async function chatTool(args, dependencies) {
     // Add conversation history
     messages.push(...conversationHistory);
     
-    // Add context message if available
-    if (contextMessage) {
-      messages.push(contextMessage);
+    // Add user prompt with context
+    const userMessage = {
+      role: 'user',
+      content: prompt // default to simple string content
+    };
+    
+    // If we have context (files/images), create complex content array
+    if (contextMessage && contextMessage.content) {
+      // Create complex content array
+      userMessage.content = [
+        ...contextMessage.content, // Include all file/image parts
+        { type: 'text', text: prompt } // Add the user prompt as text
+      ];
     }
     
-    // Add user prompt
-    messages.push({
-      role: 'user',
-      content: prompt
-    });
+    messages.push(userMessage);
 
     // Select provider
     let selectedProvider;

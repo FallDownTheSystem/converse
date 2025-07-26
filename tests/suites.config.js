@@ -47,6 +47,7 @@ export const testSuites = {
       'tests/integration/continuation-flow.test.js',
       'tests/integration/error-recovery.test.js',
       'tests/integration/mcp-client-integration.test.js',
+      'tests/integration/consensus-image.test.js',
     ],
     exclude: [
       'tests/integration/real-api*.test.js',

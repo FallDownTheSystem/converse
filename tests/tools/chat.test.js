@@ -274,9 +274,6 @@ describe('Chat Tool Unit Tests', () => {
     it('should process file context when files provided', async () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
         success: true,
-        contextMessages: [
-          { role: 'user', content: 'File content: package.json data...' }
-        ],
         files: [{ 
           originalPath: 'package.json', 
           path: 'package.json', 
@@ -285,8 +282,8 @@ describe('Chat Tool Unit Tests', () => {
           size: 100,
           lineCount: 1
         }],
-        processed: [{ fileName: 'package.json', fileType: 'json' }],
-        failed: []
+        images: [],
+        webSearch: null
       })
 
       const args = {
@@ -309,10 +306,13 @@ describe('Chat Tool Unit Tests', () => {
               expect.objectContaining({ 
                 type: 'text',
                 text: expect.stringContaining('=== FILE CONTEXT ===')
+              }),
+              expect.objectContaining({ 
+                type: 'text',
+                text: 'Analyze these files'
               })
             ])
-          }),
-          expect.objectContaining({ content: 'Analyze these files' })
+          })
         ]),
         expect.any(Object)
       )
