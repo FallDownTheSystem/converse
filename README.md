@@ -622,7 +622,7 @@ git push origin feature/your-feature
 
 ## 🙏 Acknowledgments
 
-This MCP Server was inspired by and builds upon the excellent work from [BeehiveInnovations/zen-mcp-server](https://github.com/BeehiveInnovations/zen-mcp-server). We're grateful for their pioneering implementation and innovative approach to MCP server development.
+This MCP Server was inspired by and builds upon the excellent work from [BeehiveInnovations/zen-mcp-server](https://github.com/BeehiveInnovations/zen-mcp-server).
 
 ## 📄 License
 
@@ -633,7 +633,3 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **GitHub**: https://github.com/FallDownTheSystem/converse
 - **Issues**: https://github.com/FallDownTheSystem/converse/issues
 - **NPM Package**: https://www.npmjs.com/package/converse-mcp-server
-
----
-
-**Built with ❤️ using Node.js and modern AI APIs**
