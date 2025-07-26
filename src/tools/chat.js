@@ -9,8 +9,11 @@ import { createToolResponse, createToolError } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
+import { createLogger } from '../utils/logger.js';
 import { CHAT_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
+
+const logger = createLogger('chat');
 
 /**
  * Chat tool implementation
@@ -53,7 +56,7 @@ export async function chatTool(args, dependencies) {
           continuationId = generateContinuationId();
         }
       } catch (error) {
-        debugError('Error loading conversation:', error);
+        logger.error('Error loading conversation', { error });
         // Continue with fresh conversation on error
         continuationId = generateContinuationId();
       }
@@ -85,11 +88,11 @@ export async function chatTool(args, dependencies) {
         // Add web search results if available (placeholder for now)
         if (contextResult.webSearch && !contextResult.webSearch.placeholder) {
           // Future implementation: add web search results to context
-          debugLog('[Chat] Web search results available but not yet implemented');
+          logger.debug('Web search results available but not yet implemented');
         }
         
       } catch (error) {
-        debugError('Error processing context:', error);
+        logger.error('Error processing context', { error });
         // Continue without context if processing fails
       }
     }
@@ -165,7 +168,7 @@ export async function chatTool(args, dependencies) {
     try {
       response = await selectedProvider.invoke(messages, providerOptions);
     } catch (error) {
-      debugError(`Provider ${providerName} error:`, error);
+      logger.error('Provider error', { error, data: { provider: providerName } });
       return createToolError(`Provider error: ${error.message}`);
     }
 
@@ -193,7 +196,7 @@ export async function chatTool(args, dependencies) {
       
       await continuationStore.set(continuationId, conversationState);
     } catch (error) {
-      debugError('Error saving conversation:', error);
+      logger.error('Error saving conversation', { error });
       // Continue even if save fails
     }
 
@@ -230,7 +233,7 @@ export async function chatTool(args, dependencies) {
     return createToolResponse(finalResult);
 
   } catch (error) {
-    debugError('Chat tool error:', error);
+    logger.error('Chat tool error', { error });
     return createToolError('Chat tool failed', error);
   }
 }

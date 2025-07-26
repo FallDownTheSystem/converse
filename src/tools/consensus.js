@@ -9,8 +9,11 @@ import { createToolResponse, createToolError } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
+import { createLogger } from '../utils/logger.js';
 import { CONSENSUS_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
+
+const logger = createLogger('consensus');
 
 /**
  * Consensus tool implementation
@@ -58,7 +61,7 @@ export async function consensusTool(args, dependencies) {
           continuationId = generateContinuationId();
         }
       } catch (error) {
-        console.error('Error loading conversation:', error);
+        logger.error('Error loading conversation', { error });
         // Continue with fresh conversation on error
         continuationId = generateContinuationId();
       }
@@ -87,7 +90,7 @@ export async function consensusTool(args, dependencies) {
         }
         
       } catch (error) {
-        console.error('Error processing context:', error);
+        logger.error('Error processing context', { error });
         // Continue without context if processing fails
       }
     }
@@ -175,7 +178,7 @@ export async function consensusTool(args, dependencies) {
     }
 
     // Phase 1: Initial parallel provider calls
-    debugLog(`Consensus: Calling ${providerCalls.length} providers in parallel...`);
+    logger.debug('Calling providers in parallel', { data: { providerCount: providerCalls.length } });
     const initialResults = await Promise.allSettled(
       providerCalls.map(async (call) => {
         try {
@@ -231,7 +234,7 @@ export async function consensusTool(args, dependencies) {
 
     // Phase 2: Cross-feedback (if enabled and we have multiple successful responses)
     if (enable_cross_feedback && initialPhase.successful.length > 1) {
-      debugLog(`Consensus: Running cross-feedback phase with ${initialPhase.successful.length} responses...`);
+      logger.debug('Running cross-feedback phase', { data: { responseCount: initialPhase.successful.length } });
       
       // Create cross-feedback prompt
       const feedbackPrompt = cross_feedback_prompt || 
@@ -317,7 +320,7 @@ Please provide your refined response:`;
       
       await continuationStore.set(continuationId, conversationState);
     } catch (error) {
-      debugError('Error saving consensus conversation:', error);
+      logger.error('Error saving consensus conversation', { error });
       // Continue even if save fails
     }
 
@@ -361,7 +364,7 @@ Please provide your refined response:`;
     return createToolResponse(finalResult);
 
   } catch (error) {
-    debugError('Consensus tool error:', error);
+    logger.error('Consensus tool error', { error });
     return createToolError('Consensus tool failed', error);
   }
 }

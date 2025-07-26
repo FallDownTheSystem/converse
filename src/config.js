@@ -79,11 +79,6 @@ const CONFIG_SCHEMA = {
     GOOGLE_API_KEY: { type: 'string', required: false, secret: true, description: 'Google API key' },
   },
 
-  // Provider-specific configuration
-  providers: {
-    GOOGLE_LOCATION: { type: 'string', default: 'us-central1', description: 'Google Cloud location' },
-    XAI_BASE_URL: { type: 'string', default: 'https://api.x.ai/v1', description: 'XAI API base URL' },
-  },
 
   // MCP configuration
   mcp: {
@@ -347,15 +342,7 @@ export function getProviderConfig(config, providerName) {
   const apiKey = config.apiKeys[providerName];
   const providerConfig = {};
 
-  // Add provider-specific configuration
-  switch (providerName) {
-  case 'google':
-    providerConfig.location = config.providers.googlelocation;
-    break;
-  case 'xai':
-    providerConfig.baseUrl = config.providers.xaibaseurl;
-    break;
-  }
+  // Provider-specific configuration can be added here if needed
 
   return {
     apiKey,
@@ -458,7 +445,7 @@ export async function validateRuntimeConfig(config) {
       // Require at least 2 providers in production for redundancy
       const availableProviders = getAvailableProviders(config);
       if (availableProviders.length < 1) {
-        console.warn('Warning: Only one provider configured in production environment');
+        logger.warn('Only one provider configured in production environment');
       }
     }
 
@@ -485,22 +472,20 @@ function logConfigurationSummary(config) {
   
   const availableProviders = getAvailableProviders(config);
 
-  // Only output configuration summary if not in silent mode
-  if (config.server.log_level !== 'silent') {
-    console.error('Configuration loaded successfully:');
-    console.error(`  Environment: ${config.environment.nodeEnv}`);
-    console.error(`  Port: ${config.server.port}`);
-    console.error(`  Log Level: ${config.server.log_level}`);
-    console.error(`  Available Providers: ${availableProviders.join(', ') || 'none'}`);
-    console.error(`  MCP Server: ${config.mcp.name} v${config.mcp.version}`);
-
-    // Mask API keys in logs
-    const maskedKeys = Object.keys(config.apiKeys).map(key => {
-      const value = config.apiKeys[key];
-      return `${key.toUpperCase()}: ${value ? `${value.substring(0, 8)}...` : 'not configured'}`;
-    });
-    console.error(`  API Keys: ${maskedKeys.join(', ')}`);
-  }
+  // Log configuration summary
+  logger.info('Configuration loaded successfully', {
+    data: {
+      environment: config.environment.nodeEnv,
+      port: config.server.port,
+      logLevel: config.server.log_level,
+      availableProviders: availableProviders.join(', ') || 'none',
+      mcpServer: `${config.mcp.name} v${config.mcp.version}`,
+      apiKeys: Object.keys(config.apiKeys).map(key => {
+        const value = config.apiKeys[key];
+        return `${key.toUpperCase()}: ${value ? `${value.substring(0, 8)}...` : 'not configured'}`;
+      }).join(', ')
+    }
+  });
 }
 
 /**
