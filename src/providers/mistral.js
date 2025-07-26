@@ -172,7 +172,7 @@ async function getMistralSDK() {
   if (!MistralSDK) {
     try {
       const module = await import('@mistralai/mistralai');
-      MistralSDK = module.default || module.Mistral;
+      MistralSDK = module.Mistral || module.default;
     } catch (error) {
       throw new MistralProviderError(
         'Failed to load Mistral SDK. Please install @mistralai/mistralai',

@@ -350,9 +350,10 @@ export const anthropicProvider = {
     }
 
     // Add max tokens (required by Anthropic)
+    const defaultMaxTokens = modelConfig.maxOutputTokens || 8192;
     requestPayload.max_tokens = maxTokens
-      ? Math.min(maxTokens, modelConfig.maxOutputTokens || 8192)
-      : modelConfig.maxOutputTokens || 8192;
+      ? Math.min(maxTokens, defaultMaxTokens)
+      : defaultMaxTokens;
 
     // Add temperature if specified
     if (temperature !== undefined) {
@@ -363,11 +364,18 @@ export const anthropicProvider = {
     if (modelConfig.supportsThinking && reasoning_effort) {
       const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
       if (thinkingBudget > 0) {
-        requestPayload.thinking = {
-          type: 'enabled',
-          budget_tokens: thinkingBudget
-        };
-        debugLog(`[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens (${reasoning_effort} effort)`);
+        // Ensure thinking budget is less than max_tokens as per Anthropic requirements
+        const adjustedThinkingBudget = Math.min(thinkingBudget, requestPayload.max_tokens - 1000);
+        
+        if (adjustedThinkingBudget >= 1024) { // Minimum required by Anthropic
+          requestPayload.thinking = {
+            type: 'enabled',
+            budget_tokens: adjustedThinkingBudget
+          };
+          debugLog(`[Anthropic] Thinking enabled with budget: ${adjustedThinkingBudget} tokens (${reasoning_effort} effort)`);
+        } else {
+          debugLog(`[Anthropic] Thinking budget too small after adjustment (${adjustedThinkingBudget}), disabling thinking`);
+        }
       }
     }
 
