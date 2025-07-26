@@ -282,8 +282,8 @@ describe('Anthropic Provider', () => {
           type: 'enabled',
           budget_tokens: expectedBudgets[effort]
         });
-        // Verify max_tokens is not set for Claude 4 models (SDK uses defaults)
-        expect(callArgs.max_tokens).toBeUndefined();
+        // Verify max_tokens is set correctly for Claude 4 models
+        expect(callArgs.max_tokens).toBe(32000);
       }
       
       // Test 'max' effort - should not enable thinking since budget (32000) is not < max_tokens (32000)
@@ -296,7 +296,7 @@ describe('Anthropic Provider', () => {
       
       const maxEffortCallArgs = mockCreate.mock.calls[0][0];
       expect(maxEffortCallArgs.thinking).toBeUndefined();
-      expect(maxEffortCallArgs.max_tokens).toBeUndefined();
+      expect(maxEffortCallArgs.max_tokens).toBe(32000);
     });
 
     it('should handle claude-sonnet-4 with thinking enabled', async () => {
@@ -310,7 +310,7 @@ describe('Anthropic Provider', () => {
       
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.model).toBe('claude-sonnet-4-20250514');
-      expect(callArgs.max_tokens).toBeUndefined(); // Not set for Claude 4 models
+      expect(callArgs.max_tokens).toBe(64000); // Set for Claude 4 models
       expect(callArgs.thinking).toEqual({
         type: 'enabled',
         budget_tokens: 21120 // 33% of 64000

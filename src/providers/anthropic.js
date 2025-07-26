@@ -364,7 +364,9 @@ export const anthropicProvider = {
       apiKey: config.apiKeys.anthropic,
       defaultHeaders: {
         'anthropic-beta': betaHeaders.join(',')
-      }
+      },
+      // Increase timeout to 20 minutes for thinking models that may take longer
+      timeout: 20 * 60 * 1000
     });
 
     // Convert messages to Anthropic format (system messages are always cached)
@@ -383,15 +385,13 @@ export const anthropicProvider = {
       requestPayload.system = systemPrompt;
     }
 
-    // Add max tokens only if explicitly requested
-    // For Claude 4 series models, let the SDK use its defaults (32k for opus, 64k for sonnet)
+    // Set max tokens - API requires this field
     if (maxTokens) {
       requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 8192);
-    } else if (!resolvedModel.includes('claude-opus-4') && !resolvedModel.includes('claude-sonnet-4')) {
-      // For non-4 series models, we still need to set max_tokens
+    } else {
+      // Use model's default max output tokens
       requestPayload.max_tokens = modelConfig.maxOutputTokens || 8192;
     }
-    // For 4 series models without explicit maxTokens, don't set max_tokens - let SDK use defaults
 
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
@@ -523,15 +523,6 @@ export const anthropicProvider = {
         debugError(`[Anthropic] Error message:`, error.message);
         debugError(`[Anthropic] Error response:`, error.response);
         throw new AnthropicProviderError(`Context length exceeded for model: ${error.message}`, ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
-      } else if (error.message?.includes('Streaming is strongly recommended')) {
-        // This is just a warning from the SDK about long requests
-        debugLog(`[Anthropic] SDK streaming recommendation warning`);
-        debugError(`[Anthropic] Full error object:`, error);
-        // Check if there's an actual error response
-        if (error.response || error.status) {
-          debugError(`[Anthropic] Error response status:`, error.status);
-          debugError(`[Anthropic] Error response data:`, error.response);
-        }
       }
 
       // Generic error handling
