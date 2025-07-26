@@ -87,6 +87,11 @@ There are several ways to add the Converse MCP Server to Claude:
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
         "XAI_API_KEY": "your_key_here",
+        "ANTHROPIC_API_KEY": "your_key_here",
+        "MISTRAL_API_KEY": "your_key_here",
+        "DEEPSEEK_API_KEY": "your_key_here",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -106,6 +111,11 @@ There are several ways to add the Converse MCP Server to Claude:
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
         "XAI_API_KEY": "your_key_here",
+        "ANTHROPIC_API_KEY": "your_key_here",
+        "MISTRAL_API_KEY": "your_key_here",
+        "DEEPSEEK_API_KEY": "your_key_here",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -129,6 +139,11 @@ There are several ways to add the Converse MCP Server to Claude:
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
         "XAI_API_KEY": "your_key_here",
+        "ANTHROPIC_API_KEY": "your_key_here",
+        "MISTRAL_API_KEY": "your_key_here",
+        "DEEPSEEK_API_KEY": "your_key_here",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }

@@ -27,7 +27,11 @@ describe('Continuation Flow Integration Tests', () => {
           version: config.mcp.version
         },
         {
-          capabilities: { tools: {} }
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {}
+          }
         }
       );
 
@@ -114,7 +118,11 @@ describe('Continuation Flow Integration Tests', () => {
           version: config.mcp.serverVersion
         },
         {
-          capabilities: { tools: {} }
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {}
+          }
         }
       );
 

@@ -27,7 +27,11 @@ describe('Error Scenario and Recovery Tests', () => {
           version: config.mcp.version
         },
         {
-          capabilities: { tools: {} }
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {}
+          }
         }
       );
 
@@ -83,7 +87,11 @@ describe('Error Scenario and Recovery Tests', () => {
           version: '1.0.0'
         },
         {
-          capabilities: { tools: {} }
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {}
+          }
         }
       );
 
@@ -272,7 +280,11 @@ describe('Error Scenario and Recovery Tests', () => {
           version: '1.0.0'
         },
         {
-          capabilities: { tools: {} }
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {}
+          }
         }
       );
 

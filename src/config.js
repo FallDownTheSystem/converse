@@ -77,6 +77,15 @@ const CONFIG_SCHEMA = {
     OPENAI_API_KEY: { type: 'string', required: false, secret: true, description: 'OpenAI API key' },
     XAI_API_KEY: { type: 'string', required: false, secret: true, description: 'XAI API key' },
     GOOGLE_API_KEY: { type: 'string', required: false, secret: true, description: 'Google API key' },
+    ANTHROPIC_API_KEY: { type: 'string', required: false, secret: true, description: 'Anthropic API key' },
+    MISTRAL_API_KEY: { type: 'string', required: false, secret: true, description: 'Mistral API key' },
+    DEEPSEEK_API_KEY: { type: 'string', required: false, secret: true, description: 'DeepSeek API key' },
+    OPENROUTER_API_KEY: { type: 'string', required: false, secret: true, description: 'OpenRouter API key' },
+  },
+
+  // Provider-specific configuration
+  providers: {
+    OPENROUTER_REFERER: { type: 'string', required: false, description: 'OpenRouter referer header for compliance' },
   },
 
 
@@ -150,6 +159,14 @@ function validateApiKeyFormat(provider, apiKey) {
     return apiKey.startsWith('xai-') && apiKey.length > 20;
   case 'google':
     return apiKey.length > 20; // Google keys vary in format
+  case 'anthropic':
+    return apiKey.startsWith('sk-ant-') && apiKey.length >= 30;
+  case 'mistral':
+    return apiKey.length >= 32; // Mistral keys are typically 32+ chars
+  case 'deepseek':
+    return apiKey.length >= 32; // DeepSeek keys are typically 32+ chars
+  case 'openrouter':
+    return apiKey.startsWith('sk-or-') && apiKey.length >= 40;
   default:
     return apiKey.length >= 10; // Basic minimum length check
   }
@@ -219,8 +236,19 @@ export async function loadConfig() {
       }
     }
 
-    // Initialize providers object (no provider-specific config currently)
+    // Load provider-specific configuration
     config.providers = {};
+    for (const [key, schema] of Object.entries(CONFIG_SCHEMA.providers)) {
+      try {
+        const value = validateEnvVar(key, process.env[key], schema);
+        if (value) {
+          const configKey = key.toLowerCase().replace(/_/g, '');
+          config.providers[configKey] = value;
+        }
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
 
     // Load MCP configuration
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.mcp)) {
@@ -245,7 +273,7 @@ export async function loadConfig() {
     const availableKeys = Object.keys(config.apiKeys);
     if (availableKeys.length === 0) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, or GOOGLE_API_KEY'
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY'
       );
     }
 

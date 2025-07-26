@@ -20,7 +20,11 @@ describe('MCP Protocol Workflow Tests', () => {
         version: config.mcp.serverVersion
       },
       {
-        capabilities: { tools: {} }
+        capabilities: {
+          tools: {},
+          prompts: {},
+          resources: {}
+        }
       }
     );
 

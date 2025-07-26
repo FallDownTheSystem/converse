@@ -165,7 +165,7 @@ describe('MCPTestClient', () => {
 
     it('should handle invalid tool calls', async () => {
       const response = await client.callTool('nonexistent-tool', {});
-      
+
       expect(response).toBeDefined();
       expect(response.isError).toBe(true);
       expect(response.error).toBeDefined();
@@ -260,14 +260,14 @@ describe('MCPTestClient', () => {
 
       // Call with invalid tool should not retry
       const response = await client.callTool('invalid-tool', {});
-      
+
       // Should return error response
       expect(response.isError).toBe(true);
       expect(response.error.code).toBe('UNKNOWN_TOOL');
 
       // Should have attempted only once (no retries)
       expect(client.operationCount).toBe(startCount + 1);
-      
+
       await client.stop();
     }, 20000);
   });

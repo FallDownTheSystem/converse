@@ -5,10 +5,14 @@
  * Each provider implements: async invoke(messages, options) => { content, stop_reason, rawResponse }
  */
 
-// Import individual providers (will be implemented in subsequent tasks)
+// Import individual providers
 import { openaiProvider } from './openai.js';
 import { xaiProvider } from './xai.js';
 import { googleProvider } from './google.js';
+import { anthropicProvider } from './anthropic.js';
+import { mistralProvider } from './mistral.js';
+import { deepseekProvider } from './deepseek.js';
+import { openrouterProvider } from './openrouter.js';
 
 /**
  * Provider registry map
@@ -18,10 +22,13 @@ import { googleProvider } from './google.js';
  * - isAvailable(config): Availability check
  */
 const providers = {
-  // Will be populated by individual provider modules
   openai: openaiProvider,
   xai: xaiProvider,
   google: googleProvider,
+  anthropic: anthropicProvider,
+  mistral: mistralProvider,
+  deepseek: deepseekProvider,
+  openrouter: openrouterProvider,
 };
 
 /**
