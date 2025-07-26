@@ -6,7 +6,7 @@
  * This script allows the MCP server to be run via npx/pnpm dlx for easy installation and execution.
  */
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { createRequire } from 'module';
 
@@ -19,7 +19,8 @@ const projectRoot = dirname(__dirname);
 
 // Import and start the server
 try {
-  const { startServer } = await import(join(projectRoot, 'src/index.js'));
+  const indexPath = join(projectRoot, 'src/index.js');
+  const { startServer } = await import(pathToFileURL(indexPath).href);
   
   console.log('🚀 Starting Converse MCP Server...');
   console.log(`📁 Project root: ${projectRoot}`);
