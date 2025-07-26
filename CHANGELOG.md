@@ -5,6 +5,29 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-07-26
+
+### Fixed
+- **Console Logging**: Replaced remaining `console.log` and `console.error` calls with proper structured logger to prevent stdio transport corruption
+- **Configuration**: Fixed console output in config loading that could interfere with MCP JSON-RPC protocol
+
+### Changed  
+- **Documentation**: Updated model examples to use latest intelligent models (o3, grok-4, gemini-2.5-pro) and fast models (gemini-2.5-flash, o4-mini, gpt-4.1)
+- **File Paths**: Updated example file paths in documentation to use git-bash compatible paths (`/c/Users/username/...`)
+
+### Removed
+- **Unused Configuration**: Removed unused `GOOGLE_LOCATION` and `XAI_BASE_URL` environment variables from configuration files
+- **Legacy Config**: Cleaned up unused Docker, DIAL, and OpenRouter configuration remnants from environment files
+
+### Improved
+- **Logger Integration**: Enhanced error logging consistency across chat and consensus tools
+- **Transport Safety**: Strengthened stdio transport protection against console output interference
+
+## [1.0.1] - 2025-07-25
+
+### Fixed
+- **Binary Script**: Fixed Windows compatibility for bin script import path
+
 ## [1.0.0] - 2025-07-25
 
 ### Added
