@@ -5,6 +5,24 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-07-26
+
+### Changed
+- **BREAKING**: **Transport Default**: Changed default transport from HTTP to stdio for standard MCP compliance
+  - Stdio transport is now the default (launched automatically by Claude)
+  - HTTP transport available via `--transport=http` or `MCP_TRANSPORT=http` for development/debugging
+  - Updated CLI help and documentation to reflect new defaults
+  - No functionality lost - all transport methods still available
+
+### Fixed
+- **Test Stability**: Fixed timeout issue in file context processing test
+- **Test Environment**: Added explicit `MCP_TRANSPORT=http` to test environment to maintain HTTP testing
+
+### Documentation
+- Updated README.md to show stdio as default transport
+- Updated help text and examples to reflect new transport defaults
+- Clarified when to use HTTP transport (development/debugging scenarios)
+
 ## [1.3.4] - 2025-07-26
 
 ### Added
