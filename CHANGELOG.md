@@ -5,6 +5,30 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2025-07-26
+
+### Added
+- **Anthropic Prompt Caching**: Implemented automatic prompt caching with 1-hour TTL for system prompts
+  - Reduces latency and API costs for repeated requests
+  - Minimum 1024 tokens required (2048 for Haiku models)
+  - Cache metrics available in response metadata
+- **Provider Documentation**: Added comprehensive documentation for all new providers (Anthropic, DeepSeek, Mistral, OpenRouter)
+
+### Fixed
+- **Anthropic Provider**: Fixed thinking budget calculation to properly account for token limits
+- **Anthropic Provider**: Force temperature to 1 when thinking is enabled (API requirement)
+- **Anthropic Provider**: Fixed context length issues with Claude Sonnet 4
+
+### Improved
+- **Test Coverage**: Added comprehensive integration tests for all new providers
+- **Error Handling**: Better error messages for model availability and context limits
+
+## [1.3.3] - 2025-07-26
+
+### Fixed
+- **Anthropic Provider**: Fixed context length calculation for thinking models
+- **Mistral Provider**: Fixed SDK import order to resolve constructor errors
+
 ## [1.3.2] - 2025-07-26
 
 ### Fixed
