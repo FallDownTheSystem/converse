@@ -162,9 +162,9 @@ function validateApiKey(apiKey) {
 }
 
 /**
- * Convert messages to OpenAI format
+ * Convert messages to OpenAI format, handling both Responses API and Chat Completions API
  */
-function convertMessages(messages) {
+function convertMessages(messages, useResponsesAPI = false) {
   if (!Array.isArray(messages)) {
     throw new OpenAIProviderError('Messages must be an array', 'INVALID_MESSAGES');
   }
@@ -184,6 +184,60 @@ function convertMessages(messages) {
       throw new OpenAIProviderError(`Message content is required at index ${index}`, 'MISSING_CONTENT');
     }
 
+    // Handle complex content structure (array with text and images)
+    if (Array.isArray(content)) {
+      debugLog(`[OpenAI] Processing complex content array with ${content.length} items for ${useResponsesAPI ? 'Responses API' : 'Chat Completions API'}`);
+      if (useResponsesAPI) {
+        // Convert to Responses API format
+        const convertedContent = [];
+        
+        for (const item of content) {
+          if (item.type === 'text') {
+            convertedContent.push({
+              type: 'input_text',
+              text: item.text
+            });
+          } else if (item.type === 'image' && item.source) {
+            // Convert Anthropic/Claude format to OpenAI Responses API format
+            const imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
+            debugLog(`[OpenAI] Converting image for Responses API: ${item.source.media_type}, data length: ${item.source.data.length}`);
+            convertedContent.push({
+              type: 'input_image',
+              image_url: imageUrl
+            });
+          }
+        }
+        
+        return { role, content: convertedContent };
+      } else {
+        // Convert to Chat Completions API format
+        const convertedContent = [];
+        
+        for (const item of content) {
+          if (item.type === 'text') {
+            convertedContent.push({
+              type: 'text',
+              text: item.text
+            });
+          } else if (item.type === 'image' && item.source) {
+            // Convert Anthropic/Claude format to OpenAI Chat Completions format
+            const imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
+            debugLog(`[OpenAI] Converting image for Chat Completions API: ${item.source.media_type}, data length: ${item.source.data.length}`);
+            convertedContent.push({
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+                detail: 'auto'
+              }
+            });
+          }
+        }
+        
+        return { role, content: convertedContent };
+      }
+    }
+
+    // Simple string content
     return { role, content };
   });
 }
@@ -233,7 +287,7 @@ export const openaiProvider = {
     const shouldUseResponsesAPI = modelConfig.supportsResponsesAPI !== false;
 
     // Convert and validate messages
-    const openaiMessages = convertMessages(messages);
+    const openaiMessages = convertMessages(messages, shouldUseResponsesAPI);
 
     // Build request payload based on API type
     let requestPayload;

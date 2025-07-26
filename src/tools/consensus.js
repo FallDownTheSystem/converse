@@ -12,6 +12,7 @@ import { debugLog, debugError } from '../utils/console.js';
 import { createLogger } from '../utils/logger.js';
 import { CONSENSUS_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
+import { validateAllPaths } from '../utils/fileValidator.js';
 
 const logger = createLogger('consensus');
 
@@ -71,6 +72,18 @@ export async function consensusTool(args, dependencies) {
       continuationId = generateContinuationId();
     }
 
+    // Validate file paths before processing
+    if (relevant_files.length > 0 || images.length > 0) {
+      const validation = await validateAllPaths({ 
+        files: relevant_files, 
+        images: images 
+      });
+      if (!validation.valid) {
+        logger.error('File validation failed', { errors: validation.errors });
+        return validation.errorResponse;
+      }
+    }
+
     // Process context (files and images)
     let contextMessage = null;
     if (relevant_files.length > 0 || images.length > 0) {
@@ -82,9 +95,10 @@ export async function consensusTool(args, dependencies) {
         
         const contextResult = await contextProcessor.processUnifiedContext(contextRequest);
         
-        // Create context message from files
-        if (contextResult.files.length > 0) {
-          contextMessage = createFileContext(contextResult.files, {
+        // Create context message from files and images
+        const allProcessedFiles = [...contextResult.files, ...contextResult.images];
+        if (allProcessedFiles.length > 0) {
+          contextMessage = createFileContext(allProcessedFiles, {
             includeMetadata: true,
             includeErrors: true
           });
