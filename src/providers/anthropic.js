@@ -168,13 +168,20 @@ function validateApiKey(apiKey) {
  * - System messages must be passed separately
  * - Messages must alternate between user and assistant
  * - First message must be from user
+ * - System can now be an array with cache control blocks
  */
-function convertMessagesToAnthropic(messages) {
+function convertMessagesToAnthropic(messages, options = {}) {
   if (!Array.isArray(messages)) {
     throw new AnthropicProviderError('Messages must be an array', ErrorCodes.INVALID_MESSAGES);
   }
 
-  let systemPrompt = '';
+  const { 
+    enableSystemCache = true, // Always cache system messages by default
+    cacheUserMessages = false,
+    cacheMessageThreshold = 5 // Cache messages after this many turns
+  } = options;
+  let systemContent = [];
+  let systemText = '';
   const anthropicMessages = [];
 
   for (const [index, msg] of messages.entries()) {
@@ -193,8 +200,8 @@ function convertMessagesToAnthropic(messages) {
     }
 
     if (role === 'system') {
-      // Anthropic expects system messages to be concatenated
-      systemPrompt += (systemPrompt ? '\n\n' : '') + content;
+      // Collect system messages
+      systemText += (systemText ? '\n\n' : '') + content;
     } else {
       // Handle complex content structure (array with text and images)
       if (Array.isArray(content)) {
@@ -252,7 +259,27 @@ function convertMessagesToAnthropic(messages) {
     }
   }
 
-  return { systemPrompt, messages: anthropicMessages };
+  // Build system content based on cache enablement
+  let systemResult = null;
+  if (systemText) {
+    if (enableSystemCache) {
+      // Use array format with cache control for system prompt
+      systemResult = [{
+        type: 'text',
+        text: systemText,
+        cache_control: {
+          type: 'ephemeral',
+          ttl: '1h' // 1 hour cache duration
+        }
+      }];
+      debugLog(`[Anthropic] System prompt caching enabled (ephemeral with ttl-extender for 1 hour) - ${systemText.length} chars`);
+    } else {
+      // Use simple string format without caching
+      systemResult = systemText;
+    }
+  }
+
+  return { systemPrompt: systemResult, messages: anthropicMessages };
 }
 
 /**
@@ -324,16 +351,20 @@ export const anthropicProvider = {
     // Get Anthropic SDK
     const Anthropic = await getAnthropicSDK();
 
-    // Initialize Anthropic client
+    // Initialize Anthropic client with default headers
+    // Use both prompt caching and extended cache duration headers for 1-hour caching
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
+      defaultHeaders: {
+        'anthropic-beta': 'prompt-caching-2024-07-31,extended-cache-ttl-2025-04-11'
+      }
     });
 
     // Resolve model name
     const resolvedModel = resolveModelName(model);
     const modelConfig = SUPPORTED_MODELS[resolvedModel] || {};
 
-    // Convert messages to Anthropic format
+    // Convert messages to Anthropic format (system messages are always cached)
     const { systemPrompt, messages: anthropicMessages } = convertMessagesToAnthropic(messages);
 
     // Build request payload
@@ -351,31 +382,48 @@ export const anthropicProvider = {
 
     // Add max tokens (required by Anthropic)
     const defaultMaxTokens = modelConfig.maxOutputTokens || 8192;
-    requestPayload.max_tokens = maxTokens
-      ? Math.min(maxTokens, defaultMaxTokens)
-      : defaultMaxTokens;
-
-    // Add temperature if specified
-    if (temperature !== undefined) {
-      requestPayload.temperature = Math.max(0, Math.min(1, temperature));
+    
+    // If thinking is supported and enabled, we need to reduce max_tokens to leave room for thinking
+    let effectiveMaxTokens = defaultMaxTokens;
+    if (modelConfig.supportsThinking && reasoning_effort) {
+      // Reserve some tokens for thinking - use a more conservative approach
+      effectiveMaxTokens = Math.min(defaultMaxTokens, 16000); // Cap at 16k for models with thinking
     }
+    
+    requestPayload.max_tokens = maxTokens
+      ? Math.min(maxTokens, effectiveMaxTokens)
+      : effectiveMaxTokens;
 
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
       const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
       if (thinkingBudget > 0) {
-        // Ensure thinking budget is less than max_tokens as per Anthropic requirements
-        const adjustedThinkingBudget = Math.min(thinkingBudget, requestPayload.max_tokens - 1000);
+        // Anthropic docs: thinking budget counts towards total token limit
+        // So we need to ensure max_tokens + budget_tokens <= model's actual limit
+        // Reduce max_tokens to make room for thinking
+        const reducedMaxTokens = requestPayload.max_tokens - thinkingBudget;
         
-        if (adjustedThinkingBudget >= 1024) { // Minimum required by Anthropic
+        if (reducedMaxTokens >= 1000 && thinkingBudget >= 1024) { // Ensure we have reasonable space for both
+          requestPayload.max_tokens = reducedMaxTokens;
           requestPayload.thinking = {
             type: 'enabled',
-            budget_tokens: adjustedThinkingBudget
+            budget_tokens: thinkingBudget
           };
-          debugLog(`[Anthropic] Thinking enabled with budget: ${adjustedThinkingBudget} tokens (${reasoning_effort} effort)`);
+          debugLog(`[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens, max_tokens reduced to: ${reducedMaxTokens} (${reasoning_effort} effort)`);
         } else {
-          debugLog(`[Anthropic] Thinking budget too small after adjustment (${adjustedThinkingBudget}), disabling thinking`);
+          debugLog(`[Anthropic] Not enough token budget for thinking. Would need ${thinkingBudget} thinking + ${reducedMaxTokens} output tokens`);
         }
+      }
+    }
+
+    // Add temperature if specified
+    // When thinking is enabled, temperature must be 1
+    if (temperature !== undefined) {
+      if (requestPayload.thinking) {
+        requestPayload.temperature = 1;
+        debugLog('[Anthropic] Temperature forced to 1 for thinking mode');
+      } else {
+        requestPayload.temperature = Math.max(0, Math.min(1, temperature));
       }
     }
 
@@ -429,7 +477,9 @@ export const anthropicProvider = {
             input_tokens: usage.input_tokens || 0,
             output_tokens: usage.output_tokens || 0,
             total_tokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
-            thinking_tokens: usage.thinking_input_tokens || 0
+            thinking_tokens: usage.thinking_input_tokens || 0,
+            cache_creation_input_tokens: usage.cache_creation_input_tokens || 0,
+            cache_read_input_tokens: usage.cache_read_input_tokens || 0
           },
           response_time_ms: responseTime,
           finish_reason: response.stop_reason,

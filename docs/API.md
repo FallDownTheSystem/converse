@@ -291,6 +291,45 @@ MCP_TRANSPORT=stdio npm start
 | `grok-3` | `grok3` | 131K | 131K | Previous gen | Stable reasoning |
 | `grok-3-fast` | - | 131K | 131K | High perf | Faster processing |
 
+### Anthropic Models
+
+| Model | Alias | Context | Tokens | Features | Use Cases |
+|-------|-------|---------|--------|----------|-----------|
+| `claude-opus-4-20250514` | `opus-4`, `opus` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
+| `claude-sonnet-4-20250514` | `sonnet-4`, `sonnet` | 200K | 64K | Extended thinking, images, caching | High performance, balanced |
+| `claude-3-7-sonnet-20250219` | `sonnet-3.7` | 200K | 64K | Extended thinking, images, caching | Enhanced 3.x generation |
+| `claude-3-5-sonnet-20241022` | `claude-3.5-sonnet` | 200K | 8K | Images, caching | Fast and intelligent |
+| `claude-3-5-haiku-20241022` | `haiku` | 200K | 8K | Caching | Fastest, simple queries |
+
+**Prompt Caching (Always Enabled):**
+- System prompts are automatically cached for 1 hour using Anthropic's prompt caching
+- Reduces latency and costs for repeated requests with the same system prompt
+- Minimum 1024 tokens required for caching (2048 for Haiku models)
+- Cache information available in response metadata: `cache_creation_input_tokens` and `cache_read_input_tokens`
+
+### DeepSeek Models
+
+| Model | Alias | Context | Tokens | Features | Use Cases |
+|-------|-------|---------|--------|----------|-----------|
+| `deepseek-v3` | `deepseek-chat`, `deepseek` | 128K | 64K | Latest model | General purpose AI |
+| `deepseek-coder-v2.5` | `deepseek-coder` | 128K | 16K | Code optimization | Programming tasks |
+
+### Mistral Models
+
+| Model | Alias | Context | Tokens | Features | Use Cases |
+|-------|-------|---------|--------|----------|-----------|
+| `magistral-medium-2506` | `magistral`, `magistral-medium` | 40K | 8K | Reasoning model | Complex reasoning |
+| `magistral-small-2506` | `magistral-small` | 40K | 8K | Small reasoning | Fast reasoning |
+| `mistral-medium-2505` | `mistral-medium`, `mistral` | 128K | 32K | Multimodal | General + images |
+
+### OpenRouter Models
+
+| Model | Alias | Context | Tokens | Features | Use Cases |
+|-------|-------|---------|--------|----------|-----------|
+| `kimi/k2` | `k2`, `kimi-k2` | 256K | 128K | Latest Kimi | Large context tasks |
+| `qwen/qwen-2.5-coder-32b-instruct` | `qwen-coder` | 32K | 32K | Code focus | Programming |
+| `qwen/qwq-32b-preview` | `qwen-thinking`, `qwq` | 32K | 32K | Reasoning | Step-by-step thinking |
+
 ### Model Selection
 
 Use `"auto"` for automatic selection or specify exact models:
