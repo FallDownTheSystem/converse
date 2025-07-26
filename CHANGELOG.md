@@ -5,6 +5,12 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2025-07-26
+
+### Fixed
+- **OpenRouter Provider**: Fixed HTTP-Referer header configuration issue by correcting config key casing
+- **Missing Dependencies**: Added `@anthropic-ai/sdk` and `@mistralai/mistralai` as dependencies to fix provider initialization errors
+
 ## [1.3.1] - 2025-07-26
 
 ### Improved
