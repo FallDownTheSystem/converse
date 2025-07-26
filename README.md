@@ -109,31 +109,7 @@ There are several ways to add the Converse MCP Server to Claude:
 }
 ```
 
-#### Option B: Using NPX with stdio transport
-
-```json
-{
-  "mcpServers": {
-    "converse": {
-      "command": "npx",
-      "args": ["converse-mcp-server", "--transport", "stdio"],
-      "env": {
-        "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
-        "XAI_API_KEY": "your_key_here",
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "MISTRAL_API_KEY": "your_key_here",
-        "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
-        "MAX_MCP_OUTPUT_TOKENS": "200000"
-      }
-    }
-  }
-}
-```
-
-#### Option C: Direct Node.js execution
+#### Option B: Direct Node.js execution
 
 ```json
 {
@@ -141,9 +117,7 @@ There are several ways to add the Converse MCP Server to Claude:
     "converse": {
       "command": "node",
       "args": [
-        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js",
-        "--transport",
-        "stdio"
+        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js"
       ],
       "env": {
         "OPENAI_API_KEY": "your_key_here",
@@ -161,27 +135,7 @@ There are several ways to add the Converse MCP Server to Claude:
 }
 ```
 
-#### Option D: Using environment variable for transport
-
-```json
-{
-  "mcpServers": {
-    "converse": {
-      "command": "npx",
-      "args": ["converse-mcp-server"],
-      "env": {
-        "MCP_TRANSPORT": "stdio",
-        "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
-        "XAI_API_KEY": "your_key_here",
-        "MAX_MCP_OUTPUT_TOKENS": "200000"
-      }
-    }
-  }
-}
-```
-
-#### Option E: Local HTTP Development (Advanced)
+#### Option C: Local HTTP Development (Advanced)
 
 For local development with HTTP transport (optional, for debugging):
 
@@ -208,9 +162,16 @@ For local development with HTTP transport (optional, for debugging):
 #### Installation Steps
 
 1. **For Claude Code**: 
-   - Open the command palette (Ctrl/Cmd + Shift + P)
-   - Run "Claude Code: Edit MCP Settings"
-   - Add one of the configurations above
+   ```bash
+   # Add the server globally (for all projects)
+   claude mcp add converse npx converse-mcp-server -s user
+   
+   # Then set your API keys
+   claude mcp set-env converse OPENAI_API_KEY=your_key_here -s user
+   claude mcp set-env converse GOOGLE_API_KEY=your_key_here -s user
+   claude mcp set-env converse XAI_API_KEY=your_key_here -s user
+   # Add other API keys as needed
+   ```
 
 2. **For Claude Desktop**:
    - Navigate to Settings → Developer → MCP Servers
