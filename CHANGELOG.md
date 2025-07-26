@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-07-26
+
+### Fixed
+- **Mistral Provider**: Fixed image handling by correcting the image URL field name from `image_url` to `imageUrl` to match Mistral API expectations
+  - Models supporting images (mistral-medium-3) now properly process image content
+  - Resolved validation errors when sending images to Mistral API
+
 ## [1.4.0] - 2025-07-26
 
 ### Changed

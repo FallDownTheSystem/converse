@@ -151,7 +151,7 @@ function convertMessagesToMistral(messages) {
           // Convert Anthropic/Claude format to Mistral format
           mistralContent.push({
             type: 'image_url',
-            image_url: `data:${item.source.media_type};base64,${item.source.data}`
+            imageUrl: `data:${item.source.media_type};base64,${item.source.data}`
           });
           debugLog(`[Mistral] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
         }
