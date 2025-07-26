@@ -180,6 +180,30 @@ There are several ways to add the Converse MCP Server to Claude:
 }
 ```
 
+#### Option E: Local HTTP Development (Advanced)
+
+For local development with HTTP transport:
+
+1. **First, start the server manually**:
+   ```bash
+   # In a terminal, navigate to the project directory
+   cd converse
+   npm run dev  # Starts server on http://localhost:3157/mcp
+   ```
+
+2. **Then configure Claude to connect to it**:
+   ```json
+   {
+     "mcpServers": {
+       "converse-local": {
+         "url": "http://localhost:3157/mcp"
+       }
+     }
+   }
+   ```
+
+**Important**: HTTP transport requires the server to be running before Claude can connect to it. Keep the terminal with the server open while using Claude.
+
 #### Installation Steps
 
 1. **For Claude Code**: 
@@ -196,6 +220,14 @@ There are several ways to add the Converse MCP Server to Claude:
      - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
      - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
      - Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**Windows Troubleshooting**: If `npx converse-mcp-server` doesn't work on Windows, try using:
+```json
+{
+  "command": "cmd",
+  "args": ["/c", "npx", "converse-mcp-server"]
+}
+```
 
 For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
 
@@ -349,7 +381,8 @@ npm start -- --transport=stdio
 
 **Transport Modes**: 
 - **HTTP Transport** (default): `http://localhost:3157/mcp` - Better for development and debugging
-- **Stdio Transport**: Use `--transport=stdio` or set `MCP_TRANSPORT=stdio` for traditional stdio communication
+  - **Note**: When using HTTP transport, the server must be started manually (e.g., `npm start` or `npm run dev`) as it runs as a standalone process, unlike stdio which is launched as a subprocess by Claude
+- **Stdio Transport**: Use `--transport=stdio` or set `MCP_TRANSPORT=stdio` for traditional stdio communication (launched automatically by Claude)
 
 ### Testing with Real APIs
 
