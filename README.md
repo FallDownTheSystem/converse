@@ -71,9 +71,11 @@ XAI_BASE_URL=https://api.x.ai/v1
 | **Google** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
 | **X.AI** | [console.x.ai](https://console.x.ai/) | `xai-...` |
 
-### 3. MCP Client Configuration
+### 3. Installing in Claude Code or Claude Desktop
 
-Add to your MCP client configuration (e.g., Claude Desktop):
+There are several ways to add the Converse MCP Server to Claude:
+
+#### Option A: Using NPX (Recommended)
 
 ```json
 {
@@ -84,12 +86,94 @@ Add to your MCP client configuration (e.g., Claude Desktop):
       "env": {
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
-        "XAI_API_KEY": "your_key_here"
+        "XAI_API_KEY": "your_key_here",
+        "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
   }
 }
 ```
+
+#### Option B: Using NPX with stdio transport
+
+```json
+{
+  "mcpServers": {
+    "converse": {
+      "command": "npx",
+      "args": ["FallDownTheSystem/converse", "--transport", "stdio"],
+      "env": {
+        "OPENAI_API_KEY": "your_key_here",
+        "GOOGLE_API_KEY": "your_key_here",
+        "XAI_API_KEY": "your_key_here",
+        "MAX_MCP_OUTPUT_TOKENS": "200000"
+      }
+    }
+  }
+}
+```
+
+#### Option C: Direct Node.js execution
+
+```json
+{
+  "mcpServers": {
+    "converse": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your_key_here",
+        "GOOGLE_API_KEY": "your_key_here",
+        "XAI_API_KEY": "your_key_here",
+        "MAX_MCP_OUTPUT_TOKENS": "200000"
+      }
+    }
+  }
+}
+```
+
+#### Option D: Using environment variable for transport
+
+```json
+{
+  "mcpServers": {
+    "converse": {
+      "command": "npx",
+      "args": ["FallDownTheSystem/converse"],
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "OPENAI_API_KEY": "your_key_here",
+        "GOOGLE_API_KEY": "your_key_here",
+        "XAI_API_KEY": "your_key_here",
+        "MAX_MCP_OUTPUT_TOKENS": "200000"
+      }
+    }
+  }
+}
+```
+
+#### Installation Steps
+
+1. **For Claude Code**: 
+   - Open the command palette (Ctrl/Cmd + Shift + P)
+   - Run "Claude Code: Edit MCP Settings"
+   - Add one of the configurations above
+
+2. **For Claude Desktop**:
+   - Navigate to Settings → Developer → MCP Servers
+   - Click "Add Server" and paste one of the configurations above
+
+3. **Manual Configuration**:
+   - The configuration file is typically located at:
+     - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+     - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+     - Linux: `~/.config/Claude/claude_desktop_config.json`
+
+For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
 
 ## 🛠️ Available Tools
 
@@ -128,6 +212,23 @@ Multi-provider parallel execution with cross-model feedback.
   "temperature": 0.2
 }
 ```
+
+## 📚 Help & Documentation
+
+The Converse MCP Server provides built-in help through:
+
+### Help Prompt
+Access comprehensive documentation directly in Claude:
+- `/converse:help` - Full documentation
+- `/converse:help tools` - Tool-specific help
+- `/converse:help models` - Model information
+- `/converse:help parameters` - Configuration details
+- `/converse:help examples` - Usage examples
+
+### Help Resource
+Programmatic access to documentation:
+- Resource URI: `converse://help`
+- Includes all documentation plus current server version
 
 ## 📊 Supported Models
 

@@ -1,6 +1,6 @@
 /**
  * MCP Server Manager for Testing
- * 
+ *
  * Manages MCP server process lifecycle for integration testing.
  * Handles server startup, shutdown, and communication via StdioClientTransport.
  */
@@ -21,7 +21,7 @@ export class MCPServerManager {
   constructor(options = {}) {
     // Extract env from options to handle separately
     const { env: optionsEnv, ...otherOptions } = options;
-    
+
     this.options = {
       serverPath: join(__dirname, '../../src/index.js'),
       startupTimeout: 15000,
@@ -33,7 +33,7 @@ export class MCPServerManager {
       },
       ...otherOptions
     };
-    
+
     this.transport = null;
     this.client = null;
     this.serverProcess = null;
@@ -222,7 +222,7 @@ export class MCPServerManager {
 
     return Promise.race([
       this.client.callTool(toolCall),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Tool call timeout after ${timeout}ms`)), timeout)
       )
     ]);
@@ -246,7 +246,7 @@ export class MCPServerManager {
    */
   cleanup() {
     this.isStarted = false;
-    
+
     if (this.client) {
       try {
         this.client = null;
@@ -270,7 +270,7 @@ export class MCPServerManager {
    */
   forceCleanup() {
     this.cleanup();
-    
+
     // If we have a process ID, try to kill it
     const pid = this.getServerPid();
     if (pid) {
@@ -352,7 +352,7 @@ export function createTestServer(options = {}) {
  */
 export async function withTestServer(testFn, options = {}) {
   const manager = createTestServer(options);
-  
+
   try {
     await manager.startServer();
     const client = manager.getClient();

@@ -25,7 +25,7 @@ const logger = createLogger('consensus');
 export async function consensusTool(args, dependencies) {
   try {
     const { config, providers, continuationStore, contextProcessor } = dependencies;
-    
+
     // Validate required arguments
     if (!args.prompt || typeof args.prompt !== 'string') {
       return createToolError('Prompt is required and must be a string');
@@ -74,9 +74,9 @@ export async function consensusTool(args, dependencies) {
 
     // Validate file paths before processing
     if (relevant_files.length > 0 || images.length > 0) {
-      const validation = await validateAllPaths({ 
-        files: relevant_files, 
-        images: images 
+      const validation = await validateAllPaths({
+        files: relevant_files,
+        images
       });
       if (!validation.valid) {
         logger.error('File validation failed', { errors: validation.errors });
@@ -92,9 +92,9 @@ export async function consensusTool(args, dependencies) {
           files: Array.isArray(relevant_files) ? relevant_files : [],
           images: Array.isArray(images) ? images : []
         };
-        
+
         const contextResult = await contextProcessor.processUnifiedContext(contextRequest);
-        
+
         // Create context message from files and images
         const allProcessedFiles = [...contextResult.files, ...contextResult.images];
         if (allProcessedFiles.length > 0) {
@@ -103,7 +103,7 @@ export async function consensusTool(args, dependencies) {
             includeErrors: true
           });
         }
-        
+
       } catch (error) {
         logger.error('Error processing context', { error });
         // Continue without context if processing fails
@@ -112,22 +112,22 @@ export async function consensusTool(args, dependencies) {
 
     // Build message array for providers
     const messages = [];
-    
+
     // Add system prompt
     messages.push({
       role: 'system',
       content: CONSENSUS_PROMPT
     });
-    
+
     // Add conversation history
     messages.push(...conversationHistory);
-    
+
     // Add user prompt with context
     const userMessage = {
       role: 'user',
       content: prompt // default to simple string content
     };
-    
+
     // If we have context (files/images), create complex content array
     if (contextMessage && contextMessage.content) {
       // Create complex content array
@@ -136,7 +136,7 @@ export async function consensusTool(args, dependencies) {
         { type: 'text', text: prompt } // Add the user prompt as text
       ];
     }
-    
+
     messages.push(userMessage);
 
     // Resolve model specifications to provider calls
@@ -186,7 +186,7 @@ export async function consensusTool(args, dependencies) {
           model: resolvedModelName, // Use resolved model name for API call
           temperature,
           reasoning_effort,
-          use_websearch: use_websearch,
+          use_websearch,
           config,
           ...modelSpec // Allow model-specific overrides
         }
@@ -256,9 +256,9 @@ export async function consensusTool(args, dependencies) {
     // Phase 2: Cross-feedback (if enabled and we have multiple successful responses)
     if (enable_cross_feedback && initialPhase.successful.length > 1) {
       logger.debug('Running cross-feedback phase', { data: { responseCount: initialPhase.successful.length } });
-      
+
       // Create cross-feedback prompt
-      const feedbackPrompt = cross_feedback_prompt || 
+      const feedbackPrompt = cross_feedback_prompt ||
         `Based on the other AI responses below, please refine your answer to the original question. Consider different perspectives and provide your final response:
 
 Original Question: ${prompt}
@@ -281,7 +281,7 @@ Please provide your refined response:`;
           try {
             const call = providerCalls.find(c => c.model === initialResult.model);
             const response = await call.providerInstance.invoke(feedbackMessages, call.options);
-            
+
             return {
               ...initialResult,
               refined_response: response.content,
@@ -338,7 +338,7 @@ Please provide your refined response:`;
           crossFeedbackEnabled: enable_cross_feedback
         }
       };
-      
+
       await continuationStore.set(continuationId, conversationState);
     } catch (error) {
       logger.error('Error saving consensus conversation', { error });
@@ -402,41 +402,41 @@ function resolveAutoModel(model, providerName) {
   if (model.toLowerCase() !== 'auto') {
     return model;
   }
-  
+
   const defaults = {
     'openai': 'gpt-4o-mini',
     'xai': 'grok-4-0709',
     'google': 'gemini-2.5-flash'
   };
-  
+
   return defaults[providerName] || 'gpt-4o-mini';
 }
 
 function mapModelToProvider(model) {
   const modelLower = model.toLowerCase();
-  
+
   // Handle "auto" - default to OpenAI
   if (modelLower === 'auto') {
     return 'openai';
   }
-  
+
   // OpenAI models
-  if (modelLower.includes('gpt') || modelLower.includes('o1') || 
+  if (modelLower.includes('gpt') || modelLower.includes('o1') ||
       modelLower.includes('o3') || modelLower.includes('o4')) {
     return 'openai';
   }
-  
+
   // XAI models
   if (modelLower.includes('grok')) {
     return 'xai';
   }
-  
+
   // Google models
-  if (modelLower.includes('gemini') || modelLower.includes('flash') || 
+  if (modelLower.includes('gemini') || modelLower.includes('flash') ||
       modelLower.includes('pro') || modelLower === 'google') {
     return 'google';
   }
-  
+
   // Default fallback
   return 'openai';
 }

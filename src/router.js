@@ -6,16 +6,18 @@
  * Follows functional architecture with comprehensive error handling.
  */
 
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema, ListPromptsRequestSchema, GetPromptRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { getContinuationStore } from './continuationStore.js';
 import { getTools } from './tools/index.js';
 import { getProviders } from './providers/index.js';
+import { helpPromptHandler, helpPromptMetadata } from './prompts/helpPrompt.js';
+import { helpResourceHandler, helpResourceMetadata, listResources } from './resources/helpResource.js';
 import { processUnifiedContext } from './utils/contextProcessor.js';
 import { createLogger, startTimer } from './utils/logger.js';
 import { debugError } from './utils/console.js';
-import { 
-  ConverseMCPError, 
-  ToolError, 
+import {
+  ConverseMCPError,
+  ToolError,
   ValidationError,
   createMCPErrorResponse,
   withErrorHandler,
@@ -141,10 +143,10 @@ async function createDependencies(config) {
 export async function createRouter(server, config) {
   const createRouterLogger = logger.operation('createRouter');
   const timer = startTimer('router-initialization', 'router');
-  
+
   try {
     createRouterLogger.info('Initializing router');
-    
+
     // Initialize dependencies with validation
     const dependencies = await createDependencies(config);
     const tools = getTools();
@@ -159,8 +161,8 @@ export async function createRouter(server, config) {
       const requestLogger = logger.operation(`tool-call:${toolName}`);
 
       try {
-        requestLogger.info('Tool execution started', { 
-          data: { toolName, argCount: Object.keys(toolArgs).length } 
+        requestLogger.info('Tool execution started', {
+          data: { toolName, argCount: Object.keys(toolArgs).length }
         });
 
         // Validate tool existence and callability
@@ -185,8 +187,8 @@ export async function createRouter(server, config) {
         const result = await tool(toolArgs, dependencies);
 
         const executionTime = toolTimer('completed');
-        requestLogger.info('Tool execution completed', { 
-          data: { executionTime: `${executionTime}ms` } 
+        requestLogger.info('Tool execution completed', {
+          data: { executionTime: `${executionTime}ms` }
         });
 
         // Ensure result has proper format
@@ -203,7 +205,7 @@ export async function createRouter(server, config) {
 
       } catch (error) {
         const executionTime = toolTimer('failed');
-        requestLogger.error('Tool execution failed', { 
+        requestLogger.error('Tool execution failed', {
           error,
           data: { executionTime: `${executionTime}ms`, argCount: Object.keys(toolArgs).length }
         });
@@ -260,6 +262,57 @@ export async function createRouter(server, config) {
       }
     });
 
+    // Register list_prompts handler
+    server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      return {
+        prompts: [helpPromptMetadata]
+      };
+    });
+
+    // Register get_prompt handler
+    server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const promptName = request.params?.name;
+
+      if (promptName === 'help') {
+        const promptArgs = request.params?.arguments || {};
+        const result = await helpPromptHandler(promptArgs);
+
+        return {
+          description: helpPromptMetadata.description,
+          ...result
+        };
+      }
+
+      throw new RouterError(
+        `Prompt '${promptName}' not found`,
+        'PROMPT_NOT_FOUND',
+        { requestedPrompt: promptName }
+      );
+    });
+
+    // Register list_resources handler
+    server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      const resources = listResources();
+      return {
+        resources
+      };
+    });
+
+    // Register read_resource handler
+    server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const resourceUri = request.params?.uri;
+
+      if (resourceUri === helpResourceMetadata.uri) {
+        return await helpResourceHandler();
+      }
+
+      throw new RouterError(
+        `Resource '${resourceUri}' not found`,
+        'RESOURCE_NOT_FOUND',
+        { requestedResource: resourceUri }
+      );
+    });
+
     // Note: Custom health endpoint removed - MCP uses standard protocol methods only
 
     timer('completed');
@@ -291,11 +344,11 @@ export async function createRouter(server, config) {
           })
         };
       },
-      
+
       callTool: async (toolCall) => {
         const toolName = toolCall.name;
         const toolArgs = toolCall.arguments || {};
-        
+
         try {
           // Validate tool existence and callability
           const { tool } = validateTool(toolName, tools);
@@ -366,7 +419,7 @@ function isValidJsonSchemaType(value, schemaType) {
   if (schemaType === 'string') return typeof value === 'string';
   if (schemaType === 'number') return typeof value === 'number';
   if (schemaType === 'integer') return typeof value === 'number' && Number.isInteger(value);
-  
+
   // For unknown types, fall back to JavaScript typeof
   return typeof value === schemaType;
 }

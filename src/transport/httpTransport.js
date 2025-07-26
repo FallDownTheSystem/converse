@@ -1,6 +1,6 @@
 /**
  * HTTP Streaming Transport for MCP Server
- * 
+ *
  * Implements StreamableHTTPServerTransport to replace stdio transport,
  * eliminating console output interference and providing better local development experience.
  */
@@ -26,12 +26,12 @@ export class HTTPTransportServer {
       host: config.host || 'localhost',
       requestTimeout: config.requestTimeout || 300000,
       maxRequestSize: config.maxRequestSize || '10mb',
-      
+
       // Session management
       sessionTimeout: config.sessionTimeout || 1800000,
       sessionCleanupInterval: config.sessionCleanupInterval || 300000,
       maxConcurrentSessions: config.maxConcurrentSessions || 100,
-      
+
       // CORS configuration
       enableCors: config.enableCors !== false,
       corsOptions: config.corsOptions || {
@@ -41,14 +41,14 @@ export class HTTPTransportServer {
         credentials: false,
         exposedHeaders: ['Mcp-Session-Id'],
       },
-      
+
       // Security settings
       enableDnsRebindingProtection: config.enableDnsRebindingProtection || false,
       allowedHosts: config.allowedHosts || ['127.0.0.1', 'localhost'],
       rateLimitEnabled: config.rateLimitEnabled || false,
       rateLimitWindow: config.rateLimitWindow || 900000,
       rateLimitMaxRequests: config.rateLimitMaxRequests || 1000,
-      
+
       ...config
     };
 
@@ -77,7 +77,7 @@ export class HTTPTransportServer {
    */
   setupMiddleware() {
     // JSON parsing with size limit
-    this.app.use(express.json({ 
+    this.app.use(express.json({
       limit: this.config.maxRequestSize,
       strict: true
     }));
@@ -85,11 +85,11 @@ export class HTTPTransportServer {
     // Request timeout middleware
     this.app.use((req, res, next) => {
       req.setTimeout(this.config.requestTimeout, () => {
-        logger.warn('Request timeout', { 
-          data: { 
-            method: req.method, 
-            path: req.path, 
-            timeout: this.config.requestTimeout 
+        logger.warn('Request timeout', {
+          data: {
+            method: req.method,
+            path: req.path,
+            timeout: this.config.requestTimeout
           }
         });
         if (!res.headersSent) {
@@ -109,22 +109,22 @@ export class HTTPTransportServer {
     // Rate limiting middleware (if enabled)
     if (this.config.rateLimitEnabled) {
       const rateLimitMap = new Map();
-      
+
       this.app.use((req, res, next) => {
         const clientId = req.ip || req.connection.remoteAddress;
         const now = Date.now();
         const windowStart = now - this.config.rateLimitWindow;
-        
+
         // Clean old entries
         const clientRequests = rateLimitMap.get(clientId) || [];
         const validRequests = clientRequests.filter(time => time > windowStart);
-        
+
         if (validRequests.length >= this.config.rateLimitMaxRequests) {
-          logger.warn('Rate limit exceeded', { 
-            data: { 
-              clientId, 
-              requests: validRequests.length, 
-              limit: this.config.rateLimitMaxRequests 
+          logger.warn('Rate limit exceeded', {
+            data: {
+              clientId,
+              requests: validRequests.length,
+              limit: this.config.rateLimitMaxRequests
             }
           });
           res.status(429).json({
@@ -137,16 +137,16 @@ export class HTTPTransportServer {
           });
           return;
         }
-        
+
         validRequests.push(now);
         rateLimitMap.set(clientId, validRequests);
         next();
       });
-      
-      logger.debug('Rate limiting enabled', { 
-        data: { 
-          window: this.config.rateLimitWindow, 
-          maxRequests: this.config.rateLimitMaxRequests 
+
+      logger.debug('Rate limiting enabled', {
+        data: {
+          window: this.config.rateLimitWindow,
+          maxRequests: this.config.rateLimitMaxRequests
         }
       });
     }
@@ -154,18 +154,18 @@ export class HTTPTransportServer {
     // CORS configuration for browser clients
     if (this.config.enableCors) {
       this.app.use(cors(this.config.corsOptions));
-      logger.debug('CORS enabled for HTTP transport', { 
-        data: { corsOptions: this.config.corsOptions } 
+      logger.debug('CORS enabled for HTTP transport', {
+        data: { corsOptions: this.config.corsOptions }
       });
     }
 
     // Request logging
     this.app.use((req, res, next) => {
       logger.debug('HTTP request received', {
-        data: { 
-          method: req.method, 
-          path: req.path, 
-          sessionId: req.headers['mcp-session-id'] 
+        data: {
+          method: req.method,
+          path: req.path,
+          sessionId: req.headers['mcp-session-id']
         }
       });
       next();
@@ -235,7 +235,7 @@ export class HTTPTransportServer {
         // Check session limit before creating new transport
         if (this.transports.size >= this.config.maxConcurrentSessions) {
           logger.warn('Maximum concurrent sessions reached', {
-            data: { 
+            data: {
               currentSessions: this.transports.size,
               maxSessions: this.config.maxConcurrentSessions
             }
@@ -250,7 +250,7 @@ export class HTTPTransportServer {
           });
           return;
         }
-        
+
         // New initialization request
         transport = await this.createNewTransport();
         logger.info('Created new MCP transport', {});
@@ -293,7 +293,7 @@ export class HTTPTransportServer {
    */
   async handleSseRequest(req, res) {
     const sessionId = req.headers['mcp-session-id'];
-    
+
     if (!sessionId || !this.transports.has(sessionId)) {
       logger.warn('SSE request with invalid session ID', { data: { sessionId } });
       res.status(400).send('Invalid or missing session ID');
@@ -318,7 +318,7 @@ export class HTTPTransportServer {
    */
   async handleSessionTermination(req, res) {
     const sessionId = req.headers['mcp-session-id'];
-    
+
     if (!sessionId || !this.transports.has(sessionId)) {
       logger.warn('Session termination with invalid session ID', { data: { sessionId } });
       res.status(400).send('Invalid or missing session ID');
@@ -328,7 +328,7 @@ export class HTTPTransportServer {
     try {
       const transport = this.transports.get(sessionId);
       await transport.handleRequest(req, res);
-      
+
       // Clean up the transport
       this.transports.delete(sessionId);
       logger.info('Session terminated', { data: { sessionId } });
@@ -359,15 +359,15 @@ export class HTTPTransportServer {
     transport.onclose = () => {
       if (transport.sessionId) {
         this.cleanupSession(transport.sessionId);
-        logger.debug('Transport session closed', { 
-          data: { sessionId: transport.sessionId } 
+        logger.debug('Transport session closed', {
+          data: { sessionId: transport.sessionId }
         });
       }
     };
 
     // Connect to the MCP server
     await this.mcpServer.connect(transport);
-    
+
     return transport;
   }
 
@@ -400,7 +400,7 @@ export class HTTPTransportServer {
 
   /**
    * Clean up session resources
-   * Note: Following MCP SDK pattern - only clean up our references, 
+   * Note: Following MCP SDK pattern - only clean up our references,
    * let transport.onclose handle its own cleanup
    */
   cleanupSession(sessionId) {
@@ -426,10 +426,10 @@ export class HTTPTransportServer {
     }
 
     this.cleanupInterval = setInterval(() => {
-      logger.debug('Running session cleanup', { 
-        data: { activeSessions: this.transports.size } 
+      logger.debug('Running session cleanup', {
+        data: { activeSessions: this.transports.size }
       });
-      
+
       // The timeout mechanism handles cleanup automatically,
       // but we can add additional checks here if needed
     }, this.config.sessionCleanupInterval);
@@ -453,11 +453,11 @@ export class HTTPTransportServer {
 
         this.isStarted = true;
         this.startSessionCleanup();
-        
+
         const address = this.server.address();
         logger.info('HTTP transport server started', {
-          data: { 
-            host: address.address, 
+          data: {
+            host: address.address,
             port: address.port,
             endpoint: `http://${this.config.host}:${address.port}/mcp`,
             sessionTimeout: this.config.sessionTimeout,
@@ -497,7 +497,7 @@ export class HTTPTransportServer {
       if (this.server.listening) {
         this.server.closeAllConnections?.(); // Available in Node 18.02+
       }
-      
+
       this.server.close((err) => {
         this.isStarted = false;
         if (err) {

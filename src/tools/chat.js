@@ -25,7 +25,7 @@ const logger = createLogger('chat');
 export async function chatTool(args, dependencies) {
   try {
     const { config, providers, continuationStore, contextProcessor } = dependencies;
-    
+
     // Validate required arguments
     if (!args.prompt || typeof args.prompt !== 'string') {
       return createToolError('Prompt is required and must be a string');
@@ -84,9 +84,9 @@ export async function chatTool(args, dependencies) {
           images: Array.isArray(images) ? images : [],
           webSearch: use_websearch ? prompt : null
         };
-        
+
         const contextResult = await contextProcessor.processUnifiedContext(contextRequest);
-        
+
         // Create context message from files and images
         const allProcessedFiles = [...contextResult.files, ...contextResult.images];
         if (allProcessedFiles.length > 0) {
@@ -95,13 +95,13 @@ export async function chatTool(args, dependencies) {
             includeErrors: true
           });
         }
-        
+
         // Add web search results if available (placeholder for now)
         if (contextResult.webSearch && !contextResult.webSearch.placeholder) {
           // Future implementation: add web search results to context
           logger.debug('Web search results available but not yet implemented');
         }
-        
+
       } catch (error) {
         logger.error('Error processing context', { error });
         // Continue without context if processing fails
@@ -110,7 +110,7 @@ export async function chatTool(args, dependencies) {
 
     // Build message array for provider
     const messages = [];
-    
+
     // Add system prompt only if not already in conversation history
     if (conversationHistory.length === 0 || conversationHistory[0].role !== 'system') {
       messages.push({
@@ -118,16 +118,16 @@ export async function chatTool(args, dependencies) {
         content: CHAT_PROMPT
       });
     }
-    
+
     // Add conversation history
     messages.push(...conversationHistory);
-    
+
     // Add user prompt with context
     const userMessage = {
       role: 'user',
       content: prompt // default to simple string content
     };
-    
+
     // If we have context (files/images), create complex content array
     if (contextMessage && contextMessage.content) {
       // Create complex content array
@@ -136,24 +136,24 @@ export async function chatTool(args, dependencies) {
         { type: 'text', text: prompt } // Add the user prompt as text
       ];
     }
-    
+
     messages.push(userMessage);
 
     // Select provider
     let selectedProvider;
     let providerName;
-    
+
     if (model === 'auto') {
       // Auto-select first available provider
       const availableProviders = Object.keys(providers).filter(name => {
         const provider = providers[name];
         return provider && provider.isAvailable && provider.isAvailable(config);
       });
-      
+
       if (availableProviders.length === 0) {
         return createToolError('No providers available. Please configure at least one API key.');
       }
-      
+
       providerName = availableProviders[0];
       selectedProvider = providers[providerName];
     } else {
@@ -161,11 +161,11 @@ export async function chatTool(args, dependencies) {
       // Try to map model to provider
       providerName = mapModelToProvider(model);
       selectedProvider = providers[providerName];
-      
+
       if (!selectedProvider) {
         return createToolError(`Provider not found for model: ${model}`);
       }
-      
+
       if (!selectedProvider.isAvailable(config)) {
         return createToolError(`Provider ${providerName} is not available. Check API key configuration.`);
       }
@@ -177,7 +177,7 @@ export async function chatTool(args, dependencies) {
       model: resolvedModel,
       temperature,
       reasoning_effort,
-      use_websearch: use_websearch,
+      use_websearch,
       config
     };
 
@@ -200,7 +200,7 @@ export async function chatTool(args, dependencies) {
       role: 'assistant',
       content: response.content
     };
-    
+
     const updatedMessages = [...messages, assistantMessage];
 
     // Save conversation state
@@ -208,10 +208,10 @@ export async function chatTool(args, dependencies) {
       const conversationState = {
         messages: updatedMessages,
         provider: providerName,
-        model: model,
+        model,
         lastUpdated: Date.now()
       };
-      
+
       await continuationStore.set(continuationId, conversationState);
     } catch (error) {
       logger.error('Error saving conversation', { error });
@@ -224,11 +224,11 @@ export async function chatTool(args, dependencies) {
       continuation: {
         id: continuationId,
         provider: providerName,
-        model: model,
+        model,
         messageCount: updatedMessages.filter(msg => msg.role !== 'system').length
       }
     };
-    
+
     // Add metadata if available
     if (response.metadata) {
       result.metadata = response.metadata;
@@ -268,41 +268,41 @@ function resolveAutoModel(model, providerName) {
   if (model.toLowerCase() !== 'auto') {
     return model;
   }
-  
+
   const defaults = {
     'openai': 'gpt-4o-mini',
     'xai': 'grok-4-0709',
     'google': 'gemini-2.5-flash'
   };
-  
+
   return defaults[providerName] || 'gpt-4o-mini';
 }
 
 function mapModelToProvider(model) {
   const modelLower = model.toLowerCase();
-  
+
   // Handle "auto" - default to OpenAI
   if (modelLower === 'auto') {
     return 'openai';
   }
-  
+
   // OpenAI models
-  if (modelLower.includes('gpt') || modelLower.includes('o1') || 
+  if (modelLower.includes('gpt') || modelLower.includes('o1') ||
       modelLower.includes('o3') || modelLower.includes('o4')) {
     return 'openai';
   }
-  
+
   // XAI models
   if (modelLower.includes('grok')) {
     return 'xai';
   }
-  
+
   // Google models
-  if (modelLower.includes('gemini') || modelLower.includes('flash') || 
+  if (modelLower.includes('gemini') || modelLower.includes('flash') ||
       modelLower.includes('pro') || modelLower === 'google') {
     return 'google';
   }
-  
+
   // Default fallback
   return 'openai';
 }

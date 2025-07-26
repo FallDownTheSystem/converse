@@ -15,7 +15,7 @@ vi.mock('openai', () => {
       }
     }
   }));
-  
+
   return {
     default: MockOpenAI
   };
@@ -29,7 +29,7 @@ describe('OpenAI Provider', () => {
           openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       expect(openaiProvider.validateConfig(config)).toBe(true);
     });
 
@@ -44,7 +44,7 @@ describe('OpenAI Provider', () => {
           openai: 'invalid-key'
         }
       };
-      
+
       expect(openaiProvider.validateConfig(config)).toBe(false);
     });
 
@@ -54,7 +54,7 @@ describe('OpenAI Provider', () => {
           openai: 'sk-short'
         }
       };
-      
+
       expect(openaiProvider.validateConfig(config)).toBe(false);
     });
   });
@@ -66,7 +66,7 @@ describe('OpenAI Provider', () => {
           openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       expect(openaiProvider.isAvailable(config)).toBe(true);
     });
 
@@ -79,7 +79,7 @@ describe('OpenAI Provider', () => {
   describe('getSupportedModels', () => {
     it('should return supported models object', () => {
       const models = openaiProvider.getSupportedModels();
-      
+
       expect(typeof models).toBe('object');
       expect('o3' in models).toBe(true);
       expect('o3-mini' in models).toBe(true);
@@ -90,7 +90,7 @@ describe('OpenAI Provider', () => {
     it('should include model configuration details', () => {
       const models = openaiProvider.getSupportedModels();
       const o3Model = models['o3'];
-      
+
       expect(o3Model.modelName).toBe('o3');
       expect(o3Model.friendlyName).toBe('OpenAI (O3)');
       expect(o3Model.contextWindow).toBe(200000);
@@ -101,7 +101,7 @@ describe('OpenAI Provider', () => {
   describe('getModelConfig', () => {
     it('should return config for exact model name', () => {
       const config = openaiProvider.getModelConfig('o3');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('o3');
       expect(config.friendlyName).toBe('OpenAI (O3)');
@@ -109,7 +109,7 @@ describe('OpenAI Provider', () => {
 
     it('should return config for model alias', () => {
       const config = openaiProvider.getModelConfig('o3mini');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('o3-mini');
     });
@@ -121,7 +121,7 @@ describe('OpenAI Provider', () => {
 
     it('should be case insensitive', () => {
       const config = openaiProvider.getModelConfig('O3');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('o3');
     });
@@ -137,7 +137,7 @@ describe('OpenAI Provider', () => {
     it('should throw error for missing API key', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: {} };
-      
+
       await expect(openaiProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
           name: 'OpenAIProviderError',
@@ -149,7 +149,7 @@ describe('OpenAI Provider', () => {
     it('should throw error for invalid API key format', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: { openai: 'invalid' } };
-      
+
       await expect(openaiProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
           name: 'OpenAIProviderError',
@@ -160,7 +160,7 @@ describe('OpenAI Provider', () => {
 
     it('should throw error for non-array messages', async () => {
       const messages = 'not an array';
-      
+
       await expect(openaiProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
         expect.objectContaining({
           name: 'OpenAIProviderError',
@@ -171,7 +171,7 @@ describe('OpenAI Provider', () => {
 
     it('should throw error for invalid message role', async () => {
       const messages = [{ role: 'invalid', content: 'Hello' }];
-      
+
       await expect(openaiProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
         expect.objectContaining({
           name: 'OpenAIProviderError',
@@ -182,7 +182,7 @@ describe('OpenAI Provider', () => {
 
     it('should throw error for missing message content', async () => {
       const messages = [{ role: 'user' }];
-      
+
       await expect(openaiProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
         expect.objectContaining({
           name: 'OpenAIProviderError',
@@ -197,11 +197,11 @@ describe('OpenAI Provider', () => {
       // This would be tested with a mocked OpenAI client
       // For now, we verify the model configurations
       const models = openaiProvider.getSupportedModels();
-      
+
       // O3 models don't support temperature
       expect(models['o3'].supportsTemperature).toBe(false);
       expect(models['o3-mini'].supportsTemperature).toBe(false);
-      
+
       // GPT-4o models do support temperature
       expect(models['gpt-4o'].supportsTemperature).toBe(true);
       expect(models['gpt-4o-mini'].supportsTemperature).toBe(true);
@@ -211,7 +211,7 @@ describe('OpenAI Provider', () => {
   describe('model resolution', () => {
     it('should handle model aliases correctly', () => {
       const models = openaiProvider.getSupportedModels();
-      
+
       // Verify aliases are configured
       expect(models['o3-mini'].aliases.includes('o3mini')).toBe(true);
       expect(models['o3-pro-2025-06-10'].aliases.includes('o3-pro')).toBe(true);
@@ -255,7 +255,7 @@ describe('OpenAI Provider', () => {
       }));
 
       const messages = [{ role: 'user', content: 'Hello' }];
-      const result = await openaiProvider.invoke(messages, { 
+      const result = await openaiProvider.invoke(messages, {
         config: validConfig,
         model: 'gpt-4o-mini'
       });
@@ -302,7 +302,7 @@ describe('OpenAI Provider', () => {
       }));
 
       const messages = [{ role: 'user', content: 'Complex reasoning task' }];
-      await openaiProvider.invoke(messages, { 
+      await openaiProvider.invoke(messages, {
         config: validConfig,
         model: 'o3',
         reasoning_effort: 'high'
@@ -332,7 +332,7 @@ describe('OpenAI Provider', () => {
       const messages = [{ role: 'user', content: 'test' }];
 
       // O3 models don't support temperature
-      await openaiProvider.invoke(messages, { 
+      await openaiProvider.invoke(messages, {
         config: validConfig,
         model: 'o3',
         temperature: 0.8
@@ -345,7 +345,7 @@ describe('OpenAI Provider', () => {
       );
 
       // GPT-4o models do support temperature
-      await openaiProvider.invoke(messages, { 
+      await openaiProvider.invoke(messages, {
         config: validConfig,
         model: 'gpt-4o',
         temperature: 0.8

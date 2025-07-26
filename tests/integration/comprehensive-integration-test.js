@@ -2,7 +2,7 @@
 
 /**
  * Comprehensive Integration Test Suite for Converse MCP Server
- * 
+ *
  * This test suite validates full MCP server functionality including:
  * - Real API calls to OpenAI, Google, and XAI
  * - Chat tool with continuations and context
@@ -59,7 +59,7 @@ class ComprehensiveTestSuite {
 
   async startServer() {
     this.log('Starting MCP server with stdio transport...');
-    
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Server startup timeout'));
@@ -102,7 +102,7 @@ class ComprehensiveTestSuite {
 
   async stopServer() {
     this.log('Stopping MCP server...');
-    
+
     try {
       if (this.client) {
         await this.client.close();
@@ -119,9 +119,9 @@ class ComprehensiveTestSuite {
   async runTest(testName, testFunction) {
     const result = new TestResult(testName);
     const startTime = Date.now();
-    
+
     this.log(`Running test: ${testName}`);
-    
+
     try {
       const testResult = await testFunction();
       result.setSuccess(testResult);
@@ -132,7 +132,7 @@ class ComprehensiveTestSuite {
       result.duration = Date.now() - startTime;
       this.log(`✗ ${testName} (${result.duration}ms): ${error.message}`, 'FAIL');
     }
-    
+
     this.results.push(result);
     return result;
   }
@@ -140,14 +140,14 @@ class ComprehensiveTestSuite {
   // Test: Basic server connectivity
   async testServerConnectivity() {
     const response = await this.client.listTools();
-    
+
     if (!response.tools || !Array.isArray(response.tools)) {
       throw new Error('Invalid tools response format');
     }
 
     const toolNames = response.tools.map(tool => tool.name);
     const expectedTools = ['chat', 'consensus'];
-    
+
     for (const tool of expectedTools) {
       if (!toolNames.includes(tool)) {
         throw new Error(`Expected tool '${tool}' not found in: ${toolNames.join(', ')}`);
@@ -325,7 +325,7 @@ class ComprehensiveTestSuite {
   // Test: Performance - response time
   async testPerformanceBasic() {
     const startTime = Date.now();
-    
+
     await this.client.callTool({
       name: 'chat',
       arguments: {
@@ -335,7 +335,7 @@ class ComprehensiveTestSuite {
     });
 
     const responseTime = Date.now() - startTime;
-    
+
     if (responseTime > 30000) { // 30 second timeout
       throw new Error(`Response time too slow: ${responseTime}ms`);
     }
@@ -351,7 +351,7 @@ class ComprehensiveTestSuite {
     const totalDuration = Date.now() - this.startTime;
     const passed = this.results.filter(r => r.success).length;
     const failed = this.results.filter(r => !r.success).length;
-    
+
     const report = {
       timestamp: new Date().toISOString(),
       summary: {
@@ -373,7 +373,7 @@ class ComprehensiveTestSuite {
     // Save report to file
     const reportPath = join(__dirname, 'integration-test-results.json');
     await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-    
+
     this.log(`Test report saved to: ${reportPath}`);
     return report;
   }
@@ -413,14 +413,14 @@ class ComprehensiveTestSuite {
       await this.runTest('Chat Basic Functionality', () => this.testChatBasic());
       await this.runTest('Chat Continuation', () => this.testChatContinuation());
       await this.runTest('Consensus Basic Functionality', () => this.testConsensusBasic());
-      
+
       // Error handling tests
       await this.runTest('Error Handling - Invalid Tool', () => this.testErrorHandlingInvalidTool());
       await this.runTest('Error Handling - Invalid Arguments', () => this.testErrorHandlingInvalidArgs());
-      
+
       // Feature tests
       await this.runTest('File Context Processing', () => this.testFileContext());
-      
+
       // Performance tests
       await this.runTest('Performance - Basic Response Time', () => this.testPerformanceBasic());
 
@@ -430,7 +430,7 @@ class ComprehensiveTestSuite {
 
     const report = await this.generateReport();
     this.printSummary(report);
-    
+
     return report;
   }
 }
@@ -438,7 +438,7 @@ class ComprehensiveTestSuite {
 // Run tests if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new ComprehensiveTestSuite();
-  
+
   testSuite.runAllTests()
     .then((report) => {
       process.exit(report.summary.failed > 0 ? 1 : 0);

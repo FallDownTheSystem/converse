@@ -84,7 +84,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
         ...additionalFields
       };
     }
-    
+
     // If it's a tool result object (has continuation, metadata, etc.) convert to MCP format
     if (content.continuation || content.metadata || content.content) {
       const mcpResponse = {
@@ -97,7 +97,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
         isError: isError || content.isError || false,
         ...additionalFields
       };
-      
+
       // Preserve continuation and metadata at top level
       if (content.continuation) {
         mcpResponse.continuation = content.continuation;
@@ -105,10 +105,10 @@ export function createToolResponse(content, isError = false, additionalFields = 
       if (content.metadata) {
         mcpResponse.metadata = content.metadata;
       }
-      
+
       return mcpResponse;
     }
-    
+
     // If it's any other object, stringify it
     return {
       content: [
@@ -121,7 +121,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
       ...additionalFields
     };
   }
-  
+
   // Handle string content
   return {
     content: [
@@ -144,13 +144,13 @@ export function createToolResponse(content, isError = false, additionalFields = 
 export function createToolError(message, error = null) {
   const errorText = error ? `${message}: ${error.message}` : message;
   const response = createToolResponse(errorText, true);
-  
+
   // Add error object for test compatibility
   response.error = {
     message: errorText,
     type: 'ToolError',
     timestamp: new Date().toISOString()
   };
-  
+
   return response;
 }

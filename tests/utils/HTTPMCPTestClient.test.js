@@ -1,18 +1,18 @@
 /**
  * Tests for HTTPMCPTestClient
- * 
+ *
  * Comprehensive test suite for HTTP-based MCP test client wrapper
  * that provides simplified interface for testing.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { 
-  HTTPMCPTestClient, 
-  createHTTPTestClient, 
-  withHTTPTestClient, 
-  createMultipleHTTPTestClients, 
+import {
+  HTTPMCPTestClient,
+  createHTTPTestClient,
+  withHTTPTestClient,
+  createMultipleHTTPTestClients,
   stopMultipleHTTPTestClients,
-  testHTTPConcurrency 
+  testHTTPConcurrency
 } from './HTTPMCPTestClient.js';
 
 describe('HTTPMCPTestClient', () => {
@@ -34,21 +34,21 @@ describe('HTTPMCPTestClient', () => {
   describe('Client Lifecycle', () => {
     test('should start and stop client successfully', async () => {
       expect(client.isReady).toBe(false);
-      
+
       await client.start();
       expect(client.isReady).toBe(true);
-      
+
       const connectionInfo = client.getConnectionInfo();
       expect(connectionInfo.port).toBeGreaterThan(0);
       expect(connectionInfo.host).toBe('localhost');
-      
+
       await client.stop();
       expect(client.isReady).toBe(false);
     }, 30000);
 
     test('should not allow starting already started client', async () => {
       await client.start();
-      
+
       await expect(client.start()).rejects.toThrow('already started');
     }, 30000);
 
@@ -67,7 +67,7 @@ describe('HTTPMCPTestClient', () => {
       expect(tools).toBeDefined();
       expect(tools.tools).toBeInstanceOf(Array);
       expect(tools.tools.length).toBeGreaterThan(0);
-      
+
       const toolNames = tools.tools.map(t => t.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
@@ -78,14 +78,14 @@ describe('HTTPMCPTestClient', () => {
         prompt: 'Test message',
         model: 'auto'
       });
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     }, 60000);
 
     test('should use chat helper method', async () => {
       const result = await client.chat('Hello test', { model: 'auto' });
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(Array.isArray(result.content)).toBe(true);
@@ -97,13 +97,13 @@ describe('HTTPMCPTestClient', () => {
       const models = [
         { model: 'auto' } // Use single auto model to avoid timeout issues
       ];
-      
+
       try {
         const result = await client.consensus('What is 2+2?', models);
-        
+
         expect(result).toBeDefined();
         expect(result.content).toBeDefined();
-        
+
         // If result is an error due to no API keys, that's acceptable
         if (result.isError) {
           expect(result.error).toBeDefined();
@@ -116,7 +116,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should handle tool errors gracefully', async () => {
       const result = await client.callTool('nonexistent-tool', {});
-      
+
       expect(result.isError).toBe(true);
       expect(result.error).toBeDefined();
       expect(result.error.code).toBe('UNKNOWN_TOOL');
@@ -125,7 +125,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should enforce ready state', async () => {
       const newClient = new HTTPMCPTestClient();
-      
+
       await expect(newClient.listTools()).rejects.toThrow('not ready');
       await expect(newClient.callTool('chat', {})).rejects.toThrow('not ready');
     });
@@ -138,7 +138,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should perform comprehensive health check', async () => {
       const health = await client.healthCheck();
-      
+
       expect(health.status).toBe('healthy');
       expect(health.transport).toBe('http');
       expect(health.connection).toBeDefined();
@@ -154,7 +154,7 @@ describe('HTTPMCPTestClient', () => {
       // Stop the server to make it unhealthy
       await client.stop();
       client.isReady = true; // Force ready state for test
-      
+
       const health = await client.healthCheck();
       expect(health.status).toBe('unhealthy');
       expect(health.error).toBeDefined();
@@ -168,7 +168,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should test HTTP endpoints directly', async () => {
       const endpointResults = await client.testHttpEndpoints();
-      
+
       expect(endpointResults.success).toBe(true);
       expect(endpointResults.health.status).toBe(200);
       expect(endpointResults.health.data.status).toBe('healthy');
@@ -190,14 +190,14 @@ describe('HTTPMCPTestClient', () => {
       ];
 
       const results = await client.executeConcurrent(operations);
-      
+
       expect(results).toHaveLength(3);
       expect(results.every(r => r.success)).toBe(true);
     }, 120000);
 
     test('should test session isolation', async () => {
       const isolationResult = await client.testSessionIsolation(3);
-      
+
       expect(isolationResult.success).toBe(true);
       expect(isolationResult.sessionCount).toBe(3);
       expect(isolationResult.successCount).toBe(3);
@@ -214,9 +214,9 @@ describe('HTTPMCPTestClient', () => {
       // Perform some operations to populate debug info
       await client.listTools();
       await client.chat('Debug test', { model: 'auto' });
-      
+
       const debugInfo = client.getDebugInfo();
-      
+
       expect(debugInfo.isReady).toBe(true);
       expect(debugInfo.operationCount).toBeGreaterThan(0);
       expect(debugInfo.uptime).toBeGreaterThan(0);
@@ -227,10 +227,10 @@ describe('HTTPMCPTestClient', () => {
     test('should track operation count', async () => {
       const initialDebug = client.getDebugInfo();
       const initialCount = initialDebug.operationCount;
-      
+
       await client.listTools();
       await client.chat('Count test', { model: 'auto' });
-      
+
       const finalDebug = client.getDebugInfo();
       expect(finalDebug.operationCount).toBeGreaterThan(initialCount);
     }, 60000);
@@ -248,13 +248,13 @@ describe('HTTPMCPTestClient', () => {
         retryDelay: 100,
         debugMode: true
       });
-      
+
       await retryClient.start();
-      
+
       try {
         // Test with nonexistent tool - should get structured error response
         const result = await retryClient.callTool('nonexistent-tool', {});
-        
+
         expect(result.isError).toBe(true);
         expect(result.error.code).toBe('UNKNOWN_TOOL');
       } finally {
@@ -265,13 +265,13 @@ describe('HTTPMCPTestClient', () => {
     test('should not retry non-retryable errors', async () => {
       // Test that certain errors are not retried
       const startTime = Date.now();
-      
+
       const result = await client.callTool('chat', { invalid: 'arguments' });
-      
+
       const duration = Date.now() - startTime;
       // Should fail quickly without retries
       expect(duration).toBeLessThan(5000);
-      
+
       // Should get structured error response
       expect(result.isError).toBe(true);
       expect(result.error).toBeDefined();
@@ -281,11 +281,11 @@ describe('HTTPMCPTestClient', () => {
   describe('Utility Functions', () => {
     test('createHTTPTestClient should work', async () => {
       const testClient = await createHTTPTestClient({ port: 0 });
-      
+
       try {
         expect(testClient).toBeInstanceOf(HTTPMCPTestClient);
         expect(testClient.isReady).toBe(true);
-        
+
         const tools = await testClient.listTools();
         expect(tools.tools.length).toBeGreaterThan(0);
       } finally {
@@ -295,33 +295,33 @@ describe('HTTPMCPTestClient', () => {
 
     test('withHTTPTestClient should manage lifecycle', async () => {
       let clientReceived = null;
-      
+
       const result = await withHTTPTestClient(async (client) => {
         clientReceived = client;
-        
+
         const tools = await client.listTools();
         return tools.tools.length;
       });
-      
+
       expect(clientReceived).toBeDefined();
       expect(typeof result).toBe('number');
       expect(result).toBeGreaterThan(0);
-      
+
       // Client should be stopped after the function
       expect(clientReceived.isReady).toBe(false);
     }, 30000);
 
     test('createMultipleHTTPTestClients should work', async () => {
       const clients = await createMultipleHTTPTestClients(2, { port: 0 });
-      
+
       try {
         expect(clients).toHaveLength(2);
         expect(clients.every(c => c.isReady)).toBe(true);
-        
+
         // Each client should have different ports
         const ports = clients.map(c => c.getConnectionInfo().port);
         expect(new Set(ports).size).toBe(2); // All unique ports
-        
+
         // Test that all clients work
         const results = await Promise.all(
           clients.map(c => c.listTools())
@@ -334,7 +334,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('testHTTPConcurrency should work', async () => {
       const result = await testHTTPConcurrency(2, 3);
-      
+
       expect(result.success).toBe(true);
       expect(result.clientCount).toBe(2);
       expect(result.operationsPerClient).toBe(3);
@@ -349,17 +349,17 @@ describe('HTTPMCPTestClient', () => {
       const badClient = new HTTPMCPTestClient({
         port: -1 // Invalid port
       });
-      
+
       await expect(badClient.start()).rejects.toThrow();
       expect(badClient.isReady).toBe(false);
     });
 
     test('should handle network errors', async () => {
       await client.start();
-      
+
       // Stop the underlying server to cause network errors
       await client.serverManager.stopServer();
-      
+
       // Operations should fail gracefully - check for error responses instead of exceptions
       try {
         await client.listTools();
@@ -367,7 +367,7 @@ describe('HTTPMCPTestClient', () => {
       } catch (error) {
         expect(error.message).toBeTruthy();
       }
-      
+
       const httpResult = await client.testHttpEndpoints();
       expect(httpResult.success).toBe(false);
       expect(httpResult.error).toBeTruthy();
@@ -386,13 +386,13 @@ describe('HTTPMCPTestClient', () => {
           version: '2.0.0'
         }
       });
-      
+
       await customClient.start();
-      
+
       try {
         const connectionInfo = customClient.getConnectionInfo();
         expect(connectionInfo.host).toBe('127.0.0.1');
-        
+
         const debugInfo = customClient.getDebugInfo();
         expect(debugInfo.options.maxRetries).toBe(5);
         expect(debugInfo.options.operationTimeout).toBe(60000);

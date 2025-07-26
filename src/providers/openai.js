@@ -190,7 +190,7 @@ function convertMessages(messages, useResponsesAPI = false) {
       if (useResponsesAPI) {
         // Convert to Responses API format
         const convertedContent = [];
-        
+
         for (const item of content) {
           if (item.type === 'text') {
             convertedContent.push({
@@ -207,12 +207,12 @@ function convertMessages(messages, useResponsesAPI = false) {
             });
           }
         }
-        
+
         return { role, content: convertedContent };
       } else {
         // Convert to Chat Completions API format
         const convertedContent = [];
-        
+
         for (const item of content) {
           if (item.type === 'text') {
             convertedContent.push({
@@ -232,7 +232,7 @@ function convertMessages(messages, useResponsesAPI = false) {
             });
           }
         }
-        
+
         return { role, content: convertedContent };
       }
     }
@@ -291,7 +291,7 @@ export const openaiProvider = {
 
     // Build request payload based on API type
     let requestPayload;
-    
+
     if (shouldUseResponsesAPI) {
       // Build Responses API payload
       requestPayload = {
@@ -300,17 +300,17 @@ export const openaiProvider = {
         stream,
         ...otherOptions
       };
-      
+
       // Add web search tools only if requested and model supports it
       if (use_websearch && modelConfig.supportsWebSearch) {
         requestPayload.tools = [{ type: 'web_search' }];
       }
-      
+
       // Add temperature if model supports it
       if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
-      
+
       // Add reasoning effort for thinking models (o3 series only)
       if (resolvedModel.startsWith('o3') && reasoning_effort) {
         requestPayload.reasoning = { effort: reasoning_effort };
@@ -324,18 +324,18 @@ export const openaiProvider = {
         stream,
         ...cleanOptions
       };
-      
+
       // Add temperature if model supports it
       if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
-      
+
       // Add reasoning effort for thinking models (o3 series only)
       if (resolvedModel.startsWith('o3') && reasoning_effort) {
         requestPayload.reasoning_effort = reasoning_effort;
       }
     }
-    
+
     // Add max tokens if specified (both APIs)
     if (maxTokens) {
       if (shouldUseResponsesAPI) {
@@ -364,7 +364,7 @@ export const openaiProvider = {
 
       // Extract response data based on API type
       let content, stopReason, usage;
-      
+
       if (shouldUseResponsesAPI) {
         // Handle Responses API response format
         if (!response.output_text) {
@@ -379,7 +379,7 @@ export const openaiProvider = {
         if (!choice) {
           throw new OpenAIProviderError('No response choice received from OpenAI', 'NO_RESPONSE_CHOICE');
         }
-        
+
         content = choice.message?.content;
         if (!content) {
           throw new OpenAIProviderError('No content in response from OpenAI', 'NO_RESPONSE_CONTENT');

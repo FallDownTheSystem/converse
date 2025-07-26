@@ -129,7 +129,7 @@ function convertMessages(messages) {
     // Handle complex content structure (array with text and images)
     if (Array.isArray(content)) {
       const convertedContent = [];
-      
+
       for (const item of content) {
         if (item.type === 'text') {
           convertedContent.push({
@@ -148,7 +148,7 @@ function convertMessages(messages) {
           debugLog(`[XAI] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
         }
       }
-      
+
       return { role, content: convertedContent };
     }
 
@@ -206,7 +206,7 @@ export const xaiProvider = {
 
     // Filter out unsupported parameters for XAI/Grok models
     const { reasoning_effort: _unused_reasoning_effort, ...supportedOptions } = otherOptions;
-    
+
     // Build request payload
     const requestPayload = {
       model: resolvedModel,

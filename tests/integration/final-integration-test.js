@@ -12,25 +12,25 @@ async function runFinalTest() {
   try {
     // Import modules
     console.log('\n📦 Loading MCP components...');
-    
+
     const { loadConfig } = await import('../../src/config.js');
     const { getTools } = await import('../../src/tools/index.js');
     const { getProviders } = await import('../../src/providers/index.js');
     const { getContinuationStore } = await import('../../src/continuationStore.js');
     const { processUnifiedContext } = await import('../../src/utils/contextProcessor.js');
     const fs = await import('fs/promises');
-    
+
     // Initialize components
     const config = await loadConfig();
     const tools = getTools();
     const providers = getProviders();
     const continuationStore = getContinuationStore();
-    
-    console.log(`✅ Components loaded successfully`);
+
+    console.log('✅ Components loaded successfully');
     console.log(`   - Tools: ${Object.keys(tools).join(', ')}`);
     console.log(`   - Providers: ${Object.keys(providers).join(', ')}`);
     console.log(`   - Environment: ${config.environment.nodeEnv}`);
-    
+
     // Create dependencies like the router does
     const dependencies = {
       config,
@@ -42,15 +42,15 @@ async function runFinalTest() {
         validateToolArguments: () => true,
       },
     };
-    
+
     const results = [];
     const startTime = Date.now();
-    
+
     // Helper function to run individual tests
     async function runTest(testName, testFn) {
       console.log(`\n🧪 ${testName}`);
       const testStart = Date.now();
-      
+
       try {
         const result = await testFn();
         const duration = Date.now() - testStart;
@@ -72,14 +72,14 @@ async function runFinalTest() {
         prompt: 'Respond with exactly: "OpenAI chat test successful"',
         model: 'gpt-4o-mini'  // Correct format without prefix
       }, dependencies);
-      
+
       if (!result.content?.[0]?.text) {
         throw new Error('Invalid chat response format');
       }
-      
+
       const responseText = result.content[0].text;
       console.log(`   📝 Response: "${responseText.substring(0, 50)}..."`);
-      
+
       return {
         hasContent: true,
         responseLength: responseText.length,
@@ -94,14 +94,14 @@ async function runFinalTest() {
         prompt: 'Respond with exactly: "Google Gemini test successful"',
         model: 'flash'  // Google model
       }, dependencies);
-      
+
       if (!result.content?.[0]?.text) {
         throw new Error('Invalid chat response format');
       }
-      
+
       const responseText = result.content[0].text;
       console.log(`   📝 Response: "${responseText.substring(0, 50)}..."`);
-      
+
       return {
         hasContent: true,
         responseLength: responseText.length,
@@ -116,14 +116,14 @@ async function runFinalTest() {
         prompt: 'Respond with exactly: "XAI Grok test successful"',
         model: 'grok-beta'  // XAI model
       }, dependencies);
-      
+
       if (!result.content?.[0]?.text) {
         throw new Error('Invalid chat response format');
       }
-      
+
       const responseText = result.content[0].text;
       console.log(`   📝 Response: "${responseText.substring(0, 50)}..."`);
-      
+
       return {
         hasContent: true,
         responseLength: responseText.length,
@@ -134,34 +134,34 @@ async function runFinalTest() {
     // Test 4: Chat with Continuation
     await runTest('Chat Continuation Feature', async () => {
       const chatTool = tools.chat;
-      
+
       // First message - establish conversation
       const first = await chatTool({
         prompt: 'Remember this secret code: ALPHA-7749. Just confirm you remember it.',
         model: 'gpt-4o-mini'
       }, dependencies);
-      
+
       if (!first.continuation?.id) {
         throw new Error('No continuation ID in first response');
       }
-      
+
       console.log(`   💬 Conversation started: ${first.continuation.id}`);
       console.log(`   📊 Message count: ${first.continuation.messageCount}`);
-      
+
       // Second message - test memory
       const second = await chatTool({
         prompt: 'What secret code did I ask you to remember?',
         continuation: first.continuation.id,
         model: 'gpt-4o-mini'
       }, dependencies);
-      
+
       if (second.continuation.id !== first.continuation.id) {
         throw new Error('Conversation ID changed');
       }
-      
+
       const responseText = second.content[0].text;
       console.log(`   🧠 Memory test response: "${responseText.substring(0, 50)}..."`);
-      
+
       return {
         conversationMaintained: true,
         initialMessageCount: first.continuation.messageCount,
@@ -177,24 +177,24 @@ async function runFinalTest() {
         prompt: 'What is 15 + 27? Respond only with the number.',
         models: [
           { model: 'gpt-4o-mini' },    // OpenAI
-          { model: 'flash' },          // Google  
+          { model: 'flash' },          // Google
           { model: 'grok-beta' }       // XAI
         ]
       }, dependencies);
-      
+
       if (!result.content?.[0]?.text) {
         throw new Error('Invalid consensus response format');
       }
-      
+
       const text = result.content[0].text;
       console.log(`   📊 Consensus response length: ${text.length} chars`);
-      
+
       const hasInitial = text.includes('Initial Responses');
       const hasRefined = text.includes('Refined Responses');
       const mentions42 = text.includes('42'); // The correct answer
-      
+
       console.log(`   🔍 Structure check: Initial(${hasInitial}) Refined(${hasRefined}) Answer(${mentions42})`);
-      
+
       return {
         hasInitialResponses: hasInitial,
         hasRefinedResponses: hasRefined,
@@ -207,27 +207,27 @@ async function runFinalTest() {
     // Test 6: File Context Processing
     await runTest('File Context Processing', async () => {
       const chatTool = tools.chat;
-      
+
       // Create a test file with specific content
       const testFile = 'integration-test-file.txt';
       const testContent = 'This is a test file for integration testing.\nIt contains multiple lines.\nLine 3 has special content: INTEGRATION_TEST_MARKER';
-      
+
       await fs.writeFile(testFile, testContent);
-      
+
       try {
         const result = await chatTool({
           prompt: 'What is in the provided file? Look for the special marker.',
           model: 'gpt-4o-mini',
           files: [testFile]
         }, dependencies);
-        
+
         if (!result.content?.[0]?.text) {
           throw new Error('No response content for file context test');
         }
-        
+
         const responseText = result.content[0].text;
         console.log(`   📄 File processing response: "${responseText.substring(0, 80)}..."`);
-        
+
         return {
           fileProcessed: true,
           responseLength: responseText.length,
@@ -246,7 +246,7 @@ async function runFinalTest() {
     // Test 7: Error Handling
     await runTest('Error Handling & Validation', async () => {
       const chatTool = tools.chat;
-      
+
       // Test 1: Missing prompt
       try {
         await chatTool({
@@ -259,14 +259,14 @@ async function runFinalTest() {
           throw error;
         }
       }
-      
+
       // Test 2: Invalid model
       try {
         const result = await chatTool({
           prompt: 'Test prompt',
           model: 'nonexistent-model-12345'
         }, dependencies);
-        
+
         // Should either fail or return an error response
         if (result.content && !result.error && !result.content[0].text.includes('error')) {
           throw new Error('Should have handled invalid model gracefully');
@@ -277,9 +277,9 @@ async function runFinalTest() {
           throw error;
         }
       }
-      
-      console.log(`   ✅ Error handling working correctly`);
-      
+
+      console.log('   ✅ Error handling working correctly');
+
       return {
         missingPromptHandled: true,
         invalidModelHandled: true
@@ -293,13 +293,13 @@ async function runFinalTest() {
         prompt: 'This should use the first available provider automatically.',
         model: 'auto'  // Let system choose
       }, dependencies);
-      
+
       if (!result.content?.[0]?.text) {
         throw new Error('Auto provider selection failed');
       }
-      
-      console.log(`   🤖 Auto-selected provider worked`);
-      
+
+      console.log('   🤖 Auto-selected provider worked');
+
       return {
         autoSelectionWorked: true,
         responseLength: result.content[0].text.length
@@ -404,7 +404,7 @@ async function runFinalTest() {
     console.log('='.repeat(80));
 
     return report;
-    
+
   } catch (error) {
     console.error('\n💥 Test execution failed:', error);
     console.error('Stack trace:', error.stack);

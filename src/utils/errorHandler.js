@@ -17,7 +17,7 @@ export const ERROR_CODES = {
   CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
   MISSING_CONFIG: 'MISSING_CONFIG',
   INVALID_CONFIG: 'INVALID_CONFIG',
-  
+
   // Provider errors
   PROVIDER_ERROR: 'PROVIDER_ERROR',
   PROVIDER_NOT_FOUND: 'PROVIDER_NOT_FOUND',
@@ -25,30 +25,30 @@ export const ERROR_CODES = {
   INVALID_API_KEY: 'INVALID_API_KEY',
   API_QUOTA_EXCEEDED: 'API_QUOTA_EXCEEDED',
   API_RATE_LIMIT: 'API_RATE_LIMIT',
-  
+
   // Tool errors
   TOOL_ERROR: 'TOOL_ERROR',
   TOOL_NOT_FOUND: 'TOOL_NOT_FOUND',
   INVALID_TOOL_ARGS: 'INVALID_TOOL_ARGS',
   TOOL_EXECUTION_FAILED: 'TOOL_EXECUTION_FAILED',
-  
+
   // Router errors
   ROUTER_ERROR: 'ROUTER_ERROR',
   INVALID_REQUEST: 'INVALID_REQUEST',
   REQUEST_VALIDATION_FAILED: 'REQUEST_VALIDATION_FAILED',
-  
+
   // Context processing errors
   CONTEXT_ERROR: 'CONTEXT_ERROR',
   FILE_NOT_FOUND: 'FILE_NOT_FOUND',
   FILE_ACCESS_DENIED: 'FILE_ACCESS_DENIED',
   INVALID_FILE_TYPE: 'INVALID_FILE_TYPE',
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',
-  
+
   // Continuation store errors
   CONTINUATION_ERROR: 'CONTINUATION_ERROR',
   INVALID_CONTINUATION_ID: 'INVALID_CONTINUATION_ID',
   CONTINUATION_NOT_FOUND: 'CONTINUATION_NOT_FOUND',
-  
+
   // Generic errors
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
@@ -68,7 +68,7 @@ export class ConverseMCPError extends Error {
     this.details = details;
     this.statusCode = statusCode;
     this.timestamp = new Date().toISOString();
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ConverseMCPError);
@@ -185,10 +185,10 @@ export function wrapError(originalError, message, code = ERROR_CODES.UNKNOWN_ERR
       stack: originalError.stack
     }
   };
-  
+
   const wrappedError = new ConverseMCPError(message, code, enhancedDetails);
   wrappedError.cause = originalError;
-  
+
   return wrappedError;
 }
 
@@ -202,23 +202,23 @@ export function wrapError(originalError, message, code = ERROR_CODES.UNKNOWN_ERR
 export function withErrorHandler(fn, operation = 'unknown', context = {}) {
   return async (...args) => {
     const operationLogger = logger.operation(operation);
-    
+
     try {
       operationLogger.debug('Starting operation', { data: context });
       const result = await fn(...args);
       operationLogger.debug('Operation completed successfully');
       return result;
     } catch (error) {
-      operationLogger.error('Operation failed', { 
+      operationLogger.error('Operation failed', {
         error,
         data: { args: args.length, context }
       });
-      
+
       // Re-throw enhanced error if it's already structured
       if (error instanceof ConverseMCPError) {
         throw error;
       }
-      
+
       // Wrap unknown errors
       throw wrapError(error, `${operation} failed: ${error.message}`, ERROR_CODES.INTERNAL_ERROR, context);
     }
@@ -242,11 +242,11 @@ export function createMCPErrorResponse(error, toolName = null, context = {}) {
     response.error.context = context;
     return response;
   }
-  
+
   // Create structured response for unknown errors
   const errorCode = error.code || ERROR_CODES.UNKNOWN_ERROR;
   const message = toolName ? `Error in ${toolName}: ${error.message}` : error.message;
-  
+
   return {
     content: [
       {
@@ -276,7 +276,7 @@ export function isRecoverableError(error) {
   if (error instanceof ConverseMCPError) {
     return error.statusCode < 500 && error.code !== ERROR_CODES.INTERNAL_ERROR;
   }
-  
+
   // Check for known recoverable error patterns
   const recoverablePatterns = [
     /network/i,
@@ -285,7 +285,7 @@ export function isRecoverableError(error) {
     /quota/i,
     /temporary/i
   ];
-  
+
   return recoverablePatterns.some(pattern => pattern.test(error.message));
 }
 
@@ -297,7 +297,7 @@ export function isRecoverableError(error) {
  */
 export function logError(error, operation = 'unknown', metadata = {}) {
   const operationLogger = logger.operation(operation);
-  
+
   if (error instanceof ConverseMCPError) {
     if (error.statusCode >= 500) {
       operationLogger.error('Internal error occurred', { error, data: metadata });
@@ -338,9 +338,9 @@ export class ErrorAggregator {
    */
   addError(error, identifier = null) {
     this.errors.push({ error, identifier, timestamp: new Date().toISOString() });
-    this.logger.warn('Batch operation error', { 
-      error, 
-      data: { identifier, totalErrors: this.errors.length } 
+    this.logger.warn('Batch operation error', {
+      error,
+      data: { identifier, totalErrors: this.errors.length }
     });
   }
 
@@ -367,7 +367,7 @@ export class ErrorAggregator {
     if (this.errors.length > 0) {
       const defaultMessage = `${this.operation} completed with ${this.errors.length} errors`;
       const errorMessage = message || defaultMessage;
-      
+
       const aggregatedError = new ConverseMCPError(
         errorMessage,
         ERROR_CODES.INTERNAL_ERROR,
@@ -380,7 +380,7 @@ export class ErrorAggregator {
           }))
         }
       );
-      
+
       throw aggregatedError;
     }
   }
@@ -390,7 +390,7 @@ export class ErrorAggregator {
    */
   logSummary() {
     const summary = this.getSummary();
-    
+
     if (summary.hasErrors) {
       this.logger.warn('Batch operation completed with errors', { data: summary });
     } else {
@@ -413,44 +413,44 @@ export async function retryWithBackoff(fn, options = {}) {
     maxDelay = 10000,
     operation = 'retry-operation'
   } = options;
-  
+
   const operationLogger = logger.operation(operation);
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       if (attempt > 0) {
         operationLogger.debug(`Retry attempt ${attempt}/${retries}`);
       }
-      
+
       return await fn();
-      
+
     } catch (error) {
       lastError = error;
-      
+
       if (attempt === retries) {
-        operationLogger.error('All retry attempts failed', { 
-          error, 
-          data: { attempts: attempt + 1, maxRetries: retries } 
+        operationLogger.error('All retry attempts failed', {
+          error,
+          data: { attempts: attempt + 1, maxRetries: retries }
         });
         break;
       }
-      
+
       if (!isRecoverableError(error)) {
         operationLogger.warn('Non-recoverable error, stopping retries', { error });
         break;
       }
-      
+
       const currentDelay = Math.min(delay * Math.pow(backoffFactor, attempt), maxDelay);
-      operationLogger.debug(`Retrying in ${currentDelay}ms`, { 
-        error: error.message, 
-        data: { attempt: attempt + 1, delay: currentDelay } 
+      operationLogger.debug(`Retrying in ${currentDelay}ms`, {
+        error: error.message,
+        data: { attempt: attempt + 1, delay: currentDelay }
       });
-      
+
       await new Promise(resolve => setTimeout(resolve, currentDelay));
     }
   }
-  
+
   throw lastError;
 }
 
@@ -463,12 +463,12 @@ export class CircuitBreaker {
     this.failureThreshold = options.failureThreshold || 5;
     this.resetTimeout = options.resetTimeout || 60000; // 1 minute
     this.monitorTimeout = options.monitorTimeout || 10000; // 10 seconds
-    
+
     this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
     this.failures = 0;
     this.lastFailureTime = null;
     this.nextAttempt = null;
-    
+
     this.logger = logger.operation(`circuit-breaker:${operation}`);
   }
 
@@ -486,20 +486,20 @@ export class CircuitBreaker {
           { state: this.state, nextAttempt: this.nextAttempt }
         );
       }
-      
+
       this.state = 'HALF_OPEN';
       this.logger.info('Circuit breaker transitioning to HALF_OPEN');
     }
 
     try {
       const result = await fn();
-      
+
       if (this.state === 'HALF_OPEN') {
         this.reset();
       }
-      
+
       return result;
-      
+
     } catch (error) {
       this.recordFailure();
       throw error;
@@ -512,13 +512,13 @@ export class CircuitBreaker {
   recordFailure() {
     this.failures++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failures >= this.failureThreshold) {
       this.state = 'OPEN';
       this.nextAttempt = Date.now() + this.resetTimeout;
-      
+
       this.logger.warn('Circuit breaker opened due to failures', {
-        data: { 
+        data: {
           failures: this.failures,
           threshold: this.failureThreshold,
           resetTime: new Date(this.nextAttempt).toISOString()
@@ -535,7 +535,7 @@ export class CircuitBreaker {
     this.failures = 0;
     this.lastFailureTime = null;
     this.nextAttempt = null;
-    
+
     this.logger.info('Circuit breaker reset to CLOSED');
   }
 

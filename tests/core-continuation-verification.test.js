@@ -35,12 +35,12 @@ describe('Core Continuation Verification Tests', () => {
     try {
       for (const { question, expected, step } of mathSteps) {
         console.log(`Starting chat ${step}: ${question.split('?')[0]}?...`);
-        
-        const result = await client.chat(question, { 
-          model, 
+
+        const result = await client.chat(question, {
+          model,
           ...(continuationId && { continuation_id: continuationId })
         });
-        
+
         if (result.isError) {
           console.log(`Chat ${step} failed with error, skipping test:`, result.error);
           return; // Skip if no API keys
@@ -57,12 +57,12 @@ describe('Core Continuation Verification Tests', () => {
           // Verify message count increases
           expect(result.continuation.messageCount).toBeGreaterThan(previousResult.continuation.messageCount);
         }
-        
+
         // Verify answer contains expected number
         const responseText = Array.isArray(result.content) ? result.content[0].text : result.content;
         expect(responseText).toMatch(expected);
         console.log(`Chat ${step} successful, got answer:`, responseText.substring(0, 50));
-        
+
         previousResult = result;
       }
 
@@ -89,8 +89,8 @@ describe('Core Continuation Verification Tests', () => {
 
       expect(result1.continuation).toBeDefined();
       const continuationId = result1.continuation.id;
-      
-      // Verify answer contains "4" 
+
+      // Verify answer contains "4"
       const response1Text = Array.isArray(result1.content) ? result1.content[0].text : result1.content;
       expect(response1Text).toMatch(/4/);
       console.log('Consensus 1 successful, got answer:', response1Text.substring(0, 100));
@@ -103,7 +103,7 @@ describe('Core Continuation Verification Tests', () => {
 
       if (!result2.isError) {
         expect(result2.continuation.id).toBe(continuationId);
-        
+
         // Verify answer contains "8"
         const response2Text = Array.isArray(result2.content) ? result2.content[0].text : result2.content;
         expect(response2Text).toMatch(/8/);
@@ -122,8 +122,8 @@ describe('Core Continuation Verification Tests', () => {
     try {
       // Start with chat - 2+2
       console.log('Starting mixed conversation with chat: 2+2...');
-      const chatResult = await client.chat('What is 2 + 2? Give me just the answer.', { 
-        model: 'gemini-2.5-flash' 
+      const chatResult = await client.chat('What is 2 + 2? Give me just the answer.', {
+        model: 'gemini-2.5-flash'
       });
 
       if (chatResult.isError) {
@@ -132,7 +132,7 @@ describe('Core Continuation Verification Tests', () => {
       }
 
       const continuationId = chatResult.continuation.id;
-      
+
       // Verify chat answer contains "4"
       const chatText = Array.isArray(chatResult.content) ? chatResult.content[0].text : chatResult.content;
       expect(chatText).toMatch(/4/);
@@ -146,7 +146,7 @@ describe('Core Continuation Verification Tests', () => {
 
       if (!consensusResult.isError) {
         expect(consensusResult.continuation.id).toBe(continuationId);
-        
+
         // Verify consensus answer contains "8"
         const consensusText = Array.isArray(consensusResult.content) ? consensusResult.content[0].text : consensusResult.content;
         expect(consensusText).toMatch(/8/);

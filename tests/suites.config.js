@@ -1,6 +1,6 @@
 /**
  * Test Suite Configuration for Converse MCP Server
- * 
+ *
  * This file organizes tests into logical suites for different execution contexts:
  * - Unit tests: Fast, isolated tests with mocked dependencies
  * - Integration tests: Tests with real dependencies but no external API calls
@@ -180,7 +180,7 @@ export const testSuites = {
       LOG_LEVEL: 'info'
     }
   }
-}
+};
 
 /**
  * Get test configuration for a specific suite
@@ -188,9 +188,9 @@ export const testSuites = {
  * @returns {Object} Test configuration object
  */
 export function getTestConfig(suiteName) {
-  const suite = testSuites[suiteName]
+  const suite = testSuites[suiteName];
   if (!suite) {
-    throw new Error(`Unknown test suite: ${suiteName}`)
+    throw new Error(`Unknown test suite: ${suiteName}`);
   }
 
   return {
@@ -204,7 +204,7 @@ export function getTestConfig(suiteName) {
         TEST_SUITE: suiteName
       }
     }
-  }
+  };
 }
 
 /**
@@ -212,7 +212,7 @@ export function getTestConfig(suiteName) {
  * @returns {string[]} Array of suite names
  */
 export function getAvailableSuites() {
-  return Object.keys(testSuites)
+  return Object.keys(testSuites);
 }
 
 /**
@@ -221,13 +221,13 @@ export function getAvailableSuites() {
  * @returns {Object} Validation result with warnings and errors
  */
 export function validateSuiteEnvironment(suiteName) {
-  const suite = testSuites[suiteName]
-  const warnings = []
-  const errors = []
+  const suite = testSuites[suiteName];
+  const warnings = [];
+  const errors = [];
 
   if (!suite) {
-    errors.push(`Unknown test suite: ${suiteName}`)
-    return { valid: false, warnings, errors }
+    errors.push(`Unknown test suite: ${suiteName}`);
+    return { valid: false, warnings, errors };
   }
 
   // Check for API keys if needed
@@ -236,32 +236,32 @@ export function validateSuiteEnvironment(suiteName) {
       openai: process.env.OPENAI_API_KEY,
       xai: process.env.XAI_API_KEY,
       google: process.env.GOOGLE_API_KEY
-    }
+    };
 
     const missingKeys = Object.entries(apiKeys)
       .filter(([, value]) => !value)
-      .map(([key]) => key.toUpperCase() + '_API_KEY')
+      .map(([key]) => key.toUpperCase() + '_API_KEY');
 
     if (missingKeys.length === 3) {
-      errors.push('No API keys found. Real API tests will be skipped.')
+      errors.push('No API keys found. Real API tests will be skipped.');
     } else if (missingKeys.length > 0) {
-      warnings.push(`Missing API keys: ${missingKeys.join(', ')}. Some tests may be skipped.`)
+      warnings.push(`Missing API keys: ${missingKeys.join(', ')}. Some tests may be skipped.`);
     }
   }
 
   // Check Node.js version
-  const nodeVersion = process.version
-  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0])
+  const nodeVersion = process.version;
+  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
   if (majorVersion < 18) {
-    warnings.push(`Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`)
+    warnings.push(`Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`);
   }
 
   // Check memory for performance tests
   if (suiteName === 'performance' || suiteName === 'all') {
-    const memLimit = process.memoryUsage().heapTotal
-    const memLimitMB = memLimit / 1024 / 1024
+    const memLimit = process.memoryUsage().heapTotal;
+    const memLimitMB = memLimit / 1024 / 1024;
     if (memLimitMB < 512) {
-      warnings.push(`Low memory detected (${Math.round(memLimitMB)}MB). Performance tests may be affected.`)
+      warnings.push(`Low memory detected (${Math.round(memLimitMB)}MB). Performance tests may be affected.`);
     }
   }
 
@@ -269,8 +269,8 @@ export function validateSuiteEnvironment(suiteName) {
     valid: errors.length === 0,
     warnings,
     errors
-  }
+  };
 }
 
 // Default export for convenience
-export default testSuites
+export default testSuites;

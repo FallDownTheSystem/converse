@@ -12,7 +12,7 @@ import { inspect } from 'util';
  * @returns {boolean} True if console output should be suppressed
  */
 function shouldSuppressConsole() {
-  return process.env.LOG_LEVEL === 'silent' || 
+  return process.env.LOG_LEVEL === 'silent' ||
          process.env.NODE_ENV === 'test' ||
          process.env.MCP_TRANSPORT === 'stdio';
 }
@@ -98,7 +98,7 @@ function formatLevel(level) {
  */
 function formatContext(module, operation) {
   if (!module && !operation) return '';
-  
+
   const context = [module, operation].filter(Boolean).join(':');
   if (loggerConfig.enableColors) {
     return `${COLORS.dim}[${context}]${COLORS.reset}`;
@@ -113,7 +113,7 @@ function formatContext(module, operation) {
  */
 function formatError(error) {
   if (!(error instanceof Error)) {
-    return { error: error };
+    return { error };
   }
 
   const errorInfo = {
@@ -187,7 +187,7 @@ function log(level, message, metadata = {}) {
   const timestamp = loggerConfig.enableTimestamps ? formatTimestamp() : null;
   const formattedLevel = formatLevel(level);
   const context = formatContext(metadata.module, metadata.operation);
-  
+
   // Build log parts
   const parts = [
     timestamp,
@@ -198,7 +198,7 @@ function log(level, message, metadata = {}) {
 
   // Output main log line
   const logLine = parts.join(' ');
-  
+
   if (!shouldSuppressConsole()) {
     if (level === 'error') {
       console.error(logLine);
@@ -339,12 +339,12 @@ export function createStructuredError(message, code = 'UNKNOWN_ERROR', details =
   const error = new Error(message);
   error.code = code;
   error.details = details;
-  
+
   if (originalError) {
     error.originalError = originalError;
     error.cause = originalError;
   }
-  
+
   return error;
 }
 
@@ -356,21 +356,21 @@ export function createStructuredError(message, code = 'UNKNOWN_ERROR', details =
  */
 export function logTiming(operation, startTime, metadata = {}) {
   const duration = Date.now() - startTime;
-  
+
   if (duration > 1000) {
-    logger.warn(`Slow operation: ${operation}`, { 
-      ...metadata, 
-      data: { duration: `${duration}ms` } 
+    logger.warn(`Slow operation: ${operation}`, {
+      ...metadata,
+      data: { duration: `${duration}ms` }
     });
   } else if (duration > 100) {
-    logger.info(`Operation completed: ${operation}`, { 
-      ...metadata, 
-      data: { duration: `${duration}ms` } 
+    logger.info(`Operation completed: ${operation}`, {
+      ...metadata,
+      data: { duration: `${duration}ms` }
     });
   } else {
-    logger.debug(`Operation completed: ${operation}`, { 
-      ...metadata, 
-      data: { duration: `${duration}ms` } 
+    logger.debug(`Operation completed: ${operation}`, {
+      ...metadata,
+      data: { duration: `${duration}ms` }
     });
   }
 }
@@ -384,14 +384,14 @@ export function logTiming(operation, startTime, metadata = {}) {
 export function startTimer(operation, module = 'timer') {
   const startTime = Date.now();
   const moduleLogger = createLogger(module);
-  
+
   moduleLogger.debug(`Starting: ${operation}`);
-  
+
   return (result = 'completed', metadata = {}) => {
     const duration = Date.now() - startTime;
-    moduleLogger.debug(`${result}: ${operation}`, { 
-      ...metadata, 
-      data: { duration: `${duration}ms` } 
+    moduleLogger.debug(`${result}: ${operation}`, {
+      ...metadata,
+      data: { duration: `${duration}ms` }
     });
     return duration;
   };
@@ -406,20 +406,20 @@ export function startTimer(operation, module = 'timer') {
 export function logFunction(functionName, module = 'function') {
   const moduleLogger = createLogger(module);
   const startTime = Date.now();
-  
+
   moduleLogger.trace(`Entering: ${functionName}`);
-  
+
   return (result = 'completed', error = null) => {
     const duration = Date.now() - startTime;
-    
+
     if (error) {
-      moduleLogger.trace(`Exiting with error: ${functionName}`, { 
+      moduleLogger.trace(`Exiting with error: ${functionName}`, {
         data: { duration: `${duration}ms` },
-        error 
+        error
       });
     } else {
-      moduleLogger.trace(`Exiting: ${functionName}`, { 
-        data: { duration: `${duration}ms`, result } 
+      moduleLogger.trace(`Exiting: ${functionName}`, {
+        data: { duration: `${duration}ms`, result }
       });
     }
   };
@@ -435,15 +435,15 @@ export class LoggedError extends Error {
     this.code = code;
     this.details = details;
     this.timestamp = new Date().toISOString();
-    
+
     // Log the error immediately
     if (logger) {
-      logger.error(`${this.name}: ${message}`, { 
-        data: { code, details } 
+      logger.error(`${this.name}: ${message}`, {
+        data: { code, details }
       });
     } else {
-      global.logger?.error(`${this.name}: ${message}`, { 
-        data: { code, details } 
+      global.logger?.error(`${this.name}: ${message}`, {
+        data: { code, details }
       });
     }
   }

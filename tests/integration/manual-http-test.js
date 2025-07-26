@@ -2,7 +2,7 @@
 
 /**
  * Manual HTTP Transport Test for Converse MCP Server
- * 
+ *
  * Tests the HTTP transport implementation by starting the server
  * and making HTTP-based MCP calls.
  */
@@ -29,7 +29,7 @@ class HTTPTestSuite {
 
   async startHTTPServer() {
     this.log('Starting MCP server with HTTP transport...');
-    
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.cleanup();
@@ -55,11 +55,11 @@ class HTTPTestSuite {
         this.serverProcess.stderr.on('data', (data) => {
           const output = data.toString();
           this.log(`Server stderr: ${output.trim()}`, 'DEBUG');
-          
+
           if (output.includes('started successfully') && !serverReady) {
             serverReady = true;
             clearTimeout(timeout);
-            
+
             // Give server a moment to be fully ready
             setTimeout(() => {
               this.log('Server is ready, connecting client...');
@@ -111,7 +111,7 @@ class HTTPTestSuite {
       // Connect to server
       await this.client.connect(this.transport);
       this.log('MCP client connected successfully via HTTP');
-      
+
     } catch (error) {
       throw new Error(`HTTP client connection failed: ${error.message}`);
     }
@@ -119,7 +119,7 @@ class HTTPTestSuite {
 
   async cleanup() {
     this.log('Cleaning up test resources...');
-    
+
     try {
       if (this.client) {
         await this.client.close();
@@ -139,7 +139,7 @@ class HTTPTestSuite {
     if (this.serverProcess && !this.serverProcess.killed) {
       this.log('Terminating server process...');
       this.serverProcess.kill('SIGTERM');
-      
+
       // Force kill if not dead in 5 seconds
       setTimeout(() => {
         if (!this.serverProcess.killed) {
@@ -152,7 +152,7 @@ class HTTPTestSuite {
   async runTest(name, testFn) {
     this.log(`Running test: ${name}`);
     const startTime = Date.now();
-    
+
     try {
       const result = await testFn();
       const duration = Date.now() - startTime;
@@ -170,14 +170,14 @@ class HTTPTestSuite {
   // Test basic server connectivity
   async testConnectivity() {
     const response = await this.client.listTools();
-    
+
     if (!response.tools || !Array.isArray(response.tools)) {
       throw new Error('Invalid tools response');
     }
 
     const toolNames = response.tools.map(t => t.name);
     const expectedTools = ['chat', 'consensus'];
-    
+
     for (const tool of expectedTools) {
       if (!toolNames.includes(tool)) {
         throw new Error(`Missing expected tool: ${tool}`);
@@ -201,9 +201,9 @@ class HTTPTestSuite {
       throw new Error('Invalid chat response format');
     }
 
-    return { 
+    return {
       responseLength: response.content[0].text.length,
-      hasContent: true 
+      hasContent: true
     };
   }
 
@@ -282,13 +282,13 @@ class HTTPTestSuite {
     // Print results
     const passed = this.results.filter(r => r.success).length;
     const total = this.results.length;
-    
+
     console.log('\n' + '='.repeat(50));
     console.log('HTTP TRANSPORT TEST RESULTS');
     console.log('='.repeat(50));
     console.log(`Passed: ${passed}/${total}`);
     console.log(`Success Rate: ${Math.round((passed/total)*100)}%`);
-    
+
     if (passed < total) {
       console.log('\nFailed Tests:');
       this.results.filter(r => !r.success).forEach(r => {
@@ -308,7 +308,7 @@ class HTTPTestSuite {
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new HTTPTestSuite();
-  
+
   testSuite.runAllTests()
     .then((report) => {
       process.exit(report.passed === report.total ? 0 : 1);

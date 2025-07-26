@@ -53,7 +53,7 @@ Examples:
 function getTransportType() {
   // Check command line arguments
   const args = process.argv.slice(2);
-  
+
   // Support --transport=value format
   const transportEqualArg = args.find(arg => arg.startsWith('--transport='));
   if (transportEqualArg) {
@@ -62,7 +62,7 @@ function getTransportType() {
       return transport;
     }
   }
-  
+
   // Support --transport value format
   const transportIndex = args.findIndex(arg => arg === '--transport');
   if (transportIndex >= 0 && transportIndex + 1 < args.length) {
@@ -94,7 +94,7 @@ async function main() {
 
   // Determine transport type first to configure logging appropriately
   const transportType = getTransportType();
-  
+
   // Set environment variable early for stdio transport to suppress console output
   if (transportType === 'stdio') {
     process.env.MCP_TRANSPORT = 'stdio';
@@ -107,7 +107,7 @@ async function main() {
   }
 
   const serverTimer = startTimer('server-startup', 'server');
-  
+
   try {
     logger.info('Starting Converse MCP Server');
 
@@ -117,11 +117,11 @@ async function main() {
 
     // Get MCP client configuration
     const mcpConfig = getMcpClientConfig(config);
-    
+
     logger.info('Using transport type', { data: { transport: transportType } });
 
-    logger.debug('Creating MCP server instance', { 
-      data: { name: mcpConfig.name, version: mcpConfig.version } 
+    logger.debug('Creating MCP server instance', {
+      data: { name: mcpConfig.name, version: mcpConfig.version }
     });
 
     // Create MCP server with configuration
@@ -144,15 +144,15 @@ async function main() {
 
       await httpTransport.start();
       const status = httpTransport.getStatus();
-      
+
       const startupTime = serverTimer('completed');
-      logger.info('Converse MCP Server started successfully with HTTP transport', { 
-        data: { 
+      logger.info('Converse MCP Server started successfully with HTTP transport', {
+        data: {
           startupTime: `${startupTime}ms`,
           endpoint: `http://${status.host}:${status.port}/mcp`,
           host: status.host,
           port: status.port
-        } 
+        }
       });
 
       // Store reference for shutdown
@@ -163,13 +163,13 @@ async function main() {
       await server.connect(transport);
 
       const startupTime = serverTimer('completed');
-      logger.info('Converse MCP Server started successfully with stdio transport', { 
-        data: { startupTime: `${startupTime}ms` } 
+      logger.info('Converse MCP Server started successfully with stdio transport', {
+        data: { startupTime: `${startupTime}ms` }
       });
     }
   } catch (error) {
     serverTimer('failed');
-    
+
     if (error instanceof ConfigurationError) {
       logger.error('Configuration error during startup', { error });
       debugError('Configuration Error:');
@@ -191,7 +191,7 @@ async function main() {
 async function gracefulShutdown(signal) {
   logger.info(`Received ${signal}, shutting down gracefully`);
   debugError('Shutting down Converse MCP Server...');
-  
+
   if (process.httpTransport) {
     try {
       await process.httpTransport.stop();
@@ -200,7 +200,7 @@ async function gracefulShutdown(signal) {
       logger.error('Error stopping HTTP transport', { error });
     }
   }
-  
+
   process.exit(0);
 }
 
@@ -214,9 +214,9 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled promise rejection', { 
-    error: reason, 
-    data: { promise: promise.toString() } 
+  logger.error('Unhandled promise rejection', {
+    error: reason,
+    data: { promise: promise.toString() }
   });
   debugError('Unhandled promise rejection:', reason);
   process.exit(1);

@@ -14,7 +14,7 @@ describe('XAI Provider', () => {
           xai: 'xai-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       expect(xaiProvider.validateConfig(config)).toBe(true);
     });
 
@@ -29,7 +29,7 @@ describe('XAI Provider', () => {
           xai: 'invalid-key'
         }
       };
-      
+
       expect(xaiProvider.validateConfig(config)).toBe(false);
     });
 
@@ -39,7 +39,7 @@ describe('XAI Provider', () => {
           xai: 'xai-short'
         }
       };
-      
+
       expect(xaiProvider.validateConfig(config)).toBe(false);
     });
 
@@ -49,7 +49,7 @@ describe('XAI Provider', () => {
           xai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       expect(xaiProvider.validateConfig(config)).toBe(false);
     });
   });
@@ -61,7 +61,7 @@ describe('XAI Provider', () => {
           xai: 'xai-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       expect(xaiProvider.isAvailable(config)).toBe(true);
     });
 
@@ -74,7 +74,7 @@ describe('XAI Provider', () => {
   describe('getSupportedModels', () => {
     it('should return supported models object', () => {
       const models = xaiProvider.getSupportedModels();
-      
+
       expect(typeof models).toBe('object');
       expect('grok-4-0709' in models).toBeTruthy();
       expect('grok-3' in models).toBeTruthy();
@@ -84,7 +84,7 @@ describe('XAI Provider', () => {
     it('should include model configuration details', () => {
       const models = xaiProvider.getSupportedModels();
       const grok4Model = models['grok-4-0709'];
-      
+
       expect(grok4Model.modelName).toBe('grok-4-0709');
       expect(grok4Model.friendlyName).toBe('X.AI (Grok 4)');
       expect(grok4Model.contextWindow).toBe(256000);
@@ -94,10 +94,10 @@ describe('XAI Provider', () => {
 
     it('should have correct image support configuration', () => {
       const models = xaiProvider.getSupportedModels();
-      
+
       // Grok-4 supports images
       expect(models['grok-4-0709'].supportsImages).toBe(true);
-      
+
       // Grok-3 models don't support images
       expect(models['grok-3'].supportsImages).toBe(false);
       expect(models['grok-3-fast'].supportsImages).toBe(false);
@@ -107,7 +107,7 @@ describe('XAI Provider', () => {
   describe('getModelConfig', () => {
     it('should return config for exact model name', () => {
       const config = xaiProvider.getModelConfig('grok-4-0709');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('grok-4-0709');
       expect(config.friendlyName).toBe('X.AI (Grok 4)');
@@ -115,7 +115,7 @@ describe('XAI Provider', () => {
 
     it('should return config for model alias', () => {
       const config = xaiProvider.getModelConfig('grok');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('grok-4-0709');
     });
@@ -123,7 +123,7 @@ describe('XAI Provider', () => {
     it('should return config for various aliases', () => {
       // Test all grok-4 aliases
       const aliases = ['grok', 'grok4', 'grok-4', 'grok-4-latest'];
-      
+
       for (const alias of aliases) {
         const config = xaiProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
@@ -138,7 +138,7 @@ describe('XAI Provider', () => {
 
     it('should be case insensitive', () => {
       const config = xaiProvider.getModelConfig('GROK-4-0709');
-      
+
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('grok-4-0709');
     });
@@ -154,7 +154,7 @@ describe('XAI Provider', () => {
     it('should throw error for missing API key', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: {} };
-      
+
       await expect(xaiProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
           name: 'XAIProviderError',
@@ -166,7 +166,7 @@ describe('XAI Provider', () => {
     it('should throw error for invalid API key format', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: { xai: 'invalid' } };
-      
+
       await expect(
         xaiProvider.invoke(messages, { config })
       ).rejects.toThrow(
@@ -180,7 +180,7 @@ describe('XAI Provider', () => {
     it('should throw error for OpenAI format key', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: { xai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef' } };
-      
+
       await expect(
         xaiProvider.invoke(messages, { config })
       ).rejects.toThrow(
@@ -193,7 +193,7 @@ describe('XAI Provider', () => {
 
     it('should throw error for non-array messages', async () => {
       const messages = 'not an array';
-      
+
       await expect(
         xaiProvider.invoke(messages, { config: validConfig })
       ).rejects.toThrow(
@@ -206,7 +206,7 @@ describe('XAI Provider', () => {
 
     it('should throw error for invalid message role', async () => {
       const messages = [{ role: 'invalid', content: 'Hello' }];
-      
+
       await expect(
         xaiProvider.invoke(messages, { config: validConfig })
       ).rejects.toThrow(
@@ -219,7 +219,7 @@ describe('XAI Provider', () => {
 
     it('should throw error for missing message content', async () => {
       const messages = [{ role: 'user' }];
-      
+
       await expect(
         xaiProvider.invoke(messages, { config: validConfig })
       ).rejects.toThrow(
@@ -234,7 +234,7 @@ describe('XAI Provider', () => {
   describe('model resolution', () => {
     it('should handle model aliases correctly', () => {
       const models = xaiProvider.getSupportedModels();
-      
+
       // Verify aliases are configured
       expect(models['grok-4-0709'].aliases.includes('grok')).toBe(true);
       expect(models['grok-4-0709'].aliases.includes('grok4')).toBe(true);
@@ -245,7 +245,7 @@ describe('XAI Provider', () => {
 
     it('should default to grok-4-0709 model', () => {
       const models = xaiProvider.getSupportedModels();
-      
+
       // Default model should be grok-4-0709
       const defaultConfig = xaiProvider.getModelConfig('grok');
       expect(defaultConfig.modelName).toBe('grok-4-0709');
@@ -255,7 +255,7 @@ describe('XAI Provider', () => {
   describe('temperature handling', () => {
     it('should support temperature for all models', () => {
       const models = xaiProvider.getSupportedModels();
-      
+
       // All Grok models support temperature
       expect(models['grok-4-0709'].supportsTemperature).toBe(true);
       expect(models['grok-3'].supportsTemperature).toBe(true);
@@ -272,7 +272,7 @@ describe('XAI Provider', () => {
           xai: 'xai-1234567890abcdef1234567890abcdef1234567890abcdef'
         }
       };
-      
+
       // The implementation should use 'https://api.x.ai/v1' as default
       expect(validConfig.apiKeys.xai.startsWith('xai-')).toBe(true);
     });
@@ -286,7 +286,7 @@ describe('XAI Provider', () => {
           xaiBaseUrl: 'https://custom.example.com/v1'
         }
       };
-      
+
       // The implementation should respect the custom base URL
       expect(configWithCustomUrl.providers.xaiBaseUrl).toBe('https://custom.example.com/v1');
     });

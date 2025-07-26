@@ -1,6 +1,6 @@
 /**
  * HTTP MCP Server Manager for Testing
- * 
+ *
  * Manages MCP server process lifecycle for integration testing using HTTP transport.
  * Replaces stdio-based MCPServerManager to eliminate subprocess management and
  * JSON-RPC protocol interference issues.
@@ -43,7 +43,7 @@ export class HTTPMCPServerManager {
       },
       ...options
     };
-    
+
     this.httpTransport = null;
     this.mcpServer = null;
     this.client = null;
@@ -116,7 +116,7 @@ export class HTTPMCPServerManager {
 
         // Connect client to server and wait for connection to be fully established
         await this.client.connect(this.clientTransport);
-        
+
         // Small delay to ensure connection is fully established
         await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -226,7 +226,7 @@ export class HTTPMCPServerManager {
 
     return Promise.race([
       this.client.callTool(toolCall),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Tool call timeout after ${timeout}ms`)), timeout)
       )
     ]);
@@ -296,7 +296,7 @@ export class HTTPMCPServerManager {
     this.isStarted = false;
     this.actualPort = null;
     this.sessionId = null;
-    
+
     // Clear references in reverse order of creation
     this.httpTransport = null;
     this.clientTransport = null;
@@ -373,12 +373,12 @@ export class HTTPMCPServerManager {
 
     const maxConcurrency = options.maxConcurrency || operations.length;
     const timeout = options.timeout || 30000;
-    
+
     const promises = operations.map(async (operation, index) => {
       try {
         const result = await Promise.race([
           operation(this.client),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error(`Operation ${index} timeout`)), timeout)
           )
         ]);
@@ -401,17 +401,17 @@ export class HTTPMCPServerManager {
     }
 
     const startTime = Date.now();
-    
+
     try {
       // Test tools listing
       const tools = await this.listTools();
-      
+
       // Test health endpoint
       const health = await this.getServerHealth();
-      
+
       // Test server info
       const info = await this.getServerInfo();
-      
+
       return {
         success: true,
         duration: Date.now() - startTime,
@@ -446,7 +446,7 @@ export function createHTTPTestServer(options = {}) {
  */
 export async function withHTTPTestServer(testFn, options = {}) {
   const manager = createHTTPTestServer(options);
-  
+
   try {
     await manager.startServer();
     const client = manager.getClient();

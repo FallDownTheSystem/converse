@@ -30,19 +30,19 @@ class DirectMCPTest {
 
   async initialize() {
     this.log('Initializing MCP components...');
-    
+
     // Load configuration
     this.config = await loadConfig();
     this.log(`Config loaded: ${this.config.environment.nodeEnv} environment`);
-    
+
     // Get tools and providers
     this.tools = getTools();
     this.providers = getProviders();
     this.continuationStore = getContinuationStore();
-    
+
     this.log(`Tools available: ${Object.keys(this.tools).join(', ')}`);
     this.log(`Providers available: ${Object.keys(this.providers).join(', ')}`);
-    
+
     // Create dependencies object like router does
     this.dependencies = {
       config: this.config,
@@ -54,14 +54,14 @@ class DirectMCPTest {
         validateToolArguments: () => true,
       },
     };
-    
+
     this.log('MCP components initialized successfully');
   }
 
   async runTest(name, testFn) {
     this.log(`Running test: ${name}`);
     const startTime = Date.now();
-    
+
     try {
       const result = await testFn();
       const duration = Date.now() - startTime;
@@ -157,7 +157,7 @@ class DirectMCPTest {
   // Test file context processing
   async testFileContext() {
     const chatTool = this.tools.chat;
-    
+
     // Create a test file
     const testFile = path.join(process.cwd(), 'test-context-file.txt');
     await fs.writeFile(testFile, 'This is test content for context processing.\nSecond line of test.');
@@ -196,7 +196,7 @@ class DirectMCPTest {
         // Missing required prompt
         model: 'openai:gpt-4o-mini'
       }, this.dependencies);
-      
+
       throw new Error('Expected error for missing prompt, but call succeeded');
     } catch (error) {
       if (error.message.includes('prompt') || error.message.includes('required')) {
@@ -209,14 +209,14 @@ class DirectMCPTest {
   // Test provider functionality
   async testProviders() {
     const results = {};
-    
+
     for (const [name, provider] of Object.entries(this.providers)) {
       try {
         const response = await provider.invoke([
           { role: 'user', content: 'Say "Provider test for ' + name + '"' }
         ], {
-          model: name === 'openai' ? 'gpt-4o-mini' : 
-                name === 'google' ? 'flash' : 'grok-beta',
+          model: name === 'openai' ? 'gpt-4o-mini' :
+            name === 'google' ? 'flash' : 'grok-beta',
           max_tokens: 50
         });
 
@@ -225,7 +225,7 @@ class DirectMCPTest {
           hasContent: !!response.content,
           responseLength: response.content?.length || 0
         };
-        
+
         this.log(`Provider ${name}: ✓`);
       } catch (error) {
         results[name] = {
@@ -247,11 +247,11 @@ class DirectMCPTest {
       await this.runTest('Chat Tool Direct', () => this.testChatDirect());
       await this.runTest('Chat Continuation', () => this.testChatContinuation());
       await this.runTest('Consensus Tool Direct', () => this.testConsensusDirect());
-      
+
       // Feature tests
       await this.runTest('File Context Processing', () => this.testFileContext());
       await this.runTest('Error Handling', () => this.testErrorHandling());
-      
+
       // Provider tests
       await this.runTest('Provider Functionality', () => this.testProviders());
 
@@ -263,12 +263,12 @@ class DirectMCPTest {
     // Print results summary
     const passed = this.results.filter(r => r.success).length;
     const total = this.results.length;
-    
+
     console.log('\n' + '='.repeat(60));
     console.log('DIRECT MCP FUNCTIONALITY TEST RESULTS');
     console.log('='.repeat(60));
     console.log(`Passed: ${passed}/${total} (${Math.round((passed/total)*100)}%)`);
-    
+
     if (passed < total) {
       console.log('\nFailed Tests:');
       this.results.filter(r => !r.success).forEach(r => {
@@ -298,7 +298,7 @@ class DirectMCPTest {
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new DirectMCPTest();
-  
+
   testSuite.runAllTests()
     .then((report) => {
       process.exit(report.summary.passed === report.summary.total ? 0 : 1);

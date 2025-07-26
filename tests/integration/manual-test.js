@@ -21,7 +21,7 @@ async function runTests() {
     // Create dependencies
     const providers = { getProvider, getProviders };
     const continuationStore = getContinuationStore();
-    
+
     const dependencies = {
       config,
       providers,
@@ -37,7 +37,7 @@ async function runTests() {
         temperature: 0.2
         // Don't include reasoning_effort for non-O3 models
       };
-      
+
       const chatResult = await chatTool(chatArgs, dependencies);
       console.log('✅ Chat tool executed successfully');
       console.log(`📊 Response type: ${chatResult.type}`);
@@ -83,16 +83,16 @@ async function runTests() {
       const hasReasoningEffort = chatSchema.properties.reasoning_effort;
       const hasImages = chatSchema.properties.images;
       const hasWebSearch = chatSchema.properties.use_websearch;
-      
+
       console.log(`✅ Chat tool has reasoning_effort: ${!!hasReasoningEffort}`);
       console.log(`✅ Chat tool has images support: ${!!hasImages}`);
       console.log(`✅ Chat tool has web search: ${!!hasWebSearch}`);
-      
+
       // Test consensus tool schema
       const consensusSchema = consensusTool.inputSchema;
       const consensusHasImages = consensusSchema.properties.images;
       const consensusHasReasoning = consensusSchema.properties.reasoning_effort;
-      
+
       console.log(`✅ Consensus tool has images support: ${!!consensusHasImages}`);
       console.log(`✅ Consensus tool has reasoning_effort: ${!!consensusHasReasoning}`);
       console.log('');
@@ -107,11 +107,11 @@ async function runTests() {
       const openaiProvider = providers.getProvider('openai');
       const xaiProvider = providers.getProvider('xai');
       const googleProvider = providers.getProvider('google');
-      
+
       console.log(`✅ OpenAI provider loaded: ${!!openaiProvider}`);
       console.log(`✅ XAI provider loaded: ${!!xaiProvider}`);
       console.log(`✅ Google provider loaded: ${!!googleProvider}`);
-      
+
       if (openaiProvider) {
         console.log(`🔑 OpenAI available: ${openaiProvider.isAvailable(config)}`);
       }
@@ -131,15 +131,15 @@ async function runTests() {
     console.log('📁 Test 5: Context Processor');
     try {
       const { processUnifiedContext } = await import('../../src/utils/contextProcessor.js');
-      
+
       const contextRequest = {
         files: ['./package.json'],
         images: [],
         webSearch: null
       };
-      
+
       const contextResult = await processUnifiedContext(contextRequest);
-      console.log(`✅ Context processor executed`);
+      console.log('✅ Context processor executed');
       console.log(`📄 Files processed: ${contextResult.files.length}`);
       console.log(`🖼️  Images processed: ${contextResult.images.length}`);
       if (contextResult.files.length > 0) {
@@ -157,7 +157,7 @@ async function runTests() {
       const availableProviders = config.providers?.available || [];
       if (availableProviders.length >= 2) {
         console.log('🎯 Multiple providers available, testing consensus...');
-        
+
         const consensusArgs = {
           prompt: 'What is the best programming language for web development? Give a brief answer.',
           models: [
@@ -167,7 +167,7 @@ async function runTests() {
           enable_cross_feedback: false, // Disable for faster testing
           temperature: 0.1
         };
-        
+
         const consensusResult = await consensusTool(consensusArgs, dependencies);
         console.log('✅ Consensus tool executed successfully');
         console.log(`📊 Response type: ${consensusResult.type}`);
@@ -186,7 +186,7 @@ async function runTests() {
     }
 
     console.log('🎉 Manual integration tests completed!');
-    
+
   } catch (error) {
     console.error('💥 Critical test failure:', error);
     process.exit(1);

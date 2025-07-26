@@ -45,25 +45,25 @@ const CONFIG_SCHEMA = {
   // Transport configuration
   transport: {
     MCP_TRANSPORT: { type: 'string', default: 'http', description: 'MCP transport type (http or stdio)' },
-    
+
     // HTTP server settings
     HTTP_PORT: { type: 'number', default: 3157, description: 'HTTP server port' },
     HTTP_HOST: { type: 'string', default: 'localhost', description: 'HTTP server host' },
     HTTP_REQUEST_TIMEOUT: { type: 'number', default: 300000, description: 'HTTP request timeout in milliseconds (5 minutes)' },
     HTTP_MAX_REQUEST_SIZE: { type: 'string', default: '10mb', description: 'Maximum HTTP request body size' },
-    
+
     // Session management
     HTTP_SESSION_TIMEOUT: { type: 'number', default: 1800000, description: 'Session timeout in milliseconds (30 minutes)' },
     HTTP_SESSION_CLEANUP_INTERVAL: { type: 'number', default: 300000, description: 'Session cleanup interval in milliseconds (5 minutes)' },
     HTTP_MAX_CONCURRENT_SESSIONS: { type: 'number', default: 100, description: 'Maximum concurrent sessions' },
-    
+
     // CORS configuration
     HTTP_ENABLE_CORS: { type: 'boolean', default: true, description: 'Enable CORS for HTTP transport' },
     HTTP_CORS_ORIGINS: { type: 'string', default: '*', description: 'CORS allowed origins (comma-separated)' },
     HTTP_CORS_METHODS: { type: 'string', default: 'GET,POST,DELETE,OPTIONS', description: 'CORS allowed methods' },
     HTTP_CORS_HEADERS: { type: 'string', default: 'Content-Type,mcp-session-id,Authorization', description: 'CORS allowed headers' },
     HTTP_CORS_CREDENTIALS: { type: 'boolean', default: false, description: 'CORS allow credentials' },
-    
+
     // Security settings
     HTTP_DNS_REBINDING_PROTECTION: { type: 'boolean', default: false, description: 'Enable DNS rebinding protection' },
     HTTP_ALLOWED_HOSTS: { type: 'string', default: '127.0.0.1,localhost', description: 'Allowed hosts for DNS rebinding protection (comma-separated)' },
@@ -163,7 +163,7 @@ function validateApiKeyFormat(provider, apiKey) {
 export async function loadConfig() {
   const configLogger = logger.operation('loadConfig');
   configLogger.debug('Starting configuration loading');
-  
+
   const config = {
     server: {},
     transport: {},
@@ -193,7 +193,7 @@ export async function loadConfig() {
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.transport)) {
       try {
         const value = validateEnvVar(key, process.env[key], schema);
-        
+
         if (key === 'MCP_TRANSPORT') {
           config.transport.mcptransport = value;
         } else if (key.startsWith('HTTP_')) {
@@ -286,7 +286,7 @@ export async function loadConfig() {
  */
 export function getHttpTransportConfig(config) {
   const transport = config.transport;
-  
+
   // Parse comma-separated values
   const corsOrigins = transport.corsorigins === '*' ? '*' : transport.corsorigins?.split(',').map(o => o.trim()) || ['*'];
   const corsMethods = transport.corsmethods?.split(',').map(m => m.trim()) || ['GET', 'POST', 'DELETE', 'OPTIONS'];
@@ -299,12 +299,12 @@ export function getHttpTransportConfig(config) {
     host: transport.host || 'localhost',
     requestTimeout: transport.requesttimeout || 300000,
     maxRequestSize: transport.maxrequestsize || '10mb',
-    
+
     // Session management
     sessionTimeout: transport.sessiontimeout || 1800000,
     sessionCleanupInterval: transport.sessioncleanupinterval || 300000,
     maxConcurrentSessions: transport.maxconcurrentsessions || 100,
-    
+
     // CORS configuration
     enableCors: transport.enablecors !== false,
     corsOptions: {
@@ -314,10 +314,10 @@ export function getHttpTransportConfig(config) {
       credentials: transport.corscredentials || false,
       exposedHeaders: ['Mcp-Session-Id'],
     },
-    
+
     // Security settings
     enableDnsRebindingProtection: transport.dnsrebindingprotection || false,
-    allowedHosts: allowedHosts,
+    allowedHosts,
     rateLimitEnabled: transport.ratelimitenabled || false,
     rateLimitWindow: transport.ratelimitwindow || 900000,
     rateLimitMaxRequests: transport.ratelimitmaxrequests || 1000,
@@ -396,36 +396,36 @@ export async function validateRuntimeConfig(config) {
     // Validate HTTP transport configuration
     if (config.transport.mcptransport === 'http') {
       const httpConfig = getHttpTransportConfig(config);
-      
+
       // Validate HTTP port
       if (httpConfig.port < 1 || httpConfig.port > 65535) {
         throw new ConfigurationError(`Invalid HTTP_PORT: ${httpConfig.port}. Must be between 1 and 65535`);
       }
-      
+
       // Validate timeouts
       if (httpConfig.requestTimeout < 1000) {
         throw new ConfigurationError(`Invalid HTTP_REQUEST_TIMEOUT: ${httpConfig.requestTimeout}. Must be at least 1000ms`);
       }
-      
+
       if (httpConfig.sessionTimeout < 60000) {
         throw new ConfigurationError(`Invalid HTTP_SESSION_TIMEOUT: ${httpConfig.sessionTimeout}. Must be at least 60000ms (1 minute)`);
       }
-      
+
       if (httpConfig.sessionCleanupInterval < 10000) {
         throw new ConfigurationError(`Invalid HTTP_SESSION_CLEANUP_INTERVAL: ${httpConfig.sessionCleanupInterval}. Must be at least 10000ms (10 seconds)`);
       }
-      
+
       // Validate max concurrent sessions
       if (httpConfig.maxConcurrentSessions < 1 || httpConfig.maxConcurrentSessions > 10000) {
         throw new ConfigurationError(`Invalid HTTP_MAX_CONCURRENT_SESSIONS: ${httpConfig.maxConcurrentSessions}. Must be between 1 and 10000`);
       }
-      
+
       // Validate rate limiting
       if (httpConfig.rateLimitEnabled) {
         if (httpConfig.rateLimitWindow < 1000) {
           throw new ConfigurationError(`Invalid HTTP_RATE_LIMIT_WINDOW: ${httpConfig.rateLimitWindow}. Must be at least 1000ms`);
         }
-        
+
         if (httpConfig.rateLimitMaxRequests < 1) {
           throw new ConfigurationError(`Invalid HTTP_RATE_LIMIT_MAX_REQUESTS: ${httpConfig.rateLimitMaxRequests}. Must be at least 1`);
         }
@@ -461,7 +461,7 @@ function logConfigurationSummary(config) {
   if (process.stdin.isTTY === false || process.env.NODE_ENV === 'test') {
     return;
   }
-  
+
   const availableProviders = getAvailableProviders(config);
 
   // Log configuration summary
@@ -491,6 +491,8 @@ export function getMcpClientConfig(config) {
     version: config.mcp.version,
     capabilities: {
       tools: {},
+      prompts: {},
+      resources: {},
     },
     environment: config.environment.nodeEnv,
     providers: getAvailableProviders(config),

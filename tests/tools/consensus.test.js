@@ -1,32 +1,32 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { consensusTool } from '../../src/tools/consensus.js'
-import { logger } from '../../src/utils/logger.js'
-import * as fileValidator from '../../src/utils/fileValidator.js'
-import * as contextProcessor from '../../src/utils/contextProcessor.js'
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { consensusTool } from '../../src/tools/consensus.js';
+import { logger } from '../../src/utils/logger.js';
+import * as fileValidator from '../../src/utils/fileValidator.js';
+import * as contextProcessor from '../../src/utils/contextProcessor.js';
 
 // Mock the fileValidator module
-vi.mock('../../src/utils/fileValidator.js')
+vi.mock('../../src/utils/fileValidator.js');
 // Mock the contextProcessor module
-vi.mock('../../src/utils/contextProcessor.js')
+vi.mock('../../src/utils/contextProcessor.js');
 
 describe('Consensus Tool Unit Tests', () => {
-  let mockDependencies
-  let mockConfig
-  let mockContinuationStore
-  let mockProviders
-  let mockContextProcessor
+  let mockDependencies;
+  let mockConfig;
+  let mockContinuationStore;
+  let mockProviders;
+  let mockContextProcessor;
 
   beforeEach(() => {
     // Mock file validator
-    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] })
-    
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] });
+
     // Mock createFileContext to return the expected format
     vi.mocked(contextProcessor.createFileContext).mockReturnValue({
       content: [
         { type: 'text', text: '=== FILE CONTEXT ===\n\n--- test.txt ---\ntest content' }
       ]
-    })
-    
+    });
+
     // Mock configuration
     mockConfig = {
       apiKeys: {
@@ -38,7 +38,7 @@ describe('Consensus Tool Unit Tests', () => {
         googleLocation: 'us-central1',
         xaiBaseUrl: 'https://api.x.ai/v1'
       }
-    }
+    };
 
     // Mock continuation store
     mockContinuationStore = {
@@ -47,7 +47,7 @@ describe('Consensus Tool Unit Tests', () => {
       delete: vi.fn(),
       exists: vi.fn(),
       getStats: vi.fn()
-    }
+    };
 
     // Mock individual providers
     const mockOpenAIProvider = {
@@ -61,7 +61,7 @@ describe('Consensus Tool Unit Tests', () => {
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
       getModelConfig: vi.fn().mockReturnValue({ contextWindow: 128000 })
-    }
+    };
 
     const mockXAIProvider = {
       invoke: vi.fn().mockResolvedValue({
@@ -74,7 +74,7 @@ describe('Consensus Tool Unit Tests', () => {
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
       getModelConfig: vi.fn().mockReturnValue({ contextWindow: 131000 })
-    }
+    };
 
     const mockGoogleProvider = {
       invoke: vi.fn().mockResolvedValue({
@@ -87,19 +87,19 @@ describe('Consensus Tool Unit Tests', () => {
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
       getModelConfig: vi.fn().mockReturnValue({ contextWindow: 1000000 })
-    }
+    };
 
-    // Mock providers - consensus tool expects a plain object with provider names as keys  
+    // Mock providers - consensus tool expects a plain object with provider names as keys
     mockProviders = {
       openai: mockOpenAIProvider,
       xai: mockXAIProvider,
       google: mockGoogleProvider
-    }
+    };
 
     // Mock context processor
     mockContextProcessor = {
       processUnifiedContext: vi.fn()
-    }
+    };
 
     // Create mock dependencies
     mockDependencies = {
@@ -107,12 +107,12 @@ describe('Consensus Tool Unit Tests', () => {
       continuationStore: mockContinuationStore,
       providers: mockProviders,
       contextProcessor: mockContextProcessor
-    }
+    };
 
     // Set up default mock return values
-    mockContinuationStore.get.mockResolvedValue(null)
-    mockContinuationStore.set.mockResolvedValue('conv_consensus_12345')
-    mockContinuationStore.exists.mockResolvedValue(false)
+    mockContinuationStore.get.mockResolvedValue(null);
+    mockContinuationStore.set.mockResolvedValue('conv_consensus_12345');
+    mockContinuationStore.exists.mockResolvedValue(false);
 
     mockContextProcessor.processUnifiedContext.mockResolvedValue({
       success: true,
@@ -120,30 +120,30 @@ describe('Consensus Tool Unit Tests', () => {
       files: [],
       processed: [],
       failed: []
-    })
-  })
+    });
+  });
 
   describe('Basic Consensus Functionality', () => {
     it('should handle basic consensus request with single model', async () => {
       const args = {
         prompt: 'What is 2+2?',
         models: [{ model: 'gpt-4o-mini' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
+      const result = await consensusTool(args, mockDependencies);
 
-      expect(result).toBeDefined()
-      expect(result.content).toBeDefined()
-      expect(Array.isArray(result.content)).toBe(true)
-      expect(result.content[0].type).toBe('text')
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content[0].type).toBe('text');
 
       // Parse the consensus result
-      const consensusResult = JSON.parse(result.content[0].text)
-      expect(consensusResult.status).toBe('consensus_complete')
-      expect(consensusResult.models_consulted).toBe(1)
-      expect(consensusResult.successful_initial_responses).toBe(1)
-      expect(consensusResult.phases.initial).toHaveLength(1)
-    })
+      const consensusResult = JSON.parse(result.content[0].text);
+      expect(consensusResult.status).toBe('consensus_complete');
+      expect(consensusResult.models_consulted).toBe(1);
+      expect(consensusResult.successful_initial_responses).toBe(1);
+      expect(consensusResult.phases.initial).toHaveLength(1);
+    });
 
     it('should handle consensus with multiple models', async () => {
       const args = {
@@ -153,20 +153,20 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok' },
           { model: 'flash' }
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.models_consulted).toBe(3)
-      expect(consensusResult.successful_initial_responses).toBe(3)
-      expect(consensusResult.phases.initial).toHaveLength(3)
+      expect(consensusResult.models_consulted).toBe(3);
+      expect(consensusResult.successful_initial_responses).toBe(3);
+      expect(consensusResult.phases.initial).toHaveLength(3);
 
       // Verify all providers were called
-      expect(mockProviders.openai.invoke).toHaveBeenCalled()
-      expect(mockProviders.xai.invoke).toHaveBeenCalled()
-      expect(mockProviders.google.invoke).toHaveBeenCalled()
-    })
+      expect(mockProviders.openai.invoke).toHaveBeenCalled();
+      expect(mockProviders.xai.invoke).toHaveBeenCalled();
+      expect(mockProviders.google.invoke).toHaveBeenCalled();
+    });
 
     it('should enable cross-feedback by default', async () => {
       const args = {
@@ -175,36 +175,36 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'gpt-4o-mini' },
           { model: 'grok' }
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.phases.refined).toBeDefined()
-      expect(consensusResult.refined_responses).toBe(2)
+      expect(consensusResult.phases.refined).toBeDefined();
+      expect(consensusResult.refined_responses).toBe(2);
 
       // Each provider should be called twice (initial + refinement)
-      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(2)
-      expect(mockProviders.xai.invoke).toHaveBeenCalledTimes(2)
-    })
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(2);
+      expect(mockProviders.xai.invoke).toHaveBeenCalledTimes(2);
+    });
 
     it('should disable cross-feedback when requested', async () => {
       const args = {
         prompt: 'Test question',
         models: [{ model: 'gpt-4o-mini' }],
         enable_cross_feedback: false
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.phases.refined).toBeUndefined()
-      expect(consensusResult.refined_responses).toBe(0)
+      expect(consensusResult.phases.refined).toBeUndefined();
+      expect(consensusResult.refined_responses).toBe(0);
 
       // Provider should only be called once (no refinement phase)
-      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1)
-    })
-  })
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1);
+    });
+  });
 
   describe('Model Resolution and Provider Mapping', () => {
     it('should resolve model names to correct providers', async () => {
@@ -215,27 +215,27 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok-4' },         // Should map to xai
           { model: 'gemini-pro' }      // Should map to google
         ]
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // Providers should be directly accessible
-      expect(mockProviders.openai).toBeDefined()
-      expect(mockProviders.xai).toBeDefined()
-      expect(mockProviders.google).toBeDefined()
-    })
+      expect(mockProviders.openai).toBeDefined();
+      expect(mockProviders.xai).toBeDefined();
+      expect(mockProviders.google).toBeDefined();
+    });
 
     it('should handle auto model selection', async () => {
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'auto' }]
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // Should use first available provider (openai)
-      expect(mockProviders.openai.invoke).toHaveBeenCalled()
-    })
+      expect(mockProviders.openai.invoke).toHaveBeenCalled();
+    });
 
     it('should handle model-specific options', async () => {
       const args = {
@@ -244,21 +244,21 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'gpt-4o-mini', temperature: 0.7 },
           { model: 'gemini-pro', thinking: 'medium' }
         ]
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // Check that options are passed to providers
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({ temperature: 0.7 })
-      )
+      );
       expect(mockProviders.google.invoke).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({ thinking: 'medium' })
-      )
-    })
-  })
+      );
+    });
+  });
 
   describe('Cross-Feedback Mechanism', () => {
     it('should include other models responses in refinement phase', async () => {
@@ -269,34 +269,34 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok' }
         ],
         enable_cross_feedback: true
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // Check refinement calls include context from other models
       const refinementCalls = mockProviders.openai.invoke.mock.calls.filter(
         call => call[0].some(msg => msg.content.includes('Other AI Responses:'))
-      )
-      expect(refinementCalls.length).toBeGreaterThan(0)
-    })
+      );
+      expect(refinementCalls.length).toBeGreaterThan(0);
+    });
 
     it('should use custom cross-feedback prompt when provided', async () => {
-      const customPrompt = 'Please review and improve your response based on the other perspectives'
+      const customPrompt = 'Please review and improve your response based on the other perspectives';
       const args = {
         prompt: 'Test question',
         models: [{ model: 'gpt-4o-mini' }, { model: 'grok' }],
         cross_feedback_prompt: customPrompt
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // Check that custom prompt is used in refinement
-      const calls = mockProviders.openai.invoke.mock.calls
-      const refinementCall = calls.find(call => 
+      const calls = mockProviders.openai.invoke.mock.calls;
+      const refinementCall = calls.find(call =>
         call[0].some(msg => msg.content.includes(customPrompt))
-      )
-      expect(refinementCall).toBeDefined()
-    })
+      );
+      expect(refinementCall).toBeDefined();
+    });
 
     it('should handle stance detection in refined responses', async () => {
       // Mock refined responses with stance keywords
@@ -310,7 +310,7 @@ describe('Consensus Tool Unit Tests', () => {
           content: 'I still support this position strongly',
           stop_reason: 'stop',
           metadata: { provider: 'openai' }
-        })
+        });
 
       mockProviders.xai.invoke
         .mockResolvedValueOnce({
@@ -322,7 +322,7 @@ describe('Consensus Tool Unit Tests', () => {
           content: 'I maintain my disagreement',
           stop_reason: 'stop',
           metadata: { provider: 'xai' }
-        })
+        });
 
       const args = {
         prompt: 'Should we implement this feature?',
@@ -330,16 +330,16 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'gpt-4o-mini' },
           { model: 'grok' }
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.phases.refined).toBeDefined()
-      expect(consensusResult.phases.refined.length).toBeGreaterThan(0)
-      expect(consensusResult.phases.refined[0]).toHaveProperty('refined_response')
-    })
-  })
+      expect(consensusResult.phases.refined).toBeDefined();
+      expect(consensusResult.phases.refined.length).toBeGreaterThan(0);
+      expect(consensusResult.phases.refined[0]).toHaveProperty('refined_response');
+    });
+  });
 
   describe('Context Processing Integration', () => {
     it.skip('should process context before sending to models', async () => {
@@ -348,37 +348,37 @@ describe('Consensus Tool Unit Tests', () => {
         contextMessages: [
           { role: 'user', content: 'Context: File content here' }
         ],
-        files: [{ 
-          originalPath: 'test.txt', 
-          path: 'test.txt', 
-          type: 'text', 
+        files: [{
+          originalPath: 'test.txt',
+          path: 'test.txt',
+          type: 'text',
           content: 'test content',
           size: 100,
           lineCount: 1
         }],
         processed: [{ fileName: 'test.txt' }],
         failed: []
-      })
+      });
 
       const args = {
         prompt: 'Analyze this data',
         models: [{ model: 'gpt-4o-mini' }],
         relevant_files: ['test.txt']
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
         files: ['test.txt'],
         images: []
-      })
+      });
 
       // Check that context is included in provider calls
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ 
+          expect.objectContaining({
             content: expect.arrayContaining([
-              expect.objectContaining({ 
+              expect.objectContaining({
                 type: 'text',
                 text: expect.stringContaining('=== FILE CONTEXT ===')
               })
@@ -386,8 +386,8 @@ describe('Consensus Tool Unit Tests', () => {
           })
         ]),
         expect.any(Object)
-      )
-    })
+      );
+    });
 
     it.skip('should handle context processing failures gracefully', async () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
@@ -396,58 +396,58 @@ describe('Consensus Tool Unit Tests', () => {
         files: [],
         processed: [],
         failed: [{ file: 'missing.txt', error: 'File not found' }]
-      })
+      });
 
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'gpt-4o-mini' }],
         relevant_files: ['missing.txt']
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      
+      const result = await consensusTool(args, mockDependencies);
+
       // Should still proceed with consensus
-      expect(result).toBeDefined()
-      const consensusResult = JSON.parse(result.content[0].text)
-      expect(consensusResult.status).toBe('consensus_complete')
-    })
-  })
+      expect(result).toBeDefined();
+      const consensusResult = JSON.parse(result.content[0].text);
+      expect(consensusResult.status).toBe('consensus_complete');
+    });
+  });
 
   describe('Error Handling and Resilience', () => {
     it('should throw error for missing prompt', async () => {
       const args = {
         models: [{ model: 'gpt-4o-mini' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      expect(result.isError).toBe(true)
-      expect(result.content[0].text).toMatch(/prompt.*required/i)
-    })
+      const result = await consensusTool(args, mockDependencies);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toMatch(/prompt.*required/i);
+    });
 
     it('should throw error for missing models array', async () => {
       const args = {
         prompt: 'Test prompt'
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      expect(result.isError).toBe(true)
-      expect(result.content[0].text).toMatch(/models.*required/i)
-    })
+      const result = await consensusTool(args, mockDependencies);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toMatch(/models.*required/i);
+    });
 
     it('should throw error for empty models array', async () => {
       const args = {
         prompt: 'Test prompt',
         models: []
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      expect(result.isError).toBe(true)
-      expect(result.content[0].text).toMatch(/models.*required.*at least one/i)
-    })
+      const result = await consensusTool(args, mockDependencies);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toMatch(/models.*required.*at least one/i);
+    });
 
     it('should handle individual provider failures gracefully', async () => {
       // Make one provider fail
-      mockProviders.xai.invoke.mockRejectedValue(new Error('XAI API error'))
+      mockProviders.xai.invoke.mockRejectedValue(new Error('XAI API error'));
 
       const args = {
         prompt: 'Test prompt',
@@ -456,23 +456,23 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok' },          // This will fail
           { model: 'flash' }
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.models_consulted).toBe(3)
-      expect(consensusResult.successful_initial_responses).toBe(2)
-      expect(consensusResult.failed_responses).toBe(1)
-      expect(consensusResult.phases.failed).toHaveLength(1)
-      expect(consensusResult.phases.failed[0].error).toContain('XAI API error')
-    })
+      expect(consensusResult.models_consulted).toBe(3);
+      expect(consensusResult.successful_initial_responses).toBe(2);
+      expect(consensusResult.failed_responses).toBe(1);
+      expect(consensusResult.phases.failed).toHaveLength(1);
+      expect(consensusResult.phases.failed[0].error).toContain('XAI API error');
+    });
 
     it('should handle all providers failing', async () => {
       // Make all providers fail
-      mockProviders.openai.invoke.mockRejectedValue(new Error('OpenAI error'))
-      mockProviders.xai.invoke.mockRejectedValue(new Error('XAI error'))
-      mockProviders.google.invoke.mockRejectedValue(new Error('Google error'))
+      mockProviders.openai.invoke.mockRejectedValue(new Error('OpenAI error'));
+      mockProviders.xai.invoke.mockRejectedValue(new Error('XAI error'));
+      mockProviders.google.invoke.mockRejectedValue(new Error('Google error'));
 
       const args = {
         prompt: 'Test prompt',
@@ -481,47 +481,47 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok' },
           { model: 'flash' }
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.status).toBe('consensus_complete')
-      expect(consensusResult.successful_initial_responses).toBe(0)
-      expect(consensusResult.failed_responses).toBe(3)
-      expect(consensusResult.phases.failed).toHaveLength(3)
-    })
+      expect(consensusResult.status).toBe('consensus_complete');
+      expect(consensusResult.successful_initial_responses).toBe(0);
+      expect(consensusResult.failed_responses).toBe(3);
+      expect(consensusResult.phases.failed).toHaveLength(3);
+    });
 
     it('should handle unknown models gracefully', async () => {
       // Remove the unknown provider from the providers object temporarily
-      const originalProviders = { ...mockProviders }
+      const originalProviders = { ...mockProviders };
       // This test needs to be updated - we can't easily simulate unknown model with direct object access
       // Instead, we'll test with a known model but make provider unavailable
-      mockProviders.openai.isAvailable.mockReturnValue(false)
-      mockProviders.xai.isAvailable.mockReturnValue(false)
-      mockProviders.google.isAvailable.mockReturnValue(false)
+      mockProviders.openai.isAvailable.mockReturnValue(false);
+      mockProviders.xai.isAvailable.mockReturnValue(false);
+      mockProviders.google.isAvailable.mockReturnValue(false);
 
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'unknown-model' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      
+      const result = await consensusTool(args, mockDependencies);
+
       // When no providers are available, consensus tool returns an error response
-      expect(result.isError).toBe(true)
-      expect(result.content[0].text).toContain('No valid providers available')
-    })
-  })
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('No valid providers available');
+    });
+  });
 
   describe('Continuation Support', () => {
     it('should save consensus results to continuation store', async () => {
       const args = {
         prompt: 'Test consensus question',
         models: [{ model: 'gpt-4o-mini' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
+      const result = await consensusTool(args, mockDependencies);
 
       expect(mockContinuationStore.set).toHaveBeenCalledWith(
         expect.stringMatching(/^conv_[a-f0-9-]+$/),
@@ -532,11 +532,11 @@ describe('Consensus Tool Unit Tests', () => {
           type: 'consensus',
           consensusData: expect.any(Object)
         })
-      )
+      );
 
-      expect(result.continuation).toBeDefined()
-      expect(result.continuation.id).toMatch(/^conv_[a-f0-9-]+$/)
-    })
+      expect(result.continuation).toBeDefined();
+      expect(result.continuation.id).toMatch(/^conv_[a-f0-9-]+$/);
+    });
 
     it('should load previous consensus conversation when continuation provided', async () => {
       const existingConversation = {
@@ -545,21 +545,21 @@ describe('Consensus Tool Unit Tests', () => {
           { role: 'assistant', content: 'Previous consensus result' }
         ],
         toolType: 'consensus'
-      }
+      };
 
-      mockContinuationStore.get.mockResolvedValue(existingConversation)
-      mockContinuationStore.exists.mockResolvedValue(true)
+      mockContinuationStore.get.mockResolvedValue(existingConversation);
+      mockContinuationStore.exists.mockResolvedValue(true);
 
       const args = {
         prompt: 'Follow-up consensus question',
         models: [{ model: 'gpt-4o-mini' }],
         continuation_id: 'conv_existing'
-      }
+      };
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
-      expect(mockContinuationStore.get).toHaveBeenCalledWith('conv_existing')
-      
+      expect(mockContinuationStore.get).toHaveBeenCalledWith('conv_existing');
+
       // Should include previous messages in provider calls
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -567,70 +567,70 @@ describe('Consensus Tool Unit Tests', () => {
           expect.objectContaining({ content: 'Follow-up consensus question' })
         ]),
         expect.any(Object)
-      )
-    })
-  })
+      );
+    });
+  });
 
   describe('Response Format Compliance', () => {
     it('should return MCP-compliant response format', async () => {
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'gpt-4o-mini' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
+      const result = await consensusTool(args, mockDependencies);
 
       // Check MCP response structure
-      expect(result).toHaveProperty('content')
-      expect(Array.isArray(result.content)).toBe(true)
-      expect(result.content[0]).toHaveProperty('type')
-      expect(result.content[0]).toHaveProperty('text')
-      expect(result.content[0].type).toBe('text')
+      expect(result).toHaveProperty('content');
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content[0]).toHaveProperty('type');
+      expect(result.content[0]).toHaveProperty('text');
+      expect(result.content[0].type).toBe('text');
 
       // Check continuation structure
-      expect(result).toHaveProperty('continuation')
-      expect(result.continuation).toHaveProperty('id')
-      expect(result.continuation).toHaveProperty('messageCount')
-    })
+      expect(result).toHaveProperty('continuation');
+      expect(result.continuation).toHaveProperty('id');
+      expect(result.continuation).toHaveProperty('messageCount');
+    });
 
     it('should return valid JSON in response content', async () => {
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'gpt-4o-mini' }]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
+      const result = await consensusTool(args, mockDependencies);
 
-      expect(() => JSON.parse(result.content[0].text)).not.toThrow()
+      expect(() => JSON.parse(result.content[0].text)).not.toThrow();
 
-      const consensusResult = JSON.parse(result.content[0].text)
-      expect(consensusResult).toHaveProperty('status')
-      expect(consensusResult).toHaveProperty('models_consulted')
-      expect(consensusResult).toHaveProperty('phases')
-      expect(consensusResult).toHaveProperty('settings')
-    })
+      const consensusResult = JSON.parse(result.content[0].text);
+      expect(consensusResult).toHaveProperty('status');
+      expect(consensusResult).toHaveProperty('models_consulted');
+      expect(consensusResult).toHaveProperty('phases');
+      expect(consensusResult).toHaveProperty('settings');
+    });
 
     it('should include comprehensive metadata in response', async () => {
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'gpt-4o-mini' }],
         temperature: 0.5
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
-      expect(consensusResult.settings).toHaveProperty('enable_cross_feedback')
-      expect(consensusResult.settings).toHaveProperty('temperature')
-      expect(consensusResult.settings.temperature).toBe(0.5)
+      expect(consensusResult.settings).toHaveProperty('enable_cross_feedback');
+      expect(consensusResult.settings).toHaveProperty('temperature');
+      expect(consensusResult.settings.temperature).toBe(0.5);
 
       // Check phase structure
-      expect(consensusResult.phases.initial[0]).toHaveProperty('model')
-      expect(consensusResult.phases.initial[0]).toHaveProperty('status')
-      expect(consensusResult.phases.initial[0]).toHaveProperty('response')
-      expect(consensusResult.phases.initial[0]).toHaveProperty('metadata')
-    })
-  })
+      expect(consensusResult.phases.initial[0]).toHaveProperty('model');
+      expect(consensusResult.phases.initial[0]).toHaveProperty('status');
+      expect(consensusResult.phases.initial[0]).toHaveProperty('response');
+      expect(consensusResult.phases.initial[0]).toHaveProperty('metadata');
+    });
+  });
 
   describe('Performance and Parallel Execution', () => {
     it('should execute models in parallel', async () => {
@@ -641,30 +641,30 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'grok' },
           { model: 'flash' }
         ]
-      }
+      };
 
       // Track when each provider is called
-      const callTimes = []
+      const callTimes = [];
       mockProviders.openai.invoke.mockImplementation(async () => {
-        callTimes.push(Date.now())
-        return { content: 'OpenAI response', stop_reason: 'stop', metadata: {} }
-      })
+        callTimes.push(Date.now());
+        return { content: 'OpenAI response', stop_reason: 'stop', metadata: {} };
+      });
       mockProviders.xai.invoke.mockImplementation(async () => {
-        callTimes.push(Date.now())
-        return { content: 'XAI response', stop_reason: 'stop', metadata: {} }
-      })
+        callTimes.push(Date.now());
+        return { content: 'XAI response', stop_reason: 'stop', metadata: {} };
+      });
       mockProviders.google.invoke.mockImplementation(async () => {
-        callTimes.push(Date.now())
-        return { content: 'Google response', stop_reason: 'stop', metadata: {} }
-      })
+        callTimes.push(Date.now());
+        return { content: 'Google response', stop_reason: 'stop', metadata: {} };
+      });
 
-      await consensusTool(args, mockDependencies)
+      await consensusTool(args, mockDependencies);
 
       // All providers should be called (multiple times due to cross-feedback)
-      expect(mockProviders.openai.invoke).toHaveBeenCalled()
-      expect(mockProviders.xai.invoke).toHaveBeenCalled()
-      expect(mockProviders.google.invoke).toHaveBeenCalled()
-    })
+      expect(mockProviders.openai.invoke).toHaveBeenCalled();
+      expect(mockProviders.xai.invoke).toHaveBeenCalled();
+      expect(mockProviders.google.invoke).toHaveBeenCalled();
+    });
 
     it('should handle timeout scenarios gracefully', async () => {
       // Mock a slow provider
@@ -674,7 +674,7 @@ describe('Consensus Tool Unit Tests', () => {
           stop_reason: 'stop',
           metadata: {}
         }), 100))
-      )
+      );
 
       const args = {
         prompt: 'Test prompt',
@@ -682,14 +682,14 @@ describe('Consensus Tool Unit Tests', () => {
           { model: 'gpt-4o-mini' },
           { model: 'grok' }  // This one is slow
         ]
-      }
+      };
 
-      const result = await consensusTool(args, mockDependencies)
-      const consensusResult = JSON.parse(result.content[0].text)
+      const result = await consensusTool(args, mockDependencies);
+      const consensusResult = JSON.parse(result.content[0].text);
 
       // Should still complete successfully
-      expect(consensusResult.status).toBe('consensus_complete')
-      expect(consensusResult.successful_initial_responses).toBe(2)
-    })
-  })
-})
+      expect(consensusResult.status).toBe('consensus_complete');
+      expect(consensusResult.successful_initial_responses).toBe(2);
+    });
+  });
+});

@@ -13,7 +13,7 @@ function log(message, level = 'INFO') {
 
 async function testServerStartup() {
   log('Testing server startup...');
-  
+
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       if (serverProcess && !serverProcess.killed) {
@@ -38,13 +38,13 @@ async function testServerStartup() {
     serverProcess.stderr.on('data', (data) => {
       const output = data.toString();
       log(`Server: ${output.trim()}`);
-      
+
       if (output.includes('started successfully') && !startupSuccess) {
         startupSuccess = true;
         clearTimeout(timeout);
-        
+
         log('Server started successfully!');
-        
+
         // Give it a moment then kill
         setTimeout(() => {
           serverProcess.kill('SIGTERM');
@@ -76,7 +76,7 @@ async function testServerStartup() {
 
 async function testBasicFunctionality() {
   log('Testing basic HTTP functionality...');
-  
+
   // Start server
   const serverProcess = spawn('node', ['src/index.js'], {
     env: {
@@ -100,11 +100,11 @@ async function testBasicFunctionality() {
     serverProcess.stderr.on('data', (data) => {
       const output = data.toString();
       log(`Server: ${output.trim()}`);
-      
+
       if (output.includes('started successfully') && !serverReady) {
         serverReady = true;
         log('Server ready, testing HTTP endpoint...');
-        
+
         // Test basic HTTP connectivity
         testHTTPEndpoint(3003)
           .then((result) => {
@@ -178,7 +178,7 @@ async function testHTTPEndpoint(port) {
 
 async function runAllTests() {
   const results = [];
-  
+
   try {
     // Test 1: Server startup
     log('=== Test 1: Server Startup ===');
@@ -204,12 +204,12 @@ async function runAllTests() {
   // Print summary
   const passed = results.filter(r => r.success).length;
   const total = results.length;
-  
+
   log('\n' + '='.repeat(50));
   log('SIMPLE SERVER TEST RESULTS');
   log('='.repeat(50));
   log(`Passed: ${passed}/${total}`);
-  
+
   results.forEach(r => {
     const status = r.success ? '✓' : '✗';
     const message = r.success ? r.message : r.error;

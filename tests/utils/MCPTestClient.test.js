@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { 
-  MCPTestClient, 
-  createTestClient, 
-  withTestClient, 
+import {
+  MCPTestClient,
+  createTestClient,
+  withTestClient,
   createMultipleTestClients,
-  stopMultipleTestClients 
+  stopMultipleTestClients
 } from './MCPTestClient.js';
 
 describe('MCPTestClient', () => {
@@ -27,7 +27,7 @@ describe('MCPTestClient', () => {
   describe('Constructor and Configuration', () => {
     it('should create client with default options', () => {
       const defaultClient = new MCPTestClient();
-      
+
       expect(defaultClient.options.maxRetries).toBe(3);
       expect(defaultClient.options.retryDelay).toBe(1000);
       expect(defaultClient.options.connectionTimeout).toBe(15000);
@@ -57,7 +57,7 @@ describe('MCPTestClient', () => {
       expect(client.operationCount).toBe(0);
       expect(client.lastError).toBeNull();
       expect(client.startTime).toBeNull();
-      
+
       const debugInfo = client.getDebugInfo();
       expect(debugInfo.isReady).toBe(false);
       expect(debugInfo.uptime).toBe(0);
@@ -67,27 +67,27 @@ describe('MCPTestClient', () => {
   describe('Client Lifecycle', () => {
     it('should start and stop client successfully', async () => {
       expect(client.isReady).toBe(false);
-      
+
       await client.start();
       expect(client.isReady).toBe(true);
       expect(client.startTime).toBeTruthy();
-      
+
       await client.stop();
       expect(client.isReady).toBe(false);
     }, 20000);
 
     it('should throw error when starting already started client', async () => {
       await client.start();
-      
+
       await expect(client.start()).rejects.toThrow('Test client is already started');
-      
+
       await client.stop();
     }, 20000);
 
     it('should handle multiple stop calls gracefully', async () => {
       await client.start();
       await client.stop();
-      
+
       // Second stop should not throw
       await expect(client.stop()).resolves.toBeUndefined();
     }, 20000);
@@ -106,12 +106,12 @@ describe('MCPTestClient', () => {
 
     it('should list available tools', async () => {
       const tools = await client.listTools();
-      
+
       expect(tools).toBeDefined();
       expect(tools.tools).toBeDefined();
       expect(Array.isArray(tools.tools)).toBe(true);
       expect(tools.tools.length).toBeGreaterThan(0);
-      
+
       const toolNames = tools.tools.map(tool => tool.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
@@ -151,7 +151,7 @@ describe('MCPTestClient', () => {
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-      
+
       const consensusResult = JSON.parse(result.content[0].text);
       expect(consensusResult.status).toBeDefined();
       expect(consensusResult.models_consulted).toBe(1);
@@ -177,7 +177,7 @@ describe('MCPTestClient', () => {
 
     it('should perform health check successfully', async () => {
       const health = await client.healthCheck();
-      
+
       expect(health.status).toBe('healthy');
       expect(health.server).toBeDefined();
       expect(health.performance).toBeDefined();
@@ -203,7 +203,7 @@ describe('MCPTestClient', () => {
       ];
 
       const results = await client.executeConcurrent(operations);
-      
+
       expect(results).toHaveLength(3);
       results.forEach((result, index) => {
         expect(result.index).toBe(index);
@@ -220,7 +220,7 @@ describe('MCPTestClient', () => {
       ];
 
       const results = await client.executeConcurrent(operations);
-      
+
       expect(results).toHaveLength(3);
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false);
@@ -241,22 +241,22 @@ describe('MCPTestClient', () => {
       await expect(
         retryClient.start()
       ).rejects.toThrow('Failed to start test client after 2 attempts');
-      
+
       expect(retryClient.isReady).toBe(false);
     });
 
     it('should not retry non-retryable errors', async () => {
       await client.start();
-      
+
       // Mock the isNonRetryableError to return true
       const originalIsNonRetryable = client.isNonRetryableError;
       client.isNonRetryableError = () => true;
-      
+
       try {
         await expect(
           client.callTool('invalid-tool', {})
         ).rejects.toThrow();
-        
+
         // Should have attempted only once (no retries for non-retryable errors)
         expect(client.operationCount).toBe(1);
       } finally {
@@ -269,7 +269,7 @@ describe('MCPTestClient', () => {
   describe('Debugging and Monitoring', () => {
     it('should provide debug information', async () => {
       const debugInfo = client.getDebugInfo();
-      
+
       expect(debugInfo.isReady).toBe(false);
       expect(debugInfo.operationCount).toBe(0);
       expect(debugInfo.uptime).toBe(0);
@@ -280,56 +280,56 @@ describe('MCPTestClient', () => {
 
     it('should track operation count', async () => {
       await client.start();
-      
+
       expect(client.operationCount).toBe(0);
-      
+
       await client.listTools();
       expect(client.operationCount).toBe(1);
-      
+
       await client.chat('Test');
       expect(client.operationCount).toBe(2);
-      
+
       await client.stop();
     }, 20000);
 
     it('should track uptime', async () => {
       expect(client.getDebugInfo().uptime).toBe(0);
-      
+
       await client.start();
-      
+
       // Wait a bit
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const uptime = client.getDebugInfo().uptime;
       expect(uptime).toBeGreaterThan(0);
-      
+
       await client.stop();
     }, 20000);
   });
 
   describe('Utility Functions', () => {
     it('should create test client with factory function', async () => {
-      const testClient = await createTestClient({ 
-        connectionTimeout: 10000 
+      const testClient = await createTestClient({
+        connectionTimeout: 10000
       });
-      
+
       expect(testClient).toBeInstanceOf(MCPTestClient);
       expect(testClient.isReady).toBe(true);
-      
+
       await testClient.stop();
     }, 20000);
 
     it('should run test with automatic client lifecycle', async () => {
       let clientReceived = null;
-      
+
       const result = await withTestClient(async (client) => {
         clientReceived = client;
-        
+
         expect(client.isReady).toBe(true);
-        
+
         const tools = await client.listTools();
         expect(tools.tools.length).toBeGreaterThan(0);
-        
+
         return 'test-result';
       }, { connectionTimeout: 10000 });
 
@@ -340,7 +340,7 @@ describe('MCPTestClient', () => {
 
     it('should cleanup client even if test function throws', async () => {
       let clientRef = null;
-      
+
       try {
         await withTestClient(async (client) => {
           clientRef = client;
@@ -361,14 +361,14 @@ describe('MCPTestClient', () => {
       // Note: This test might be challenging since each client tries to start
       // its own server instance. In a real scenario, we'd need to coordinate
       // port usage or use a different approach.
-      
+
       // For now, test the interface without actually creating multiple servers
       const mockClients = [];
-      
+
       // Test the utility functions exist and have correct signatures
       expect(createMultipleTestClients).toBeTypeOf('function');
       expect(stopMultipleTestClients).toBeTypeOf('function');
-      
+
       // Test stopping empty array
       await expect(stopMultipleTestClients([])).resolves.toBeUndefined();
     });

@@ -1,6 +1,6 @@
 /**
  * MCP Test Client Wrapper
- * 
+ *
  * High-level wrapper around MCPServerManager that provides simplified interface
  * for testing MCP client-server interactions with retry logic and debugging features.
  */
@@ -20,12 +20,12 @@ export class MCPTestClient {
       debugMode: false,
       ...options
     };
-    
+
     this.serverManager = new MCPServerManager({
       startupTimeout: this.options.connectionTimeout,
       ...options.serverOptions
     });
-    
+
     this.isReady = false;
     this.lastError = null;
     this.operationCount = 0;
@@ -65,11 +65,11 @@ export class MCPTestClient {
     }
 
     this.log('Stopping MCP test client...');
-    
+
     try {
       await this.serverManager.stopServer();
       this.isReady = false;
-      
+
       const duration = Date.now() - this.startTime;
       this.log(`Test client stopped after ${duration}ms, ${this.operationCount} operations`);
     } catch (error) {
@@ -100,9 +100,9 @@ export class MCPTestClient {
    */
   async callTool(toolName, args = {}, options = {}) {
     this.ensureReady();
-    
+
     const timeout = options.timeout || this.options.operationTimeout;
-    
+
     return this.withRetry('callTool', async () => {
       return await this.serverManager.executeToolCall({
         name: toolName,
@@ -145,24 +145,24 @@ export class MCPTestClient {
    */
   async healthCheck() {
     this.ensureReady();
-    
+
     const startTime = Date.now();
-    
+
     try {
       // Test basic connectivity
       const tools = await this.listTools();
       const listTime = Date.now() - startTime;
-      
+
       // Test a simple tool call
       const chatStartTime = Date.now();
-      const chatResult = await this.chat('Health check test', { 
+      const chatResult = await this.chat('Health check test', {
         model: 'auto',
-        temperature: 0 
+        temperature: 0
       });
       const chatTime = Date.now() - chatStartTime;
-      
+
       const totalTime = Date.now() - startTime;
-      
+
       return {
         status: 'healthy',
         server: this.serverManager.getHealthStatus(),
@@ -196,18 +196,18 @@ export class MCPTestClient {
    */
   async executeConcurrent(operations, options = {}) {
     this.ensureReady();
-    
+
     const maxConcurrency = options.maxConcurrency || operations.length;
     const timeout = options.timeout || this.options.operationTimeout;
-    
+
     this.log(`Executing ${operations.length} operations with max concurrency ${maxConcurrency}`);
-    
+
     // Simple Promise.all for now, could implement proper concurrency limiting
     const promises = operations.map(async (operation, index) => {
       try {
         const result = await Promise.race([
           operation(this),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error(`Operation ${index} timeout`)), timeout)
           )
         ]);
@@ -245,7 +245,7 @@ export class MCPTestClient {
    */
   async withRetry(operationName, operation) {
     this.operationCount++;
-    
+
     for (let attempt = 1; attempt <= this.options.maxRetries; attempt++) {
       try {
         this.log(`${operationName}: attempt ${attempt}`);
@@ -255,12 +255,12 @@ export class MCPTestClient {
       } catch (error) {
         this.lastError = error;
         this.log(`${operationName}: attempt ${attempt} failed:`, error.message);
-        
+
         // Don't retry certain types of errors
         if (this.isNonRetryableError(error)) {
           throw error;
         }
-        
+
         if (attempt < this.options.maxRetries) {
           await this.delay(this.options.retryDelay * attempt);
         }
@@ -340,7 +340,7 @@ export async function createTestClient(options = {}) {
  */
 export async function withTestClient(testFn, options = {}) {
   const client = new MCPTestClient(options);
-  
+
   try {
     await client.start();
     return await testFn(client);
@@ -357,7 +357,7 @@ export async function withTestClient(testFn, options = {}) {
  */
 export async function createMultipleTestClients(count, options = {}) {
   const clients = [];
-  
+
   try {
     for (let i = 0; i < count; i++) {
       const client = new MCPTestClient({
@@ -371,7 +371,7 @@ export async function createMultipleTestClients(count, options = {}) {
       await client.start();
       clients.push(client);
     }
-    
+
     return clients;
   } catch (error) {
     // Cleanup any clients that were created

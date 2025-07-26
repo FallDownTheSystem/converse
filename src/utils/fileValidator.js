@@ -1,6 +1,6 @@
 /**
  * File Validator Utility
- * 
+ *
  * Validates that file paths exist before processing them.
  * Returns early with clear error messages if any files are not found.
  */
@@ -21,7 +21,7 @@ export async function validateFilePaths(filePaths, fileType = 'file') {
   }
 
   const missingPaths = [];
-  
+
   for (const filePath of filePaths) {
     if (!filePath || typeof filePath !== 'string') {
       missingPaths.push(`Invalid path: ${filePath}`);
@@ -29,8 +29,8 @@ export async function validateFilePaths(filePaths, fileType = 'file') {
     }
 
     // Convert to absolute path if needed
-    const absolutePath = isAbsolute(filePath) 
-      ? filePath 
+    const absolutePath = isAbsolute(filePath)
+      ? filePath
       : resolve(process.cwd(), filePath);
 
     try {
@@ -61,7 +61,7 @@ export async function validateFilePaths(filePaths, fileType = 'file') {
  */
 export async function validateAllPaths({ files = [], images = [] }) {
   const errors = [];
-  
+
   // Validate regular files
   if (files.length > 0) {
     const fileValidation = await validateFilePaths(files, 'file');

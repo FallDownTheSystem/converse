@@ -1,6 +1,6 @@
 /**
  * Safe Console Utility
- * 
+ *
  * Provides console functions that respect MCP transport mode and logging settings.
  * Prevents console output from corrupting stdio transport JSON-RPC streams.
  */

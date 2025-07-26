@@ -1,6 +1,6 @@
 /**
  * Tests for HTTPMCPServerManager
- * 
+ *
  * Comprehensive test suite for HTTP-based MCP server management
  * that replaces stdio-based subprocess management.
  */
@@ -27,22 +27,22 @@ describe('HTTPMCPServerManager', () => {
   describe('Server Lifecycle', () => {
     test('should start and stop server successfully', async () => {
       expect(manager.isRunning()).toBe(false);
-      
+
       await manager.startServer();
       expect(manager.isRunning()).toBe(true);
-      
+
       const connectionInfo = manager.getConnectionInfo();
       expect(connectionInfo.port).toBeGreaterThan(0);
       expect(connectionInfo.host).toBe('localhost');
       expect(connectionInfo.baseUrl).toContain('http://localhost:');
-      
+
       await manager.stopServer();
       expect(manager.isRunning()).toBe(false);
     }, 30000);
 
     test('should not allow starting already started server', async () => {
       await manager.startServer();
-      
+
       await expect(manager.startServer()).rejects.toThrow('already started');
     }, 30000);
 
@@ -55,7 +55,7 @@ describe('HTTPMCPServerManager', () => {
         port: 0,
         startupTimeout: 1 // Very short timeout (1ms)
       });
-      
+
       // This should timeout because the startup process takes longer than 1ms
       await expect(slowManager.startServer()).rejects.toThrow('timeout');
     }, 10000);
@@ -69,7 +69,7 @@ describe('HTTPMCPServerManager', () => {
     test('should provide working MCP client', async () => {
       const client = manager.getClient();
       expect(client).toBeDefined();
-      
+
       const tools = await client.listTools();
       expect(tools).toBeDefined();
       expect(tools.tools).toBeInstanceOf(Array);
@@ -91,7 +91,7 @@ describe('HTTPMCPServerManager', () => {
       expect(tools).toBeDefined();
       expect(tools.tools).toBeInstanceOf(Array);
       expect(tools.tools.length).toBeGreaterThan(0);
-      
+
       // Check for expected tools
       const toolNames = tools.tools.map(t => t.name);
       expect(toolNames).toContain('chat');
@@ -106,7 +106,7 @@ describe('HTTPMCPServerManager', () => {
           model: 'auto'
         }
       });
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(Array.isArray(result.content)).toBe(true);
@@ -130,7 +130,7 @@ describe('HTTPMCPServerManager', () => {
         name: 'nonexistent-tool',
         arguments: {}
       });
-      
+
       // Should return an error response rather than throwing
       expect(result).toBeDefined();
       expect(result.isError).toBe(true);
@@ -163,7 +163,7 @@ describe('HTTPMCPServerManager', () => {
     test('should handle HTTP endpoint errors gracefully', async () => {
       // Stop the server to cause endpoint failures
       await manager.stopServer();
-      
+
       await expect(manager.getServerHealth()).rejects.toThrow();
       await expect(manager.getServerInfo()).rejects.toThrow();
     });
@@ -197,7 +197,7 @@ describe('HTTPMCPServerManager', () => {
       ];
 
       const results = await manager.executeConcurrent(operations);
-      
+
       expect(results).toHaveLength(3);
       expect(results.every(r => r.success)).toBe(true);
     }, 60000);
@@ -212,7 +212,7 @@ describe('HTTPMCPServerManager', () => {
 
     test('should provide health status when running', async () => {
       await manager.startServer();
-      
+
       const status = manager.getHealthStatus();
       expect(status.isStarted).toBe(true);
       expect(status.hasClient).toBe(true);
@@ -222,7 +222,7 @@ describe('HTTPMCPServerManager', () => {
 
     test('should perform basic functionality test', async () => {
       await manager.startServer();
-      
+
       const testResult = await manager.performBasicTest();
       expect(testResult.success).toBe(true);
       expect(testResult.tools).toBeGreaterThan(0);
@@ -235,7 +235,7 @@ describe('HTTPMCPServerManager', () => {
       // Start first manager on a specific port
       const manager1 = new HTTPMCPServerManager({ port: 31234 });
       await manager1.startServer();
-      
+
       try {
         // Try to start second manager on same port
         const manager2 = new HTTPMCPServerManager({ port: 31234 });
@@ -250,7 +250,7 @@ describe('HTTPMCPServerManager', () => {
       const badManager = new HTTPMCPServerManager({
         port: -1 // Invalid port
       });
-      
+
       await expect(badManager.startServer()).rejects.toThrow();
       expect(badManager.isRunning()).toBe(false);
     });
@@ -265,20 +265,20 @@ describe('HTTPMCPServerManager', () => {
     test('withHTTPTestServer should manage lifecycle', async () => {
       let clientReceived = null;
       let managerReceived = null;
-      
+
       const result = await withHTTPTestServer(async (client, manager) => {
         clientReceived = client;
         managerReceived = manager;
-        
+
         const tools = await client.listTools();
         return tools.tools.length;
       });
-      
+
       expect(clientReceived).toBeDefined();
       expect(managerReceived).toBeDefined();
       expect(typeof result).toBe('number');
       expect(result).toBeGreaterThan(0);
-      
+
       // Manager should be stopped after the function
       expect(managerReceived.isRunning()).toBe(false);
     }, 30000);
@@ -290,9 +290,9 @@ describe('HTTPMCPServerManager', () => {
         host: '127.0.0.1',
         port: 0
       });
-      
+
       await customManager.startServer();
-      
+
       try {
         const connectionInfo = customManager.getConnectionInfo();
         expect(connectionInfo.host).toBe('127.0.0.1');
@@ -309,9 +309,9 @@ describe('HTTPMCPServerManager', () => {
           TEST_VALUE: 'test123'
         }
       });
-      
+
       await envManager.startServer();
-      
+
       try {
         expect(process.env.TEST_VALUE).toBe('test123');
       } finally {

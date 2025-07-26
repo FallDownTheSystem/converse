@@ -165,11 +165,11 @@ function convertMessagesToGemini(messages) {
       systemPrompt = content;
     } else if (role === 'user') {
       const parts = [];
-      
+
       // Handle complex content structure (array with text and images)
       if (Array.isArray(content)) {
         let textContent = '';
-        
+
         for (const item of content) {
           if (item.type === 'text') {
             textContent += item.text;
@@ -184,7 +184,7 @@ function convertMessagesToGemini(messages) {
             debugLog(`[Google] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
           }
         }
-        
+
         // Combine system prompt with text content if present
         const finalTextContent = systemPrompt ? `${systemPrompt}\n\n${textContent}` : textContent;
         if (finalTextContent) {
@@ -195,10 +195,10 @@ function convertMessagesToGemini(messages) {
         const userContent = systemPrompt ? `${systemPrompt}\n\n${content}` : content;
         parts.push({ text: userContent });
       }
-      
+
       contents.push({
         role: 'user',
-        parts: parts
+        parts
       });
       systemPrompt = null; // Only use system prompt once
     } else if (role === 'assistant') {
@@ -213,7 +213,7 @@ function convertMessagesToGemini(messages) {
         }
         contents.push({
           role: 'model', // Google uses 'model' instead of 'assistant'
-          parts: parts
+          parts
         });
       } else {
         contents.push({

@@ -1,6 +1,6 @@
 /**
  * HTTP MCP Test Client Wrapper
- * 
+ *
  * High-level wrapper around HTTPMCPServerManager that provides simplified interface
  * for testing MCP client-server interactions using HTTP transport instead of stdio.
  * Replaces MCPTestClient with HTTP-based architecture for better reliability.
@@ -23,7 +23,7 @@ export class HTTPMCPTestClient {
       port: 0, // Random port
       ...options
     };
-    
+
     this.serverManager = new HTTPMCPServerManager({
       host: this.options.host,
       port: this.options.port,
@@ -40,7 +40,7 @@ export class HTTPMCPTestClient {
       },
       ...options.serverOptions
     });
-    
+
     this.isReady = false;
     this.lastError = null;
     this.operationCount = 0;
@@ -82,11 +82,11 @@ export class HTTPMCPTestClient {
     }
 
     this.log('Stopping HTTP MCP test client...');
-    
+
     try {
       await this.serverManager.stopServer();
       this.isReady = false;
-      
+
       const duration = Date.now() - this.startTime;
       this.log(`HTTP test client stopped after ${duration}ms, ${this.operationCount} operations`);
     } catch (error) {
@@ -117,9 +117,9 @@ export class HTTPMCPTestClient {
    */
   async callTool(toolName, args = {}, options = {}) {
     this.ensureReady();
-    
+
     const timeout = options.timeout || this.options.operationTimeout;
-    
+
     return this.withRetry('callTool', async () => {
       return await this.serverManager.executeToolCall({
         name: toolName,
@@ -162,34 +162,34 @@ export class HTTPMCPTestClient {
    */
   async healthCheck() {
     this.ensureReady();
-    
+
     const startTime = Date.now();
-    
+
     try {
       // Test basic connectivity
       const tools = await this.listTools();
       const listTime = Date.now() - startTime;
-      
+
       // Test HTTP health endpoint
       const httpHealthStart = Date.now();
       const httpHealth = await this.serverManager.getServerHealth();
       const httpHealthTime = Date.now() - httpHealthStart;
-      
+
       // Test server info endpoint
       const infoStart = Date.now();
       const serverInfo = await this.serverManager.getServerInfo();
       const infoTime = Date.now() - infoStart;
-      
+
       // Test a simple tool call
       const chatStartTime = Date.now();
-      const chatResult = await this.chat('Health check test', { 
+      const chatResult = await this.chat('Health check test', {
         model: 'auto',
-        temperature: 0 
+        temperature: 0
       });
       const chatTime = Date.now() - chatStartTime;
-      
+
       const totalTime = Date.now() - startTime;
-      
+
       return {
         status: 'healthy',
         server: this.serverManager.getHealthStatus(),
@@ -233,12 +233,12 @@ export class HTTPMCPTestClient {
    */
   async executeConcurrent(operations, options = {}) {
     this.ensureReady();
-    
+
     const maxConcurrency = options.maxConcurrency || operations.length;
     const timeout = options.timeout || this.options.operationTimeout;
-    
+
     this.log(`Executing ${operations.length} operations with max concurrency ${maxConcurrency}`);
-    
+
     return await this.serverManager.executeConcurrent(operations, { maxConcurrency, timeout });
   }
 
@@ -249,12 +249,12 @@ export class HTTPMCPTestClient {
    */
   async testSessionIsolation(sessionCount = 3) {
     this.ensureReady();
-    
+
     const startTime = Date.now();
     this.log(`Testing session isolation with ${sessionCount} sessions`);
-    
+
     try {
-      const operations = Array.from({ length: sessionCount }, (_, index) => 
+      const operations = Array.from({ length: sessionCount }, (_, index) =>
         async (client) => {
           const sessionResult = await client.callTool({
             name: 'chat',
@@ -269,14 +269,14 @@ export class HTTPMCPTestClient {
 
       const results = await this.executeConcurrent(operations);
       const successCount = results.filter(r => r.success).length;
-      
+
       return {
         success: successCount === sessionCount,
         sessionCount,
         successCount,
         failedCount: sessionCount - successCount,
         duration: Date.now() - startTime,
-        results: results
+        results
       };
     } catch (error) {
       return {
@@ -300,8 +300,8 @@ export class HTTPMCPTestClient {
       connection: this.connectionInfo,
       server: this.serverManager.getHealthStatus(),
       transport: 'http',
-      options: { 
-        ...this.options, 
+      options: {
+        ...this.options,
         serverOptions: undefined, // Don't expose server options
         env: undefined // Don't expose environment
       }
@@ -322,10 +322,10 @@ export class HTTPMCPTestClient {
    */
   async testHttpEndpoints() {
     this.ensureReady();
-    
+
     const baseUrl = this.connectionInfo.baseUrl;
     const results = {};
-    
+
     try {
       // Test health endpoint
       const healthResponse = await fetch(`${baseUrl}/health`);
@@ -333,20 +333,20 @@ export class HTTPMCPTestClient {
         status: healthResponse.status,
         data: await healthResponse.json()
       };
-      
+
       // Test info endpoint
       const infoResponse = await fetch(`${baseUrl}/info`);
       results.info = {
         status: infoResponse.status,
         data: await infoResponse.json()
       };
-      
+
       results.success = true;
     } catch (error) {
       results.success = false;
       results.error = error.message;
     }
-    
+
     return results;
   }
 
@@ -359,7 +359,7 @@ export class HTTPMCPTestClient {
    */
   async withRetry(operationName, operation) {
     this.operationCount++;
-    
+
     for (let attempt = 1; attempt <= this.options.maxRetries; attempt++) {
       try {
         this.log(`${operationName}: attempt ${attempt}`);
@@ -369,12 +369,12 @@ export class HTTPMCPTestClient {
       } catch (error) {
         this.lastError = error;
         this.log(`${operationName}: attempt ${attempt} failed:`, error.message);
-        
+
         // Don't retry certain types of errors
         if (this.isNonRetryableError(error)) {
           throw error;
         }
-        
+
         if (attempt < this.options.maxRetries) {
           await this.delay(this.options.retryDelay * attempt);
         }
@@ -456,7 +456,7 @@ export async function createHTTPTestClient(options = {}) {
  */
 export async function withHTTPTestClient(testFn, options = {}) {
   const client = new HTTPMCPTestClient(options);
-  
+
   try {
     await client.start();
     return await testFn(client);
@@ -473,7 +473,7 @@ export async function withHTTPTestClient(testFn, options = {}) {
  */
 export async function createMultipleHTTPTestClients(count, options = {}) {
   const clients = [];
-  
+
   try {
     for (let i = 0; i < count; i++) {
       const client = new HTTPMCPTestClient({
@@ -488,7 +488,7 @@ export async function createMultipleHTTPTestClients(count, options = {}) {
       await client.start();
       clients.push(client);
     }
-    
+
     return clients;
   } catch (error) {
     // Cleanup any clients that were created
@@ -515,11 +515,11 @@ export async function stopMultipleHTTPTestClients(clients) {
  */
 export async function testHTTPConcurrency(clientCount = 3, operationsPerClient = 5, options = {}) {
   const startTime = Date.now();
-  
+
   try {
     // Create multiple clients
     const clients = await createMultipleHTTPTestClients(clientCount, options);
-    
+
     // Run concurrent operations on all clients
     const allOperations = [];
     for (let clientIndex = 0; clientIndex < clients.length; clientIndex++) {
@@ -530,15 +530,15 @@ export async function testHTTPConcurrency(clientCount = 3, operationsPerClient =
         });
       }
     }
-    
+
     // Execute all operations concurrently
     const results = await Promise.allSettled(allOperations.map(op => op()));
-    
+
     // Stop all clients
     await stopMultipleHTTPTestClients(clients);
-    
+
     const successCount = results.filter(r => r.status === 'fulfilled').length;
-    
+
     return {
       success: successCount === allOperations.length,
       clientCount,

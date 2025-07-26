@@ -41,7 +41,7 @@ function truncateToTokenLimit(text, maxTokens) {
   }
 
   const originalTokens = estimateTokens(text);
-  
+
   if (originalTokens <= maxTokens) {
     return {
       content: text,
@@ -54,15 +54,15 @@ function truncateToTokenLimit(text, maxTokens) {
 
   // Calculate maximum characters to keep (with some buffer for safety)
   const maxChars = Math.floor(maxTokens * 3.8); // Slightly less than 4 chars per token
-  
+
   // Find a good truncation point (prefer complete sentences or paragraphs)
-  let truncationPoint = maxChars;
+  const truncationPoint = maxChars;
   const text_substring = text.substring(0, maxChars + 200); // Look ahead a bit
-  
+
   // Try to find sentence endings
   const sentenceEndings = ['. ', '.\n', '!\n', '?\n', '! ', '? '];
   let bestTruncation = maxChars;
-  
+
   for (const ending of sentenceEndings) {
     const lastIndex = text_substring.lastIndexOf(ending);
     if (lastIndex > maxChars * 0.8 && lastIndex < maxChars) {
@@ -70,7 +70,7 @@ function truncateToTokenLimit(text, maxTokens) {
       break;
     }
   }
-  
+
   // If no good sentence ending, try paragraph breaks
   if (bestTruncation === maxChars) {
     const paragraphBreak = text_substring.lastIndexOf('\n\n');
@@ -78,7 +78,7 @@ function truncateToTokenLimit(text, maxTokens) {
       bestTruncation = paragraphBreak + 2;
     }
   }
-  
+
   // If still no good break, try line breaks
   if (bestTruncation === maxChars) {
     const lineBreak = text_substring.lastIndexOf('\n');
@@ -86,12 +86,12 @@ function truncateToTokenLimit(text, maxTokens) {
       bestTruncation = lineBreak + 1;
     }
   }
-  
+
   const truncatedText = text.substring(0, bestTruncation);
   const finalTokens = estimateTokens(truncatedText);
-  
+
   const truncationMessage = `\n\n[Response truncated due to length. Original: ~${originalTokens} tokens, Truncated: ~${finalTokens} tokens, Limit: ${maxTokens} tokens]`;
-  
+
   return {
     content: truncatedText + truncationMessage,
     truncated: true,
@@ -121,8 +121,8 @@ export function applyTokenLimit(response, maxTokens) {
 
   // Handle different response types
   let textContent = '';
-  let originalResponse = response;
-  
+  const originalResponse = response;
+
   if (typeof response === 'string') {
     textContent = response;
   } else if (response && typeof response === 'object') {
@@ -139,7 +139,7 @@ export function applyTokenLimit(response, maxTokens) {
   }
 
   const result = truncateToTokenLimit(textContent, maxTokens);
-  
+
   if (result.truncated) {
     logger.warn('Response truncated due to token limit', {
       originalTokens: result.originalTokens,
@@ -195,7 +195,7 @@ export function getTokenLimit(config) {
   if (config && config.mcp && config.mcp.max_mcp_output_tokens) {
     return config.mcp.max_mcp_output_tokens;
   }
-  
+
   // Fallback to environment variable
   const envLimit = process.env.MAX_MCP_OUTPUT_TOKENS;
   if (envLimit) {
@@ -204,7 +204,7 @@ export function getTokenLimit(config) {
       return limit;
     }
   }
-  
+
   // Default limit
   return 25000;
 }

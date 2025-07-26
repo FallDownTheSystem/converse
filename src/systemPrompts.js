@@ -1,6 +1,6 @@
 /**
  * System Prompts for Converse MCP Server Tools
- * 
+ *
  * Matches the Python implementation system prompts exactly for feature parity.
  */
 

@@ -20,7 +20,7 @@ describe('MCPServerManager', () => {
   describe('Constructor and Configuration', () => {
     it('should create manager with default options', () => {
       const defaultManager = new MCPServerManager();
-      
+
       expect(defaultManager.options.startupTimeout).toBe(15000);
       expect(defaultManager.options.shutdownTimeout).toBe(5000);
       expect(defaultManager.options.env.NODE_ENV).toBe('test');
@@ -48,7 +48,7 @@ describe('MCPServerManager', () => {
       expect(manager.getStderrOutput()).toEqual([]);
       expect(manager.getStdoutOutput()).toEqual([]);
       expect(manager.getServerPid()).toBeNull();
-      
+
       const health = manager.getHealthStatus();
       expect(health.isStarted).toBe(false);
       expect(health.hasClient).toBe(false);
@@ -59,31 +59,31 @@ describe('MCPServerManager', () => {
   describe('Server Lifecycle', () => {
     it('should start and stop server successfully', async () => {
       expect(manager.isRunning()).toBe(false);
-      
+
       await manager.startServer();
       expect(manager.isRunning()).toBe(true);
       expect(manager.getServerPid()).toBeTruthy();
-      
+
       const client = manager.getClient();
       expect(client).toBeDefined();
       expect(typeof client.callTool).toBe('function');
-      
+
       await manager.stopServer();
       expect(manager.isRunning()).toBe(false);
     }, 20000);
 
     it('should throw error when starting already started server', async () => {
       await manager.startServer();
-      
+
       await expect(manager.startServer()).rejects.toThrow('Server is already started');
-      
+
       await manager.stopServer();
     }, 20000);
 
     it('should handle multiple stop calls gracefully', async () => {
       await manager.startServer();
       await manager.stopServer();
-      
+
       // Second stop should not throw
       await expect(manager.stopServer()).resolves.toBeUndefined();
     }, 20000);
@@ -100,12 +100,12 @@ describe('MCPServerManager', () => {
 
     it('should list available tools', async () => {
       const tools = await manager.listTools();
-      
+
       expect(tools).toBeDefined();
       expect(tools.tools).toBeDefined();
       expect(Array.isArray(tools.tools)).toBe(true);
       expect(tools.tools.length).toBeGreaterThan(0);
-      
+
       const toolNames = tools.tools.map(tool => tool.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
@@ -142,7 +142,7 @@ describe('MCPServerManager', () => {
         name: 'nonexistent-tool',
         arguments: {}
       });
-      
+
       // Check that error response is returned (not thrown)
       expect(result.isError).toBe(true);
       expect(result.error.code).toBe('UNKNOWN_TOOL');
@@ -179,10 +179,10 @@ describe('MCPServerManager', () => {
   describe('Debugging and Monitoring', () => {
     it('should capture stderr output', async () => {
       await manager.startServer();
-      
+
       const stderrOutput = manager.getStderrOutput();
       expect(Array.isArray(stderrOutput)).toBe(true);
-      
+
       await manager.stopServer();
     }, 20000);
 
@@ -190,15 +190,15 @@ describe('MCPServerManager', () => {
       const initialHealth = manager.getHealthStatus();
       expect(initialHealth.isStarted).toBe(false);
       expect(initialHealth.pid).toBeNull();
-      
+
       await manager.startServer();
-      
+
       const runningHealth = manager.getHealthStatus();
       expect(runningHealth.isStarted).toBe(true);
       expect(runningHealth.pid).toBeTruthy();
       expect(runningHealth.hasClient).toBe(true);
       expect(runningHealth.hasTransport).toBe(true);
-      
+
       await manager.stopServer();
     }, 20000);
   });
@@ -206,7 +206,7 @@ describe('MCPServerManager', () => {
   describe('Utility Functions', () => {
     it('should create test server with factory function', () => {
       const testServer = createTestServer({ startupTimeout: 5000 });
-      
+
       expect(testServer).toBeInstanceOf(MCPServerManager);
       expect(testServer.options.startupTimeout).toBe(5000);
     });
@@ -214,17 +214,17 @@ describe('MCPServerManager', () => {
     it('should run test with server lifecycle management', async () => {
       let clientReceived = null;
       let managerReceived = null;
-      
+
       const result = await withTestServer(async (client, manager) => {
         clientReceived = client;
         managerReceived = manager;
-        
+
         expect(client).toBeDefined();
         expect(manager.isRunning()).toBe(true);
-        
+
         const tools = await client.listTools();
         expect(tools.tools.length).toBeGreaterThan(0);
-        
+
         return 'test-result';
       });
 
@@ -236,7 +236,7 @@ describe('MCPServerManager', () => {
 
     it('should cleanup server even if test function throws', async () => {
       let managerRef = null;
-      
+
       try {
         await withTestServer(async (client, manager) => {
           managerRef = manager;
@@ -255,7 +255,7 @@ describe('MCPServerManager', () => {
   describe('Concurrent Operations', () => {
     it('should handle multiple tool calls concurrently', async () => {
       await manager.startServer();
-      
+
       const promises = [];
       for (let i = 0; i < 3; i++) {
         promises.push(
@@ -269,13 +269,13 @@ describe('MCPServerManager', () => {
       }
 
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(3);
       results.forEach(result => {
         expect(result.content).toBeDefined();
         expect(result.content[0].type).toBe('text');
       });
-      
+
       await manager.stopServer();
     }, 30000);
   });
