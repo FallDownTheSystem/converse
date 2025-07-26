@@ -357,11 +357,8 @@ export const anthropicProvider = {
 
     // Initialize Anthropic client with default headers
     // Use both prompt caching and extended cache duration headers for 1-hour caching
-    // Add thinking beta for models that support thinking
+    // Set beta headers for caching
     const betaHeaders = ['prompt-caching-2024-07-31', 'extended-cache-ttl-2025-04-11'];
-    if (modelConfig.supportsThinking && reasoning_effort) {
-      betaHeaders.push('thinking-2025-01-27');
-    }
     
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
