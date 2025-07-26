@@ -533,6 +533,90 @@ converse/
 | `GOOGLE_LOCATION` | Google API region | `us-central1` | `us-central1` |
 | `XAI_BASE_URL` | XAI API endpoint | `https://api.x.ai/v1` | Custom endpoint |
 
+### 🔐 Authentication for Remote Deployments
+
+The Converse MCP Server supports multiple authentication strategies for secure remote deployments:
+
+#### Authentication Strategies
+
+| Strategy | Description | Configuration |
+|----------|-------------|---------------|
+| `none` | No authentication (default) | No additional config needed |
+| `bearer` | JWT Bearer token | Requires `MCP_JWT_SECRET` |
+| `api_key` | API key authentication | Requires `MCP_API_KEYS` |
+| `oauth2` | OAuth 2.0 flow | Requires OAuth provider config |
+
+#### Environment Variables for Authentication
+
+```bash
+# Authentication Strategy
+MCP_AUTH_STRATEGY=bearer      # Options: none, bearer, api_key, oauth2
+MCP_AUTH_REQUIRE=true         # Require auth for all requests
+
+# JWT Configuration (for bearer and oauth2)
+MCP_JWT_SECRET=your-secret-key-at-least-32-chars
+MCP_JWT_ALGORITHM=HS256       # Default: HS256
+MCP_JWT_EXPIRES_IN=24h        # Default: 24h
+MCP_JWT_ISSUER=converse-mcp   # Default: converse-mcp-server
+
+# API Key Authentication
+MCP_API_KEYS=key1,key2,key3   # Comma-separated list
+
+# OAuth2 Configuration
+MCP_OAUTH_CLIENT_ID=your-client-id
+MCP_OAUTH_CLIENT_SECRET=your-client-secret
+MCP_OAUTH_AUTH_URL=https://accounts.google.com/o/oauth2/v2/auth
+MCP_OAUTH_TOKEN_URL=https://oauth2.googleapis.com/token
+MCP_OAUTH_CALLBACK_URL=https://your-server.com/oauth/callback
+MCP_OAUTH_SCOPE=openid profile email
+MCP_OAUTH_USERINFO_URL=https://www.googleapis.com/oauth2/v2/userinfo
+
+# Session-based Auth Control
+MCP_SESSION_AUTH_ENABLED=true              # Enable session auth
+MCP_SESSION_AUTH_REQUIRE_FOR_SESSION=false # Allow session creation without auth
+MCP_SESSION_AUTH_REQUIRE_FOR_OPERATIONS=true # Require auth for operations
+```
+
+#### Authentication Examples
+
+**Bearer Token (Recommended for APIs)**
+```bash
+# Generate a token (you'll need to implement token generation)
+curl -X POST http://localhost:3157/mcp \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**API Key**
+```bash
+curl -X POST http://localhost:3157/mcp \
+  -H "X-API-Key: your-api-key"
+```
+
+**OAuth2 Flow**
+1. Direct user to `/oauth/authorize`
+2. User authenticates with OAuth provider
+3. Server exchanges code for token at `/oauth/callback`
+4. Client receives MCP JWT token for subsequent requests
+
+#### Security Best Practices
+
+1. **Always use HTTPS** in production deployments
+2. **Set strong JWT secrets** (minimum 32 characters)
+3. **Use short token expiration** times (24h or less)
+4. **Enable rate limiting** for additional protection
+5. **Configure CORS** appropriately for your clients
+
+Example production configuration:
+```bash
+NODE_ENV=production
+MCP_AUTH_STRATEGY=oauth2
+MCP_AUTH_REQUIRE=true
+MCP_JWT_SECRET=$(openssl rand -base64 32)
+HTTP_RATE_LIMIT_ENABLED=true
+HTTP_DNS_REBINDING_PROTECTION=true
+HTTP_CORS_ORIGINS=https://your-app.com
+```
+
 ### Model Selection
 
 Use `"auto"` for automatic model selection, or specify exact models:

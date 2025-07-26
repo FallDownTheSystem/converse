@@ -211,9 +211,17 @@ export class HTTPTransportServer {
         endpoints: {
           mcp: '/mcp',
           health: '/health',
-          info: '/info'
+          info: '/info',
+          oauth: this.config.auth.strategy === 'oauth2' ? {
+            authorize: '/oauth/authorize',
+            callback: '/oauth/callback'
+          } : undefined
         },
-        sessions: this.transports.size
+        sessions: this.transports.size,
+        authentication: {
+          required: this.config.auth.requireAuth,
+          strategy: this.config.auth.strategy
+        }
       });
     });
   }

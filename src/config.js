@@ -70,6 +70,33 @@ const CONFIG_SCHEMA = {
     HTTP_RATE_LIMIT_ENABLED: { type: 'boolean', default: false, description: 'Enable rate limiting' },
     HTTP_RATE_LIMIT_WINDOW: { type: 'number', default: 900000, description: 'Rate limit window in milliseconds (15 minutes)' },
     HTTP_RATE_LIMIT_MAX_REQUESTS: { type: 'number', default: 1000, description: 'Maximum requests per window' },
+
+    // Authentication settings
+    MCP_AUTH_STRATEGY: { type: 'string', default: 'none', description: 'Authentication strategy: none, bearer, api_key, oauth2, custom' },
+    MCP_AUTH_REQUIRE: { type: 'boolean', default: false, description: 'Require authentication for all requests' },
+    
+    // JWT settings (for bearer token and OAuth2)
+    MCP_JWT_SECRET: { type: 'string', required: false, secret: true, description: 'JWT secret for token signing' },
+    MCP_JWT_ALGORITHM: { type: 'string', default: 'HS256', description: 'JWT signing algorithm' },
+    MCP_JWT_EXPIRES_IN: { type: 'string', default: '24h', description: 'JWT expiration time' },
+    MCP_JWT_ISSUER: { type: 'string', default: 'converse-mcp-server', description: 'JWT issuer' },
+    
+    // API Key authentication
+    MCP_API_KEYS: { type: 'string', required: false, secret: true, description: 'Comma-separated list of valid API keys' },
+    
+    // OAuth2 settings
+    MCP_OAUTH_CLIENT_ID: { type: 'string', required: false, description: 'OAuth2 client ID' },
+    MCP_OAUTH_CLIENT_SECRET: { type: 'string', required: false, secret: true, description: 'OAuth2 client secret' },
+    MCP_OAUTH_AUTH_URL: { type: 'string', required: false, description: 'OAuth2 authorization URL' },
+    MCP_OAUTH_TOKEN_URL: { type: 'string', required: false, description: 'OAuth2 token URL' },
+    MCP_OAUTH_CALLBACK_URL: { type: 'string', required: false, description: 'OAuth2 callback URL' },
+    MCP_OAUTH_SCOPE: { type: 'string', default: 'openid profile email', description: 'OAuth2 scope' },
+    MCP_OAUTH_USERINFO_URL: { type: 'string', required: false, description: 'OAuth2 user info URL' },
+    
+    // Session-based auth settings
+    MCP_SESSION_AUTH_ENABLED: { type: 'boolean', default: true, description: 'Enable session-based authentication' },
+    MCP_SESSION_AUTH_REQUIRE_FOR_SESSION: { type: 'boolean', default: false, description: 'Require auth for session creation' },
+    MCP_SESSION_AUTH_REQUIRE_FOR_OPERATIONS: { type: 'boolean', default: true, description: 'Require auth for operations' },
   },
 
   // API Keys (at least one required)
@@ -318,8 +345,9 @@ export function getHttpTransportConfig(config) {
   // Parse comma-separated values
   const corsOrigins = transport.corsorigins === '*' ? '*' : transport.corsorigins?.split(',').map(o => o.trim()) || ['*'];
   const corsMethods = transport.corsmethods?.split(',').map(m => m.trim()) || ['GET', 'POST', 'DELETE', 'OPTIONS'];
-  const corsHeaders = transport.corsheaders?.split(',').map(h => h.trim()) || ['Content-Type', 'mcp-session-id', 'Authorization'];
+  const corsHeaders = transport.corsheaders?.split(',').map(h => h.trim()) || ['Content-Type', 'mcp-session-id', 'Authorization', 'X-API-Key'];
   const allowedHosts = transport.allowedhosts?.split(',').map(h => h.trim()) || ['127.0.0.1', 'localhost'];
+  const apiKeys = transport.mcpapikeys?.split(',').map(k => k.trim()).filter(k => k) || [];
 
   return {
     // Server settings
@@ -349,6 +377,33 @@ export function getHttpTransportConfig(config) {
     rateLimitEnabled: transport.ratelimitenabled || false,
     rateLimitWindow: transport.ratelimitwindow || 900000,
     rateLimitMaxRequests: transport.ratelimitmaxrequests || 1000,
+
+    // Authentication configuration
+    auth: {
+      strategy: transport.mcpauthstrategy || 'none',
+      requireAuth: transport.mcpauthrequire || false,
+      jwtSecret: transport.mcpjwtsecret,
+      jwtOptions: {
+        algorithm: transport.mcpjwtalgorithm || 'HS256',
+        expiresIn: transport.mcpjwtexpiresin || '24h',
+        issuer: transport.mcpjwtissuer || 'converse-mcp-server'
+      },
+      apiKeys,
+      oauth2: {
+        clientId: transport.mcpoauthclientid,
+        clientSecret: transport.mcpoauthclientsecret,
+        authorizationUrl: transport.mcpoauthauthurl,
+        tokenUrl: transport.mcpoauthtokenurl,
+        callbackUrl: transport.mcpoauthcallbackurl,
+        scope: transport.mcpoauthscope || 'openid profile email',
+        userInfoUrl: transport.mcpoauthuserinfourl
+      },
+      sessionAuth: {
+        enabled: transport.mcpsessionauthenabled !== false,
+        requireAuthForSession: transport.mcpsessionauthrequireforsession || false,
+        requireAuthForOperations: transport.mcpsessionauthrequireforoperations !== false
+      }
+    }
   };
 }
 
