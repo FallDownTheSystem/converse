@@ -5,6 +5,15 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2025-07-26
+
+### Fixed
+- **Google Provider**: Fixed gemini-2.0-flash configuration - model does not support thinking mode
+- **Anthropic Provider**: Fixed Claude 4 series models token handling
+  - No longer set max_tokens for opus-4 and sonnet-4 models, letting SDK use defaults (32k/64k)
+  - Prevents "context length exceeded" errors that were actually SDK warnings about streaming
+- **Tests**: Updated test expectations to match new error message formats
+
 ## [1.5.1] - 2025-07-26
 
 ### Fixed
