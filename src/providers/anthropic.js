@@ -27,7 +27,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 32000,
     timeout: 300000,
     description: 'Claude Opus 4 - Highest level of intelligence and capability with extended thinking',
-    aliases: ['claude-4-opus', 'opus-4', 'opus', 'claude-opus']
+    aliases: ['claude-4-opus', 'opus-4', 'opus', 'claude-opus', 'claude-opus-4', 'opus4']
   },
   'claude-sonnet-4-20250514': {
     modelName: 'claude-sonnet-4-20250514',
@@ -43,7 +43,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 64000,
     timeout: 300000,
     description: 'Claude Sonnet 4 - High intelligence and balanced performance with extended thinking',
-    aliases: ['claude-4-sonnet', 'sonnet-4', 'sonnet', 'claude-sonnet']
+    aliases: ['claude-4-sonnet', 'sonnet-4', 'sonnet', 'claude-sonnet', 'claude-sonnet-4', 'sonnet4']
   },
   'claude-3-7-sonnet-20250219': {
     modelName: 'claude-3-7-sonnet-20250219',
@@ -59,7 +59,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 64000,
     timeout: 300000,
     description: 'Claude 3.7 Sonnet - Enhanced 3.x generation with thinking',
-    aliases: ['claude-3.7-sonnet', 'sonnet-3.7']
+    aliases: ['claude-3.7-sonnet', 'sonnet-3.7', 'claude-3-7-sonnet', 'claude 3.7 sonnet', 'sonnet 3.7']
   },
   'claude-3-5-sonnet-20241022': {
     modelName: 'claude-3-5-sonnet-20241022',
@@ -73,7 +73,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: false,
     timeout: 300000,
     description: 'Claude 3.5 Sonnet - Fast and intelligent model',
-    aliases: ['claude-3.5-sonnet', 'claude-3-5-sonnet-latest']
+    aliases: ['claude-3.5-sonnet', 'claude-3-5-sonnet-latest', 'claude-sonnet-3.5', 'sonnet-3.5', 'claude 3.5 sonnet', 'sonnet 3.5']
   },
   'claude-3-5-haiku-20241022': {
     modelName: 'claude-3-5-haiku-20241022',
@@ -87,7 +87,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: false,
     timeout: 180000,
     description: 'Claude 3.5 Haiku - Fastest model, best for simple queries',
-    aliases: ['claude-3.5-haiku', 'claude-3-5-haiku-latest', 'haiku', 'claude-haiku']
+    aliases: ['claude-3.5-haiku', 'claude-3-5-haiku-latest', 'haiku', 'claude-haiku', 'haiku-3.5', 'claude 3.5 haiku', 'haiku 3.5']
   }
 };
 

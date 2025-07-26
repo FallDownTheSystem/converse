@@ -22,7 +22,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     timeout: 300000,
     description: 'Magistral Medium - Frontier-class reasoning model (June 2025)',
-    aliases: ['magistral-medium', 'magistral-medium-latest']
+    aliases: ['magistral-medium', 'magistral-medium-latest', 'magistral', 'magistral medium']
   },
   'magistral-small-2506': {
     modelName: 'magistral-small-2506',
@@ -36,7 +36,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     timeout: 180000,
     description: 'Magistral Small - Small reasoning model (June 2025)',
-    aliases: ['magistral-small', 'magistral-small-latest']
+    aliases: ['magistral-small', 'magistral-small-latest', 'magistral small']
   },
   'mistral-medium-2505': {
     modelName: 'mistral-medium-2505',
@@ -49,7 +49,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Mistral Medium 3 - Frontier-class multimodal model (May 2025)',
-    aliases: ['mistral-medium-3', 'mistral-medium-latest', 'mistral-medium']
+    aliases: ['mistral-medium-3', 'mistral-medium-latest', 'mistral-medium', 'mistral medium 3', 'mistral', 'medium-3']
   }
 };
 

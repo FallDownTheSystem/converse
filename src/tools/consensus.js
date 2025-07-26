@@ -404,12 +404,16 @@ function resolveAutoModel(model, providerName) {
   }
 
   const defaults = {
-    'openai': 'gpt-4o-mini',
+    'openai': 'o3',
     'xai': 'grok-4-0709',
-    'google': 'gemini-2.5-flash'
+    'google': 'gemini-2.5-pro',
+    'anthropic': 'claude-sonnet-4-20250514',
+    'mistral': 'magistral-medium-2506',
+    'deepseek': 'deepseek-reasoner',
+    'openrouter': 'qwen/qwen3-coder'
   };
 
-  return defaults[providerName] || 'gpt-4o-mini';
+  return defaults[providerName] || 'o3';
 }
 
 function mapModelToProvider(model) {
@@ -435,6 +439,30 @@ function mapModelToProvider(model) {
   if (modelLower.includes('gemini') || modelLower.includes('flash') ||
       modelLower.includes('pro') || modelLower === 'google') {
     return 'google';
+  }
+
+  // Anthropic models
+  if (modelLower.includes('claude') || modelLower.includes('opus') ||
+      modelLower.includes('sonnet') || modelLower.includes('haiku')) {
+    return 'anthropic';
+  }
+
+  // Mistral models
+  if (modelLower.includes('mistral') || modelLower.includes('magistral')) {
+    return 'mistral';
+  }
+
+  // DeepSeek models
+  if (modelLower.includes('deepseek') || modelLower === 'reasoner' ||
+      modelLower === 'r1' || modelLower === 'chat') {
+    return 'deepseek';
+  }
+
+  // OpenRouter models (specific model patterns)
+  if (modelLower.includes('qwen') || modelLower.includes('kimi') ||
+      modelLower.includes('moonshot') || modelLower === 'k2' ||
+      modelLower.includes('/')) {  // OpenRouter uses provider/model format
+    return 'openrouter';
   }
 
   // Default fallback

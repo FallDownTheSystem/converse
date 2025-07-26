@@ -27,7 +27,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: 300000,
     description: 'Qwen3 235B Thinking model with enhanced reasoning capabilities',
-    aliases: ['qwen3-thinking', 'qwen-thinking']
+    aliases: ['qwen3-thinking', 'qwen-thinking', 'qwen3 thinking', 'qwen thinking', 'qwen3-235b-thinking']
   },
   'qwen/qwen3-coder': {
     modelName: 'qwen/qwen3-coder',
@@ -40,7 +40,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Qwen3 Coder specialized for programming tasks',
-    aliases: ['qwen3-coder', 'qwen-coder']
+    aliases: ['qwen3-coder', 'qwen-coder', 'qwen3 coder', 'qwen coder', 'qwen-3-coder']
   },
   'moonshotai/kimi-k2': {
     modelName: 'moonshotai/kimi-k2',
@@ -53,7 +53,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Moonshot AI Kimi K2 with extended context window',
-    aliases: ['kimi-k2', 'moonshot-kimi']
+    aliases: ['kimi-k2', 'moonshot-kimi', 'kimi k2', 'kimi', 'moonshot kimi', 'moonshot-k2', 'k2']
   }
 };
 

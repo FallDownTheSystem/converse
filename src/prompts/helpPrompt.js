@@ -16,7 +16,11 @@ export function generateHelpContent() {
   const allModels = {
     openai: providers.openai?.getSupportedModels() || {},
     google: providers.google?.getSupportedModels() || {},
-    xai: providers.xai?.getSupportedModels() || {}
+    xai: providers.xai?.getSupportedModels() || {},
+    anthropic: providers.anthropic?.getSupportedModels() || {},
+    mistral: providers.mistral?.getSupportedModels() || {},
+    deepseek: providers.deepseek?.getSupportedModels() || {},
+    openrouter: providers.openrouter?.getSupportedModels() || {}
   };
 
   // Format provider models for display
@@ -117,6 +121,10 @@ Multi-provider parallel execution with response aggregation and cross-model refi
 ${formatProviderModels('OpenAI', allModels.openai)}
 ${formatProviderModels('Google Gemini', allModels.google)}
 ${formatProviderModels('X.AI (Grok)', allModels.xai)}
+${formatProviderModels('Anthropic', allModels.anthropic)}
+${formatProviderModels('Mistral', allModels.mistral)}
+${formatProviderModels('DeepSeek', allModels.deepseek)}
+${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ## Model Selection Tips
 

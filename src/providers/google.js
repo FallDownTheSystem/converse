@@ -23,7 +23,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 24576,
     timeout: 300000,
     description: 'Gemini 2.0 Flash (1M context) - Latest fast model with experimental thinking, supports audio/video input and grounding',
-    aliases: ['flash-2.0', 'flash2']
+    aliases: ['flash-2.0', 'flash2', 'flash 2.0', 'gemini flash 2.0', 'gemini-2.0-flash-latest']
   },
   'gemini-2.0-flash-lite': {
     modelName: 'gemini-2.0-flash-lite',
@@ -38,7 +38,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 0,
     timeout: 300000,
     description: 'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only with grounding',
-    aliases: ['flashlite', 'flash-lite']
+    aliases: ['flashlite', 'flash-lite', 'flash lite', 'flash-lite-2.0', 'gemini flash lite', 'gemini-2.0-flash-lite-latest']
   },
   'gemini-2.5-flash': {
     modelName: 'gemini-2.5-flash',
@@ -53,7 +53,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 24576,
     timeout: 300000,
     description: 'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
-    aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5']
+    aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5', 'flash 2.5', 'gemini flash 2.5', 'gemini-2.5-flash-latest']
   },
   'gemini-2.5-pro': {
     modelName: 'gemini-2.5-pro',
@@ -68,7 +68,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 32768,
     timeout: 300000,
     description: 'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
-    aliases: ['pro', 'gemini pro', 'gemini-pro', 'gemini']
+    aliases: ['pro', 'gemini pro', 'gemini-pro', 'gemini', 'pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest']
   }
 };
 

@@ -5,6 +5,25 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2025-07-26
+
+### Improved
+- **Help System**: Updated help documentation and resources to display models from all 7 providers (previously only showed 3)
+- **Auto Model Selection**: Enhanced "auto" model selector to support all providers with intelligent defaults:
+  - OpenAI: `o3` (powerful reasoning model)
+  - Google: `gemini-2.5-pro` (advanced capabilities)
+  - Anthropic: `claude-sonnet-4-20250514` (Sonnet 4)
+  - Mistral: `magistral-medium-2506` (frontier-class model)
+  - DeepSeek: `deepseek-reasoner` (reasoning model)
+  - XAI: `grok-4-0709` (unchanged)
+  - OpenRouter: `qwen/qwen3-coder` (unchanged)
+- **Model Aliases**: Added comprehensive aliases for all models across all providers for easier access
+- **Provider Detection**: Updated `mapModelToProvider` function to recognize models from all 7 providers
+
+### Fixed
+- **Help Command**: Fixed issue where help command only displayed models from original 3 providers
+- **Model Resolution**: Fixed model name resolution to work with all provider models and their aliases
+
 ## [1.3.0] - 2025-07-26
 
 ### Added

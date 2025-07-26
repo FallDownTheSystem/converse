@@ -21,7 +21,8 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 300000, // 5 minutes
-    description: 'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis'
+    description: 'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
+    aliases: ['o3-2025-01-31']
   },
   'o3-mini': {
     modelName: 'o3-mini',
@@ -35,7 +36,7 @@ const SUPPORTED_MODELS = {
     supportsResponsesAPI: true,
     timeout: 300000,
     description: 'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
-    aliases: ['o3mini', 'o3 mini']
+    aliases: ['o3mini', 'o3 mini', 'o3-mini-2025-01-31']
   },
   'o3-pro-2025-06-10': {
     modelName: 'o3-pro-2025-06-10',
@@ -63,7 +64,7 @@ const SUPPORTED_MODELS = {
     supportsResponsesAPI: true,
     timeout: 180000, // 3 minutes
     description: 'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
-    aliases: ['o4mini', 'o4', 'o4 mini']
+    aliases: ['o4mini', 'o4', 'o4 mini', 'o4-mini-2025-01-30']
   },
   'gpt-4.1-2025-04-14': {
     modelName: 'gpt-4.1-2025-04-14',
@@ -77,7 +78,7 @@ const SUPPORTED_MODELS = {
     supportsResponsesAPI: true,
     timeout: 300000,
     description: 'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
-    aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1']
+    aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1', 'gpt-4.1-latest']
   },
   'gpt-4o': {
     modelName: 'gpt-4o',
