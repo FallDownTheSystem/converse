@@ -5,6 +5,20 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-07-26
+
+### Fixed
+- **Image Processing**: Fixed image handling in chat and consensus tools where images were being sent in a separate message from the prompt, causing XAI (Grok) and Google (Gemini) providers to not receive images correctly
+- **Message Structure**: Both tools now properly merge context (including images) and prompt into a single user message with complex content array
+- **Provider Compatibility**: All three providers (OpenAI, XAI, Google) now correctly process images with their respective format requirements
+
+### Added
+- **Integration Tests**: Added comprehensive image processing tests for consensus tool to verify all providers handle images correctly
+
+### Improved
+- **Image Format Validation**: Enhanced image format conversion for XAI and Google providers with proper debugging output
+- **File Validation**: Added file existence validation before processing context to prevent errors
+
 ## [1.0.3] - 2025-07-26
 
 ### Fixed
