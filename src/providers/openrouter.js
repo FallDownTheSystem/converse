@@ -84,11 +84,12 @@ function getCustomHeaders(config) {
   const headers = {};
 
   // REQUIRED: HTTP-Referer header for compliance
-  const referer = config?.providers?.openrouterReferer || 'https://github.com/FallDownTheSystem/converse';
+  // Note: config keys are lowercase without underscores due to config.js transformation
+  const referer = config?.providers?.openrouterreferer || 'https://github.com/FallDownTheSystem/converse';
   headers['HTTP-Referer'] = referer;
 
   // Optional: X-Title header for request tracking
-  const title = config?.providers?.openrouterTitle;
+  const title = config?.providers?.openroutertitle;
   if (title) {
     headers['X-Title'] = title;
   }
@@ -172,9 +173,10 @@ export const openrouterProvider = createOpenAICompatibleProvider({
 const originalInvoke = openrouterProvider.invoke;
 openrouterProvider.invoke = async function(messages, options = {}) {
   // Validate referer configuration
-  if (!options.config?.providers?.openrouterReferer) {
+  // Note: config keys are lowercase without underscores due to config.js transformation
+  if (!options.config?.providers?.openrouterreferer) {
     throw new OpenRouterProviderError(
-      'OpenRouter requires HTTP-Referer header. Please set config.providers.openrouterReferer',
+      'OpenRouter requires HTTP-Referer header. Please set OPENROUTER_REFERER in your environment',
       ErrorCodes.INVALID_REQUEST
     );
   }

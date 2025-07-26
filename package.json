@@ -85,7 +85,9 @@
     ".env.example"
   ],
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.57.0",
     "@google/genai": "^1.11.0",
+    "@mistralai/mistralai": "^1.7.5",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
