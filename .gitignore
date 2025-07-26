@@ -130,3 +130,5 @@ logs/
 # Backup files
 *.backup
 *.bak
+backlog
+.claude
