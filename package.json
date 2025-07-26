@@ -1,6 +1,6 @@
 {
   "name": "converse-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simplified, functional Node.js implementation of MCP server with chat and consensus tools",
   "type": "module",
   "main": "src/index.js",
