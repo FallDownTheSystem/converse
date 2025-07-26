@@ -20,11 +20,11 @@
   "continuation": {
     "id": "conv_abc123",
     "provider": "openai",
-    "model": "gpt-4o-mini",
+    "model": "o4-mini",
     "messageCount": 2
   },
   "metadata": {
-    "model": "gpt-4o-mini",
+    "model": "o4-mini",
     "usage": {
       "input_tokens": 15,
       "output_tokens": 145,
@@ -58,7 +58,7 @@
   "arguments": {
     "prompt": "Review this function for potential bugs and improvements",
     "model": "o3",
-    "files": ["/project/src/auth.js"],
+    "files": ["/c/Users/username/project/src/auth.js"],
     "reasoning_effort": "high",
     "temperature": 0.1
   }
@@ -74,10 +74,10 @@
     "prompt": "Analyze the overall architecture and suggest improvements for scalability",
     "model": "gemini-2.5-pro",
     "files": [
-      "/project/src/server.js",
-      "/project/src/routes/index.js",
-      "/project/src/middleware/auth.js",
-      "/project/config/database.js"
+      "/c/Users/username/project/src/server.js",
+      "/c/Users/username/project/src/routes/index.js",
+      "/c/Users/username/project/src/middleware/auth.js",
+      "/c/Users/username/project/config/database.js"
     ],
     "temperature": 0.2
   }
@@ -107,7 +107,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "What's the syntax for async/await in JavaScript?",
-    "model": "flash",
+    "model": "gemini-2.5-flash",
     "temperature": 0.3
   }
 }
@@ -120,7 +120,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Brainstorm creative ways to gamify a productivity app",
-    "model": "grok",
+    "model": "grok-4",
     "temperature": 0.7
   }
 }
@@ -138,7 +138,7 @@
     "models": [
       {"model": "o3"},
       {"model": "gemini-2.5-pro"},
-      {"model": "grok"}
+      {"model": "grok-4"}
     ],
     "temperature": 0.2
   }
@@ -181,14 +181,14 @@
   "arguments": {
     "prompt": "Given our current system architecture, what's the best approach for implementing real-time notifications?",
     "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-flash"},
-      {"model": "grok-4-0709"}
+      {"model": "o3"},        // Most intelligent: Complex reasoning
+      {"model": "grok-4"},    // Most intelligent: Advanced analysis
+      {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
     ],
     "relevant_files": [
-      "/docs/current_architecture.md",
-      "/src/server.js",
-      "/package.json"
+      "/c/Users/username/docs/current_architecture.md",
+      "/c/Users/username/src/server.js",
+      "/c/Users/username/package.json"
     ],
     "enable_cross_feedback": true,
     "temperature": 0.15
@@ -204,9 +204,9 @@
   "arguments": {
     "prompt": "What's the best CSS framework for rapid prototyping in 2024?",
     "models": [
-      {"model": "flash"},
-      {"model": "gpt-4o-mini"},
-      {"model": "grok-3-fast"}
+      {"model": "gemini-2.5-flash"},
+      {"model": "o4-mini"},
+      {"model": "grok-4"}
     ],
     "enable_cross_feedback": false,
     "temperature": 0.3
@@ -223,8 +223,8 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Analyze this UI design and suggest improvements for user experience",
-    "model": "gpt-4o",
-    "images": ["/designs/dashboard_mockup.png"],
+    "model": "gpt-4.1",
+    "images": ["/c/Users/username/designs/dashboard_mockup.png"],
     "temperature": 0.3
   }
 }
@@ -238,14 +238,14 @@
   "arguments": {
     "prompt": "Compare these three design options and recommend the best one for our mobile app",
     "models": [
-      {"model": "gpt-4o"},
+      {"model": "gpt-4.1"},
       {"model": "gemini-2.5-pro"},
-      {"model": "grok"}
+      {"model": "grok-4"}
     ],
     "images": [
-      "/designs/option_a.png",
-      "/designs/option_b.png", 
-      "/designs/option_c.png"
+      "/c/Users/username/designs/option_a.png",
+      "/c/Users/username/designs/option_b.png", 
+      "/c/Users/username/designs/option_c.png"
     ],
     "temperature": 0.2
   }
@@ -260,8 +260,8 @@
   "arguments": {
     "prompt": "Review the implementation against the architecture diagram. Are we following the design correctly?",
     "model": "o3",
-    "files": ["/src/services/payment.js", "/src/models/transaction.js"],
-    "images": ["/docs/payment_flow_diagram.png"],
+    "files": ["/c/Users/username/src/services/payment.js", "/c/Users/username/src/models/transaction.js"],
+    "images": ["/c/Users/username/docs/payment_flow_diagram.png"],
     "reasoning_effort": "high"
   }
 }
@@ -278,9 +278,9 @@
     "prompt": "Help me debug this error. The application crashes intermittently with this stack trace.",
     "model": "o3",
     "files": [
-      "/src/server.js",
-      "/logs/error.log",
-      "/src/middleware/error-handler.js"
+      "/c/Users/username/src/server.js",
+      "/c/Users/username/logs/error.log",
+      "/c/Users/username/src/middleware/error-handler.js"
     ],
     "reasoning_effort": "high",
     "temperature": 0.1
@@ -296,14 +296,14 @@
   "arguments": {
     "prompt": "Our API response times are degrading. What could be the root causes?",
     "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "grok"}
+      {"model": "gemini-2.5-flash"},  // Fast: Quick analysis
+      {"model": "o4-mini"},           // Fast: Rapid responses
+      {"model": "gpt-4.1"}            // Fast: Efficient processing
     ],
     "relevant_files": [
-      "/monitoring/performance_report.json",
-      "/src/database/queries.js",
-      "/src/api/routes.js"
+      "/c/Users/username/monitoring/performance_report.json",
+      "/c/Users/username/src/database/queries.js",
+      "/c/Users/username/src/api/routes.js"
     ],
     "cross_feedback_prompt": "Focus on the most likely performance bottlenecks based on the data"
   }
@@ -333,7 +333,7 @@
   "arguments": {
     "prompt": "Review this code and explain what it does, then suggest best practices improvements",
     "model": "o3",
-    "files": ["/src/utils/encryption.js"],
+    "files": ["/c/Users/username/src/utils/encryption.js"],
     "reasoning_effort": "medium",
     "temperature": 0.2
   }
@@ -349,10 +349,10 @@
     "prompt": "Compare Next.js, Nuxt.js, and SvelteKit for our new web application project",
     "models": [
       {"model": "o3"},
-      {"model": "flash"},
-      {"model": "grok"}
+      {"model": "gemini-2.5-flash"},
+      {"model": "grok-4"}
     ],
-    "relevant_files": ["/docs/project_requirements.md"],
+    "relevant_files": ["/c/Users/username/docs/project_requirements.md"],
     "temperature": 0.25
   }
 }
@@ -370,11 +370,11 @@
     "models": [
       {"model": "o3"},
       {"model": "gemini-2.5-pro"},
-      {"model": "grok"}
+      {"model": "grok-4"}
     ],
     "relevant_files": [
-      "/docs/user_requirements.md",
-      "/src/models/user.js"
+      "/c/Users/username/docs/user_requirements.md",
+      "/c/Users/username/src/models/user.js"
     ],
     "cross_feedback_prompt": "Consider security, scalability, and user experience in your refinement"
   }
@@ -389,7 +389,7 @@
   "arguments": {
     "prompt": "Generate a React component for a responsive image gallery with lazy loading",
     "model": "gemini-2.5-flash",
-    "files": ["/src/styles/globals.css"],
+    "files": ["/c/Users/username/src/styles/globals.css"],
     "temperature": 0.3
   }
 }
@@ -403,7 +403,7 @@
   "arguments": {
     "prompt": "Help me refactor this legacy code to use modern ES6+ features and improve readability",
     "model": "o3",
-    "files": ["/src/legacy/data-processor.js"],
+    "files": ["/c/Users/username/src/legacy/data-processor.js"],
     "reasoning_effort": "medium",
     "temperature": 0.2
   }
@@ -420,7 +420,7 @@
   "arguments": {
     "prompt": "I need to migrate our monolith to microservices. What's the step-by-step approach?",
     "model": "o3",
-    "files": ["/src/app.js", "/docs/current_architecture.md"],
+    "files": ["/c/Users/username/src/app.js", "/c/Users/username/docs/current_architecture.md"],
     "reasoning_effort": "max",
     "temperature": 0.1
   }
@@ -437,12 +437,12 @@
     "models": [
       {"model": "o3"},
       {"model": "gemini-2.5-pro"},
-      {"model": "grok"}
+      {"model": "grok-4"}
     ],
     "relevant_files": [
-      "/backend/requirements.txt",
-      "/monitoring/performance_metrics.json",
-      "/docs/team_skills.md"
+      "/c/Users/username/backend/requirements.txt",
+      "/c/Users/username/monitoring/performance_metrics.json",
+      "/c/Users/username/docs/team_skills.md"
     ],
     "cross_feedback_prompt": "Consider team expertise, migration costs, and long-term maintainability"
   }
@@ -456,7 +456,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Research the latest trends in web development for 2024 and how they apply to our project",
-    "model": "grok",
+    "model": "grok-4",
     "use_websearch": true,
     "temperature": 0.5
   }
@@ -472,7 +472,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Generate creative marketing copy for our new product launch",
-    "model": "grok",
+    "model": "grok-4",
     "temperature": 0.8
   }
 }
@@ -484,7 +484,7 @@
   "arguments": {
     "prompt": "Fix this bug in my authentication logic",
     "model": "o3",
-    "files": ["/src/auth.js"],
+    "files": ["/c/Users/username/src/auth.js"],
     "temperature": 0.0,
     "reasoning_effort": "high"
   }
@@ -561,7 +561,7 @@
   "arguments": {
     "prompt": "Review this API endpoint implementation",
     "model": "o3",
-    "files": ["/src/api/users.js"]
+    "files": ["/c/Users/username/src/api/users.js"]
   }
 }
 
@@ -571,7 +571,7 @@
   "arguments": {
     "prompt": "Now help me implement the error handling you suggested",
     "continuation_id": "conv_dev_456",
-    "files": ["/src/api/users.js"]
+    "files": ["/c/Users/username/src/api/users.js"]
   }
 }
 
@@ -595,9 +595,9 @@
   "arguments": {
     "prompt": "Brainstorm innovative features for a fitness tracking app that would differentiate us from competitors",
     "models": [
-      {"model": "grok"},
+      {"model": "grok-4"},
       {"model": "gemini-2.5-pro"},
-      {"model": "gpt-4o"}
+      {"model": "gpt-4.1"}
     ],
     "temperature": 0.7,
     "cross_feedback_prompt": "Build on each other's ideas and suggest combinations"
@@ -612,8 +612,8 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Suggest creative ways to improve user onboarding for this interface",
-    "model": "grok",
-    "images": ["/designs/current_onboarding.png"],
+    "model": "grok-4",
+    "images": ["/c/Users/username/designs/current_onboarding.png"],
     "temperature": 0.6
   }
 }
@@ -631,12 +631,12 @@
     "models": [
       {"model": "o3"},
       {"model": "gemini-2.5-pro"},
-      {"model": "flash"}
+      {"model": "gemini-2.5-flash"}
     ],
     "relevant_files": [
-      "/src/checkout/payment.js",
-      "/src/checkout/validation.js",
-      "/docs/business_requirements.md"
+      "/c/Users/username/src/checkout/payment.js",
+      "/c/Users/username/src/checkout/validation.js",
+      "/c/Users/username/docs/business_requirements.md"
     ],
     "temperature": 0.2
   }
@@ -651,7 +651,7 @@
   "arguments": {
     "prompt": "Generate comprehensive unit tests for this user authentication module",
     "model": "gemini-2.5-flash",
-    "files": ["/src/auth/index.js"],
+    "files": ["/c/Users/username/src/auth/index.js"],
     "temperature": 0.3
   }
 }
@@ -711,7 +711,7 @@
       "arguments": {
         "prompt": "Review this pull request for security issues and best practices",
         "model": "o3",
-        "files": ["src/modified-file.js"],
+        "files": ["/c/Users/username/src/modified-file.js"],
         "reasoning_effort": "high"
       }
     }' | npx converse-mcp-server
@@ -726,9 +726,9 @@ echo '{
   "arguments": {
     "prompt": "Generate API documentation for these endpoints",
     "model": "gemini-2.5-flash",
-    "files": ["src/api/routes.js"]
+    "files": ["/c/Users/username/src/api/routes.js"]
   }
-}' | npx converse-mcp-server > docs/api.md
+}' | npx converse-mcp-server > /c/Users/username/docs/api.md
 ```
 
 ---

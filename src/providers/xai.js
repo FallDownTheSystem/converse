@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     timeout: 300000, // 5 minutes
     description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support',
-    aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest']
+    aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest', 'grok 4', 'grok 4 latest']
   },
   'grok-3': {
     modelName: 'grok-3',
@@ -32,7 +32,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     timeout: 300000,
     description: 'GROK-3 (131K context) - Previous generation reasoning model from X.AI',
-    aliases: ['grok3']
+    aliases: ['grok3', 'grok 3']
   },
   'grok-3-fast': {
     modelName: 'grok-3-fast',
@@ -44,7 +44,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     timeout: 300000,
     description: 'GROK-3 Fast (131K context) - Higher performance variant, faster processing but more expensive',
-    aliases: ['grok3fast', 'grok3-fast']
+    aliases: ['grok3fast', 'grok3-fast', 'grok 3 fast']
   }
 };
 

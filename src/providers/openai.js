@@ -31,7 +31,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,
     timeout: 300000,
     description: 'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
-    aliases: ['o3mini']
+    aliases: ['o3mini', 'o3 mini']
   },
   'o3-pro-2025-06-10': {
     modelName: 'o3-pro-2025-06-10',
@@ -43,7 +43,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,
     timeout: 1800000, // 30 minutes
     description: 'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
-    aliases: ['o3-pro']
+    aliases: ['o3-pro', 'o3pro', 'o3 pro']
   },
   'o4-mini': {
     modelName: 'o4-mini',
@@ -55,7 +55,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     timeout: 180000, // 3 minutes
     description: 'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
-    aliases: ['o4mini']
+    aliases: ['o4mini', 'o4', 'o4 mini']
   },
   'gpt-4.1-2025-04-14': {
     modelName: 'gpt-4.1-2025-04-14',
@@ -67,7 +67,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     timeout: 300000,
     description: 'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
-    aliases: ['gpt4.1']
+    aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1']
   },
   'gpt-4o': {
     modelName: 'gpt-4o',
@@ -78,7 +78,8 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsTemperature: true,
     timeout: 180000,
-    description: 'GPT-4o (128K context) - Multimodal flagship model with vision capabilities'
+    description: 'GPT-4o (128K context) - Multimodal flagship model with vision capabilities',
+    aliases: ['gpt4o', 'gpt 4o', '4o']
   },
   'gpt-4o-mini': {
     modelName: 'gpt-4o-mini',
@@ -89,7 +90,8 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsTemperature: true,
     timeout: 120000,
-    description: 'GPT-4o-mini (128K context) - Fast and efficient multimodal model'
+    description: 'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
+    aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini']
   }
 };
 

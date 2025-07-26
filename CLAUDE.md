@@ -1,17 +1,19 @@
 # Claude Development Guide for Converse MCP Server
 
-This repository contains the **Converse MCP Server** - a simplified, functional Node.js implementation of an MCP server.
+This repository contains the **Converse MCP Server** - a functional Node.js implementation of an MCP server.
 
 ## Repository Structure
 
 - **`src/`** - Main source code for the Converse MCP Server
 - **`docs/`** - Complete documentation (API, Architecture, Examples)
 - **`tests/`** - Comprehensive test suite (unit, integration, e2e)
-- **`backlog/`** - Project management and task tracking
+- **`scripts/`** - Development and build scripts
+- **`examples/`** - Usage examples and sample configurations
+- **`bin/`** - Executable binaries for CLI usage
 
 ## Converse MCP Server (Node.js)
 
-The **Converse MCP Server** follows a simplified, functional architecture with two main tools:
+The **Converse MCP Server** follows a functional architecture with two main tools:
 
 1. **Chat Tool** - Single-provider conversational AI with context support
 2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
@@ -136,7 +138,7 @@ npm run test:tools
 
 ### Available Tools
 
-This implementation includes two main tools:
+The Converse MCP Server includes two main tools:
 
 1. **Chat Tool** (`chat`)
    - General conversational AI
@@ -149,26 +151,39 @@ This implementation includes two main tools:
    - Two-phase workflow: initial responses + cross-model refinement
    - All models consulted simultaneously for speed
    - Models can see each other's responses and refine their answers
-   - Single tool call with simplified interface
+   - Single tool call with clean interface
    - Robust error handling - partial failures don't stop other models
    - Optional: disable cross-feedback for faster single-phase consensus
 
 ### Using the Consensus Tool
 
-The consensus tool operates in a single call with parallel processing:
+The consensus tool operates with parallel processing across multiple AI providers:
 
 ```javascript
 // Example request structure:
 {
   "prompt": "Should we implement real-time collaboration features?",
   "models": [
-    {"model": "gemini-pro"},
-    {"model": "o3"},
-    {"model": "flash"}
+    {"model": "o3"},        // Most intelligent: Complex reasoning
+    {"model": "grok-4"},    // Most intelligent: Advanced analysis 
+    {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
   ],
-  "relevant_files": ["/path/to/spec.md"],  // Optional
+  "relevant_files": ["/c/Users/username/Documents/project/spec.md"],  // Optional - use git-bash paths
   "enable_cross_feedback": true,           // Optional, defaults to true
   "cross_feedback_prompt": null            // Optional custom refinement prompt
+}
+```
+
+```javascript
+// Alternative with fast models for quick consensus:
+{
+  "prompt": "Should we use TypeScript for this component?",
+  "models": [
+    {"model": "gemini-2.5-flash"},  // Fast: Quick analysis
+    {"model": "o4-mini"},           // Fast: Rapid responses
+    {"model": "gpt-4.1"}            // Fast: Efficient processing
+  ],
+  "relevant_files": ["/c/Users/username/project/src/components/Header.tsx"]
 }
 ```
 
@@ -221,7 +236,12 @@ LOG_LEVEL=debug npm start
 - `src/tools/` - MCP tool implementations (chat.js and consensus.js)
 - `src/providers/` - AI provider implementations (OpenAI, Google, XAI)
 - `src/utils/` - Utility functions (logging, context processing, etc.)
+- `src/transport/` - HTTP transport layer for MCP communication
+- `src/router.js` - Request routing and middleware
+- `src/systemPrompts.js` - System prompt templates
+- `src/continuationStore.js` - Conversation state management
 - `tests/` - Comprehensive test suite
+- `scripts/` - Development and build automation scripts
 - `docs/` - Complete documentation
 
 ### Environment Requirements
@@ -253,14 +273,14 @@ The server can be deployed using:
 
 ```bash
 # NPX (recommended)
-npx FallDownTheSystem/converse
+npx converse-mcp-server
 
 # Global installation
 npm install -g converse-mcp-server
 converse
 
 # From source
-git clone <repository>
+git clone https://github.com/FallDownTheSystem/converse.git
 cd converse
 npm install
 npm start
