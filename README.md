@@ -268,6 +268,67 @@ node final-integration-test.js
 - Real API tests connect successfully (if keys configured)
 - Integration tests achieve >70% success rate
 
+## 📦 Publishing to NPM
+
+> **Note**: This section is for maintainers. The package is already published as `converse-mcp-server`.
+
+### Quick Publishing Checklist
+
+```bash
+# 1. Ensure clean working directory
+git status
+
+# 2. Run full validation
+npm run validate
+
+# 3. Test package contents
+npm pack --dry-run
+
+# 4. Test bin script
+node bin/converse.js --help
+
+# 5. Bump version (choose one)
+npm version patch    # Bug fixes: 1.0.1 → 1.0.2
+npm version minor    # New features: 1.0.1 → 1.1.0
+npm version major    # Breaking changes: 1.0.1 → 2.0.0
+
+# 6. Test publish (dry run)
+npm publish --dry-run
+
+# 7. Publish to npm
+npm publish
+
+# 8. Verify publication
+npm view converse-mcp-server
+npx converse-mcp-server --help
+```
+
+### Version Guidelines
+
+- **Patch** (`npm version patch`): Bug fixes, documentation updates, minor improvements
+- **Minor** (`npm version minor`): New features, new model support, new tool capabilities
+- **Major** (`npm version major`): Breaking API changes, major architecture changes
+
+### Post-Publication
+
+After publishing, update installation instructions if needed and verify:
+
+```bash
+# Test direct execution
+npx converse-mcp-server
+npx converse
+
+# Test MCP client integration
+# Update Claude Desktop config to use: "npx converse-mcp-server"
+```
+
+### Troubleshooting Publication
+
+- **Git not clean**: Commit all changes first
+- **Tests failing**: Fix issues before publishing
+- **Version conflicts**: Check existing versions with `npm view converse-mcp-server versions`
+- **Permission issues**: Ensure you're logged in with `npm whoami`
+
 ## 📁 Project Structure
 
 ```

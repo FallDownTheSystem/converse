@@ -5,8 +5,8 @@
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "converse": "./bin/converse.js",
-    "converse-mcp-server": "./bin/converse.js"
+    "converse": "bin/converse.js",
+    "converse-mcp-server": "bin/converse.js"
   },
   "engines": {
     "node": ">=20.0.0"
