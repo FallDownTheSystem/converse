@@ -39,7 +39,7 @@ npm start
 
 - **Node.js**: >= 20.0.0 (LTS recommended)
 - **Package Manager**: npm, pnpm, or yarn
-- **API Keys**: At least one of OpenAI, Google, or X.AI
+- **API Keys**: At least one provider API key (OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, or OpenRouter)
 
 ## 🔑 Configuration
 
@@ -52,6 +52,10 @@ Create a `.env` file in your project root:
 OPENAI_API_KEY=sk-proj-your_openai_key_here
 GOOGLE_API_KEY=your_google_api_key_here  
 XAI_API_KEY=xai-your_xai_key_here
+ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
+MISTRAL_API_KEY=your_mistral_key_here
+DEEPSEEK_API_KEY=your_deepseek_key_here
+OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
 
 # Optional: Server configuration
 PORT=3157
@@ -61,6 +65,7 @@ MAX_MCP_OUTPUT_TOKENS=200000
 # Optional: Provider-specific settings
 GOOGLE_LOCATION=us-central1
 XAI_BASE_URL=https://api.x.ai/v1
+OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
 ```
 
 ### 2. Get API Keys
@@ -70,6 +75,10 @@ XAI_BASE_URL=https://api.x.ai/v1
 | **OpenAI** | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | `sk-proj-...` |
 | **Google** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
 | **X.AI** | [console.x.ai](https://console.x.ai/) | `xai-...` |
+| **Anthropic** | [console.anthropic.com](https://console.anthropic.com/) | `sk-ant-...` |
+| **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | 32+ chars |
+| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | 32+ chars |
+| **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `sk-or-...` |
 
 ### 3. Installing in Claude Code or Claude Desktop
 
@@ -457,9 +466,15 @@ converse/
 │   ├── systemPrompts.js      # Tool system prompts
 │   ├── providers/            # AI provider implementations
 │   │   ├── index.js          # Provider registry
+│   │   ├── interface.js      # Unified provider interface
 │   │   ├── openai.js         # OpenAI provider
 │   │   ├── xai.js            # XAI provider
-│   │   └── google.js         # Google provider
+│   │   ├── google.js         # Google provider
+│   │   ├── anthropic.js      # Anthropic provider
+│   │   ├── mistral.js        # Mistral AI provider
+│   │   ├── deepseek.js       # DeepSeek provider
+│   │   ├── openrouter.js     # OpenRouter provider
+│   │   └── openai-compatible.js # Base for OpenAI-compatible APIs
 │   ├── tools/                # MCP tool implementations
 │   │   ├── index.js          # Tool registry
 │   │   ├── chat.js           # Chat tool

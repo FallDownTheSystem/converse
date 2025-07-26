@@ -5,6 +5,39 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-07-26
+
+### Added
+- **New Providers**: Added support for 5 new AI providers, expanding model options:
+  - **Anthropic**: Support for Claude models including Opus 4, Sonnet 3.5, and Haiku 3.5
+  - **Mistral AI**: Support for Magistral Medium, Magistral Small, and Mistral Medium 3
+  - **DeepSeek**: Support for DeepSeek Chat (V3) and DeepSeek Reasoner (R1) models
+  - **OpenRouter**: Gateway to access Qwen3 235B Thinking, Qwen3 Coder, and Kimi K2 models
+  - **OpenAI-Compatible Base Module**: Reusable factory for creating providers with OpenAI-compatible APIs
+
+### Features
+- **Unified Provider Interface**: All providers implement consistent interface with error handling
+- **Advanced Model Capabilities**: 
+  - Thinking/reasoning models with configurable effort levels (Anthropic, OpenRouter)
+  - Multimodal support for images (Anthropic, Mistral Medium 3)
+  - Extended context windows (up to 200K tokens for Claude, 200K for Kimi K2)
+- **Enhanced Error Handling**: Provider-specific error mapping to unified error codes
+- **Comprehensive Test Coverage**: Added extensive unit tests for all new providers
+- **Dynamic SDK Loading**: Lazy loading of provider SDKs for better performance
+
+### Improved
+- **Provider Architecture**: Refactored to use base modules for code reuse
+- **Model Configuration**: Rich metadata for each model including capabilities and limits
+- **Temperature Handling**: Fixed temperature parameter conflicts in OpenAI-compatible providers
+- **Image Validation**: Added proper validation for models that don't support images
+- **Integration Tests**: Fixed MCP server initialization with required capabilities
+
+### Fixed
+- **OpenAI-Compatible Providers**: Fixed temperature default parameter override issue
+- **Error Re-throwing**: Fixed error handling in Anthropic provider to avoid double-wrapping
+- **Mock Setup**: Fixed dynamic import mocking patterns in provider tests
+- **API Key Validation**: Added proper validation for provider-specific key formats
+
 ## [1.2.1] - 2025-07-26
 
 ### Changed
