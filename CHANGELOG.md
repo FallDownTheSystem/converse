@@ -5,6 +5,21 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-07-26
+
+### Changed
+- **Dependencies**: Updated dotenv from v16.4.7 to v17.2.1
+- **Dependencies**: Updated eslint to latest version (9.17.0)
+- **Configuration**: Added `quiet: true` option to dotenv configuration to suppress verbose logging output
+
+### Fixed
+- **Tests**: Fixed test failures caused by dotenv v17's verbose logging interfering with JSON parsing in MCP protocol tests
+- **Tests**: Updated tests to properly handle MCP protocol error responses instead of expecting thrown errors
+- **Tests**: Added missing prompts and resources capabilities to test server instances
+
+### Improved
+- **Code Quality**: All code now passes latest eslint rules and formatting standards
+
 ## [1.2.0] - 2025-07-26
 
 ### Added

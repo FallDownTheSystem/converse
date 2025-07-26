@@ -1,6 +1,6 @@
 {
   "name": "converse-mcp-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Converse MCP Server - Converse with other LLMs with chat and consensus tools",
   "type": "module",
   "main": "src/index.js",
@@ -88,13 +88,13 @@
     "@google/genai": "^1.11.0",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "openai": "^5.0.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.0.0",
+    "eslint": "^9.32.0",
     "prettier": "^3.0.0",
     "vitest": "^3.2.4"
   }

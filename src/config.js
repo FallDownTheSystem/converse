@@ -14,12 +14,12 @@ import { ConfigurationError } from './utils/errorHandler.js';
 // Priority: .env.test (for test env) > .env (default)
 if (process.env.NODE_ENV === 'test') {
   // Load test environment first
-  dotenv.config({ path: '.env.test' });
+  dotenv.config({ path: '.env.test', quiet: true });
   // Fall back to .env for any missing variables
-  dotenv.config({ override: false });
+  dotenv.config({ override: false, quiet: true });
 } else {
   // Load default .env file
-  dotenv.config();
+  dotenv.config({ quiet: true });
 }
 
 // Configure logger early

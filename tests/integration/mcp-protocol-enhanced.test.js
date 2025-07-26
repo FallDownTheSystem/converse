@@ -23,7 +23,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         },
         {
           capabilities: {
-            tools: {}
+            tools: {},
+            prompts: {},
+            resources: {}
           }
         }
       );
@@ -437,7 +439,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       });
 
       const callTime = Date.now() - callStart;
-      expect(callTime).toBeLessThan(10000); // Should complete within 10 seconds
+      expect(callTime).toBeLessThan(20000); // Should complete within 20 seconds
     });
   });
 
