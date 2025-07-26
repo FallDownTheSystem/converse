@@ -7,6 +7,7 @@
  * with chat and consensus tools using modern Node.js practices.
  */
 
+import { fileURLToPath } from 'url';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig, validateRuntimeConfig, getMcpClientConfig, getHttpTransportConfig } from './config.js';
@@ -221,8 +222,18 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-main().catch((error) => {
-  logger.error('Fatal error in main', { error });
-  debugError('Fatal error:', error);
-  process.exit(1);
-});
+// Export the main function for use in bin/converse.js
+export { main };
+
+// Check if this module is the main entry point
+// This works better across platforms and Node.js versions
+const isMainModule = import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` ||
+                     process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  main().catch((error) => {
+    logger.error('Fatal error in main', { error });
+    debugError('Fatal error:', error);
+    process.exit(1);
+  });
+}

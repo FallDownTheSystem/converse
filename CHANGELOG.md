@@ -5,6 +5,16 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-07-26
+
+### Fixed
+- **Binary Entry Point**: Fixed "startServer is not a function" error when running via npx/npm by properly exporting main function from index.js
+- **Module Structure**: Improved module architecture to support both CLI and programmatic usage
+- **Stdio Transport**: Removed console output from bin file to prevent JSON-RPC protocol corruption
+
+### Changed
+- **Entry Point Pattern**: index.js now exports main function and only auto-executes when run directly, following Node.js best practices
+
 ## [1.1.1] - 2025-07-26
 
 ### Improved
