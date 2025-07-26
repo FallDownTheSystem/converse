@@ -155,7 +155,7 @@ MCP_TRANSPORT=stdio npm start
       },
       "description": "List of models to consult. Example: [{'model': 'o3'}, {'model': 'gemini-2.5-flash'}, {'model': 'grok-4-0709'}]"
     },
-    "relevant_files": {
+    "files": {
       "type": "array",
       "items": {"type": "string"},
       "description": "File paths for additional context. Example: ['/path/to/architecture.md', '/path/to/requirements.txt']"
@@ -256,7 +256,7 @@ MCP_TRANSPORT=stdio npm start
     {"model": "gemini-2.5-pro"}, 
     {"model": "grok-4-0709"}
   ],
-  "relevant_files": ["/docs/requirements.md", "/docs/current_architecture.md"],
+  "files": ["/docs/requirements.md", "/docs/current_architecture.md"],
   "enable_cross_feedback": true,
   "temperature": 0.1,
   "reasoning_effort": "high"
@@ -652,7 +652,7 @@ LOG_LEVEL=error  # Errors only
       {"model": "gemini-2.5-pro"},
       {"model": "grok-4-0709"}
     ],
-    "relevant_files": [
+    "files": [
       "/docs/requirements.md",
       "/docs/current_architecture.md",
       "/docs/performance_goals.md"

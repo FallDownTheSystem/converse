@@ -93,7 +93,7 @@ Multi-provider parallel execution with response aggregation and cross-model refi
 - **prompt** (required, string): Your question or topic for consensus
 - **models** (required, array): List of model configurations to query
   - Each model object should have: {"model": "model-name"}
-- **relevant_files** (optional, array): List of file paths to include as context
+- **files** (optional, array): List of file paths to include as context
 - **images** (optional, array): List of image paths to include
 - **continuation_id** (optional, string): ID to continue a previous conversation
 - **enable_cross_feedback** (optional, boolean): Allow models to see and refine based on other responses (default: true)
@@ -111,7 +111,7 @@ Multi-provider parallel execution with response aggregation and cross-model refi
     {"model": "gemini-2.5-pro"},
     {"model": "grok-4"}
   ],
-  "relevant_files": ["/path/to/requirements.md", "/path/to/architecture.md"],
+  "files": ["/path/to/requirements.md", "/path/to/architecture.md"],
   "enable_cross_feedback": true,
   "temperature": 0.3
 }

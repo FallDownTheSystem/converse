@@ -263,7 +263,7 @@ Multi-provider parallel execution with cross-model feedback.
     {"model": "gemini-2.5-flash"},
     {"model": "grok-4-0709"}
   ],
-  "relevant_files": ["/path/to/requirements.md"],
+  "files": ["/path/to/requirements.md"],
   "enable_cross_feedback": true,
   "temperature": 0.2
 }

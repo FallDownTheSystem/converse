@@ -277,7 +277,7 @@ describe('Enhanced Real API Integration Tests via HTTP Client', () => {
       });
     }, 120000);
 
-    it.skipIf([hasOpenAI, hasXAI, hasGoogle].filter(Boolean).length < 2)('should handle consensus with relevant files via HTTP client', async () => {
+    it.skipIf([hasOpenAI, hasXAI, hasGoogle].filter(Boolean).length < 2)('should handle consensus with files via HTTP client', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const models = [];
         if (hasOpenAI) models.push({ model: 'gpt-4o-mini' });
@@ -291,7 +291,7 @@ describe('Enhanced Real API Integration Tests via HTTP Client', () => {
           arguments: {
             prompt: 'Based on the package.json and README files, what is this project and what are its main capabilities?',
             models: models.slice(0, 2), // Use first 2 available providers
-            relevant_files: [
+            files: [
               'package.json', // Relative path
               'C:\\Users\\Juugo\\Documents\\Projects\\zen-mcp-server\\README.md', // Absolute path
               './src/config.js' // Another relative path style
@@ -321,7 +321,7 @@ describe('Enhanced Real API Integration Tests via HTTP Client', () => {
           expect(refinedText).toMatch(/(converse|mcp|server|chat|consensus|node)/i);
         });
 
-        logger.info(`[real-api-enhanced-test] Consensus with relevant files HTTP client successful with ${models.slice(0, 2).length} providers`);
+        logger.info(`[real-api-enhanced-test] Consensus with files HTTP client successful with ${models.slice(0, 2).length} providers`);
       });
     }, 120000);
   });

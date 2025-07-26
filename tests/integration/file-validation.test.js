@@ -96,14 +96,14 @@ describe('File Validation Integration Tests', () => {
   });
 
   describe('Consensus Tool File Validation', () => {
-    it('should return error when relevant_files do not exist', async () => {
+    it('should return error when files do not exist', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
           name: 'consensus',
           arguments: {
             prompt: 'Analyze these files',
             models: [{ model: 'gpt-4o-mini' }],
-            relevant_files: ['nonexistent-1.txt', 'nonexistent-2.txt']
+            files: ['nonexistent-1.txt', 'nonexistent-2.txt']
           }
         });
 
@@ -139,7 +139,7 @@ describe('File Validation Integration Tests', () => {
           arguments: {
             prompt: 'What type of project is this based on package.json?',
             models: [{ model: 'gpt-4o-mini' }],
-            relevant_files: ['package.json']
+            files: ['package.json']
           }
         });
 

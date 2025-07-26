@@ -363,7 +363,7 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Analyze this data',
         models: [{ model: 'gpt-4o-mini' }],
-        relevant_files: ['test.txt']
+        files: ['test.txt']
       };
 
       await consensusTool(args, mockDependencies);
@@ -401,7 +401,7 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: [{ model: 'gpt-4o-mini' }],
-        relevant_files: ['missing.txt']
+        files: ['missing.txt']
       };
 
       const result = await consensusTool(args, mockDependencies);

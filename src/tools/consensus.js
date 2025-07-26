@@ -39,7 +39,7 @@ export async function consensusTool(args, dependencies) {
     const {
       prompt,
       models,
-      relevant_files = [],
+      files = [],
       images = [],
       continuation_id,
       enable_cross_feedback = true,
@@ -73,9 +73,9 @@ export async function consensusTool(args, dependencies) {
     }
 
     // Validate file paths before processing
-    if (relevant_files.length > 0 || images.length > 0) {
+    if (files.length > 0 || images.length > 0) {
       const validation = await validateAllPaths({
-        files: relevant_files,
+        files: files,
         images
       });
       if (!validation.valid) {
@@ -86,10 +86,10 @@ export async function consensusTool(args, dependencies) {
 
     // Process context (files and images)
     let contextMessage = null;
-    if (relevant_files.length > 0 || images.length > 0) {
+    if (files.length > 0 || images.length > 0) {
       try {
         const contextRequest = {
-          files: Array.isArray(relevant_files) ? relevant_files : [],
+          files: Array.isArray(files) ? files : [],
           images: Array.isArray(images) ? images : []
         };
 
@@ -489,7 +489,7 @@ consensusTool.inputSchema = {
       },
       description: 'List of models to consult. Example: [{"model": "o3"}, {"model": "gemini-2.5-flash"}, {"model": "grok-4-0709"}]',
     },
-    relevant_files: {
+    files: {
       type: 'array',
       items: { type: 'string' },
       description: 'File paths for additional context (absolute paths). Example: ["/path/to/architecture.md", "/path/to/requirements.txt"]',

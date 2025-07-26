@@ -185,7 +185,7 @@
       {"model": "grok-4"},    // Most intelligent: Advanced analysis
       {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
     ],
-    "relevant_files": [
+    "files": [
       "/c/Users/username/docs/current_architecture.md",
       "/c/Users/username/src/server.js",
       "/c/Users/username/package.json"
@@ -300,7 +300,7 @@
       {"model": "o4-mini"},           // Fast: Rapid responses
       {"model": "gpt-4.1"}            // Fast: Efficient processing
     ],
-    "relevant_files": [
+    "files": [
       "/c/Users/username/monitoring/performance_report.json",
       "/c/Users/username/src/database/queries.js",
       "/c/Users/username/src/api/routes.js"
@@ -352,7 +352,7 @@
       {"model": "gemini-2.5-flash"},
       {"model": "grok-4"}
     ],
-    "relevant_files": ["/c/Users/username/docs/project_requirements.md"],
+    "files": ["/c/Users/username/docs/project_requirements.md"],
     "temperature": 0.25
   }
 }
@@ -372,7 +372,7 @@
       {"model": "gemini-2.5-pro"},
       {"model": "grok-4"}
     ],
-    "relevant_files": [
+    "files": [
       "/c/Users/username/docs/user_requirements.md",
       "/c/Users/username/src/models/user.js"
     ],
@@ -439,7 +439,7 @@
       {"model": "gemini-2.5-pro"},
       {"model": "grok-4"}
     ],
-    "relevant_files": [
+    "files": [
       "/c/Users/username/backend/requirements.txt",
       "/c/Users/username/monitoring/performance_metrics.json",
       "/c/Users/username/docs/team_skills.md"
@@ -633,7 +633,7 @@
       {"model": "gemini-2.5-pro"},
       {"model": "gemini-2.5-flash"}
     ],
-    "relevant_files": [
+    "files": [
       "/c/Users/username/src/checkout/payment.js",
       "/c/Users/username/src/checkout/validation.js",
       "/c/Users/username/docs/business_requirements.md"

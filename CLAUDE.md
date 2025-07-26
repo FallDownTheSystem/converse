@@ -168,7 +168,7 @@ The consensus tool operates with parallel processing across multiple AI provider
     {"model": "grok-4"},    // Most intelligent: Advanced analysis 
     {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
   ],
-  "relevant_files": ["/c/Users/username/Documents/project/spec.md"],  // Optional - use git-bash paths
+  "files": ["/c/Users/username/Documents/project/spec.md"],  // Optional - use git-bash paths
   "enable_cross_feedback": true,           // Optional, defaults to true
   "cross_feedback_prompt": null            // Optional custom refinement prompt
 }
@@ -183,7 +183,7 @@ The consensus tool operates with parallel processing across multiple AI provider
     {"model": "o4-mini"},           // Fast: Rapid responses
     {"model": "gpt-4.1"}            // Fast: Efficient processing
   ],
-  "relevant_files": ["/c/Users/username/project/src/components/Header.tsx"]
+  "files": ["/c/Users/username/project/src/components/Header.tsx"]
 }
 ```
 
