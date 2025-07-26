@@ -297,7 +297,7 @@ describe('Real API Integration Tests', () => {
           arguments: {
             prompt: 'What is 2+2?',
             model: 'o3-mini',
-            reasoningEffort: 'low'
+            reasoning_effort: 'low'
           }
         })
 

@@ -60,7 +60,7 @@ describe('Enhanced Real API Integration Tests via HTTP Client', () => {
             arguments: {
               prompt: 'What is 17 * 23? Show your reasoning.',
               model: 'o3-mini',
-              reasoningEffort: 'low',
+              reasoning_effort: 'low',
               temperature: 0
             }
           })

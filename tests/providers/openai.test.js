@@ -233,15 +233,11 @@ describe('OpenAI Provider', () => {
       // Import OpenAI to get the mocked instance
       const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        choices: [
-          {
-            message: { content: 'Hello! How can I help you today?' },
-            finish_reason: 'stop'
-          }
-        ],
+        output_text: 'Hello! How can I help you today?',
+        status: 'completed',
         usage: {
-          prompt_tokens: 10,
-          completion_tokens: 8,
+          input_tokens: 10,
+          output_tokens: 8,
           total_tokens: 18
         },
         model: 'gpt-4o-mini'
@@ -252,6 +248,9 @@ describe('OpenAI Provider', () => {
           completions: {
             create: mockCreate
           }
+        },
+        responses: {
+          create: mockCreate
         }
       }));
 
@@ -263,7 +262,7 @@ describe('OpenAI Provider', () => {
 
       expect(result).toEqual({
         content: 'Hello! How can I help you today?',
-        stop_reason: 'stop',
+        stop_reason: 'completed',
         rawResponse: expect.any(Object),
         metadata: {
           model: 'gpt-4o-mini',
@@ -273,17 +272,18 @@ describe('OpenAI Provider', () => {
             total_tokens: 18
           },
           response_time_ms: expect.any(Number),
-          finish_reason: 'stop',
-          provider: 'openai'
+          finish_reason: 'completed',
+          provider: 'openai',
+          api_type: 'Responses API',
+          web_search_used: false
         }
       });
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: 'Hello' }],
-          stream: false,
-          temperature: 0.7
+          input: [{ role: 'user', content: 'Hello' }],
+          stream: false
         })
       );
     });
@@ -291,30 +291,27 @@ describe('OpenAI Provider', () => {
     it('should handle reasoning effort for O3 models', async () => {
       const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        choices: [
-          {
-            message: { content: 'Reasoning response' },
-            finish_reason: 'stop'
-          }
-        ],
-        usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 }
+        output_text: 'Reasoning response',
+        status: 'completed',
+        usage: { input_tokens: 5, output_tokens: 10, total_tokens: 15 }
       });
 
       OpenAI.mockImplementation(() => ({
-        chat: { completions: { create: mockCreate } }
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
       }));
 
       const messages = [{ role: 'user', content: 'Complex reasoning task' }];
       await openaiProvider.invoke(messages, { 
         config: validConfig,
         model: 'o3',
-        reasoningEffort: 'high'
+        reasoning_effort: 'high'
       });
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           model: 'o3',
-          reasoning_effort: 'high'
+          reasoning: { effort: 'high' }
         })
       );
     });
@@ -322,12 +319,14 @@ describe('OpenAI Provider', () => {
     it('should handle temperature based on model support', async () => {
       const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        choices: [{ message: { content: 'response' }, finish_reason: 'stop' }],
+        output_text: 'response',
+        status: 'completed',
         usage: {}
       });
 
       OpenAI.mockImplementation(() => ({
-        chat: { completions: { create: mockCreate } }
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
       }));
 
       const messages = [{ role: 'user', content: 'test' }];
@@ -369,7 +368,8 @@ describe('OpenAI Provider', () => {
       );
 
       OpenAI.mockImplementation(() => ({
-        chat: { completions: { create: mockCreate } }
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
       }));
 
       const messages = [{ role: 'user', content: 'test' }];

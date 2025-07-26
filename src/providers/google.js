@@ -19,9 +19,10 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsTemperature: true,
     supportsThinking: true,
+    supportsWebSearch: true,
     maxThinkingTokens: 24576,
     timeout: 300000,
-    description: 'Gemini 2.0 Flash (1M context) - Latest fast model with experimental thinking, supports audio/video input',
+    description: 'Gemini 2.0 Flash (1M context) - Latest fast model with experimental thinking, supports audio/video input and grounding',
     aliases: ['flash-2.0', 'flash2']
   },
   'gemini-2.0-flash-lite': {
@@ -33,9 +34,10 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: true,
     supportsThinking: false,
+    supportsWebSearch: true,
     maxThinkingTokens: 0,
     timeout: 300000,
-    description: 'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only',
+    description: 'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only with grounding',
     aliases: ['flashlite', 'flash-lite']
   },
   'gemini-2.5-flash': {
@@ -47,9 +49,10 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsTemperature: true,
     supportsThinking: true,
+    supportsWebSearch: true,
     maxThinkingTokens: 24576,
     timeout: 300000,
-    description: 'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations',
+    description: 'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
     aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5']
   },
   'gemini-2.5-pro': {
@@ -58,6 +61,7 @@ const SUPPORTED_MODELS = {
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 65536,
     supportsStreaming: true,
+    supportsWebSearch: true,
     supportsImages: true,
     supportsTemperature: true,
     supportsThinking: true,
@@ -181,12 +185,12 @@ function convertMessagesToGemini(messages) {
 /**
  * Calculate thinking budget for models that support it
  */
-function calculateThinkingBudget(modelConfig, reasoningEffort) {
+function calculateThinkingBudget(modelConfig, reasoning_effort) {
   if (!modelConfig.supportsThinking || !modelConfig.maxThinkingTokens) {
     return 0;
   }
 
-  const budget = THINKING_BUDGETS[reasoningEffort] || THINKING_BUDGETS.medium;
+  const budget = THINKING_BUDGETS[reasoning_effort] || THINKING_BUDGETS.medium;
   return Math.floor(modelConfig.maxThinkingTokens * budget);
 }
 
@@ -281,7 +285,8 @@ export const googleProvider = {
       temperature = 0.7,
       maxTokens = null,
       stream: _unused_stream = false, // Acknowledged but not used yet
-      reasoningEffort = 'medium',
+      reasoning_effort = 'medium',
+      use_websearch = false,
       config,
       ...otherOptions
     } = options;
@@ -321,15 +326,20 @@ export const googleProvider = {
     }
 
     // Add thinking configuration for models that support it
-    if (modelConfig.supportsThinking && reasoningEffort) {
-      const thinkingBudget = calculateThinkingBudget(modelConfig, reasoningEffort);
+    if (modelConfig.supportsThinking && reasoning_effort) {
+      const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
       if (thinkingBudget > 0) {
         generationConfig.thinkingConfig = { thinkingBudget };
       }
     }
 
+    // Add web search grounding if requested and model supports it
+    if (use_websearch && modelConfig.supportsWebSearch) {
+      generationConfig.tools = [{ googleSearch: {} }];
+    }
+
     try {
-      debugLog(`[Google] Calling ${resolvedModel} with ${messages.length} messages`);
+      debugLog(`[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
 
       const startTime = Date.now();
 
@@ -371,8 +381,10 @@ export const googleProvider = {
           usage,
           response_time_ms: responseTime,
           finish_reason: finishReason,
-          reasoning_effort: modelConfig.supportsThinking ? reasoningEffort : null,
-          provider: 'google'
+          reasoning_effort: modelConfig.supportsThinking ? reasoning_effort : null,
+          provider: 'google',
+          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+          grounding_metadata: response.groundingMetadata || null
         }
       };
 

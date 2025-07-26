@@ -160,6 +160,7 @@ export async function chatTool(args, dependencies) {
       model: resolvedModel,
       temperature,
       reasoning_effort,
+      use_websearch: use_websearch,
       config
     };
 

@@ -147,7 +147,7 @@ describe('MCPServerManager', () => {
       expect(result.isError).toBe(true);
       expect(result.error.code).toBe('UNKNOWN_TOOL');
       expect(result.error.toolName).toBe('nonexistent-tool');
-      expect(result.content[0].text).toContain('Unknown tool: nonexistent-tool');
+      expect(result.content[0].text).toContain('Unknown tool \'nonexistent-tool\'');
     });
   });
 

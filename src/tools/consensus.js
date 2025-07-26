@@ -44,7 +44,8 @@ export async function consensusTool(args, dependencies) {
       enable_cross_feedback = true,
       cross_feedback_prompt,
       temperature = 0.2,
-      reasoning_effort = 'medium'
+      reasoning_effort = 'medium',
+      use_websearch = false
     } = args;
 
     let conversationHistory = [];
@@ -165,6 +166,7 @@ export async function consensusTool(args, dependencies) {
           model: resolvedModelName, // Use resolved model name for API call
           temperature,
           reasoning_effort,
+          use_websearch: use_websearch,
           config,
           ...modelSpec // Allow model-specific overrides
         }
@@ -475,6 +477,11 @@ consensusTool.inputSchema = {
       enum: ['minimal', 'low', 'medium', 'high', 'max'],
       description: 'Reasoning depth for thinking models. Examples: "medium" (balanced - default), "high" (complex analysis), "max" (thorough evaluation). Default: "medium"',
       default: 'medium'
+    },
+    use_websearch: {
+      type: 'boolean',
+      description: 'Enable web search for current information and best practices. Only works with models that support web search (OpenAI, XAI, Google). Example: true for recent developments, false for analysis. Default: false',
+      default: false
     },
   },
   required: ['prompt', 'models'],

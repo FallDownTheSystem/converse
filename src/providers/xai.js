@@ -18,8 +18,9 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
+    supportsWebSearch: true,
     timeout: 300000, // 5 minutes
-    description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support',
+    description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support and live search',
     aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest', 'grok 4', 'grok 4 latest']
   },
   'grok-3': {
@@ -30,6 +31,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsTemperature: true,
+    supportsWebSearch: false,
     timeout: 300000,
     description: 'GROK-3 (131K context) - Previous generation reasoning model from X.AI',
     aliases: ['grok3', 'grok 3']
@@ -42,6 +44,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsTemperature: true,
+    supportsWebSearch: false,
     timeout: 300000,
     description: 'GROK-3 Fast (131K context) - Higher performance variant, faster processing but more expensive',
     aliases: ['grok3fast', 'grok3-fast', 'grok 3 fast']
@@ -143,7 +146,8 @@ export const xaiProvider = {
       temperature = 0.7,
       maxTokens = null,
       stream = false,
-      reasoningEffort = 'medium',
+      reasoning_effort = 'medium',
+      use_websearch = false,
       config,
       ...otherOptions
     } = options;
@@ -174,7 +178,7 @@ export const xaiProvider = {
     const xaiMessages = convertMessages(messages);
 
     // Filter out unsupported parameters for XAI/Grok models
-    const { reasoning_effort, reasoningEffort: reasoningEffortAlias, ...supportedOptions } = otherOptions;
+    const { reasoning_effort: _unused_reasoning_effort, ...supportedOptions } = otherOptions;
     
     // Build request payload
     const requestPayload = {
@@ -194,11 +198,18 @@ export const xaiProvider = {
       requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 256000);
     }
 
+    // Add web search parameters if requested and model supports it
+    if (use_websearch && modelConfig.supportsWebSearch) {
+      requestPayload.search_parameters = {
+        mode: 'auto' // Let the model decide when to use web search
+      };
+    }
+
     // Note: XAI/Grok models don't currently support reasoning_effort parameter
     // We silently ignore it for API consistency (no need to log warnings in tests)
 
     try {
-      debugLog(`[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages`);
+      debugLog(`[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with live search)' : ''}`);
 
       const startTime = Date.now();
 
@@ -236,7 +247,8 @@ export const xaiProvider = {
           },
           response_time_ms: responseTime,
           finish_reason: choice.finish_reason,
-          provider: 'xai'
+          provider: 'xai',
+          web_search_used: use_websearch && modelConfig.supportsWebSearch
         }
       };
 

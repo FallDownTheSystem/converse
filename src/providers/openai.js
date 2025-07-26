@@ -18,6 +18,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 300000, // 5 minutes
     description: 'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis'
   },
@@ -29,6 +31,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: false,
+    supportsWebSearch: false, // o3-mini does not support web search
+    supportsResponsesAPI: true,
     timeout: 300000,
     description: 'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
     aliases: ['o3mini', 'o3 mini']
@@ -41,6 +45,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 1800000, // 30 minutes
     description: 'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
     aliases: ['o3-pro', 'o3pro', 'o3 pro']
@@ -52,7 +58,9 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 180000, // 3 minutes
     description: 'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
     aliases: ['o4mini', 'o4', 'o4 mini']
@@ -65,6 +73,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 300000,
     description: 'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
     aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1']
@@ -77,6 +87,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 180000,
     description: 'GPT-4o (128K context) - Multimodal flagship model with vision capabilities',
     aliases: ['gpt4o', 'gpt 4o', '4o']
@@ -89,6 +101,8 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
     timeout: 120000,
     description: 'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
     aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini']
@@ -190,7 +204,8 @@ export const openaiProvider = {
       temperature = 0.7,
       maxTokens = null,
       stream = false,
-      reasoningEffort = 'medium',
+      reasoning_effort = 'medium',
+      use_websearch = false,
       config,
       ...otherOptions
     } = options;
@@ -213,75 +228,129 @@ export const openaiProvider = {
     const resolvedModel = resolveModelName(model);
     const modelConfig = SUPPORTED_MODELS[resolvedModel] || {};
 
+    // Always use Responses API since all OpenAI models support it
+    // Only fallback to Chat Completions API if Responses API is explicitly not supported
+    const shouldUseResponsesAPI = modelConfig.supportsResponsesAPI !== false;
+
     // Convert and validate messages
     const openaiMessages = convertMessages(messages);
 
-    // Build request payload (exclude reasoning_effort from otherOptions)
-    const { reasoning_effort: _unused, ...cleanOptions } = otherOptions;
-    const requestPayload = {
-      model: resolvedModel,
-      messages: openaiMessages,
-      stream,
-      ...cleanOptions
-    };
-
-    // Add temperature if model supports it
-    if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
-      requestPayload.temperature = Math.max(0, Math.min(2, temperature));
+    // Build request payload based on API type
+    let requestPayload;
+    
+    if (shouldUseResponsesAPI) {
+      // Build Responses API payload
+      requestPayload = {
+        model: resolvedModel,
+        input: openaiMessages,
+        stream,
+        ...otherOptions
+      };
+      
+      // Add web search tools only if requested and model supports it
+      if (use_websearch && modelConfig.supportsWebSearch) {
+        requestPayload.tools = [{ type: 'web_search' }];
+      }
+      
+      // Add temperature if model supports it
+      if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
+        requestPayload.temperature = Math.max(0, Math.min(2, temperature));
+      }
+      
+      // Add reasoning effort for thinking models (o3 series only)
+      if (resolvedModel.startsWith('o3') && reasoning_effort) {
+        requestPayload.reasoning = { effort: reasoning_effort };
+      }
+    } else {
+      // Build Chat Completions API payload
+      const { reasoning_effort: _unused, ...cleanOptions } = otherOptions;
+      requestPayload = {
+        model: resolvedModel,
+        messages: openaiMessages,
+        stream,
+        ...cleanOptions
+      };
+      
+      // Add temperature if model supports it
+      if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
+        requestPayload.temperature = Math.max(0, Math.min(2, temperature));
+      }
+      
+      // Add reasoning effort for thinking models (o3 series only)
+      if (resolvedModel.startsWith('o3') && reasoning_effort) {
+        requestPayload.reasoning_effort = reasoning_effort;
+      }
     }
-
-    // Add max tokens if specified
+    
+    // Add max tokens if specified (both APIs)
     if (maxTokens) {
-      requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+      if (shouldUseResponsesAPI) {
+        requestPayload.max_output_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+      } else {
+        requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+      }
     }
-
-    // Add reasoning effort for thinking models (o3 series only)
-    if (resolvedModel.startsWith('o3') && reasoningEffort) {
-      requestPayload.reasoning_effort = reasoningEffort;
-    }
-    // Note: GPT-4o and other models don't support reasoning_effort parameter
-    // Only O3 series models support this parameter
 
     try {
-      debugLog(`[OpenAI] Calling ${resolvedModel} with ${openaiMessages.length} messages`);
+      const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
+      debugLog(`[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with web search)' : ''}`);
 
       const startTime = Date.now();
 
-      // Make the API call
-      const response = await openai.chat.completions.create(requestPayload);
+      // Make the API call based on API type
+      let response;
+      if (shouldUseResponsesAPI) {
+        response = await openai.responses.create(requestPayload);
+      } else {
+        response = await openai.chat.completions.create(requestPayload);
+      }
 
       const responseTime = Date.now() - startTime;
       debugLog(`[OpenAI] Response received in ${responseTime}ms`);
 
-      // Extract response data
-      const choice = response.choices[0];
-      if (!choice) {
-        throw new OpenAIProviderError('No response choice received from OpenAI', 'NO_RESPONSE_CHOICE');
+      // Extract response data based on API type
+      let content, stopReason, usage;
+      
+      if (shouldUseResponsesAPI) {
+        // Handle Responses API response format
+        if (!response.output_text) {
+          throw new OpenAIProviderError('No output_text in Responses API response', 'NO_RESPONSE_CONTENT');
+        }
+        content = response.output_text;
+        stopReason = response.status || 'stop';
+        usage = response.usage || {};
+      } else {
+        // Handle Chat Completions API response format
+        const choice = response.choices[0];
+        if (!choice) {
+          throw new OpenAIProviderError('No response choice received from OpenAI', 'NO_RESPONSE_CHOICE');
+        }
+        
+        content = choice.message?.content;
+        if (!content) {
+          throw new OpenAIProviderError('No content in response from OpenAI', 'NO_RESPONSE_CONTENT');
+        }
+        stopReason = choice.finish_reason || 'stop';
+        usage = response.usage || {};
       }
-
-      const content = choice.message?.content;
-      if (!content) {
-        throw new OpenAIProviderError('No content in response from OpenAI', 'NO_RESPONSE_CONTENT');
-      }
-
-      // Extract usage information
-      const usage = response.usage || {};
 
       // Return unified response format
       return {
         content,
-        stop_reason: choice.finish_reason || 'stop',
+        stop_reason: stopReason,
         rawResponse: response,
         metadata: {
           model: response.model || resolvedModel,
           usage: {
-            input_tokens: usage.prompt_tokens || 0,
-            output_tokens: usage.completion_tokens || 0,
+            input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
+            output_tokens: usage.completion_tokens || usage.output_tokens || 0,
             total_tokens: usage.total_tokens || 0
           },
           response_time_ms: responseTime,
-          finish_reason: choice.finish_reason,
-          provider: 'openai'
+          finish_reason: stopReason,
+          provider: 'openai',
+          api_type: apiType,
+          web_search_used: use_websearch && modelConfig.supportsWebSearch
         }
       };
 
