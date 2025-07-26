@@ -13,7 +13,6 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createHTTPTransport, HTTPTransportServer } from '../../src/transport/httpTransport.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { loadConfig, validateRuntimeConfig, getMcpClientConfig } from '../../src/config.js';
 import { createRouter } from '../../src/router.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -75,6 +74,9 @@ export class HTTPMCPServerManager {
           process.env[key] = value;
         }
 
+        // Dynamic import config module AFTER setting env vars
+        const { loadConfig, validateRuntimeConfig, getMcpClientConfig, getHttpTransportConfig } = await import('../../src/config.js');
+
         // Load configuration
         this.config = await loadConfig();
         await validateRuntimeConfig(this.config);
@@ -92,14 +94,18 @@ export class HTTPMCPServerManager {
         // Set up router with server and config
         await createRouter(this.mcpServer, this.config);
 
+        // Get HTTP transport config
+        const httpConfig = getHttpTransportConfig(this.config);
+
+        // Override some settings for testing
+        httpConfig.port = this.options.port;
+        httpConfig.host = this.options.host;
+        httpConfig.enableCors = this.options.enableCors;
+        httpConfig.enableDnsRebindingProtection = false; // Disable for testing
+        httpConfig.allowedHosts = ['127.0.0.1', 'localhost'];
+
         // Create HTTP transport
-        this.httpTransport = await createHTTPTransport(this.mcpServer, {
-          port: this.options.port,
-          host: this.options.host,
-          enableCors: this.options.enableCors,
-          enableDnsRebindingProtection: false, // Disable for testing
-          allowedHosts: ['127.0.0.1', 'localhost']
-        });
+        this.httpTransport = await createHTTPTransport(this.mcpServer, httpConfig);
 
         // Start the HTTP server
         const address = await this.httpTransport.start();
@@ -189,6 +195,17 @@ export class HTTPMCPServerManager {
       throw new Error('Server is not started or client is not available');
     }
     return this.client;
+  }
+
+  /**
+   * Get the actual port the server is listening on
+   * @returns {number}
+   */
+  getPort() {
+    if (!this.isStarted || !this.actualPort) {
+      throw new Error('Server not started. Call startServer() first');
+    }
+    return this.actualPort;
   }
 
   /**

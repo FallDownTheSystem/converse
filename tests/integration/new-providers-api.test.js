@@ -48,13 +48,13 @@ describe('New Providers Real API Integration Tests', () => {
         });
 
         expect(result).toBeDefined();
-        
+
         if (result.isError) {
           console.error('[new-providers-api-test] Claude Sonnet 3.5 error:', result.error);
           console.error('[new-providers-api-test] Error content:', result.content);
           console.error('[new-providers-api-test] Full result:', JSON.stringify(result, null, 2));
         }
-        
+
         expect(result.isError).toBeFalsy();
         expect(result.content).toBeDefined();
         expect(Array.isArray(result.content)).toBe(true);
@@ -206,12 +206,12 @@ describe('New Providers Real API Integration Tests', () => {
         });
 
         expect(result).toBeDefined();
-        
+
         if (result.isError) {
           console.error('[new-providers-api-test] Mistral Medium error:', result.error);
           console.error('[new-providers-api-test] Error content:', result.content);
         }
-        
+
         expect(result.isError).toBeFalsy();
         expect(result.content[0].text).toContain('56');
 
@@ -428,7 +428,7 @@ describe('New Providers Real API Integration Tests', () => {
     it.skipIf(!hasAnthropic)('should handle rate limiting gracefully', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // Make multiple rapid requests
-        const promises = Array(3).fill(null).map((_, i) => 
+        const promises = Array(3).fill(null).map((_, i) =>
           client.callTool({
             name: 'chat',
             arguments: {
@@ -440,7 +440,7 @@ describe('New Providers Real API Integration Tests', () => {
         );
 
         const results = await Promise.allSettled(promises);
-        
+
         // At least one should succeed
         const successCount = results.filter(r => r.status === 'fulfilled' && !r.value.isError).length;
         expect(successCount).toBeGreaterThan(0);

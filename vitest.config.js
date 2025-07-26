@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
     // Test environment - using Node.js native environment for our MCP server
     environment: 'node',
@@ -54,9 +55,11 @@ export default defineConfig({
     setupFiles: [],
     
     // Environment variables for testing
+    // Load all env vars from .env files (empty prefix loads all, not just VITE_)
     env: {
+      ...loadEnv(mode ?? 'test', process.cwd(), ''),
       NODE_ENV: 'test',
       LOG_LEVEL: 'error' // Suppress logs during testing
     }
   }
-})
+}))

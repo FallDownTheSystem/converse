@@ -175,12 +175,12 @@ function convertMessagesToAnthropic(messages, options = {}) {
     throw new AnthropicProviderError('Messages must be an array', ErrorCodes.INVALID_MESSAGES);
   }
 
-  const { 
+  const {
     enableSystemCache = true, // Always cache system messages by default
     cacheUserMessages = false,
     cacheMessageThreshold = 5 // Cache messages after this many turns
   } = options;
-  let systemContent = [];
+  const systemContent = [];
   let systemText = '';
   const anthropicMessages = [];
 
@@ -382,14 +382,14 @@ export const anthropicProvider = {
 
     // Add max tokens (required by Anthropic)
     const defaultMaxTokens = modelConfig.maxOutputTokens || 8192;
-    
+
     // If thinking is supported and enabled, we need to reduce max_tokens to leave room for thinking
     let effectiveMaxTokens = defaultMaxTokens;
     if (modelConfig.supportsThinking && reasoning_effort) {
       // Reserve some tokens for thinking - use a more conservative approach
       effectiveMaxTokens = Math.min(defaultMaxTokens, 16000); // Cap at 16k for models with thinking
     }
-    
+
     requestPayload.max_tokens = maxTokens
       ? Math.min(maxTokens, effectiveMaxTokens)
       : effectiveMaxTokens;
@@ -402,7 +402,7 @@ export const anthropicProvider = {
         // So we need to ensure max_tokens + budget_tokens <= model's actual limit
         // Reduce max_tokens to make room for thinking
         const reducedMaxTokens = requestPayload.max_tokens - thinkingBudget;
-        
+
         if (reducedMaxTokens >= 1000 && thinkingBudget >= 1024) { // Ensure we have reasonable space for both
           requestPayload.max_tokens = reducedMaxTokens;
           requestPayload.thinking = {

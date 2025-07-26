@@ -74,16 +74,16 @@ const CONFIG_SCHEMA = {
     // Authentication settings
     MCP_AUTH_STRATEGY: { type: 'string', default: 'none', description: 'Authentication strategy: none, bearer, api_key, oauth2, custom' },
     MCP_AUTH_REQUIRE: { type: 'boolean', default: false, description: 'Require authentication for all requests' },
-    
+
     // JWT settings (for bearer token and OAuth2)
     MCP_JWT_SECRET: { type: 'string', required: false, secret: true, description: 'JWT secret for token signing' },
     MCP_JWT_ALGORITHM: { type: 'string', default: 'HS256', description: 'JWT signing algorithm' },
     MCP_JWT_EXPIRES_IN: { type: 'string', default: '24h', description: 'JWT expiration time' },
     MCP_JWT_ISSUER: { type: 'string', default: 'converse-mcp-server', description: 'JWT issuer' },
-    
+
     // API Key authentication
     MCP_API_KEYS: { type: 'string', required: false, secret: true, description: 'Comma-separated list of valid API keys' },
-    
+
     // OAuth2 settings
     MCP_OAUTH_CLIENT_ID: { type: 'string', required: false, description: 'OAuth2 client ID' },
     MCP_OAUTH_CLIENT_SECRET: { type: 'string', required: false, secret: true, description: 'OAuth2 client secret' },
@@ -92,7 +92,7 @@ const CONFIG_SCHEMA = {
     MCP_OAUTH_CALLBACK_URL: { type: 'string', required: false, description: 'OAuth2 callback URL' },
     MCP_OAUTH_SCOPE: { type: 'string', default: 'openid profile email', description: 'OAuth2 scope' },
     MCP_OAUTH_USERINFO_URL: { type: 'string', required: false, description: 'OAuth2 user info URL' },
-    
+
     // Session-based auth settings
     MCP_SESSION_AUTH_ENABLED: { type: 'boolean', default: true, description: 'Enable session-based authentication' },
     MCP_SESSION_AUTH_REQUIRE_FOR_SESSION: { type: 'boolean', default: false, description: 'Require auth for session creation' },
