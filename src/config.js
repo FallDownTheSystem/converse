@@ -36,7 +36,7 @@ const logger = createLogger('config');
 const CONFIG_SCHEMA = {
   // Server configuration
   server: {
-    PORT: { type: 'number', default: 3000, description: 'Server port' },
+    PORT: { type: 'number', default: 3157, description: 'Server port' },
     HOST: { type: 'string', default: 'localhost', description: 'Server host' },
     NODE_ENV: { type: 'string', default: 'development', description: 'Environment mode' },
     LOG_LEVEL: { type: 'string', default: 'info', description: 'Logging level' },
@@ -47,7 +47,7 @@ const CONFIG_SCHEMA = {
     MCP_TRANSPORT: { type: 'string', default: 'http', description: 'MCP transport type (http or stdio)' },
     
     // HTTP server settings
-    HTTP_PORT: { type: 'number', default: 3000, description: 'HTTP server port' },
+    HTTP_PORT: { type: 'number', default: 3157, description: 'HTTP server port' },
     HTTP_HOST: { type: 'string', default: 'localhost', description: 'HTTP server host' },
     HTTP_REQUEST_TIMEOUT: { type: 'number', default: 300000, description: 'HTTP request timeout in milliseconds (5 minutes)' },
     HTTP_MAX_REQUEST_SIZE: { type: 'string', default: '10mb', description: 'Maximum HTTP request body size' },
@@ -219,16 +219,8 @@ export async function loadConfig() {
       }
     }
 
-    // Load provider configuration
-    for (const [key, schema] of Object.entries(CONFIG_SCHEMA.providers)) {
-      try {
-        const value = validateEnvVar(key, process.env[key], schema);
-        const configKey = key.toLowerCase().replace(/_/g, '');
-        config.providers[configKey] = value;
-      } catch (error) {
-        errors.push(error.message);
-      }
-    }
+    // Initialize providers object (no provider-specific config currently)
+    config.providers = {};
 
     // Load MCP configuration
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.mcp)) {

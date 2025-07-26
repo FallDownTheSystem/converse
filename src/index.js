@@ -34,7 +34,7 @@ Options:
 
 Environment Variables:
   MCP_TRANSPORT        Transport type (http or stdio)
-  PORT                 HTTP server port (default: 3000)
+  PORT                 HTTP server port (default: 3157)
   HOST                 HTTP server host (default: localhost)
 
 Examples:
@@ -91,6 +91,20 @@ async function main() {
     process.exit(0);
   }
 
+  // Determine transport type first to configure logging appropriately
+  const transportType = getTransportType();
+  
+  // Set environment variable early for stdio transport to suppress console output
+  if (transportType === 'stdio') {
+    process.env.MCP_TRANSPORT = 'stdio';
+    // Reconfigure logger with updated environment
+    const { configureLogger } = await import('./utils/logger.js');
+    configureLogger({
+      level: process.env.LOG_LEVEL || 'info',
+      isDevelopment: process.env.NODE_ENV === 'development'
+    });
+  }
+
   const serverTimer = startTimer('server-startup', 'server');
   
   try {
@@ -102,9 +116,7 @@ async function main() {
 
     // Get MCP client configuration
     const mcpConfig = getMcpClientConfig(config);
-
-    // Determine transport type
-    const transportType = getTransportType();
+    
     logger.info('Using transport type', { data: { transport: transportType } });
 
     logger.debug('Creating MCP server instance', { 
