@@ -1,20 +1,22 @@
 # Converse MCP Server
 
+[![npm version](https://img.shields.io/npm/v/converse-mcp-server.svg)](https://www.npmjs.com/package/converse-mcp-server)
+
 A simplified, functional Node.js implementation of an MCP (Model Context Protocol) server with chat and consensus tools. Built with modern Node.js practices and official SDKs for seamless AI provider integration.
 
 ## 🚀 Quick Start
 
-### Option 1: Direct from GitHub (Recommended)
+### Option 1: Direct from NPM (Recommended)
 
 ```bash
 # Using npx (recommended)
-npx FallDownTheSystem/converse
+npx converse-mcp-server
 
 # Using pnpm dlx (alternative)
-pnpm dlx FallDownTheSystem/converse
+pnpm dlx converse-mcp-server
 
 # Using yarn dlx (alternative)  
-yarn dlx FallDownTheSystem/converse
+yarn dlx converse-mcp-server
 ```
 
 ### Option 2: Clone and Install
@@ -63,7 +65,6 @@ LOG_LEVEL=info
 MAX_MCP_OUTPUT_TOKENS=200000
 
 # Optional: Provider-specific settings
-GOOGLE_LOCATION=us-central1
 XAI_BASE_URL=https://api.x.ai/v1
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
 ```
@@ -91,7 +92,7 @@ There are several ways to add the Converse MCP Server to Claude:
   "mcpServers": {
     "converse": {
       "command": "npx",
-      "args": ["FallDownTheSystem/converse"],
+      "args": ["converse-mcp-server"],
       "env": {
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
@@ -115,7 +116,7 @@ There are several ways to add the Converse MCP Server to Claude:
   "mcpServers": {
     "converse": {
       "command": "npx",
-      "args": ["FallDownTheSystem/converse", "--transport", "stdio"],
+      "args": ["converse-mcp-server", "--transport", "stdio"],
       "env": {
         "OPENAI_API_KEY": "your_key_here",
         "GOOGLE_API_KEY": "your_key_here",
@@ -167,7 +168,7 @@ There are several ways to add the Converse MCP Server to Claude:
   "mcpServers": {
     "converse": {
       "command": "npx",
-      "args": ["FallDownTheSystem/converse"],
+      "args": ["converse-mcp-server"],
       "env": {
         "MCP_TRANSPORT": "stdio",
         "OPENAI_API_KEY": "your_key_here",
@@ -291,7 +292,9 @@ Programmatic access to documentation:
 ### OpenAI Models
 - **o3**: Strong reasoning (200K context)
 - **o3-mini**: Fast O3 variant (200K context)  
+- **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE
 - **o4-mini**: Latest reasoning model (200K context)
+- **gpt-4.1**: Advanced reasoning (1M context)
 - **gpt-4o**: Multimodal flagship (128K context)
 - **gpt-4o-mini**: Fast multimodal (128K context)
 
@@ -299,11 +302,33 @@ Programmatic access to documentation:
 - **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context)
 - **gemini-2.5-pro** (alias: `pro`): Deep reasoning (1M context)
 - **gemini-2.0-flash**: Latest with experimental thinking
+- **gemini-2.0-flash-lite**: Lightweight fast model, text-only
 
 ### X.AI/Grok Models  
 - **grok-4-0709** (alias: `grok`): Latest advanced model (256K context)
 - **grok-3**: Previous generation (131K context)
 - **grok-3-fast**: Higher performance variant
+
+### Anthropic Models
+- **claude-opus-4**: Highest intelligence with extended thinking (200K context)
+- **claude-sonnet-4**: Balanced performance with extended thinking (200K context)
+- **claude-3.7-sonnet**: Enhanced 3.x generation with thinking (200K context)
+- **claude-3.5-sonnet**: Fast and intelligent (200K context)
+- **claude-3.5-haiku**: Fastest model for simple queries (200K context)
+
+### Mistral Models
+- **magistral-medium**: Frontier-class reasoning model (40K context)
+- **magistral-small**: Small reasoning model (40K context)
+- **mistral-medium-3**: Frontier-class multimodal model (128K context)
+
+### DeepSeek Models
+- **deepseek-chat**: Strong MoE model with 671B/37B parameters (64K context)
+- **deepseek-reasoner**: Advanced reasoning model with CoT (64K context)
+
+### OpenRouter Models
+- **qwen3-235b-thinking**: Qwen3 with enhanced reasoning (32K context)
+- **qwen3-coder**: Specialized for programming tasks (32K context)
+- **kimi-k2**: Moonshot AI Kimi K2 with extended context (200K context)
 
 ## 🚀 Development
 
@@ -342,8 +367,12 @@ npm run kill-server    # Kill any server running on port 3157
 npm test               # Run all tests
 npm run test:unit      # Unit tests only
 npm run test:integration # Integration tests
+npm run test:mcp-client # MCP client tests (HTTP-based client-server testing)
 npm run test:real-api  # Real API tests (requires keys)
+npm run test:providers # Provider tests
+npm run test:tools     # Tool tests
 npm run test:coverage  # Coverage report
+npm run test:watch     # Run tests in watch mode
 
 # Code quality
 npm run lint           # Check code style
@@ -396,7 +425,7 @@ XAI_API_KEY=xai-...
 npm run test:real-api
 
 # Run comprehensive integration tests
-node final-integration-test.js
+node tests/integration/final-integration-test.js
 
 # Validate server functionality
 npm run validate
@@ -417,14 +446,14 @@ npm test
 npm run test:real-api
 
 # 4. Comprehensive validation
-node final-integration-test.js
+node tests/integration/final-integration-test.js
 ```
 
 **Expected Results:**
 - Server starts without errors on port 3157
 - All unit tests pass
 - Real API tests connect successfully (if keys configured)
-- Integration tests achieve >70% success rate
+- Some real API integration tests may occasionally timeout
 
 ## 📦 Publishing to NPM
 
@@ -530,7 +559,6 @@ converse/
 | `PORT` | Server port | `3157` | `3157` |
 | `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
 | `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
-| `GOOGLE_LOCATION` | Google API region | `us-central1` | `us-central1` |
 | `XAI_BASE_URL` | XAI API endpoint | `https://api.x.ai/v1` | Custom endpoint |
 
 ### Model Selection
