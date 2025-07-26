@@ -22,7 +22,7 @@ export class HTTPTransportServer {
   constructor(config = {}) {
     this.config = {
       // Server settings
-      port: config.port || 3000,
+      port: config.port || 3157,
       host: config.host || 'localhost',
       requestTimeout: config.requestTimeout || 300000,
       maxRequestSize: config.maxRequestSize || '10mb',

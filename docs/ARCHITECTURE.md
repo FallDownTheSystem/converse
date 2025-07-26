@@ -65,10 +65,10 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-// HTTP transport on port 3000 (default)
+// HTTP transport on port 3157 (default)
 const httpTransport = new StreamableHTTPServerTransport({
   host: 'localhost',
-  port: 3000
+  port: 3157
 });
 ```
 
@@ -288,7 +288,7 @@ export const config = {
   
   // Server settings
   server: {
-    port: parseInt(process.env.PORT) || 3000,
+    port: parseInt(process.env.PORT) || 3157,
     logLevel: process.env.LOG_LEVEL || 'info',
     maxOutputTokens: parseInt(process.env.MAX_MCP_OUTPUT_TOKENS) || 25000
   },

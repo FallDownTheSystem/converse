@@ -295,7 +295,7 @@ export function getHttpTransportConfig(config) {
 
   return {
     // Server settings
-    port: transport.port || 3000,
+    port: transport.port || 3157,
     host: transport.host || 'localhost',
     requestTimeout: transport.requesttimeout || 300000,
     maxRequestSize: transport.maxrequestsize || '10mb',

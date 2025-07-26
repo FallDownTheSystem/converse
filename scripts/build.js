@@ -180,7 +180,7 @@ function createProductionConfig() {
 # Production Environment
 NODE_ENV=production
 LOG_LEVEL=info
-PORT=3000
+PORT=3157
 
 # Required API Keys
 OPENAI_API_KEY=sk-your-production-openai-key
@@ -293,7 +293,7 @@ sudo systemctl start converse-mcp-server
 - Git Commit: ${buildInfo.gitCommit}
 
 ## Health Check
-The server starts on port ${BUILD_CONFIG.productionEnv.PORT || 3000} and uses stdio transport for MCP communication.
+The server starts on port ${BUILD_CONFIG.productionEnv.PORT || 3157} and uses stdio transport for MCP communication.
 `;
   
   const deploymentPath = resolve(projectRoot, 'DEPLOYMENT.md');

@@ -7,7 +7,7 @@ describe('MCPServerManager', () => {
   beforeEach(() => {
     manager = new MCPServerManager({
       startupTimeout: 10000, // Shorter timeout for tests
-      shutdownTimeout: 3000
+      shutdownTimeout: 3157
     });
   });
 

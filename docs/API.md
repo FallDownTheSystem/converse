@@ -12,7 +12,7 @@ The Converse MCP Server provides two main tools through the Model Context Protoc
 The server supports two transport modes:
 
 ### HTTP Transport (Default)
-- **Endpoint**: `http://localhost:3000/mcp` 
+- **Endpoint**: `http://localhost:3157/mcp` 
 - **Protocol**: HTTP streaming with JSON-RPC 2.0
 - **Usage**: Best for development, debugging, and web integrations
 - **Features**: Health endpoints, CORS support, session management

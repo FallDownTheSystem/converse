@@ -54,7 +54,7 @@ GOOGLE_API_KEY=your_google_api_key_here
 XAI_API_KEY=xai-your_xai_key_here
 
 # Optional: Server configuration
-PORT=3000
+PORT=3157
 LOG_LEVEL=info
 MAX_MCP_OUTPUT_TOKENS=200000
 
@@ -172,14 +172,14 @@ LOG_LEVEL=debug npm run dev
 
 ```bash
 # Server management
-npm start              # Start server (auto-kills existing server on port 3000)
+npm start              # Start server (auto-kills existing server on port 3157)
 npm run start:clean    # Start server without killing existing processes
 npm run start:port     # Start server on port 3001 (avoids port conflicts)
 npm run dev            # Development with hot reload (auto-kills existing server)
 npm run dev:clean      # Development without killing existing processes
 npm run dev:port       # Development on port 3001 (avoids port conflicts)
 npm run dev:quiet      # Development with minimal logging
-npm run kill-server    # Kill any server running on port 3000
+npm run kill-server    # Kill any server running on port 3157
 
 # Testing
 npm test               # Run all tests
@@ -198,15 +198,15 @@ npm run validate       # Full validation (lint + test)
 npm run build          # Build for production
 npm run debug          # Start with debugger
 npm run check-deps     # Check for outdated dependencies
-npm run kill-server    # Kill any server running on port 3000
+npm run kill-server    # Kill any server running on port 3157
 ```
 
 ### 💡 Development Notes
 
-**Port Management**: The server runs on port 3000 by default for HTTP transport. If you encounter "EADDRINUSE" errors:
+**Port Management**: The server runs on port 3157 by default for HTTP transport. If you encounter "EADDRINUSE" errors:
 
-1. **Automatic cleanup**: `npm start` and `npm run dev` will automatically attempt to kill existing processes on port 3000
-2. **Manual cleanup**: Run `npm run kill-server` to manually free up port 3000  
+1. **Automatic cleanup**: `npm start` and `npm run dev` will automatically attempt to kill existing processes on port 3157
+2. **Manual cleanup**: Run `npm run kill-server` to manually free up port 3157  
 3. **Clean start**: Use `:clean` variants (`npm run start:clean`, `npm run dev:clean`) to skip auto-cleanup
 4. **Persistent issues**: If port conflicts persist, manually kill Node.js processes or restart your terminal
 
@@ -223,7 +223,7 @@ npm start -- --transport=stdio
 ```
 
 **Transport Modes**: 
-- **HTTP Transport** (default): `http://localhost:3000/mcp` - Better for development and debugging
+- **HTTP Transport** (default): `http://localhost:3157/mcp` - Better for development and debugging
 - **Stdio Transport**: Use `--transport=stdio` or set `MCP_TRANSPORT=stdio` for traditional stdio communication
 
 ### Testing with Real APIs
@@ -263,7 +263,7 @@ node final-integration-test.js
 ```
 
 **Expected Results:**
-- Server starts without errors on port 3000
+- Server starts without errors on port 3157
 - All unit tests pass
 - Real API tests connect successfully (if keys configured)
 - Integration tests achieve >70% success rate
@@ -363,7 +363,7 @@ converse/
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `PORT` | Server port | `3000` | `3000` |
+| `PORT` | Server port | `3157` | `3157` |
 | `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
 | `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
 | `GOOGLE_LOCATION` | Google API region | `us-central1` | `us-central1` |

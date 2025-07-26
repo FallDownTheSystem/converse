@@ -62,7 +62,7 @@ function showDevInfo() {
   logger.info('Configuration:');
   logger.info(`  • Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`  • Log Level: ${process.env.LOG_LEVEL || 'info'}`);
-  logger.info(`  • Port: ${process.env.PORT || '3000'}`);
+  logger.info(`  • Port: ${process.env.PORT || '3157'}`);
   logger.info(`  • Auto Restart: ${DEV_CONFIG.autoRestart ? '✓' : '✗'}`);
   logger.info(`  • Environment File: ${hasEnv ? '✓' : '✗'}`);
   

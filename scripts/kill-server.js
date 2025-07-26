@@ -3,7 +3,7 @@
 /**
  * Kill Server Script
  * 
- * Cross-platform script to kill any process running on port 3000
+ * Cross-platform script to kill any process running on port 3157
  * Used to prevent EADDRINUSE errors during development
  */
 
@@ -11,7 +11,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3157;
 
 async function killServerOnPort(port) {
   try {

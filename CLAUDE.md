@@ -264,7 +264,7 @@ XAI_API_KEY=xai-your_key_here
 # Optional: Server settings
 MAX_MCP_OUTPUT_TOKENS=200000
 LOG_LEVEL=info
-PORT=3000
+PORT=3157
 ```
 
 ### Deployment
