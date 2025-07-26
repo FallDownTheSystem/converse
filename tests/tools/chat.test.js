@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { chatTool } from '../../src/tools/chat.js'
 import { logger } from '../../src/utils/logger.js'
+import * as fileValidator from '../../src/utils/fileValidator.js'
+
+// Mock the fileValidator module
+vi.mock('../../src/utils/fileValidator.js')
 
 describe('Chat Tool Unit Tests', () => {
   let mockDependencies
@@ -10,6 +14,9 @@ describe('Chat Tool Unit Tests', () => {
   let mockContextProcessor
 
   beforeEach(() => {
+    // Mock file validator
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] })
+    
     // Mock configuration
     mockConfig = {
       apiKeys: {
@@ -291,7 +298,12 @@ describe('Chat Tool Unit Tests', () => {
         files: ['package.json']
       }
 
-      await chatTool(args, mockDependencies)
+      const result = await chatTool(args, mockDependencies)
+      
+      // Log the result to see if there's an error
+      if (result.isError) {
+        console.log('Chat tool returned error:', result)
+      }
 
       expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
         files: ['package.json'],

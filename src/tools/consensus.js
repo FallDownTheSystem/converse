@@ -210,8 +210,7 @@ export async function consensusTool(args, dependencies) {
             provider: call.provider,
             status: 'success',
             response: response.content,
-            metadata: response.metadata || {},
-            rawResponse: response.rawResponse
+            metadata: response.metadata || {}
           };
         } catch (error) {
           return {
@@ -346,7 +345,7 @@ Please provide your refined response:`;
       // Continue even if save fails
     }
 
-    // Build result object
+    // Build result object keeping backward compatibility but removing rawResponse
     const result = {
       status: 'consensus_complete',
       models_consulted: models.length,
