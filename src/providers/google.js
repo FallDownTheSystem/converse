@@ -18,11 +18,11 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
-    supportsThinking: true,
+    supportsThinking: false,
     supportsWebSearch: true,
-    maxThinkingTokens: 24576,
+    maxThinkingTokens: 0,
     timeout: 300000,
-    description: 'Gemini 2.0 Flash (1M context) - Latest fast model with experimental thinking, supports audio/video input and grounding',
+    description: 'Gemini 2.0 Flash (1M context) - Latest fast model, supports audio/video input and grounding',
     aliases: ['flash-2.0', 'flash2', 'flash 2.0', 'gemini flash 2.0', 'gemini-2.0-flash-latest']
   },
   'gemini-2.0-flash-lite': {

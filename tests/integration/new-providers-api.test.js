@@ -131,6 +131,32 @@ describe('New Providers Real API Integration Tests', () => {
       });
     }, 90000);
 
+    it.skipIf(!hasAnthropic)('should handle Claude Opus 4 with thinking', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        const result = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'What is 15 + 15?',
+            model: 'claude-opus-4',
+            reasoning_effort: 'minimal' // Minimal effort for testing
+          }
+        });
+
+        if (result.isError) {
+          console.error('[new-providers-api-test] Claude Opus 4 thinking error:', result.error);
+          console.error('[new-providers-api-test] Error content:', result.content);
+        }
+
+        // Opus 4 should always be available with Anthropic API key
+        expect(result.isError).toBeFalsy();
+        expect(result.content[0].text).toBeDefined();
+        // Should contain the answer (30)
+        expect(result.content[0].text).toContain('30');
+
+        logger.info('[new-providers-api-test] Anthropic Claude Opus 4 thinking test completed');
+      });
+    }, 90000);
+
     it.skipIf(!hasAnthropic)('should handle Claude 3.7 thinking model if available', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({

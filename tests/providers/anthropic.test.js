@@ -171,7 +171,14 @@ describe('Anthropic Provider', () => {
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.system).toBe('You are a helpful assistant');
+      expect(callArgs.system).toEqual([{
+        type: 'text',
+        text: 'You are a helpful assistant',
+        cache_control: {
+          type: 'ephemeral',
+          ttl: '1h'
+        }
+      }]);
       expect(callArgs.messages).toEqual([
         { role: 'user', content: 'Hello' }
       ]);
@@ -189,7 +196,14 @@ describe('Anthropic Provider', () => {
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.system).toBe('First system message\n\nSecond system message');
+      expect(callArgs.system).toEqual([{
+        type: 'text',
+        text: 'First system message\n\nSecond system message',
+        cache_control: {
+          type: 'ephemeral',
+          ttl: '1h'
+        }
+      }]);
     });
 
     it('should handle image content', async () => {
@@ -245,13 +259,13 @@ describe('Anthropic Provider', () => {
       const messages = [{ role: 'user', content: 'Complex problem' }];
 
       // Test different reasoning efforts
-      const efforts = ['minimal', 'low', 'medium', 'high', 'max'];
+      // Note: thinking budget must be < max_tokens (32000 for opus-4)
+      const efforts = ['minimal', 'low', 'medium', 'high'];
       const expectedBudgets = {
         minimal: 1600,   // 5% of 32000, min 1024
         low: 4800,       // 15% of 32000
         medium: 10560,   // 33% of 32000
         high: 21440,     // 67% of 32000
-        max: 32000       // 100% of max (32000)
       };
 
       for (const effort of efforts) {
@@ -268,7 +282,39 @@ describe('Anthropic Provider', () => {
           type: 'enabled',
           budget_tokens: expectedBudgets[effort]
         });
+        // Verify max_tokens is not set for Claude 4 models (SDK uses defaults)
+        expect(callArgs.max_tokens).toBeUndefined();
       }
+      
+      // Test 'max' effort - should not enable thinking since budget (32000) is not < max_tokens (32000)
+      mockCreate.mockClear();
+      await anthropicProvider.invoke(messages, {
+        model: 'claude-opus-4-20250514',
+        reasoning_effort: 'max',
+        config: mockConfig
+      });
+      
+      const maxEffortCallArgs = mockCreate.mock.calls[0][0];
+      expect(maxEffortCallArgs.thinking).toBeUndefined();
+      expect(maxEffortCallArgs.max_tokens).toBeUndefined();
+    });
+
+    it('should handle claude-sonnet-4 with thinking enabled', async () => {
+      const messages = [{ role: 'user', content: 'Test sonnet-4' }];
+      
+      await anthropicProvider.invoke(messages, {
+        model: 'claude-sonnet-4',
+        reasoning_effort: 'medium',
+        config: mockConfig
+      });
+      
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('claude-sonnet-4-20250514');
+      expect(callArgs.max_tokens).toBeUndefined(); // Not set for Claude 4 models
+      expect(callArgs.thinking).toEqual({
+        type: 'enabled',
+        budget_tokens: 21120 // 33% of 64000
+      });
     });
 
     it('should not add thinking for models that do not support it', async () => {
@@ -525,7 +571,7 @@ describe('Anthropic Provider', () => {
         })
       ).rejects.toMatchObject({
         code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
-        message: 'Context length exceeded for model'
+        message: expect.stringContaining('Context length exceeded for model')
       });
     });
   });

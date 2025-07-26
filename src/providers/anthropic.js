@@ -351,18 +351,24 @@ export const anthropicProvider = {
     // Get Anthropic SDK
     const Anthropic = await getAnthropicSDK();
 
+    // Resolve model name first
+    const resolvedModel = resolveModelName(model);
+    const modelConfig = SUPPORTED_MODELS[resolvedModel] || {};
+
     // Initialize Anthropic client with default headers
     // Use both prompt caching and extended cache duration headers for 1-hour caching
+    // Add thinking beta for models that support thinking
+    const betaHeaders = ['prompt-caching-2024-07-31', 'extended-cache-ttl-2025-04-11'];
+    if (modelConfig.supportsThinking && reasoning_effort) {
+      betaHeaders.push('thinking-2025-01-27');
+    }
+    
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
       defaultHeaders: {
-        'anthropic-beta': 'prompt-caching-2024-07-31,extended-cache-ttl-2025-04-11'
+        'anthropic-beta': betaHeaders.join(',')
       }
     });
-
-    // Resolve model name
-    const resolvedModel = resolveModelName(model);
-    const modelConfig = SUPPORTED_MODELS[resolvedModel] || {};
 
     // Convert messages to Anthropic format (system messages are always cached)
     const { systemPrompt, messages: anthropicMessages } = convertMessagesToAnthropic(messages);
@@ -380,39 +386,38 @@ export const anthropicProvider = {
       requestPayload.system = systemPrompt;
     }
 
-    // Add max tokens (required by Anthropic)
-    const defaultMaxTokens = modelConfig.maxOutputTokens || 8192;
-
-    // If thinking is supported and enabled, we need to reduce max_tokens to leave room for thinking
-    let effectiveMaxTokens = defaultMaxTokens;
-    if (modelConfig.supportsThinking && reasoning_effort) {
-      // Reserve some tokens for thinking - use a more conservative approach
-      effectiveMaxTokens = Math.min(defaultMaxTokens, 16000); // Cap at 16k for models with thinking
+    // Add max tokens only if explicitly requested
+    // For Claude 4 series models, let the SDK use its defaults (32k for opus, 64k for sonnet)
+    if (maxTokens) {
+      requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 8192);
+    } else if (!resolvedModel.includes('claude-opus-4') && !resolvedModel.includes('claude-sonnet-4')) {
+      // For non-4 series models, we still need to set max_tokens
+      requestPayload.max_tokens = modelConfig.maxOutputTokens || 8192;
     }
-
-    requestPayload.max_tokens = maxTokens
-      ? Math.min(maxTokens, effectiveMaxTokens)
-      : effectiveMaxTokens;
+    // For 4 series models without explicit maxTokens, don't set max_tokens - let SDK use defaults
 
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
       const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
-      if (thinkingBudget > 0) {
-        // Anthropic docs: thinking budget counts towards total token limit
-        // So we need to ensure max_tokens + budget_tokens <= model's actual limit
-        // Reduce max_tokens to make room for thinking
-        const reducedMaxTokens = requestPayload.max_tokens - thinkingBudget;
-
-        if (reducedMaxTokens >= 1000 && thinkingBudget >= 1024) { // Ensure we have reasonable space for both
-          requestPayload.max_tokens = reducedMaxTokens;
-          requestPayload.thinking = {
-            type: 'enabled',
-            budget_tokens: thinkingBudget
-          };
-          debugLog(`[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens, max_tokens reduced to: ${reducedMaxTokens} (${reasoning_effort} effort)`);
-        } else {
-          debugLog(`[Anthropic] Not enough token budget for thinking. Would need ${thinkingBudget} thinking + ${reducedMaxTokens} output tokens`);
-        }
+      debugLog(`[Anthropic] Model ${resolvedModel}: maxOutputTokens=${modelConfig.maxOutputTokens}, maxThinkingTokens=${modelConfig.maxThinkingTokens}, thinkingBudget=${thinkingBudget}`);
+      
+      // For 4 series models, we trust the SDK defaults work with thinking
+      // For other models, check against max_tokens if set
+      const maxTokensLimit = requestPayload.max_tokens || 
+        (resolvedModel.includes('claude-opus-4') ? 32000 : 
+         resolvedModel.includes('claude-sonnet-4') ? 64000 : 
+         modelConfig.maxOutputTokens);
+      
+      if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
+        // According to Anthropic docs: thinking tokens count towards max_tokens limit
+        // thinking.budget_tokens must be >= 1024 and < max_tokens
+        requestPayload.thinking = {
+          type: 'enabled',
+          budget_tokens: thinkingBudget
+        };
+        debugLog(`[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens (${reasoning_effort} effort)`);
+      } else {
+        debugLog(`[Anthropic] Thinking not enabled: budget ${thinkingBudget} must be < max_tokens limit ${maxTokensLimit}`);
       }
     }
 
@@ -429,6 +434,14 @@ export const anthropicProvider = {
 
     try {
       debugLog(`[Anthropic] Calling ${resolvedModel} with ${anthropicMessages.length} messages`);
+      debugLog(`[Anthropic] Request payload:`, JSON.stringify({
+        model: requestPayload.model,
+        max_tokens: requestPayload.max_tokens,
+        thinking: requestPayload.thinking,
+        temperature: requestPayload.temperature,
+        message_count: requestPayload.messages?.length,
+        system_length: Array.isArray(requestPayload.system) ? requestPayload.system[0]?.text?.length : requestPayload.system?.length
+      }, null, 2));
       if (systemPrompt) {
         debugLog(`[Anthropic] System prompt length: ${systemPrompt.length} characters`);
       }
@@ -507,8 +520,21 @@ export const anthropicProvider = {
         throw new AnthropicProviderError(`Invalid request: ${error.error.message}`, ErrorCodes.INVALID_REQUEST, error);
       } else if (error.error?.type === 'not_found_error') {
         throw new AnthropicProviderError(`Model ${resolvedModel} not found`, ErrorCodes.MODEL_NOT_FOUND, error);
-      } else if (error.message?.includes('context length') || error.message?.includes('token')) {
-        throw new AnthropicProviderError('Context length exceeded for model', ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
+      } else if (error.message?.includes('context length') || error.message?.includes('context_length') || 
+                 (error.message?.includes('token') && error.message?.includes('limit'))) {
+        debugError(`[Anthropic] Context length error - Full error:`, error);
+        debugError(`[Anthropic] Error message:`, error.message);
+        debugError(`[Anthropic] Error response:`, error.response);
+        throw new AnthropicProviderError(`Context length exceeded for model: ${error.message}`, ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
+      } else if (error.message?.includes('Streaming is strongly recommended')) {
+        // This is just a warning from the SDK about long requests
+        debugLog(`[Anthropic] SDK streaming recommendation warning`);
+        debugError(`[Anthropic] Full error object:`, error);
+        // Check if there's an actual error response
+        if (error.response || error.status) {
+          debugError(`[Anthropic] Error response status:`, error.status);
+          debugError(`[Anthropic] Error response data:`, error.response);
+        }
       }
 
       // Generic error handling
