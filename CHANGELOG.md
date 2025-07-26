@@ -5,6 +5,12 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2025-07-26
+
+### Fixed
+- **Anthropic Provider**: Removed non-existent 'thinking-2025-01-27' beta header
+  - Thinking mode is controlled through model selection, not beta headers
+
 ## [1.5.3] - 2025-07-26
 
 ### Fixed
