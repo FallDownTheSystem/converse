@@ -5,6 +5,43 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-07-28
+
+### Changed
+- **Configuration**: Server name and version are now automatically read from package.json
+  - Removed `MCP_SERVER_NAME` and `MCP_SERVER_VERSION` environment variables
+  - Ensures version consistency across all parts of the application
+- **OpenRouter Provider**: Requires `OPENROUTER_DYNAMIC_MODELS=true` to use models in `provider/model` format
+  - Previously allowed dynamic models without explicit configuration
+  - Now properly enforces the environment variable requirement
+- **Tool Descriptions**: Updated parameter descriptions for better clarity
+  - Model examples now show `o3`, `gemini-2.5-pro`, `grok-4-0709`
+  - File and image paths show both absolute (Windows) and relative path examples
+  - Reasoning effort examples updated to `low`, `medium`, `high`
+  - Simplified use_websearch description
+- **Help System**: Help prompt now dynamically generates tool documentation from metadata
+  - Ensures consistency between implementation and documentation
+  - No more manual updates needed when tool parameters change
+
+### Added
+- **Environment Variables Documentation**: Added all missing environment variables to help prompt
+  - All API keys (ANTHROPIC, MISTRAL, DEEPSEEK, OPENROUTER)
+  - OpenRouter configuration options
+  - HTTP server configuration options
+
+### Removed
+- **Unused Build Script**: Removed unused `build.js` script and related npm scripts
+  - Project doesn't require build step as it's pure Node.js
+  - Removed `build` and `build:fast` npm scripts
+- **Obsolete Environment Variables**: Cleaned up documentation
+  - Removed references to `GOOGLE_LOCATION` (already unused)
+  - Removed references to `XAI_BASE_URL` (not configurable via env)
+
+### Fixed
+- **OpenRouter Dynamic Models**: Fixed behavior to require explicit enablement
+  - Models with "/" format now properly require `OPENROUTER_DYNAMIC_MODELS=true`
+  - Returns clear error message when dynamic models are disabled
+
 ## [1.6.0] - 2025-07-27
 
 ### Added
