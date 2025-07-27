@@ -5,6 +5,45 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Cross-Platform Support**: Comprehensive cross-platform compatibility improvements
+  - Created `src/utils/pathUtils.js` utility module for platform-agnostic operations
+  - Added `cross-env` and `rimraf` dependencies for cross-platform npm scripts
+  - Platform-specific path handling for Windows, Linux, and macOS
+  - Cross-platform timeout commands and process spawning
+
+### Changed
+- **npm Scripts**: Updated all scripts to use cross-platform commands
+  - Replaced Unix-specific `rm -rf` with `rimraf` package
+  - All environment variable assignments now use `cross-env`
+  - Scripts now work correctly on Windows, Linux, and macOS
+- **Path Handling**: Improved path operations throughout codebase
+  - Fixed path comparisons to use proper URL methods instead of string replacement
+  - Line counting now handles both CRLF (Windows) and LF (Unix/Mac) line endings
+  - Test files use platform-agnostic path helpers instead of hardcoded paths
+- **Process Spawning**: Updated to use Node.js executable path
+  - Tests now use `process.execPath` instead of hardcoded 'node' command
+  - Proper spawn options for Windows compatibility
+
+### Fixed
+- **Windows Compatibility**: Fixed multiple Windows-specific issues
+  - Path separator handling in file operations
+  - Process spawning in test files
+  - Timeout commands in validation script
+- **Test Reliability**: Fixed hardcoded paths in tests
+  - Replaced Windows-specific paths (C:\) with platform helpers
+  - Replaced Unix-specific paths (/tmp) with OS temp directory
+- **JSON Import**: Fixed ES module JSON import syntax for better compatibility
+  - Tests now use `readFileSync` and `JSON.parse` instead of import assertions
+
+### Improved
+- **Code Quality**: Enhanced linting and code standards
+  - Changed `no-unused-vars` to warning level for better DX
+  - Added missing global variables to ESLint config
+  - Fixed numerous linting issues across the codebase
+
 ## [1.7.1] - 2025-07-28
 
 ### Changed
