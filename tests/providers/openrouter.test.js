@@ -10,6 +10,16 @@ import { ErrorCodes, StopReasons } from '../../src/providers/interface.js';
 // Mock the OpenAI module
 const mockCreate = vi.fn();
 
+// Mock the endpoints client
+vi.mock('../../src/providers/openrouter-endpoints-client.js', () => ({
+  fetchModelEndpointsWithCache: vi.fn(),
+  endpointsCache: {
+    clear: vi.fn(),
+    get: vi.fn(() => ({ found: false, value: null })),
+    set: vi.fn()
+  }
+}));
+
 vi.mock('openai', () => {
   const mockOpenAI = vi.fn(() => ({
     chat: {
@@ -26,6 +36,7 @@ vi.mock('openai', () => {
 
 // Import provider AFTER setting up the mock
 import { openrouterProvider } from '../../src/providers/openrouter.js';
+import { fetchModelEndpointsWithCache } from '../../src/providers/openrouter-endpoints-client.js';
 
 describe('OpenRouter Provider', () => {
   let mockConfig;
@@ -33,6 +44,7 @@ describe('OpenRouter Provider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreate.mockClear();
+    fetchModelEndpointsWithCache.mockClear();
 
     mockConfig = {
       apiKeys: {
@@ -85,6 +97,7 @@ describe('OpenRouter Provider', () => {
       expect(models['qwen/qwen3-235b-a22b-thinking-2507']).toBeDefined();
       expect(models['qwen/qwen3-coder']).toBeDefined();
       expect(models['moonshotai/kimi-k2']).toBeDefined();
+      expect(models['openrouter/auto']).toBeDefined();
     });
 
     it('should get model config by exact name', () => {
@@ -115,6 +128,161 @@ describe('OpenRouter Provider', () => {
     it('should return null for unknown model', () => {
       const config = openrouterProvider.getModelConfig('unknown-model');
       expect(config).toBeNull();
+    });
+
+    it('should get config for openrouter/auto model', () => {
+      const config = openrouterProvider.getModelConfig('openrouter/auto');
+      
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('openrouter/auto');
+      expect(config.friendlyName).toBe('OpenRouter Auto (via NotDiamond)');
+      expect(config.contextWindow).toBe(128000);
+      expect(config.maxOutputTokens).toBe(8192);
+    });
+
+    it('should support openrouter auto aliases', () => {
+      const aliases = ['openrouter auto', 'auto router', 'auto-router', 'openrouter-auto'];
+      
+      aliases.forEach(alias => {
+        const config = openrouterProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('openrouter/auto');
+      });
+    });
+
+    it('should return dynamic config when dynamic models enabled', () => {
+      // Create a test instance with dynamic models enabled
+      const testConfig = {
+        providers: {
+          openrouterreferer: 'https://test.example.com',
+          openrouterdynamicmodels: true
+        }
+      };
+      
+      // Store config for getModelConfig to use
+      openrouterProvider._lastConfig = testConfig;
+      
+      const config = openrouterProvider.getModelConfig('anthropic/claude-3-opus');
+      
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('anthropic/claude-3-opus');
+      expect(config.isDynamic).toBe(true);
+      expect(config.contextWindow).toBe(8192); // Default value
+      expect(config.maxOutputTokens).toBe(4096); // Default value
+    });
+
+    it('should not return dynamic config when disabled', () => {
+      // Create a test instance with dynamic models disabled
+      const testConfig = {
+        providers: {
+          openrouterreferer: 'https://test.example.com',
+          openrouterdynamicmodels: false
+        }
+      };
+      
+      // Store config for getModelConfig to use
+      openrouterProvider._lastConfig = testConfig;
+      
+      // Use a different model that wasn't cached in previous test
+      const config = openrouterProvider.getModelConfig('meta-llama/llama-3-70b');
+      
+      expect(config).toBeNull();
+    });
+
+    it('should fetch model config from API when invoking with dynamic model', async () => {
+      // Mock the API response
+      fetchModelEndpointsWithCache.mockResolvedValueOnce({
+        modelName: 'anthropic/claude-3-opus-20240229',
+        friendlyName: 'Claude 3 Opus',
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        supportsStreaming: true,
+        supportsImages: true,
+        supportsTemperature: true,
+        isDynamic: true
+      });
+
+      const messages = [{ role: 'user', content: 'Hello' }];
+      
+      mockCreate.mockResolvedValueOnce({
+        id: 'chatcmpl-dynamic',
+        object: 'chat.completion',
+        created: 1234567890,
+        model: 'anthropic/claude-3-opus-20240229',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Dynamic response'
+          },
+          finish_reason: 'stop'
+        }],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30
+        }
+      });
+
+      await openrouterProvider.invoke(messages, {
+        model: 'anthropic/claude-3-opus-20240229',
+        config: {
+          ...mockConfig,
+          providers: {
+            ...mockConfig.providers,
+            openrouterdynamicmodels: true
+          }
+        }
+      });
+
+      expect(fetchModelEndpointsWithCache).toHaveBeenCalledWith('anthropic/claude-3-opus-20240229');
+      expect(mockCreate).toHaveBeenCalled();
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('anthropic/claude-3-opus-20240229');
+    });
+
+    it('should handle API fetch errors gracefully', async () => {
+      // Mock the API to return null (model not found)
+      fetchModelEndpointsWithCache.mockResolvedValueOnce(null);
+
+      const messages = [{ role: 'user', content: 'Hello' }];
+      
+      mockCreate.mockResolvedValueOnce({
+        id: 'chatcmpl-notfound',
+        object: 'chat.completion',
+        created: 1234567890,
+        model: 'nonexistent/model',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Default config response'
+          },
+          finish_reason: 'stop'
+        }],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30
+        }
+      });
+
+      await openrouterProvider.invoke(messages, {
+        model: 'nonexistent/model',
+        config: {
+          ...mockConfig,
+          providers: {
+            ...mockConfig.providers,
+            openrouterdynamicmodels: true
+          }
+        }
+      });
+
+      expect(fetchModelEndpointsWithCache).toHaveBeenCalledWith('nonexistent/model');
+      expect(mockCreate).toHaveBeenCalled();
+      // Should still work with default config
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('nonexistent/model');
     });
   });
 

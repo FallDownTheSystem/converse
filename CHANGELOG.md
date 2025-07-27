@@ -5,6 +5,26 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **OpenRouter Provider**: Dynamic model discovery support
+  - Enable with `OPENROUTER_DYNAMIC_MODELS=true` environment variable
+  - Automatically fetches model capabilities from OpenRouter's endpoints API
+  - Supports any model available on OpenRouter without manual configuration
+  - Model capabilities are cached for 24 hours to improve performance
+  - Added support for `openrouter/auto` model for automatic model selection
+- **Model Routing**: Enhanced model routing logic
+  - Models with "/" format check native providers first before routing to OpenRouter
+  - Allows using models like `anthropic/claude-3.5-sonnet` via OpenRouter when not available natively
+  - Maintains backward compatibility with keyword-based routing
+
+### Changed
+- **OpenRouter Provider**: Added static configurations for Qwen3 and Kimi models
+  - `qwen/qwen3-235b-a22b-thinking-2507` - 235B model with thinking capabilities
+  - `qwen/qwen3-coder` - Specialized for coding tasks
+  - `moonshotai/kimi-k2` - 200K context window
+
 ## [1.5.5] - 2025-07-26
 
 ### Fixed

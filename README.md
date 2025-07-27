@@ -67,6 +67,8 @@ MAX_MCP_OUTPUT_TOKENS=200000
 # Optional: Provider-specific settings
 XAI_BASE_URL=https://api.x.ai/v1
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
+OPENROUTER_TITLE=YourAppName
+OPENROUTER_DYNAMIC_MODELS=true
 ```
 
 ### 2. Get API Keys
@@ -102,6 +104,8 @@ There are several ways to add the Converse MCP Server to Claude:
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
+        "OPENROUTER_DYNAMIC_MODELS": "true",
+        "OPENROUTER_TITLE": "YourAppName",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -128,6 +132,8 @@ There are several ways to add the Converse MCP Server to Claude:
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
+        "OPENROUTER_DYNAMIC_MODELS": "true",
+        "OPENROUTER_TITLE": "YourAppName",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -197,13 +203,15 @@ For more detailed instructions, see the [official MCP configuration guide](https
 
 ### 1. Chat Tool
 
-General conversational AI with context and continuation support.
+General conversational AI with context and continuation support. Supports automatic model routing - simple names route by keyword, slash format (e.g., `anthropic/claude-3.5-sonnet`) checks native providers first before routing to OpenRouter.
 
 ```javascript
 // Example usage
 {
   "prompt": "How should I structure the authentication module for this Express.js API?",
-  "model": "gemini-2.5-flash",
+  "model": "gemini-2.5-flash",         // Routes to Google
+  // "model": "anthropic/claude-3.5-sonnet", // Routes to OpenRouter (if enabled)
+  // "model": "openrouter/auto",          // Auto-select best model
   "files": ["/path/to/src/auth.js", "/path/to/config.json"],
   "images": ["/path/to/architecture.png"],
   "temperature": 0.5,

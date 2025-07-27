@@ -86,6 +86,8 @@ const CONFIG_SCHEMA = {
   // Provider-specific configuration
   providers: {
     OPENROUTER_REFERER: { type: 'string', required: false, description: 'OpenRouter referer header for compliance' },
+    OPENROUTER_TITLE: { type: 'string', required: false, description: 'OpenRouter X-Title header for request tracking' },
+    OPENROUTER_DYNAMIC_MODELS: { type: 'boolean', default: false, description: 'Enable dynamic model discovery via OpenRouter endpoints API' },
   },
 
 

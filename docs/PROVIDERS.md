@@ -67,12 +67,20 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Environment Variables**: 
   - `OPENROUTER_API_KEY` - Your API key
   - `OPENROUTER_REFERER` - Required referer URL (e.g., your GitHub repo)
-- **Supported Models**: Access to multiple providers through unified API
+  - `OPENROUTER_TITLE` - Optional title for request tracking
+  - `OPENROUTER_DYNAMIC_MODELS` - Enable dynamic model discovery (default: false)
+- **Static Models**: Pre-configured models available without dynamic discovery
+  - `qwen/qwen3-235b-a22b-thinking-2507` - Qwen3 235B with thinking capabilities
+  - `qwen/qwen3-coder` - Qwen3 specialized for coding
+  - `moonshotai/kimi-k2` - Kimi K2 with 200K context window
+  - `openrouter/auto` - Auto-selects best model using NotDiamond routing
+- **Dynamic Models**: When `OPENROUTER_DYNAMIC_MODELS=true`, any model in `provider/model` format
   - `anthropic/claude-3.5-sonnet`
   - `openai/gpt-4-turbo`
   - `google/gemini-pro`
   - `mistralai/mistral-large`
   - `meta-llama/llama-3.1-405b-instruct`
+  - And many more - see [openrouter.ai/models](https://openrouter.ai/models)
 
 ## Configuration Examples
 
@@ -87,6 +95,10 @@ DEEPSEEK_API_KEY=your_deepseek_key_here
 # OpenRouter requires both API key and referer
 OPENROUTER_API_KEY=sk-or-your_key_here
 OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
+# Optional: Enable dynamic model discovery to use any OpenRouter model
+OPENROUTER_DYNAMIC_MODELS=true
+# Optional: Add title for request tracking
+OPENROUTER_TITLE=YourAppName
 ```
 
 ### Claude Configuration (claude_desktop_config.json)
@@ -102,7 +114,9 @@ OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
-        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp"
+        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
+        "OPENROUTER_DYNAMIC_MODELS": "true",
+        "OPENROUTER_TITLE": "YourAppName"
       }
     }
   }
@@ -133,17 +147,38 @@ All providers support streaming responses for real-time output.
 
 When using the chat or consensus tools, specify models using their identifiers:
 
+### Model Routing Logic
+
+1. **Simple Names**: Models without "/" are routed by keyword matching:
+   - Contains "gpt", "o1", "o3", "o4" → OpenAI
+   - Contains "claude", "opus", "sonnet", "haiku" → Anthropic
+   - Contains "gemini", "flash", "pro" → Google
+   - Contains "grok" → X.AI
+   - Contains "mistral", "magistral" → Mistral
+   - Contains "deepseek", "reasoner", "r1" → DeepSeek
+   - Contains "qwen", "kimi", "k2" → OpenRouter
+
+2. **Slash Format**: Models with "/" check native providers first:
+   - If exact model exists in a native provider → Routes to that provider
+   - If not found in any native provider → Routes to OpenRouter
+   - This allows using models like "anthropic/claude-3.5-sonnet" via OpenRouter
+
+3. **OpenRouter Auto**: Special aliases route to OpenRouter's auto-selection:
+   - "openrouter/auto", "openrouter auto", "auto router", "auto-router"
+
 ```javascript
 // Chat tool examples
 {
-  "model": "gpt-4o",              // OpenAI
-  "model": "claude-opus-4",       // Anthropic (auto-resolves to claude-opus-4-20250514)
-  "model": "sonnet",              // Anthropic (resolves to latest Sonnet 4)
-  "model": "gemini-2.5-pro",      // Google
-  "model": "grok-4-0709",         // X.AI
-  "model": "mistral-large",       // Mistral
-  "model": "deepseek-chat",       // DeepSeek
-  "model": "anthropic/claude-3.5-sonnet"  // OpenRouter
+  "model": "gpt-4o",              // OpenAI (keyword match)
+  "model": "claude-opus-4",       // Anthropic (keyword match, auto-resolves)
+  "model": "sonnet",              // Anthropic (keyword match)
+  "model": "gemini-2.5-pro",      // Google (keyword match)
+  "model": "grok-4-0709",         // X.AI (keyword match)
+  "model": "mistral-large",       // Mistral (keyword match)
+  "model": "deepseek-chat",       // DeepSeek (keyword match)
+  "model": "anthropic/claude-3.5-sonnet",  // OpenRouter (slash format, not in Anthropic)
+  "model": "qwen/qwen3-coder",            // OpenRouter (static model)
+  "model": "openrouter/auto"              // OpenRouter auto-selection
 }
 
 // Consensus tool with multiple providers
@@ -177,3 +212,10 @@ When using the chat or consensus tools, specify models using their identifiers:
 - The `OPENROUTER_REFERER` header is **required**
 - Use your application URL or GitHub repository
 - This helps OpenRouter track usage for compliance
+
+### OpenRouter Dynamic Models
+- Enable with `OPENROUTER_DYNAMIC_MODELS=true`
+- First request to a new model may be slower (fetches capabilities)
+- Model capabilities are cached for 24 hours
+- Use any model from [openrouter.ai/models](https://openrouter.ai/models)
+- Models must use `provider/model` format (e.g., `meta-llama/llama-3.2-90b`)

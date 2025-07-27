@@ -11,6 +11,7 @@
 import { createOpenAICompatibleProvider } from './openai-compatible.js';
 import { debugLog } from '../utils/console.js';
 import { ProviderError, ErrorCodes } from './interface.js';
+import { fetchModelEndpointsWithCache } from './openrouter-endpoints-client.js';
 
 // Define supported OpenRouter models with their capabilities
 // Only including the three specific models requested
@@ -54,6 +55,19 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     description: 'Moonshot AI Kimi K2 with extended context window',
     aliases: ['kimi-k2', 'moonshot-kimi', 'kimi k2', 'kimi', 'moonshot kimi', 'moonshot-k2', 'k2']
+  },
+  'openrouter/auto': {
+    modelName: 'openrouter/auto',
+    friendlyName: 'OpenRouter Auto (via NotDiamond)',
+    contextWindow: 128000, // Safe default for auto-routing
+    maxOutputTokens: 8192, // Safe default
+    supportsStreaming: true,
+    supportsImages: false, // Conservative default
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Auto-selects the best model for your prompt using NotDiamond routing',
+    aliases: ['openrouter auto', 'auto router', 'auto-router', 'openrouter-auto']
   }
 };
 
@@ -84,12 +98,14 @@ function getCustomHeaders(config) {
   const headers = {};
 
   // REQUIRED: HTTP-Referer header for compliance
-  // Note: config keys are lowercase without underscores due to config.js transformation
-  const referer = config?.providers?.openrouterreferer || 'https://github.com/FallDownTheSystem/converse';
+  // Handle both camelCase (from tests) and lowercase (from config.js) keys
+  const referer = config?.providers?.openrouterreferer ||
+                  config?.providers?.openrouterReferer ||
+                  'https://github.com/FallDownTheSystem/converse';
   headers['HTTP-Referer'] = referer;
 
   // Optional: X-Title header for request tracking
-  const title = config?.providers?.openroutertitle;
+  const title = config?.providers?.openroutertitle || config?.providers?.openrouterTitle;
   if (title) {
     headers['X-Title'] = title;
   }
@@ -169,16 +185,148 @@ export const openrouterProvider = createOpenAICompatibleProvider({
   }
 });
 
-// Override the invoke method to add dynamic headers
+/**
+ * Check if a model string follows OpenRouter's provider/model format
+ */
+function isOpenRouterModelFormat(modelName) {
+  return typeof modelName === 'string' && modelName.includes('/');
+}
+
+/**
+ * Create a dynamic model configuration from minimal information
+ */
+function createDynamicModelConfig(modelName) {
+  return {
+    modelName,
+    friendlyName: `${modelName} (via OpenRouter)`,
+    contextWindow: 8192, // Safe default
+    maxOutputTokens: 4096, // Safe default
+    supportsStreaming: true,
+    supportsImages: false, // Conservative default
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: `Dynamic model: ${modelName}`,
+    isDynamic: true // Flag to identify dynamic models
+  };
+}
+
+// Store for dynamically discovered models
+const dynamicModels = new Map();
+
+// Override methods to support dynamic models
+const originalGetSupportedModels = openrouterProvider.getSupportedModels;
+openrouterProvider.getSupportedModels = function() {
+  const staticModels = originalGetSupportedModels.call(this);
+
+  // Merge dynamic models if any exist
+  if (dynamicModels.size > 0) {
+    const allModels = { ...staticModels };
+    for (const [modelName, config] of dynamicModels) {
+      allModels[modelName] = config;
+    }
+    return allModels;
+  }
+
+  return staticModels;
+};
+
+// Create an async version of getModelConfig for API fetching
+openrouterProvider.getModelConfigAsync = async function(modelName) {
+  // First check static models
+  const staticConfig = this.getModelConfig(modelName);
+  if (staticConfig && !staticConfig.isDynamic) {
+    return staticConfig;
+  }
+
+  // Check if already in dynamic models cache
+  if (dynamicModels.has(modelName)) {
+    return dynamicModels.get(modelName);
+  }
+
+  // If dynamic models are enabled and model follows format, fetch from API
+  const config = this._lastConfig || {};
+  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels || 
+                               config?.providers?.openrouterDynamicModels;
+  if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
+    debugLog(`[OpenRouter] Fetching dynamic model config for: ${modelName}`);
+    
+    // Fetch from API with caching
+    const apiConfig = await fetchModelEndpointsWithCache(modelName);
+    
+    if (apiConfig) {
+      // Store in dynamic models cache
+      dynamicModels.set(modelName, apiConfig);
+      return apiConfig;
+    } else {
+      // Model not found on API, create default config to avoid repeated lookups
+      const defaultConfig = createDynamicModelConfig(modelName);
+      defaultConfig.notFoundOnApi = true;
+      dynamicModels.set(modelName, defaultConfig);
+      return defaultConfig;
+    }
+  }
+
+  return null;
+};
+
+const originalGetModelConfig = openrouterProvider.getModelConfig;
+openrouterProvider.getModelConfig = function(modelName) {
+  // First check static models
+  const staticConfig = originalGetModelConfig.call(this, modelName);
+  if (staticConfig) {
+    return staticConfig;
+  }
+
+  // Check dynamic models
+  if (dynamicModels.has(modelName)) {
+    return dynamicModels.get(modelName);
+  }
+
+  // For synchronous calls, create default config if dynamic models enabled
+  const config = this._lastConfig || {};
+  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels || 
+                               config?.providers?.openrouterDynamicModels;
+  if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
+    // Note: This is a fallback for synchronous calls
+    // The async version should be preferred for accurate model info
+    const dynamicConfig = createDynamicModelConfig(modelName);
+    dynamicConfig.needsApiUpdate = true;
+    return dynamicConfig;
+  }
+
+  return null;
+};
+
+// Override the invoke method to add dynamic headers and model support
 const originalInvoke = openrouterProvider.invoke;
 openrouterProvider.invoke = async function(messages, options = {}) {
+  // Store config for use in getModelConfig
+  this._lastConfig = options.config;
+
   // Validate referer configuration
-  // Note: config keys are lowercase without underscores due to config.js transformation
-  if (!options.config?.providers?.openrouterreferer) {
+  // Handle both camelCase (from tests) and lowercase (from config.js) keys
+  if (!options.config?.providers?.openrouterreferer && !options.config?.providers?.openrouterReferer) {
     throw new OpenRouterProviderError(
       'OpenRouter requires HTTP-Referer header. Please set OPENROUTER_REFERER in your environment',
       ErrorCodes.INVALID_REQUEST
     );
+  }
+
+  // Check if we need to fetch dynamic model config
+  const modelName = options.model;
+  if (modelName) {
+    const existingConfig = this.getModelConfig(modelName);
+    
+    // If the model needs API update, fetch it now
+    if (existingConfig?.needsApiUpdate) {
+      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels || 
+                                  options.config?.providers?.openrouterDynamicModels;
+      if (dynamicModelsEnabled) {
+        debugLog(`[OpenRouter] Fetching API config for model: ${modelName}`);
+        await this.getModelConfigAsync(modelName);
+      }
+    }
   }
 
   // Create a modified config with custom headers

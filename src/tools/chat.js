@@ -159,7 +159,7 @@ export async function chatTool(args, dependencies) {
     } else {
       // Use specified provider/model
       // Try to map model to provider
-      providerName = mapModelToProvider(model);
+      providerName = mapModelToProvider(model, providers);
       selectedProvider = providers[providerName];
 
       if (!selectedProvider) {
@@ -282,7 +282,7 @@ function resolveAutoModel(model, providerName) {
   return defaults[providerName] || 'gpt-4o-mini';
 }
 
-function mapModelToProvider(model) {
+function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
   // Handle "auto" - default to OpenAI
@@ -290,6 +290,30 @@ function mapModelToProvider(model) {
     return 'openai';
   }
 
+  // Check OpenRouter-specific patterns first
+  if (modelLower === 'openrouter auto' || modelLower === 'auto router' ||
+      modelLower === 'auto-router' || modelLower === 'openrouter-auto') {
+    return 'openrouter';
+  }
+
+  // If model contains "/", check if native provider supports it
+  if (modelLower.includes('/')) {
+    // Check each provider to see if they have this exact model
+    for (const [providerName, provider] of Object.entries(providers)) {
+      if (provider && provider.getModelConfig) {
+        const modelConfig = provider.getModelConfig(model);
+        if (modelConfig && !modelConfig.isDynamic && !modelConfig.needsApiUpdate) {
+          // Model exists in this provider's static list
+          return providerName;
+        }
+      }
+    }
+    // No native provider has this model, route to OpenRouter
+    return 'openrouter';
+  }
+
+  // For non-slash models, use keyword matching as before
+  
   // OpenAI models
   if (modelLower.includes('gpt') || modelLower.includes('o1') ||
       modelLower.includes('o3') || modelLower.includes('o4')) {
@@ -326,8 +350,7 @@ function mapModelToProvider(model) {
 
   // OpenRouter models (specific model patterns)
   if (modelLower.includes('qwen') || modelLower.includes('kimi') ||
-      modelLower.includes('moonshot') || modelLower === 'k2' ||
-      modelLower.includes('/')) {  // OpenRouter uses provider/model format
+      modelLower.includes('moonshot') || modelLower === 'k2') {
     return 'openrouter';
   }
 
