@@ -5,6 +5,37 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2025-07-28
+
+### Changed
+- **Test Organization**: Reorganized integration tests into provider-specific structure
+  - Provider tests now in `tests/integration/providers/{provider}/` directories
+  - Each provider has separate API, features, and image test files
+  - Removed archived test files that were replaced
+- **Test Commands**: Updated test command naming for consistency
+  - `npm run test:e2e` now preferred over `test:real-api` (both still work)
+  - Added provider subcategory commands for granular testing
+- **Documentation**: Updated all test documentation to reflect new structure
+  - Updated `tests/README.md` with new test organization
+  - Updated main `README.md` with current test commands
+  - Added `tests/integration/providers/README.md` for provider test guidance
+
+### Added
+- **Provider Image Tests**: Added dedicated image processing tests
+  - `xai/xai-image.test.js` - XAI Grok-4 image processing
+  - `google/google-image.test.js` - Google Gemini image processing
+- **Error Handling Tests**: Added comprehensive error handling tests
+  - `anthropic/anthropic-error.test.js` - Rate limiting and edge cases
+  - `multi-provider-error.test.js` - Cross-provider error handling
+- **Advanced Tests**: Added advanced multi-provider scenarios
+  - `multi-provider-advanced.test.js` - Consensus with files, consistency tests
+  - `debug-tests.test.js` - Message format debugging
+
+### Fixed
+- **Test Configuration**: Updated `suites.config.js` to use new test paths
+  - Fixed real-api suite to use glob patterns for new structure
+  - Properly excludes archived directory from test runs
+
 ## [1.7.0] - 2025-07-28
 
 ### Changed
