@@ -93,46 +93,46 @@ export const MockAnthropic = vi.fn().mockImplementation(() => ({
 export function createMockAnthropicProvider(overrides = {}) {
   return createMockProvider({
     name: 'anthropic',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => ANTHROPIC_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       // Check direct match
       if (ANTHROPIC_MODELS[modelName]) {
         return ANTHROPIC_MODELS[modelName];
       }
-      
+
       // Check aliases
       for (const model of Object.values(ANTHROPIC_MODELS)) {
         if (model.aliases && model.aliases.includes(modelName)) {
           return model;
         }
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = ANTHROPIC_MODELS[options.model] || ANTHROPIC_MODELS['claude-3-5-sonnet-20241022'];
-      
+
       // Simulate Anthropic-specific validations
       if (!options.config?.apiKeys?.anthropic) {
         throw new ProviderError('Anthropic API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate image handling for non-vision models
-      const hasImages = messages.some(msg => 
-        Array.isArray(msg.content) && 
+      const hasImages = messages.some(msg =>
+        Array.isArray(msg.content) &&
         msg.content.some(item => item.type === 'image')
       );
-      
+
       if (hasImages && !modelConfig.supportsImages) {
         throw new ProviderError(
           `Model ${options.model} does not support images`,
           ErrorCodes.INVALID_REQUEST
         );
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock Anthropic response')
@@ -145,7 +145,7 @@ export function createMockAnthropicProvider(overrides = {}) {
         })
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -178,7 +178,7 @@ export function createMockAnthropicResponse(content = 'Test response', options =
 // Mock streaming response generator
 export function createMockAnthropicStreamResponse(chunks = ['Hello', ' world', '!']) {
   const events = [];
-  
+
   // Message start event
   events.push({
     type: 'message_start',
@@ -196,7 +196,7 @@ export function createMockAnthropicStreamResponse(chunks = ['Hello', ' world', '
       }
     }
   });
-  
+
   // Content block start
   events.push({
     type: 'content_block_start',
@@ -206,7 +206,7 @@ export function createMockAnthropicStreamResponse(chunks = ['Hello', ' world', '
       text: ''
     }
   });
-  
+
   // Content deltas
   chunks.forEach(chunk => {
     events.push({
@@ -218,13 +218,13 @@ export function createMockAnthropicStreamResponse(chunks = ['Hello', ' world', '
       }
     });
   });
-  
+
   // Content block stop
   events.push({
     type: 'content_block_stop',
     index: 0
   });
-  
+
   // Message delta with final usage
   events.push({
     type: 'message_delta',
@@ -236,12 +236,12 @@ export function createMockAnthropicStreamResponse(chunks = ['Hello', ' world', '
       output_tokens: 20
     }
   });
-  
+
   // Message stop
   events.push({
     type: 'message_stop'
   });
-  
+
   return events;
 }
 
@@ -265,14 +265,14 @@ export function createMockAnthropicError(type = 'invalid_api_key', message = nul
       message: message || 'Overloaded'
     }
   };
-  
+
   const errorData = errors[type] || errors.invalid_api_key;
   const error = new Error(errorData.message);
   error.type = errorData.type;
-  error.status = type === 'invalid_api_key' ? 401 : 
-                 type === 'rate_limit' ? 429 : 
-                 type === 'overloaded' ? 529 : 400;
-  
+  error.status = type === 'invalid_api_key' ? 401 :
+    type === 'rate_limit' ? 429 :
+      type === 'overloaded' ? 529 : 400;
+
   return error;
 }
 
@@ -284,23 +284,23 @@ export function createMockAnthropicClient(behavior = {}) {
         if (behavior.throwError) {
           throw createMockAnthropicError(behavior.errorType);
         }
-        
+
         return createMockAnthropicResponse(
           behavior.content || 'Mock response',
           behavior.responseOptions || {}
         );
       }),
-      
+
       stream: vi.fn().mockImplementation(async (params) => {
         if (behavior.throwError) {
           throw createMockAnthropicError(behavior.errorType);
         }
-        
+
         const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
         const events = createMockAnthropicStreamResponse(chunks);
-        
+
         return {
-          [Symbol.asyncIterator]: async function* () {
+          async *[Symbol.asyncIterator] () {
             for (const event of events) {
               yield event;
             }
@@ -309,6 +309,6 @@ export function createMockAnthropicClient(behavior = {}) {
       })
     }
   };
-  
+
   return client;
 }

@@ -259,9 +259,9 @@ export async function loadFixture(fixturePath) {
  */
 export function createTestMatrix(options) {
   const { providers = ['openai', 'google', 'xai'], models: modelList = models.fast, scenarios = ['success', 'error'] } = options;
-  
+
   const matrix = [];
-  
+
   for (const provider of providers) {
     for (const model of modelList) {
       for (const scenario of scenarios) {
@@ -274,7 +274,7 @@ export function createTestMatrix(options) {
       }
     }
   }
-  
+
   return matrix;
 }
 

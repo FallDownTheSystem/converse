@@ -85,46 +85,46 @@ const MISTRAL_MODELS = {
 export function createMockMistralProvider(overrides = {}) {
   return createMockProvider({
     name: 'mistral',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => MISTRAL_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       // Check direct match
       if (MISTRAL_MODELS[modelName]) {
         return MISTRAL_MODELS[modelName];
       }
-      
+
       // Check aliases
       for (const model of Object.values(MISTRAL_MODELS)) {
         if (model.aliases && model.aliases.includes(modelName)) {
           return model;
         }
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = MISTRAL_MODELS[options.model] || MISTRAL_MODELS['mistral-large-latest'];
-      
+
       // Simulate Mistral-specific validations
       if (!options.config?.apiKeys?.mistral) {
         throw new ProviderError('Mistral API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate image handling for vision models
-      const hasImages = messages.some(msg => 
-        Array.isArray(msg.content) && 
+      const hasImages = messages.some(msg =>
+        Array.isArray(msg.content) &&
         msg.content.some(item => item.type === 'image')
       );
-      
+
       if (hasImages && !modelConfig.supportsImages) {
         throw new ProviderError(
           `Model ${options.model} does not support images`,
           ErrorCodes.INVALID_REQUEST
         );
       }
-      
+
       // Simulate code generation for Codestral
       if (modelConfig.modelName.includes('codestral')) {
         return new MockResponseBuilder()
@@ -133,7 +133,7 @@ export function createMockMistralProvider(overrides = {}) {
           .withProvider('mistral')
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock Mistral response')
@@ -141,7 +141,7 @@ export function createMockMistralProvider(overrides = {}) {
         .withProvider('mistral')
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -177,7 +177,7 @@ export function createMockMistralResponse(content = 'Test response', options = {
 // Mock streaming response generator
 export function createMockMistralStreamResponse(chunks = ['Hello', ' world', '!'], options = {}) {
   const streamId = `mistral-${Date.now()}`;
-  
+
   return chunks.map((chunk, index) => ({
     id: streamId,
     object: 'chat.completion.chunk',
@@ -224,7 +224,7 @@ export function createMockMistralError(type = 'invalid_api_key', message = null)
       code: 'context_length_exceeded'
     }
   };
-  
+
   return {
     error: errors[type] || errors.invalid_api_key
   };
@@ -243,22 +243,22 @@ export function createMockMistralClient(behavior = {}) {
           };
           throw error;
         }
-        
+
         if (params.stream) {
           const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
           const streamData = createMockMistralStreamResponse(chunks, {
             model: params.model
           });
-          
+
           return {
-            [Symbol.asyncIterator]: async function* () {
+            async *[Symbol.asyncIterator] () {
               for (const chunk of streamData) {
                 yield chunk;
               }
             }
           };
         }
-        
+
         return createMockMistralResponse(
           behavior.content || 'Mock response',
           behavior.responseOptions || {}

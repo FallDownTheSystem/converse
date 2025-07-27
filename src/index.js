@@ -7,7 +7,7 @@
  * with chat and consensus tools using modern Node.js practices.
  */
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig, validateRuntimeConfig, getMcpClientConfig, getHttpTransportConfig } from './config.js';
@@ -227,7 +227,7 @@ export { main };
 
 // Check if this module is the main entry point
 // This works better across platforms and Node.js versions
-const isMainModule = import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` ||
+const isMainModule = import.meta.url === pathToFileURL(process.argv[1]).href ||
                      process.argv[1] === fileURLToPath(import.meta.url);
 
 if (isMainModule) {

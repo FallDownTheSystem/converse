@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasXAI,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('XAI Image Processing Tests', () => {
@@ -18,7 +18,7 @@ describe('XAI Image Processing Tests', () => {
         const skipMessage = getSkipMessage(['XAI']);
         logger.warn(`[xai-image-test] ${skipMessage}`);
       } else {
-        logger.info(`[xai-image-test] Running XAI image tests`);
+        logger.info('[xai-image-test] Running XAI image tests');
       }
     } catch (error) {
       logger.error('[xai-image-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('XAI Image Processing Tests', () => {
   });
 
   describe('Grok-4 Image Processing', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should process image with absolute path', async () => {
@@ -61,7 +61,7 @@ describe('XAI Image Processing Tests', () => {
       });
     }, 60000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should process base64 encoded image', async () => {
@@ -86,13 +86,13 @@ describe('XAI Image Processing Tests', () => {
 
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
-        
+
         // Should recognize it's red or mention color
         expect(responseText).toMatch(/(red|color|pixel)/);
       });
     }, 60000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should handle multiple images', async () => {
@@ -113,7 +113,7 @@ describe('XAI Image Processing Tests', () => {
 
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
-        
+
         // Should mention two images or multiple images
         expect(responseText).toMatch(/(two|2|multiple)/);
       });
@@ -121,14 +121,14 @@ describe('XAI Image Processing Tests', () => {
   });
 
   describe('Image Processing with Text Conversations', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should maintain conversation context with images', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // First message with image
         const redPixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-        
+
         const firstResult = await client.callTool({
           name: 'chat',
           arguments: {

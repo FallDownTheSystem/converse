@@ -27,7 +27,7 @@ export const testUtils = {
   },
   helpers,
   fixtures,
-  
+
   /**
    * Quick access to commonly used utilities
    */

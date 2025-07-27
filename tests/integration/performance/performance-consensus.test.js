@@ -67,7 +67,7 @@ describe('Consensus Performance Tests', () => {
       const testPrompt = 'What is 2+2? Answer with just the number.';
 
       // Test parallel execution (consensus tool)
-      console.log(`DEBUG: Starting parallel consensus with models:`, models);
+      console.log('DEBUG: Starting parallel consensus with models:', models);
       const parallelStartTime = Date.now();
       const parallelResult = await router.callTool({
         name: 'consensus',
@@ -83,14 +83,14 @@ describe('Consensus Performance Tests', () => {
 
       expect(parallelResult.isError).toBe(false);
       const consensusData = JSON.parse(parallelResult.content[0].text);
-      console.log(`DEBUG: Consensus data:`, {
+      console.log('DEBUG: Consensus data:', {
         models_consulted: consensusData.models_consulted,
         successful_initial_responses: consensusData.successful_initial_responses,
         failed_responses: consensusData.failed_responses
       });
 
       // Test sequential execution (individual chat calls)
-      console.log(`DEBUG: Starting sequential chat calls`);
+      console.log('DEBUG: Starting sequential chat calls');
       const sequentialStartTime = Date.now();
       const sequentialResults = [];
       const callTimings = [];
@@ -108,14 +108,14 @@ describe('Consensus Performance Tests', () => {
         });
         const callEnd = Date.now();
         const callDuration = callEnd - callStart;
-        
+
         callTimings.push({
           callIndex: i + 1,
           startTime: callStart,
           endTime: callEnd,
           duration: callDuration
         });
-        
+
         console.log(`DEBUG: Sequential call ${i+1} took ${callDuration}ms`);
         sequentialResults.push(result);
       }
@@ -126,7 +126,7 @@ describe('Consensus Performance Tests', () => {
       for (let i = 1; i < callTimings.length; i++) {
         const prevCall = callTimings[i - 1];
         const currentCall = callTimings[i];
-        
+
         expect(currentCall.startTime).toBeGreaterThanOrEqual(prevCall.endTime);
         console.log(`DEBUG: Verified call ${currentCall.callIndex} started at ${currentCall.startTime}ms after call ${prevCall.callIndex} ended at ${prevCall.endTime}ms`);
       }

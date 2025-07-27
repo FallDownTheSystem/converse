@@ -88,7 +88,7 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Load expected values from package.json
       const packagePath = join(__dirname, '../../../package.json');
       const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-      
+
       expect(config.mcp.name).toBe(packageJson.name);
       expect(config.mcp.version).toBe(packageJson.version);
     });
@@ -108,7 +108,7 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Load expected values from package.json
       const packagePath = join(__dirname, '../../../package.json');
       const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-      
+
       expect(mcpConfig.name).toBe(packageJson.name);
       expect(mcpConfig.version).toBe(packageJson.version);
     });

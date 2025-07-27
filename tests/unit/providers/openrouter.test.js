@@ -134,7 +134,7 @@ describe('OpenRouter Provider', () => {
 
     it('should get config for openrouter/auto model', () => {
       const config = openrouterProvider.getModelConfig('openrouter/auto');
-      
+
       expect(config).toBeDefined();
       expect(config.modelName).toBe('openrouter/auto');
       expect(config.friendlyName).toBe('OpenRouter Auto (via NotDiamond)');
@@ -144,7 +144,7 @@ describe('OpenRouter Provider', () => {
 
     it('should support openrouter auto aliases', () => {
       const aliases = ['openrouter auto', 'auto router', 'auto-router', 'openrouter-auto'];
-      
+
       aliases.forEach(alias => {
         const config = openrouterProvider.getModelConfig(alias);
         expect(config).toBeDefined();
@@ -160,12 +160,12 @@ describe('OpenRouter Provider', () => {
           openrouterdynamicmodels: true
         }
       };
-      
+
       // Store config for getModelConfig to use
       openrouterProvider._lastConfig = testConfig;
-      
+
       const config = openrouterProvider.getModelConfig('anthropic/claude-3-opus');
-      
+
       expect(config).toBeDefined();
       expect(config.modelName).toBe('anthropic/claude-3-opus');
       expect(config.isDynamic).toBe(true);
@@ -181,13 +181,13 @@ describe('OpenRouter Provider', () => {
           openrouterdynamicmodels: false
         }
       };
-      
+
       // Store config for getModelConfig to use
       openrouterProvider._lastConfig = testConfig;
-      
+
       // Use a different model that wasn't cached in previous test
       const config = openrouterProvider.getModelConfig('meta-llama/llama-3-70b');
-      
+
       expect(config).toBeNull();
     });
 
@@ -205,7 +205,7 @@ describe('OpenRouter Provider', () => {
       });
 
       const messages = [{ role: 'user', content: 'Hello' }];
-      
+
       mockCreate.mockResolvedValueOnce({
         id: 'chatcmpl-dynamic',
         object: 'chat.completion',
@@ -248,7 +248,7 @@ describe('OpenRouter Provider', () => {
       fetchModelEndpointsWithCache.mockResolvedValueOnce(null);
 
       const messages = [{ role: 'user', content: 'Hello' }];
-      
+
       mockCreate.mockResolvedValueOnce({
         id: 'chatcmpl-notfound',
         object: 'chat.completion',

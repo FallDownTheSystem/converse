@@ -313,7 +313,7 @@ function mapModelToProvider(model, providers) {
   }
 
   // For non-slash models, use keyword matching as before
-  
+
   // OpenAI models
   if (modelLower.includes('gpt') || modelLower.includes('o1') ||
       modelLower.includes('o3') || modelLower.includes('o4')) {

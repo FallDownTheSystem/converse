@@ -12,6 +12,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { getNodeCommand, getSpawnOptions } from '../../src/utils/pathUtils.js';
 
 class HTTPTestSuite {
   constructor() {
@@ -38,7 +39,7 @@ class HTTPTestSuite {
 
       try {
         // Start server process with HTTP transport
-        this.serverProcess = spawn('node', ['src/index.js'], {
+        this.serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
           env: {
             ...process.env,
             NODE_ENV: 'test',
@@ -47,7 +48,7 @@ class HTTPTestSuite {
             MCP_TRANSPORT: 'http'
           },
           stdio: ['pipe', 'pipe', 'pipe']
-        });
+        }));
 
         let serverReady = false;
 

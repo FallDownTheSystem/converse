@@ -13,11 +13,15 @@ export default [
         setTimeout: "readonly",
         clearTimeout: "readonly",
         setInterval: "readonly",
-        clearInterval: "readonly"
+        clearInterval: "readonly",
+        fetch: "readonly",
+        URL: "readonly",
+        module: "readonly",
+        require: "readonly"
       }
     },
     rules: {
-      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
       "no-undef": "error",
       "prefer-const": "error",
       "no-var": "error",

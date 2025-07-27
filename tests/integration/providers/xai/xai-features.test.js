@@ -2,12 +2,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasXAI,
   hasOpenAI,
   hasGoogle,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('XAI Feature-Specific Tests', () => {
@@ -20,7 +20,7 @@ describe('XAI Feature-Specific Tests', () => {
         const skipMessage = getSkipMessage(['XAI']);
         logger.warn(`[xai-features-test] ${skipMessage}`);
       } else {
-        logger.info(`[xai-features-test] Running XAI feature tests`);
+        logger.info('[xai-features-test] Running XAI feature tests');
       }
     } catch (error) {
       logger.error('[xai-features-test] Setup failed:', error);
@@ -29,7 +29,7 @@ describe('XAI Feature-Specific Tests', () => {
   });
 
   describe('Web Search Features', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should support web search when enabled', async () => {
@@ -54,7 +54,7 @@ describe('XAI Feature-Specific Tests', () => {
   });
 
   describe('Multi-Model Consensus with XAI', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should participate in consensus gathering', async () => {
@@ -87,7 +87,7 @@ describe('XAI Feature-Specific Tests', () => {
   });
 
   describe('Multi-Provider Consensus', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI', 'OPENAI', 'GOOGLE']
     })('should work in multi-provider consensus', async () => {
       await withHTTPTestServer(async (client, manager) => {

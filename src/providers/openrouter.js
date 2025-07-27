@@ -246,14 +246,14 @@ openrouterProvider.getModelConfigAsync = async function(modelName) {
 
   // If dynamic models are enabled and model follows format, fetch from API
   const config = this._lastConfig || {};
-  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels || 
+  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels ||
                                config?.providers?.openrouterDynamicModels;
   if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
     debugLog(`[OpenRouter] Fetching dynamic model config for: ${modelName}`);
-    
+
     // Fetch from API with caching
     const apiConfig = await fetchModelEndpointsWithCache(modelName);
-    
+
     if (apiConfig) {
       // Store in dynamic models cache
       dynamicModels.set(modelName, apiConfig);
@@ -285,9 +285,9 @@ openrouterProvider.getModelConfig = function(modelName) {
 
   // Check if dynamic models are enabled
   const config = this._lastConfig || {};
-  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels || 
+  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels ||
                                config?.providers?.openrouterDynamicModels;
-  
+
   // Only allow dynamic models if explicitly enabled AND model has slash format
   if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
     // Note: This is a fallback for synchronous calls
@@ -321,10 +321,10 @@ openrouterProvider.invoke = async function(messages, options = {}) {
   const modelName = options.model;
   if (modelName) {
     const existingConfig = this.getModelConfig(modelName);
-    
+
     // If model not found and has slash format, check if dynamic models are enabled
     if (!existingConfig && isOpenRouterModelFormat(modelName)) {
-      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels || 
+      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels ||
                                   options.config?.providers?.openrouterDynamicModels;
       if (!dynamicModelsEnabled) {
         throw new OpenRouterProviderError(
@@ -333,10 +333,10 @@ openrouterProvider.invoke = async function(messages, options = {}) {
         );
       }
     }
-    
+
     // If the model needs API update, fetch it now
     if (existingConfig?.needsApiUpdate) {
-      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels || 
+      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels ||
                                   options.config?.providers?.openrouterDynamicModels;
       if (dynamicModelsEnabled) {
         debugLog(`[OpenRouter] Fetching API config for model: ${modelName}`);

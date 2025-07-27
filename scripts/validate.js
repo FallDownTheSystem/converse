@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { createLogger } from '../src/utils/logger.js';
+import { getTimeoutCommand } from '../src/utils/pathUtils.js';
 
 const logger = createLogger('validate');
 
@@ -184,7 +185,8 @@ function validateServerStartup() {
   
   try {
     // Quick server startup test (with timeout)
-    execCommand('timeout 5s npm start || true', 'Server startup test', true);
+    const timeoutCmd = getTimeoutCommand(5, 'npm start');
+    execCommand(timeoutCmd, 'Server startup test', true);
     logger.info('✓ Server startup validation completed');
   } catch (error) {
     logger.warn('⚠️ Server startup test failed (may be due to missing API keys)');

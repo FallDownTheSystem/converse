@@ -3,13 +3,13 @@ import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
 import path from 'path';
-import { 
-  testWithApiKeys, 
-  hasOpenAI, 
-  hasXAI, 
+import {
+  testWithApiKeys,
+  hasOpenAI,
+  hasXAI,
   hasGoogle,
   hasAnyMainProvider,
-  getSkipMessage 
+  getSkipMessage
 } from '../../utils/conditionalTest.js';
 
 describe('Advanced Multi-Provider Integration Tests', () => {
@@ -18,7 +18,7 @@ describe('Advanced Multi-Provider Integration Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-      
+
       const availableProviders = [];
       if (hasOpenAI) availableProviders.push('OpenAI');
       if (hasXAI) availableProviders.push('XAI');
@@ -36,9 +36,9 @@ describe('Advanced Multi-Provider Integration Tests', () => {
   });
 
   describe('Consensus with File Context', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     })('should handle consensus with files', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // Create models list based on available API keys
@@ -89,8 +89,8 @@ describe('Advanced Multi-Provider Integration Tests', () => {
   });
 
   describe('Complex Conversation Flow', () => {
-    testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+    testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
     })('should handle complex multi-turn conversation', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // Start conversation
@@ -140,8 +140,8 @@ describe('Advanced Multi-Provider Integration Tests', () => {
   });
 
   describe('Provider Output Consistency', () => {
-    testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+    testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
     })('should produce consistent outputs across providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const testPrompt = 'What is the capital of France? Answer with just the city name.';
@@ -204,8 +204,8 @@ describe('Advanced Multi-Provider Integration Tests', () => {
   });
 
   describe('Concurrent Provider Requests', () => {
-    testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+    testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
     })('should handle concurrent requests across providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const concurrentRequests = 3;

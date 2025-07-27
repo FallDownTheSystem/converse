@@ -5,6 +5,7 @@
  */
 
 import { spawn } from 'child_process';
+import { getNodeCommand, getSpawnOptions } from '../../src/utils/pathUtils.js';
 
 function log(message, level = 'INFO') {
   const timestamp = new Date().toISOString();
@@ -22,7 +23,7 @@ async function testServerStartup() {
       reject(new Error('Server startup timeout after 15 seconds'));
     }, 15000);
 
-    const serverProcess = spawn('node', ['src/index.js'], {
+    const serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
       env: {
         ...process.env,
         NODE_ENV: 'test',
@@ -31,7 +32,7 @@ async function testServerStartup() {
         MCP_TRANSPORT: 'http'
       },
       stdio: ['pipe', 'pipe', 'pipe']
-    });
+    }));
 
     let startupSuccess = false;
 
@@ -78,7 +79,7 @@ async function testBasicFunctionality() {
   log('Testing basic HTTP functionality...');
 
   // Start server
-  const serverProcess = spawn('node', ['src/index.js'], {
+  const serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
     env: {
       ...process.env,
       NODE_ENV: 'test',
@@ -87,7 +88,7 @@ async function testBasicFunctionality() {
       MCP_TRANSPORT: 'http'
     },
     stdio: ['pipe', 'pipe', 'pipe']
-  });
+  }));
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {

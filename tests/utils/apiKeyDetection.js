@@ -13,11 +13,11 @@
 function isValidApiKey(keyName, prefix, minLength = 20) {
   const key = process.env[keyName];
   if (!key) return false;
-  
+
   if (prefix) {
     return key.startsWith(prefix) && key.length >= minLength;
   }
-  
+
   return key.length >= minLength;
 }
 
@@ -82,7 +82,7 @@ function hasApiKey(provider) {
     console.warn(`Warning: Unknown provider '${provider}' - treating as unavailable`);
     return false;
   }
-  
+
   return isValidApiKey(config.envVar, config.prefix, config.minLength);
 }
 
@@ -112,11 +112,11 @@ function hasAllApiKeys(providers) {
  */
 function getSkipMessage(requiredProviders, requireAll = false) {
   const missingProviders = requiredProviders.filter(provider => !hasApiKey(provider));
-  
+
   if (missingProviders.length === 0) {
     return ''; // No skip needed
   }
-  
+
   // Handle both known and unknown providers gracefully
   const providerNames = missingProviders.map(p => {
     const config = API_KEY_CONFIGS[p];
@@ -126,7 +126,7 @@ function getSkipMessage(requiredProviders, requireAll = false) {
     const config = API_KEY_CONFIGS[p];
     return config ? config.envVar : `${p}_API_KEY`; // Guess env var name if unknown
   });
-  
+
   if (requireAll) {
     return `Skipping test: Missing API keys for ${providerNames.join(', ')}. Set ${envVars.join(', ')} to run this test.`;
   } else {
@@ -161,17 +161,17 @@ function skipIfWithMessage(testFn, condition, message) {
  * @returns {Function} - Test function that handles skipping
  */
 function testWithApiKeys({ requiredProviders, requireAll = false }) {
-  const shouldSkip = requireAll 
+  const shouldSkip = requireAll
     ? !hasAllApiKeys(requiredProviders)
     : !hasAnyApiKey(requiredProviders);
-    
+
   const skipMessage = getSkipMessage(requiredProviders, requireAll);
-  
+
   // Return a function that will be called with the test description and function
   return function(description, testFn, timeout) {
     // Import it from vitest dynamically
     const { it } = require('vitest');
-    
+
     if (shouldSkip) {
       // Log the skip message
       if (skipMessage) {
@@ -205,7 +205,7 @@ module.exports = {
   getSkipMessage,
   skipIfWithMessage,
   testWithApiKeys,
-  
+
   // Individual provider checks
   hasOpenAI,
   hasXAI,
@@ -214,11 +214,11 @@ module.exports = {
   hasMistral,
   hasDeepSeek,
   hasOpenRouter,
-  
+
   // Common combinations
   hasAnyMainProvider,
   hasAllMainProviders,
-  
+
   // Constants
   API_KEY_CONFIGS
 };

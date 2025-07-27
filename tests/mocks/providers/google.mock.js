@@ -95,33 +95,33 @@ export const MockGoogleGenerativeAI = vi.fn().mockImplementation(() => ({
 export function createMockGoogleProvider(overrides = {}) {
   return createMockProvider({
     name: 'google',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => GOOGLE_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       // Check direct match
       if (GOOGLE_MODELS[modelName]) {
         return GOOGLE_MODELS[modelName];
       }
-      
+
       // Check aliases
       for (const model of Object.values(GOOGLE_MODELS)) {
         if (model.aliases && model.aliases.includes(modelName)) {
           return model;
         }
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = GOOGLE_MODELS[options.model] || GOOGLE_MODELS['gemini-1.5-flash'];
-      
+
       // Simulate Google-specific validations
       if (!options.config?.apiKeys?.google) {
         throw new ProviderError('Google API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate thinking models behavior
       if (modelConfig.supportsThinking && modelConfig.modelName.includes('thinking')) {
         return new MockResponseBuilder()
@@ -149,7 +149,7 @@ export function createMockGoogleProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock Google response')
@@ -157,7 +157,7 @@ export function createMockGoogleProvider(overrides = {}) {
         .withProvider('google')
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -231,7 +231,7 @@ export function createMockGoogleError(type = 'invalid_api_key', message = null) 
       }
     }
   };
-  
+
   return errors[type] || errors.invalid_api_key;
 }
 
@@ -242,25 +242,25 @@ export function createMockGoogleClient(behavior = {}) {
       if (behavior.throwError) {
         throw createMockGoogleError(behavior.errorType);
       }
-      
+
       return createMockGoogleResponse(
         behavior.content || 'Mock response',
         behavior.responseOptions || {}
       );
     }),
-    
+
     generateContentStream: vi.fn().mockImplementation(async function* (params) {
       if (behavior.throwError) {
         throw createMockGoogleError(behavior.errorType);
       }
-      
+
       const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
       for (const chunk of createMockGoogleStreamResponse(chunks)) {
         yield chunk;
       }
     })
   };
-  
+
   return {
     getGenerativeModel: vi.fn().mockReturnValue(model)
   };

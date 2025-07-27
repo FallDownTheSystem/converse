@@ -2,13 +2,13 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
-  hasOpenAI, 
-  hasXAI, 
+import {
+  testWithApiKeys,
+  hasOpenAI,
+  hasXAI,
   hasGoogle,
   hasAnyMainProvider,
-  getSkipMessage 
+  getSkipMessage
 } from '../../utils/conditionalTest.js';
 
 describe('Multi-Provider Consensus Integration Tests', () => {
@@ -23,7 +23,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-      
+
       const availableProviders = [];
       if (hasOpenAI) availableProviders.push('OpenAI');
       if (hasXAI) availableProviders.push('XAI');
@@ -45,8 +45,8 @@ describe('Multi-Provider Consensus Integration Tests', () => {
   });
 
   describe('Main Provider Consensus', () => {
-    testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+    testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
     })('should gather consensus from all main providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const models = [];
@@ -78,7 +78,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
       });
     }, 120000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI', 'GOOGLE'],
       requireAll: true
     })('should test cross-feedback between OpenAI and Google', async () => {
@@ -114,11 +114,11 @@ describe('Multi-Provider Consensus Integration Tests', () => {
     it.skipIf(!hasAnyMainProvider || (!hasAnthropic() && !hasDeepSeek()))('should combine main and new providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const models = [];
-        
+
         // Add main providers
         if (hasOpenAI) models.push({ model: 'gpt-4o-mini' });
         if (hasGoogle) models.push({ model: 'flash' });
-        
+
         // Add new providers
         if (hasAnthropic()) models.push({ model: 'haiku' });
         if (hasDeepSeek()) models.push({ model: 'deepseek-chat' });
@@ -159,7 +159,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
     it('should handle consensus with all available providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const models = [];
-        
+
         // Add all available providers
         if (hasOpenAI) models.push({ model: 'gpt-4o-mini' });
         if (hasXAI) models.push({ model: 'grok' });
@@ -188,7 +188,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
 
         const consensusResult = JSON.parse(result.content[0].text);
         expect(consensusResult.models_consulted).toBe(models.length);
-        
+
         // Count successful responses
         const successCount = consensusResult.phases.initial.filter(r => r.status === 'success').length;
         expect(successCount).toBeGreaterThan(0);
@@ -199,8 +199,8 @@ describe('Multi-Provider Consensus Integration Tests', () => {
   });
 
   describe('Error Recovery in Consensus', () => {
-    testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+    testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
     })('should handle partial provider failures gracefully', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const models = [
@@ -222,7 +222,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
         expect(result.isError).toBeFalsy();
 
         const consensusResult = JSON.parse(result.content[0].text);
-        
+
         // Should still complete with partial success
         expect(consensusResult.status).toBe('consensus_complete');
         expect(consensusResult.successful_initial_responses).toBeGreaterThan(0);

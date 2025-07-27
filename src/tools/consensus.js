@@ -75,7 +75,7 @@ export async function consensusTool(args, dependencies) {
     // Validate file paths before processing
     if (files.length > 0 || images.length > 0) {
       const validation = await validateAllPaths({
-        files: files,
+        files,
         images
       });
       if (!validation.valid) {
@@ -447,7 +447,7 @@ function mapModelToProvider(model, providers) {
   }
 
   // For non-slash models, use keyword matching as before
-  
+
   // OpenAI models
   if (modelLower.includes('gpt') || modelLower.includes('o1') ||
       modelLower.includes('o3') || modelLower.includes('o4')) {

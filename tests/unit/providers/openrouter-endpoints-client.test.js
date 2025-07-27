@@ -45,7 +45,7 @@ describe('OpenRouter Endpoints API Client', () => {
       });
 
       const result = await fetchModelEndpoints('anthropic/claude-3');
-      
+
       expect(fetch).toHaveBeenCalledWith(
         'https://openrouter.ai/api/v1/models/anthropic/claude-3/endpoints',
         expect.objectContaining({
@@ -53,7 +53,7 @@ describe('OpenRouter Endpoints API Client', () => {
           headers: { 'Accept': 'application/json' }
         })
       );
-      
+
       expect(result).toBeDefined();
       expect(result.modelName).toBe('anthropic/claude-3');
     });
@@ -264,13 +264,13 @@ describe('OpenRouter Endpoints API Client', () => {
 
     it('should provide cache management methods', () => {
       const cache = createEndpointsCache();
-      
+
       expect(cache.size()).toBe(0);
-      
+
       cache.set('test-key', { test: 'value' });
       expect(cache.size()).toBe(1);
       expect(cache.get('test-key')).toEqual({ found: true, value: { test: 'value' } });
-      
+
       cache.clear();
       expect(cache.size()).toBe(0);
       expect(cache.get('test-key')).toEqual({ found: false, value: null });
@@ -278,16 +278,16 @@ describe('OpenRouter Endpoints API Client', () => {
 
     it('should expire cache entries', () => {
       const cache = createEndpointsCache();
-      
+
       // Set with immediate expiry
       cache.set('expired-key', { test: 'value' }, true);
-      
+
       // Mock time passing (more than 5 minutes for failed TTL)
       const originalNow = Date.now;
       Date.now = vi.fn(() => originalNow() + 6 * 60 * 1000);
-      
+
       expect(cache.get('expired-key')).toEqual({ found: false, value: null });
-      
+
       // Restore Date.now
       Date.now = originalNow;
     });

@@ -10,11 +10,14 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import sampleResponses from './data/sample-responses.json' assert { type: 'json' };
-import providerResponses from './data/provider-responses.json' assert { type: 'json' };
-import toolFixtures from './data/tool-fixtures.json' assert { type: 'json' };
-import errorScenarios from './data/error-scenarios.json' assert { type: 'json' };
-import edgeCases from './data/edge-cases.json' assert { type: 'json' };
+
+// Load JSON files using readFileSync for compatibility
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const sampleResponses = JSON.parse(readFileSync(join(__dirname, 'data', 'sample-responses.json'), 'utf8'));
+const providerResponses = JSON.parse(readFileSync(join(__dirname, 'data', 'provider-responses.json'), 'utf8'));
+const toolFixtures = JSON.parse(readFileSync(join(__dirname, 'data', 'tool-fixtures.json'), 'utf8'));
+const errorScenarios = JSON.parse(readFileSync(join(__dirname, 'data', 'error-scenarios.json'), 'utf8'));
+const edgeCases = JSON.parse(readFileSync(join(__dirname, 'data', 'edge-cases.json'), 'utf8'));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

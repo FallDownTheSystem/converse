@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasGoogle,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('Google Feature-Specific Tests', () => {
@@ -18,7 +18,7 @@ describe('Google Feature-Specific Tests', () => {
         const skipMessage = getSkipMessage(['GOOGLE']);
         logger.warn(`[google-features-test] ${skipMessage}`);
       } else {
-        logger.info(`[google-features-test] Running Google feature tests`);
+        logger.info('[google-features-test] Running Google feature tests');
       }
     } catch (error) {
       logger.error('[google-features-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('Google Feature-Specific Tests', () => {
   });
 
   describe('Thinking Mode Features', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should support Google thinking mode', async () => {
@@ -50,7 +50,7 @@ describe('Google Feature-Specific Tests', () => {
   });
 
   describe('Multi-Model Consensus with Google', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should participate in consensus gathering', async () => {
@@ -84,7 +84,7 @@ describe('Google Feature-Specific Tests', () => {
   });
 
   describe('Cross-Provider Consensus', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE', 'OPENAI'],
       requireAll: true
     })('should work in cross-provider consensus with OpenAI', async () => {

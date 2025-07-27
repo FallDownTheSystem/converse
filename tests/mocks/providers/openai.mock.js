@@ -125,37 +125,37 @@ export const MockOpenAI = vi.fn().mockImplementation(() => ({
 export function createMockOpenAIProvider(overrides = {}) {
   return createMockProvider({
     name: 'openai',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => OPENAI_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       // Check direct match
       if (OPENAI_MODELS[modelName]) {
         return OPENAI_MODELS[modelName];
       }
-      
+
       // Check aliases
       for (const model of Object.values(OPENAI_MODELS)) {
         if (model.aliases && model.aliases.includes(modelName)) {
           return model;
         }
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = OPENAI_MODELS[options.model] || OPENAI_MODELS['gpt-4'];
-      
+
       // Simulate OpenAI-specific validations
       if (!options.config?.apiKeys?.openai) {
         throw new ProviderError('OpenAI API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate thinking models behavior
       if (modelConfig.supportsThinking && options.reasoning_effort) {
         const thinkingTokens = options.reasoning_effort === 'high' ? 5000 : 2000;
-        
+
         return new MockResponseBuilder()
           .withContent('After careful consideration, here is my response...')
           .withModel(options.model)
@@ -180,7 +180,7 @@ export function createMockOpenAIProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Simulate web search for supported models
       if (modelConfig.supportsWebSearch && options.use_websearch) {
         return new MockResponseBuilder()
@@ -199,7 +199,7 @@ export function createMockOpenAIProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock OpenAI response')
@@ -207,7 +207,7 @@ export function createMockOpenAIProvider(overrides = {}) {
         .withProvider('openai')
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -239,14 +239,14 @@ export function createMockOpenAIResponse(content = 'Test response', options = {}
       total_tokens: (options.prompt_tokens || 10) + (options.completion_tokens || 20)
     }
   };
-  
+
   // Add reasoning tokens for thinking models
   if (options.reasoning_tokens) {
     response.usage.completion_tokens_details = {
       reasoning_tokens: options.reasoning_tokens
     };
   }
-  
+
   return response;
 }
 
@@ -305,7 +305,7 @@ export function createMockOpenAIError(type = 'rate_limit', message = null) {
       }
     }
   };
-  
+
   return errors[type] || errors.rate_limit;
 }
 
@@ -319,19 +319,19 @@ export function createMockOpenAIClient(behavior = {}) {
           if (behavior.throwError) {
             throw new Error(JSON.stringify(createMockOpenAIError(behavior.errorType)));
           }
-          
+
           // Check for streaming
           if (params.stream) {
             const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
             return {
-              [Symbol.asyncIterator]: async function* () {
+              async *[Symbol.asyncIterator] () {
                 for (const chunk of createMockOpenAIStreamResponse(chunks, params)) {
                   yield chunk;
                 }
               }
             };
           }
-          
+
           // Regular response
           return createMockOpenAIResponse(
             behavior.content || 'Mock response',
@@ -341,6 +341,6 @@ export function createMockOpenAIClient(behavior = {}) {
       }
     }
   };
-  
+
   return client;
 }

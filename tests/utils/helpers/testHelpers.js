@@ -64,14 +64,14 @@ export function createMockLogger() {
  */
 export async function waitFor(condition, timeout = 5000, interval = 100) {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     if (await condition()) {
       return true;
     }
     await new Promise(resolve => setTimeout(resolve, interval));
   }
-  
+
   throw new Error('Timeout waiting for condition');
 }
 
@@ -84,7 +84,7 @@ export function createDeferred() {
     resolve = res;
     reject = rej;
   });
-  
+
   return { promise, resolve, reject };
 }
 
@@ -93,7 +93,7 @@ export function createDeferred() {
  */
 export function mockFileSystem() {
   const files = new Map();
-  
+
   return {
     readFile: vi.fn().mockImplementation((path) => {
       if (files.has(path)) {

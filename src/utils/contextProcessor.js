@@ -143,7 +143,7 @@ export async function processFileContent(filePath, options = {}) {
 
       const content = await readFile(validatedPath, 'utf8');
       result.content = content;
-      result.lineCount = content.split('\n').length;
+      result.lineCount = content.split(/\r?\n/).length;
       result.encoding = 'utf8';
       result.charCount = content.length;
 

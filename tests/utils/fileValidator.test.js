@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { validateFilePaths, validateAllPaths } from '../../src/utils/fileValidator.js';
 import { access, constants } from 'fs/promises';
 import { resolve } from 'path';
+import { getTestAbsolutePath } from '../../src/utils/pathUtils.js';
 
 // Mock fs modules
 vi.mock('fs/promises');
@@ -44,7 +45,7 @@ describe('File Validator Unit Tests', () => {
     });
 
     it('should handle absolute paths correctly', async () => {
-      const absolutePath = 'C:\\Users\\Test\\file.txt';
+      const absolutePath = getTestAbsolutePath('Users', 'Test', 'file.txt');
       const result = await validateFilePaths([absolutePath]);
       expect(result.valid).toBe(true);
       expect(access).toHaveBeenCalledWith(absolutePath, constants.R_OK);
@@ -171,7 +172,7 @@ describe('File Validator Unit Tests', () => {
 
       const result = await validateAllPaths({
         files: ['missing.txt', '../relative/path.md'],
-        images: ['exists.jpg', 'missing.png', 'C:\\absolute\\path.gif']
+        images: ['exists.jpg', 'missing.png', getTestAbsolutePath('absolute', 'path.gif')]
       });
 
       expect(result.valid).toBe(false);

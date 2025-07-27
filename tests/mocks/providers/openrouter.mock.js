@@ -110,18 +110,18 @@ export const MockOpenRouterEndpointsClient = {
 export function createMockOpenRouterProvider(overrides = {}) {
   const provider = createMockProvider({
     name: 'openrouter',
-    
+
     // Include endpoints client
     endpointsClient: MockOpenRouterEndpointsClient,
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => OPENROUTER_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation(async (modelName) => {
       // Check static models
       if (OPENROUTER_MODELS[modelName]) {
         return OPENROUTER_MODELS[modelName];
       }
-      
+
       // Check if it's a dynamic model pattern
       if (modelName.includes('/')) {
         // Simulate fetching from endpoints API
@@ -139,26 +139,26 @@ export function createMockOpenRouterProvider(overrides = {}) {
           description: `Dynamic model ${modelName} via OpenRouter`,
           aliases: []
         };
-        
+
         // Cache the result
         MockOpenRouterEndpointsClient.setCachedModelInfo(modelName, mockDynamicModel);
-        
+
         return mockDynamicModel;
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       // Simulate OpenRouter-specific validations
       if (!options.config?.apiKeys?.openrouter) {
         throw new ProviderError('OpenRouter API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Handle dynamic models
       const modelName = options.model || 'openai/gpt-4';
       const isDynamicModel = !OPENROUTER_MODELS[modelName] && modelName.includes('/');
-      
+
       if (isDynamicModel) {
         // Simulate dynamic model invocation
         return new MockResponseBuilder()
@@ -176,7 +176,7 @@ export function createMockOpenRouterProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock OpenRouter response')
@@ -184,10 +184,10 @@ export function createMockOpenRouterProvider(overrides = {}) {
         .withProvider('openrouter')
         .build();
     }),
-    
+
     ...overrides
   });
-  
+
   // Add method to simulate endpoints API behavior
   provider.refreshModelList = vi.fn().mockImplementation(async () => {
     const dynamicModels = {};
@@ -209,7 +209,7 @@ export function createMockOpenRouterProvider(overrides = {}) {
     }
     return dynamicModels;
   });
-  
+
   return provider;
 }
 
@@ -288,7 +288,7 @@ export function createMockOpenRouterError(type = 'invalid_api_key', message = nu
       }
     }
   };
-  
+
   return errors[type] || errors.invalid_api_key;
 }
 
@@ -306,18 +306,18 @@ export function createMockOpenRouterClient(behavior = {}) {
             };
             throw error;
           }
-          
+
           if (params.stream) {
             const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
             return {
-              [Symbol.asyncIterator]: async function* () {
+              async *[Symbol.asyncIterator] () {
                 for (const chunk of createMockOpenRouterStreamResponse(chunks, params)) {
                   yield chunk;
                 }
               }
             };
           }
-          
+
           return createMockOpenRouterResponse(
             behavior.content || 'Mock response',
             behavior.responseOptions || {}

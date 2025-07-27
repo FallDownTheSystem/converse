@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasXAI,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('XAI API Integration Tests', () => {
@@ -18,7 +18,7 @@ describe('XAI API Integration Tests', () => {
         const skipMessage = getSkipMessage(['XAI']);
         logger.warn(`[xai-api-test] ${skipMessage}`);
       } else {
-        logger.info(`[xai-api-test] Running XAI API tests`);
+        logger.info('[xai-api-test] Running XAI API tests');
       }
     } catch (error) {
       logger.error('[xai-api-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('XAI API Integration Tests', () => {
   });
 
   describe('Basic Chat Functionality', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should work with Grok via HTTP', async () => {
@@ -48,7 +48,7 @@ describe('XAI API Integration Tests', () => {
       });
     }, 60000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should maintain conversation continuity', async () => {
@@ -87,7 +87,7 @@ describe('XAI API Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should handle invalid model names gracefully', async () => {
@@ -107,7 +107,7 @@ describe('XAI API Integration Tests', () => {
   });
 
   describe('Performance', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should complete simple requests within reasonable time', async () => {

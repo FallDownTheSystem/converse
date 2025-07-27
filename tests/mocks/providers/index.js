@@ -104,18 +104,18 @@ export function createMockProviderRegistry(providers = {}) {
     mistral: mockMistralProvider,
     deepseek: mockDeepSeekProvider
   };
-  
+
   return {
     providers: { ...defaultProviders, ...providers },
-    
+
     get(name) {
       return this.providers[name] || null;
     },
-    
+
     register(name, provider) {
       this.providers[name] = provider;
     },
-    
+
     getAvailable(config) {
       return Object.entries(this.providers)
         .filter(([_, provider]) => provider.isAvailable(config))
@@ -124,7 +124,7 @@ export function createMockProviderRegistry(providers = {}) {
           return acc;
         }, {});
     },
-    
+
     reset() {
       resetAllMocks(...Object.values(this.providers));
     }

@@ -1,6 +1,6 @@
 /**
  * OpenRouter Endpoints API Client
- * 
+ *
  * Handles fetching model capabilities from OpenRouter's endpoints API.
  * Provides caching and error handling for dynamic model discovery.
  */
@@ -16,17 +16,17 @@ function parseModelId(modelId) {
   if (!modelId || typeof modelId !== 'string') {
     return null;
   }
-  
+
   const parts = modelId.split('/');
   if (parts.length !== 2) {
     return null;
   }
-  
+
   const [author, slug] = parts;
   if (!author || !slug) {
     return null;
   }
-  
+
   return { author, slug };
 }
 
@@ -38,21 +38,21 @@ function parseModelId(modelId) {
 function convertEndpointToModelConfig(endpointData) {
   const data = endpointData.data;
   const modelId = data.id;
-  
+
   // Find the best endpoint (prefer primary providers)
   const preferredProviders = ['Anthropic', 'OpenAI', 'Google', 'XAI'];
   let selectedEndpoint = data.endpoints[0]; // Default to first
-  
+
   for (const endpoint of data.endpoints) {
     if (preferredProviders.includes(endpoint.provider_name)) {
       selectedEndpoint = endpoint;
       break;
     }
   }
-  
+
   // Extract supported parameters
   const supportedParams = selectedEndpoint.supported_parameters || [];
-  
+
   return {
     modelName: modelId,
     friendlyName: data.name || `${modelId} (via OpenRouter)`,
@@ -89,42 +89,42 @@ export async function fetchModelEndpoints(modelId) {
     debugLog(`[OpenRouter Endpoints] Invalid model ID format: ${modelId}`);
     return null;
   }
-  
+
   const { author, slug } = parsed;
   const url = `https://openrouter.ai/api/v1/models/${author}/${slug}/endpoints`;
-  
+
   try {
     debugLog(`[OpenRouter Endpoints] Fetching endpoints for ${modelId}`);
-    
-    const response = await fetch(url, {
+
+    const response = await globalThis.fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
       }
     });
-    
+
     if (response.status === 404) {
       debugLog(`[OpenRouter Endpoints] Model not found: ${modelId}`);
       return null;
     }
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
-    
+
     // Validate response structure
     if (!data?.data?.id || !data?.data?.endpoints?.length) {
       debugLog(`[OpenRouter Endpoints] Invalid response structure for ${modelId}`);
       return null;
     }
-    
+
     const modelConfig = convertEndpointToModelConfig(data);
     debugLog(`[OpenRouter Endpoints] Successfully fetched config for ${modelId}`);
-    
+
     return modelConfig;
-    
+
   } catch (error) {
     debugError(`[OpenRouter Endpoints] Error fetching ${modelId}:`, error);
     return null;
@@ -138,7 +138,7 @@ export function createEndpointsCache() {
   const cache = new Map();
   const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 24 hours
   const FAILED_TTL = 5 * 60 * 1000; // 5 minutes for failed requests
-  
+
   return {
     /**
      * Get a cached value
@@ -150,15 +150,15 @@ export function createEndpointsCache() {
       if (!entry) {
         return { found: false, value: null };
       }
-      
+
       if (Date.now() > entry.expiry) {
         cache.delete(key);
         return { found: false, value: null };
       }
-      
+
       return { found: true, value: entry.value };
     },
-    
+
     /**
      * Set a cached value
      * @param {string} key - Cache key
@@ -172,14 +172,14 @@ export function createEndpointsCache() {
         expiry: Date.now() + ttl
       });
     },
-    
+
     /**
      * Clear the entire cache
      */
     clear() {
       cache.clear();
     },
-    
+
     /**
      * Get cache size
      * @returns {number} Number of cached entries
@@ -205,12 +205,12 @@ export async function fetchModelEndpointsWithCache(modelId) {
     debugLog(`[OpenRouter Endpoints] Using cached config for ${modelId}`);
     return cached.value;
   }
-  
+
   // Fetch from API
   const config = await fetchModelEndpoints(modelId);
-  
+
   // Cache the result (including null for not found)
   endpointsCache.set(modelId, config, config === null);
-  
+
   return config;
 }

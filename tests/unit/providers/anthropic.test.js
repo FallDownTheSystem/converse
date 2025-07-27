@@ -285,7 +285,7 @@ describe('Anthropic Provider', () => {
         // Verify max_tokens is set correctly for Claude 4 models
         expect(callArgs.max_tokens).toBe(32000);
       }
-      
+
       // Test 'max' effort - should not enable thinking since budget (32000) is not < max_tokens (32000)
       mockCreate.mockClear();
       await anthropicProvider.invoke(messages, {
@@ -293,7 +293,7 @@ describe('Anthropic Provider', () => {
         reasoning_effort: 'max',
         config: mockConfig
       });
-      
+
       const maxEffortCallArgs = mockCreate.mock.calls[0][0];
       expect(maxEffortCallArgs.thinking).toBeUndefined();
       expect(maxEffortCallArgs.max_tokens).toBe(32000);
@@ -301,13 +301,13 @@ describe('Anthropic Provider', () => {
 
     it('should handle claude-sonnet-4 with thinking enabled', async () => {
       const messages = [{ role: 'user', content: 'Test sonnet-4' }];
-      
+
       await anthropicProvider.invoke(messages, {
         model: 'claude-sonnet-4',
         reasoning_effort: 'medium',
         config: mockConfig
       });
-      
+
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.model).toBe('claude-sonnet-4-20250514');
       expect(callArgs.max_tokens).toBe(64000); // Set for Claude 4 models

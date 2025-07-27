@@ -263,7 +263,7 @@ export async function loadConfig() {
         errors.push(error.message);
       }
     }
-    
+
     // Load name and version from package.json
     try {
       const packagePath = join(dirname(fileURLToPath(import.meta.url)), '../package.json');

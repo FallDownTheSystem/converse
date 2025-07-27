@@ -35,7 +35,7 @@ export function createMockToolWithError(error) {
 export function createMockToolWithValidation(validator) {
   const tool = createMockTool();
   const originalHandler = tool.handler;
-  
+
   tool.handler = vi.fn().mockImplementation(async (args) => {
     const validation = validator(args);
     if (!validation.valid) {
@@ -43,6 +43,6 @@ export function createMockToolWithValidation(validator) {
     }
     return originalHandler(args);
   });
-  
+
   return tool;
 }

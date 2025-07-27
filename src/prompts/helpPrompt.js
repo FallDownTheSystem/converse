@@ -61,16 +61,16 @@ export function generateHelpContent() {
   const tools = getTools();
   const formatToolParameters = (inputSchema) => {
     if (!inputSchema || !inputSchema.properties) return '';
-    
-    let params = [];
+
+    const params = [];
     const { properties, required = [] } = inputSchema;
-    
+
     for (const [name, prop] of Object.entries(properties)) {
       const isRequired = required.includes(name);
       const defaultValue = prop.default !== undefined ? ` (default: ${JSON.stringify(prop.default)})` : '';
       params.push(`- **${name}** (${isRequired ? 'required' : 'optional'}, ${prop.type}): ${prop.description}${defaultValue}`);
     }
-    
+
     return params.join('\n');
   };
 

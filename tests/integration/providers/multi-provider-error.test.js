@@ -16,7 +16,7 @@ describe('Multi-Provider Error Handling Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-      
+
       const availableProviders = [];
       if (hasAnthropic()) availableProviders.push('Anthropic');
       if (hasDeepSeek()) availableProviders.push('DeepSeek');
@@ -38,28 +38,28 @@ describe('Multi-Provider Error Handling Tests', () => {
     it.skipIf(!hasAnyNewApiKey())('should handle invalid model names gracefully across all available providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const testCases = [];
-        
+
         if (hasAnthropic()) {
           testCases.push({
             provider: 'Anthropic',
             model: 'claude-nonexistent-model'
           });
         }
-        
+
         if (hasDeepSeek()) {
           testCases.push({
             provider: 'DeepSeek',
             model: 'deepseek-nonexistent'
           });
         }
-        
+
         if (hasMistral()) {
           testCases.push({
             provider: 'Mistral',
             model: 'mistral-nonexistent'
           });
         }
-        
+
         if (hasOpenRouter()) {
           testCases.push({
             provider: 'OpenRouter',
@@ -94,11 +94,11 @@ describe('Multi-Provider Error Handling Tests', () => {
     it.skipIf(!hasAnyNewApiKey() || (!hasAnthropic() && !hasDeepSeek()))('should handle rate limiting across multiple providers', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const providers = [];
-        
+
         if (hasAnthropic()) {
           providers.push({ name: 'Anthropic', model: 'haiku' });
         }
-        
+
         if (hasDeepSeek()) {
           providers.push({ name: 'DeepSeek', model: 'deepseek-chat' });
         }
@@ -110,7 +110,7 @@ describe('Multi-Provider Error Handling Tests', () => {
 
         // Make rapid requests across providers
         const allPromises = [];
-        
+
         for (const provider of providers) {
           const promises = Array(3).fill(null).map((_, i) =>
             client.callTool({

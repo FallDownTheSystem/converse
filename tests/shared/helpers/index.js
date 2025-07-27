@@ -130,14 +130,14 @@ export const async = {
    */
   async waitFor(condition, timeout = 5000, interval = 100) {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       if (await condition()) {
         return true;
       }
       await new Promise(resolve => setTimeout(resolve, interval));
     }
-    
+
     throw new Error('Timeout waiting for condition');
   },
 
@@ -150,7 +150,7 @@ export const async = {
       resolve = res;
       reject = rej;
     });
-    
+
     return { promise, resolve, reject };
   },
 
@@ -168,7 +168,7 @@ export const async = {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Operation timed out')), timeout);
     });
-    
+
     return Promise.race([fn(), timeoutPromise]);
   }
 };
@@ -182,7 +182,7 @@ export const filesystem = {
    */
   mockFileSystem() {
     const files = new Map();
-    
+
     return {
       readFile: vi.fn().mockImplementation((path) => {
         if (files.has(path)) {
@@ -213,12 +213,12 @@ export const filesystem = {
   async createTempFile(content, extension = 'txt') {
     const tempDir = path.join(__dirname, '../../temp');
     await fs.mkdir(tempDir, { recursive: true });
-    
+
     const filename = `test-${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
     const filepath = path.join(tempDir, filename);
-    
+
     await fs.writeFile(filepath, content);
-    
+
     return {
       path: filepath,
       cleanup: async () => {
@@ -241,7 +241,7 @@ export const stores = {
    */
   createMockContinuationStore() {
     const store = new Map();
-    
+
     return {
       get: vi.fn().mockImplementation((id) => store.get(id)),
       set: vi.fn().mockImplementation((id, data) => {
@@ -286,7 +286,7 @@ export const context = {
       code: 'function test() { return "hello"; }',
       markdown: '# Test\n\nThis is a test markdown file.'
     };
-    
+
     return contents[type] || contents.text;
   }
 };
@@ -314,7 +314,7 @@ export const assertions = {
     } catch (err) {
       error = err;
     }
-    
+
     expect(error).toBeDefined();
     if (errorMessage) {
       expect(error.message).toContain(errorMessage);
@@ -370,7 +370,7 @@ export const setup = {
   async beforeEachTest() {
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset modules if needed
     vi.resetModules();
   },
@@ -388,9 +388,9 @@ export const setup = {
    */
   setupTestEnvironment(env = {}) {
     const originalEnv = { ...process.env };
-    
+
     Object.assign(process.env, config.createTestEnv(env));
-    
+
     return {
       restore: () => {
         process.env = originalEnv;

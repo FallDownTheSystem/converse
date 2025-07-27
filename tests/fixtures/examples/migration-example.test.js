@@ -152,7 +152,7 @@ describe('Migration Example: Test Matrix', () => {
     google: ['gemini-2.5-pro'],
     xai: ['grok-4']
   };
-  
+
   providers.forEach(provider => {
     models[provider].forEach(model => {
       it(`should test ${provider}/${model}`, () => {
@@ -218,7 +218,7 @@ describe('Migration Example: Custom Mock Responses', () => {
 
 /**
  * Migration Checklist:
- * 
+ *
  * 1. Replace hardcoded mock data with fixture loader calls
  * 2. Use getProviderResponse() for provider-specific responses
  * 3. Use getToolFixture() for tool-specific test scenarios

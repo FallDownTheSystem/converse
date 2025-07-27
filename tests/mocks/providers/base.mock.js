@@ -176,26 +176,26 @@ export class CallTracker {
 export function createMockProvider(overrides = {}) {
   const tracker = new CallTracker();
   const behavior = new MockProviderBehavior();
-  
+
   const mockProvider = {
     // Provider metadata
     name: overrides.name || 'mock-provider',
-    
+
     // Call tracking
     tracker,
     behavior,
-    
+
     // Provider interface methods
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const call = tracker.recordCall('invoke', { messages, options });
       call.callNumber = tracker.getCallCount('invoke');
-      
+
       // Apply configured behavior
       const customResponse = await behavior.getBehaviorForCall(call.callNumber - 1);
       if (customResponse) {
         return customResponse;
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock response')
@@ -203,17 +203,17 @@ export function createMockProvider(overrides = {}) {
         .withProvider(mockProvider.name)
         .build();
     }),
-    
+
     validateConfig: vi.fn().mockImplementation((config) => {
       tracker.recordCall('validateConfig', { config });
       return config && config.apiKeys && config.apiKeys[mockProvider.name];
     }),
-    
+
     isAvailable: vi.fn().mockImplementation((config) => {
       tracker.recordCall('isAvailable', { config });
       return mockProvider.validateConfig(config);
     }),
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => {
       tracker.recordCall('getSupportedModels', {});
       return {
@@ -241,17 +241,17 @@ export function createMockProvider(overrides = {}) {
         }
       };
     }),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       tracker.recordCall('getModelConfig', { modelName });
       const models = mockProvider.getSupportedModels();
       return models[modelName] || null;
     }),
-    
+
     // Apply any overrides
     ...overrides
   };
-  
+
   return mockProvider;
 }
 
@@ -264,7 +264,7 @@ export function createMockProviderWithError(error) {
     error.code || ErrorCodes.API_ERROR,
     error.originalError
   );
-  
+
   return createMockProvider({
     invoke: vi.fn().mockRejectedValue(errorToThrow)
   });
@@ -292,7 +292,7 @@ export function createMockProviderWithStreaming(chunks = ['Hello', ' world', '!'
           }
         })();
       }
-      
+
       // Non-streaming response
       return new MockResponseBuilder()
         .withContent(chunks.join(''))
@@ -306,7 +306,7 @@ export function createMockProviderWithStreaming(chunks = ['Hello', ' world', '!'
  */
 export function createMockProviderWithRateLimit(requestsBeforeLimit = 3) {
   let requestCount = 0;
-  
+
   return createMockProvider({
     invoke: vi.fn().mockImplementation(async () => {
       requestCount++;
@@ -329,7 +329,7 @@ export function createMockProviderWithLatency(minMs = 100, maxMs = 500) {
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const latency = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
       await new Promise(resolve => setTimeout(resolve, latency));
-      
+
       return new MockResponseBuilder()
         .withResponseTime(latency)
         .build();

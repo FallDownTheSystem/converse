@@ -9,8 +9,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
-import { 
-  testWithApiKeys 
+import {
+  testWithApiKeys
 } from '../../utils/conditionalTest.js';
 import 'dotenv/config';
 

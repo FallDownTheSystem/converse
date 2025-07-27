@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { getNodeCommand } from '../../src/utils/pathUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -60,7 +61,7 @@ export class MCPServerManager {
       try {
         // Create StdioClientTransport with forced stdio mode
         this.transport = new StdioClientTransport({
-          command: 'node',
+          command: getNodeCommand(),
           args: [this.options.serverPath, '--transport', 'stdio'],
           env: {
             ...process.env,

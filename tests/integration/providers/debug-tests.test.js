@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { logger } from '../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
-  hasOpenAI, 
-  hasXAI, 
+import {
+  testWithApiKeys,
+  hasOpenAI,
+  hasXAI,
   hasGoogle,
   hasAnyMainProvider
 } from '../../utils/conditionalTest.js';
 
 describe('Debug Provider Message Format', () => {
-  testWithApiKeys({ 
-    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+  testWithApiKeys({
+    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
   })('should examine message format sent to providers', async () => {
     await withHTTPTestServer(async (client, manager) => {
       // Enable debug logging to see what's being sent
@@ -45,8 +45,8 @@ describe('Debug Provider Message Format', () => {
     });
   }, 30000);
 
-  testWithApiKeys({ 
-    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+  testWithApiKeys({
+    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
   })('should verify provider message structure for images', async () => {
     await withHTTPTestServer(async (client, manager) => {
       // Test with base64 image to ensure proper formatting
@@ -76,7 +76,7 @@ describe('Debug Provider Message Format', () => {
 
         // Each provider should either process the image or error appropriately
         expect(result).toBeDefined();
-        
+
         if (!result.isError) {
           // If successful, response should mention color
           const response = result.content[0].text.toLowerCase();
@@ -86,8 +86,8 @@ describe('Debug Provider Message Format', () => {
     });
   }, 60000);
 
-  testWithApiKeys({ 
-    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'] 
+  testWithApiKeys({
+    requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
   })('should examine consensus message format', async () => {
     await withHTTPTestServer(async (client, manager) => {
       const models = [];
@@ -117,7 +117,7 @@ describe('Debug Provider Message Format', () => {
 
         logger.info('[debug-tests] Consensus debug test completed', {
           isError: result.isError,
-          modelsConsulted: result.content?.[0]?.text ? 
+          modelsConsulted: result.content?.[0]?.text ?
             JSON.parse(result.content[0].text).models_consulted : 0
         });
 

@@ -29,7 +29,7 @@ export class FixtureLoader {
    */
   getProviderResponse(provider, model = null, scenario = 'default') {
     const key = `provider-${provider}-${model || 'default'}-${scenario}`;
-    
+
     if (this.cache.has(key)) {
       return this.cache.get(key);
     }
@@ -91,7 +91,7 @@ export class FixtureLoader {
    */
   loadFile(filename) {
     const filePath = join(this.basePath, 'files', filename);
-    
+
     if (!existsSync(filePath)) {
       throw new Error(`Fixture file not found: ${filename}`);
     }
@@ -107,11 +107,11 @@ export class FixtureLoader {
   getFileMetadata(filename) {
     const content = this.loadFile(filename);
     const filePath = join(this.basePath, 'files', filename);
-    
+
     return {
       path: filePath,
       name: filename,
-      content: content,
+      content,
       size: Buffer.byteLength(content, 'utf-8'),
       lines: content.split('\n').length,
       isEmpty: content.length === 0
@@ -198,18 +198,18 @@ export class FixtureLoader {
    */
   listFixtures(type) {
     switch (type) {
-      case 'providers':
-        return Object.keys(fixtures.providerResponses);
-      case 'tools':
-        return Object.keys(fixtures.toolFixtures);
-      case 'errors':
-        return Object.keys(fixtures.errorScenarios);
-      case 'edgeCases':
-        return Object.keys(fixtures.edgeCases);
-      case 'files':
-        return Object.keys(fixtures.FIXTURE_PATHS).filter(k => k !== 'responses');
-      default:
-        throw new Error(`Unknown fixture type: ${type}`);
+    case 'providers':
+      return Object.keys(fixtures.providerResponses);
+    case 'tools':
+      return Object.keys(fixtures.toolFixtures);
+    case 'errors':
+      return Object.keys(fixtures.errorScenarios);
+    case 'edgeCases':
+      return Object.keys(fixtures.edgeCases);
+    case 'files':
+      return Object.keys(fixtures.FIXTURE_PATHS).filter(k => k !== 'responses');
+    default:
+      throw new Error(`Unknown fixture type: ${type}`);
     }
   }
 

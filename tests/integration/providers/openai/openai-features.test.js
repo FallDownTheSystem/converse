@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasOpenAI,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('OpenAI Feature-Specific Tests', () => {
@@ -18,7 +18,7 @@ describe('OpenAI Feature-Specific Tests', () => {
         const skipMessage = getSkipMessage(['OPENAI']);
         logger.warn(`[openai-features-test] ${skipMessage}`);
       } else {
-        logger.info(`[openai-features-test] Running OpenAI feature tests`);
+        logger.info('[openai-features-test] Running OpenAI feature tests');
       }
     } catch (error) {
       logger.error('[openai-features-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('OpenAI Feature-Specific Tests', () => {
   });
 
   describe('O3 Model Features', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should support OpenAI reasoning effort for O3', async () => {
@@ -52,7 +52,7 @@ describe('OpenAI Feature-Specific Tests', () => {
   });
 
   describe('Multi-Model Consensus with OpenAI', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should participate in consensus gathering', async () => {
@@ -86,7 +86,7 @@ describe('OpenAI Feature-Specific Tests', () => {
   });
 
   describe('Web Search Features', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should support web search when enabled', async () => {

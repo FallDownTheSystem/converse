@@ -4,7 +4,7 @@
  */
 
 import { it } from 'vitest';
-import { 
+import {
   hasApiKey,
   hasAnyApiKey,
   hasAllApiKeys,
@@ -20,12 +20,12 @@ import {
  * @returns {Function} - Test function that handles skipping with messages
  */
 export function testWithApiKeys({ requiredProviders, requireAll = false }) {
-  const shouldSkip = requireAll 
+  const shouldSkip = requireAll
     ? !hasAllApiKeys(requiredProviders)
     : !hasAnyApiKey(requiredProviders);
-    
+
   const skipMessage = getSkipMessage(requiredProviders, requireAll);
-  
+
   // Return the appropriate test function
   return function(description, testFn, timeout) {
     if (shouldSkip) {
@@ -33,12 +33,12 @@ export function testWithApiKeys({ requiredProviders, requireAll = false }) {
       if (skipMessage) {
         console.log(`\x1b[33m[SKIP] ${skipMessage}\x1b[0m`);
       }
-      
+
       // Add the skip message to the test description for clarity
-      const enhancedDescription = skipMessage 
+      const enhancedDescription = skipMessage
         ? `${description} [SKIPPED: ${skipMessage.replace('Skipping test: ', '')}]`
         : description;
-      
+
       // Use it.skip with enhanced description
       return it.skip(enhancedDescription, testFn, timeout);
     } else {
@@ -49,7 +49,7 @@ export function testWithApiKeys({ requiredProviders, requireAll = false }) {
 }
 
 // Re-export all the detection functions for convenience
-export { 
+export {
   hasApiKey,
   hasAnyApiKey,
   hasAllApiKeys,

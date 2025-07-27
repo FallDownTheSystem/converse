@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasGoogle,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('Google Image Processing Tests', () => {
@@ -18,7 +18,7 @@ describe('Google Image Processing Tests', () => {
         const skipMessage = getSkipMessage(['GOOGLE']);
         logger.warn(`[google-image-test] ${skipMessage}`);
       } else {
-        logger.info(`[google-image-test] Running Google image tests`);
+        logger.info('[google-image-test] Running Google image tests');
       }
     } catch (error) {
       logger.error('[google-image-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('Google Image Processing Tests', () => {
   });
 
   describe('Gemini Pro Image Processing', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should process base64 encoded image', async () => {
@@ -52,13 +52,13 @@ describe('Google Image Processing Tests', () => {
 
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
-        
+
         // Should recognize it's green
         expect(responseText).toMatch(/(green|color)/);
       });
     }, 60000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should analyze image content', async () => {
@@ -78,7 +78,7 @@ describe('Google Image Processing Tests', () => {
 
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
-        
+
         // Should mention pattern or squares or pixels
         expect(responseText).toMatch(/(pattern|square|pixel|checker|grid)/);
 
@@ -88,14 +88,14 @@ describe('Google Image Processing Tests', () => {
   });
 
   describe('Multi-Modal Conversations', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should handle images in conversation flow', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // Blue pixel
         const bluePixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-        
+
         const result = await client.callTool({
           name: 'chat',
           arguments: {
@@ -108,7 +108,7 @@ describe('Google Image Processing Tests', () => {
 
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
-        
+
         // Should identify blue and mention a complementary color
         expect(responseText).toContain('blue');
         expect(responseText).toMatch(/(orange|yellow|complement)/);
@@ -119,7 +119,7 @@ describe('Google Image Processing Tests', () => {
   });
 
   describe('Error Handling', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['GOOGLE'],
       requireAll: true
     })('should handle invalid image data gracefully', async () => {

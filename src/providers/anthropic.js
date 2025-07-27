@@ -359,7 +359,7 @@ export const anthropicProvider = {
     // Use both prompt caching and extended cache duration headers for 1-hour caching
     // Set beta headers for caching
     const betaHeaders = ['prompt-caching-2024-07-31', 'extended-cache-ttl-2025-04-11'];
-    
+
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
       defaultHeaders: {
@@ -397,14 +397,14 @@ export const anthropicProvider = {
     if (modelConfig.supportsThinking && reasoning_effort) {
       const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
       debugLog(`[Anthropic] Model ${resolvedModel}: maxOutputTokens=${modelConfig.maxOutputTokens}, maxThinkingTokens=${modelConfig.maxThinkingTokens}, thinkingBudget=${thinkingBudget}`);
-      
+
       // For 4 series models, we trust the SDK defaults work with thinking
       // For other models, check against max_tokens if set
-      const maxTokensLimit = requestPayload.max_tokens || 
-        (resolvedModel.includes('claude-opus-4') ? 32000 : 
-         resolvedModel.includes('claude-sonnet-4') ? 64000 : 
-         modelConfig.maxOutputTokens);
-      
+      const maxTokensLimit = requestPayload.max_tokens ||
+        (resolvedModel.includes('claude-opus-4') ? 32000 :
+          resolvedModel.includes('claude-sonnet-4') ? 64000 :
+            modelConfig.maxOutputTokens);
+
       if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
         // According to Anthropic docs: thinking tokens count towards max_tokens limit
         // thinking.budget_tokens must be >= 1024 and < max_tokens
@@ -431,7 +431,7 @@ export const anthropicProvider = {
 
     try {
       debugLog(`[Anthropic] Calling ${resolvedModel} with ${anthropicMessages.length} messages`);
-      debugLog(`[Anthropic] Request payload:`, JSON.stringify({
+      debugLog('[Anthropic] Request payload:', JSON.stringify({
         model: requestPayload.model,
         max_tokens: requestPayload.max_tokens,
         thinking: requestPayload.thinking,
@@ -517,11 +517,11 @@ export const anthropicProvider = {
         throw new AnthropicProviderError(`Invalid request: ${error.error.message}`, ErrorCodes.INVALID_REQUEST, error);
       } else if (error.error?.type === 'not_found_error') {
         throw new AnthropicProviderError(`Model ${resolvedModel} not found`, ErrorCodes.MODEL_NOT_FOUND, error);
-      } else if (error.message?.includes('context length') || error.message?.includes('context_length') || 
+      } else if (error.message?.includes('context length') || error.message?.includes('context_length') ||
                  (error.message?.includes('token') && error.message?.includes('limit'))) {
-        debugError(`[Anthropic] Context length error - Full error:`, error);
-        debugError(`[Anthropic] Error message:`, error.message);
-        debugError(`[Anthropic] Error response:`, error.response);
+        debugError('[Anthropic] Context length error - Full error:', error);
+        debugError('[Anthropic] Error message:', error.message);
+        debugError('[Anthropic] Error response:', error.response);
         throw new AnthropicProviderError(`Context length exceeded for model: ${error.message}`, ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
       }
 

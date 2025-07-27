@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
-import { 
-  testWithApiKeys, 
+import {
+  testWithApiKeys,
   hasOpenAI,
-  getSkipMessage 
+  getSkipMessage
 } from '../../../utils/conditionalTest.js';
 
 describe('OpenAI API Integration Tests', () => {
@@ -18,7 +18,7 @@ describe('OpenAI API Integration Tests', () => {
         const skipMessage = getSkipMessage(['OPENAI']);
         logger.warn(`[openai-api-test] ${skipMessage}`);
       } else {
-        logger.info(`[openai-api-test] Running OpenAI API tests`);
+        logger.info('[openai-api-test] Running OpenAI API tests');
       }
     } catch (error) {
       logger.error('[openai-api-test] Setup failed:', error);
@@ -27,7 +27,7 @@ describe('OpenAI API Integration Tests', () => {
   });
 
   describe('Basic Chat Functionality', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should work with GPT-4o-mini via HTTP', async () => {
@@ -48,7 +48,7 @@ describe('OpenAI API Integration Tests', () => {
       });
     }, 60000);
 
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should maintain conversation continuity', async () => {
@@ -87,7 +87,7 @@ describe('OpenAI API Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should handle invalid model names gracefully', async () => {
@@ -107,7 +107,7 @@ describe('OpenAI API Integration Tests', () => {
   });
 
   describe('Performance', () => {
-    testWithApiKeys({ 
+    testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
     })('should complete simple requests within reasonable time', async () => {

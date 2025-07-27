@@ -85,33 +85,33 @@ const XAI_MODELS = {
 export function createMockXAIProvider(overrides = {}) {
   return createMockProvider({
     name: 'xai',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => XAI_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       // Check direct match
       if (XAI_MODELS[modelName]) {
         return XAI_MODELS[modelName];
       }
-      
+
       // Check aliases
       for (const model of Object.values(XAI_MODELS)) {
         if (model.aliases && model.aliases.includes(modelName)) {
           return model;
         }
       }
-      
+
       return null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = XAI_MODELS[options.model] || XAI_MODELS['grok-beta'];
-      
+
       // Simulate XAI-specific validations
       if (!options.config?.apiKeys?.xai) {
         throw new ProviderError('XAI API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate web search behavior
       if (modelConfig.supportsWebSearch && options.use_websearch) {
         return new MockResponseBuilder()
@@ -150,7 +150,7 @@ export function createMockXAIProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock XAI response')
@@ -158,7 +158,7 @@ export function createMockXAIProvider(overrides = {}) {
         .withProvider('xai')
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -187,7 +187,7 @@ export function createMockXAIResponse(content = 'Test response', options = {}) {
       total_tokens: (options.prompt_tokens || 10) + (options.completion_tokens || 20)
     }
   };
-  
+
   // Add web search results if enabled
   if (options.with_search) {
     response.extra = {
@@ -195,7 +195,7 @@ export function createMockXAIResponse(content = 'Test response', options = {}) {
       search_results: options.search_results || []
     };
   }
-  
+
   return response;
 }
 
@@ -241,7 +241,7 @@ export function createMockXAIError(type = 'invalid_api_key', message = null) {
       }
     }
   };
-  
+
   return errors[type] || errors.invalid_api_key;
 }
 
@@ -256,17 +256,17 @@ export function createMockXAIClient(behavior = {}) {
         };
         throw error;
       }
-      
+
       if (options.body.stream) {
         // Return a mock readable stream
         const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
         const streamData = createMockXAIStreamResponse(chunks, {
           model: options.body.model
         });
-        
+
         return {
           body: {
-            [Symbol.asyncIterator]: async function* () {
+            async *[Symbol.asyncIterator] () {
               for (const chunk of streamData) {
                 yield `data: ${JSON.stringify(chunk)}\n\n`;
               }
@@ -275,7 +275,7 @@ export function createMockXAIClient(behavior = {}) {
           }
         };
       }
-      
+
       // Regular response
       return {
         data: createMockXAIResponse(

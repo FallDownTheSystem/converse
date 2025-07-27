@@ -67,7 +67,7 @@ export function createMockConsensusTool(overrides = {}) {
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'Consensus prompt' },
-        models: { 
+        models: {
           type: 'array',
           items: {
             type: 'object',

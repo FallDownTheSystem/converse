@@ -3,6 +3,7 @@ import { chatTool } from '../../../src/tools/chat.js';
 import { consensusTool } from '../../../src/tools/consensus.js';
 import { HTTPMCPServerManager, withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { logger } from '../../../src/utils/logger.js';
+import { getTestAbsolutePath } from '../../../src/utils/pathUtils.js';
 
 describe('File Validation Integration Tests', () => {
   describe('Chat Tool File Validation', () => {
@@ -154,7 +155,7 @@ describe('File Validation Integration Tests', () => {
   describe('Path Resolution', () => {
     it('should handle absolute paths correctly', async () => {
       await withHTTPTestServer(async (client, manager) => {
-        const absolutePath = 'C:\\Windows\\System32\\nonexistent-file.txt';
+        const absolutePath = getTestAbsolutePath('Windows', 'System32', 'nonexistent-file.txt');
         const result = await client.callTool({
           name: 'chat',
           arguments: {

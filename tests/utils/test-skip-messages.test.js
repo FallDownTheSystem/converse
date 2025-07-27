@@ -8,7 +8,7 @@ import { testWithApiKeys } from './conditionalTest.js';
 
 describe('Skip Message Demonstration Tests', () => {
   // Test requiring all three main providers
-  testWithApiKeys({ 
+  testWithApiKeys({
     requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
     requireAll: true
   })('should run only if ALL three main providers are available', () => {
@@ -17,7 +17,7 @@ describe('Skip Message Demonstration Tests', () => {
   });
 
   // Test requiring at least one provider
-  testWithApiKeys({ 
+  testWithApiKeys({
     requiredProviders: ['OPENAI', 'XAI', 'GOOGLE']
   })('should run if ANY of the three main providers are available', () => {
     expect(true).toBe(true);
@@ -25,7 +25,7 @@ describe('Skip Message Demonstration Tests', () => {
   });
 
   // Test requiring specific providers
-  testWithApiKeys({ 
+  testWithApiKeys({
     requiredProviders: ['ANTHROPIC', 'MISTRAL'],
     requireAll: true
   })('should run only if Anthropic AND Mistral are available', () => {
@@ -34,7 +34,7 @@ describe('Skip Message Demonstration Tests', () => {
   });
 
   // Test requiring new providers
-  testWithApiKeys({ 
+  testWithApiKeys({
     requiredProviders: ['DEEPSEEK', 'OPENROUTER']
   })('should run if DeepSeek OR OpenRouter is available', () => {
     expect(true).toBe(true);
@@ -42,7 +42,7 @@ describe('Skip Message Demonstration Tests', () => {
   });
 
   // Test with a single provider
-  testWithApiKeys({ 
+  testWithApiKeys({
     requiredProviders: ['OPENAI'],
     requireAll: true
   })('should run only if OpenAI is available', () => {

@@ -44,26 +44,26 @@ const DEEPSEEK_MODELS = {
 export function createMockDeepSeekProvider(overrides = {}) {
   return createMockProvider({
     name: 'deepseek',
-    
+
     getSupportedModels: vi.fn().mockImplementation(() => DEEPSEEK_MODELS),
-    
+
     getModelConfig: vi.fn().mockImplementation((modelName) => {
       return DEEPSEEK_MODELS[modelName] || null;
     }),
-    
+
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig = DEEPSEEK_MODELS[options.model] || DEEPSEEK_MODELS['deepseek-chat'];
-      
+
       // Simulate DeepSeek-specific validations
       if (!options.config?.apiKeys?.deepseek) {
         throw new ProviderError('DeepSeek API key is required', ErrorCodes.MISSING_API_KEY);
       }
-      
+
       // Simulate reasoning model behavior
       if (modelConfig.supportsThinking) {
-        const reasoningTokens = options.reasoning_effort === 'high' ? 15000 : 
-                               options.reasoning_effort === 'low' ? 5000 : 10000;
-        
+        const reasoningTokens = options.reasoning_effort === 'high' ? 15000 :
+          options.reasoning_effort === 'low' ? 5000 : 10000;
+
         return new MockResponseBuilder()
           .withContent('After deep analysis and reasoning, I conclude that...')
           .withModel(options.model)
@@ -99,7 +99,7 @@ export function createMockDeepSeekProvider(overrides = {}) {
           })
           .build();
       }
-      
+
       // Default response
       return new MockResponseBuilder()
         .withContent('Mock DeepSeek response')
@@ -107,7 +107,7 @@ export function createMockDeepSeekProvider(overrides = {}) {
         .withProvider('deepseek')
         .build();
     }),
-    
+
     ...overrides
   });
 }
@@ -139,20 +139,20 @@ export function createMockDeepSeekResponse(content = 'Test response', options = 
       prompt_cache_miss_tokens: options.prompt_tokens || 10
     }
   };
-  
+
   // Add reasoning content for reasoning models
   if (options.reasoning_content) {
     response.choices[0].message.reasoning_content = options.reasoning_content;
     response.usage.reasoning_tokens = options.reasoning_tokens || 5000;
   }
-  
+
   return response;
 }
 
 // Mock streaming response generator
 export function createMockDeepSeekStreamResponse(chunks = ['Hello', ' world', '!'], options = {}) {
   const streamId = `deepseek-${Date.now()}`;
-  
+
   return chunks.map((chunk, index) => ({
     id: streamId,
     object: 'chat.completion.chunk',
@@ -201,7 +201,7 @@ export function createMockDeepSeekError(type = 'invalid_api_key', message = null
       }
     }
   };
-  
+
   return errors[type] || errors.invalid_api_key;
 }
 
@@ -217,16 +217,16 @@ export function createMockDeepSeekClient(behavior = {}) {
         };
         throw error;
       }
-      
+
       if (options.body.stream) {
         const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
         const streamData = createMockDeepSeekStreamResponse(chunks, {
           model: options.body.model
         });
-        
+
         return {
           body: {
-            [Symbol.asyncIterator]: async function* () {
+            async *[Symbol.asyncIterator] () {
               for (const chunk of streamData) {
                 yield `data: ${JSON.stringify(chunk)}\n\n`;
               }
@@ -235,7 +235,7 @@ export function createMockDeepSeekClient(behavior = {}) {
           }
         };
       }
-      
+
       return {
         data: createMockDeepSeekResponse(
           behavior.content || 'Mock response',
