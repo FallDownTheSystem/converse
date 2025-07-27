@@ -278,15 +278,17 @@ openrouterProvider.getModelConfig = function(modelName) {
     return staticConfig;
   }
 
-  // Check dynamic models
+  // Check dynamic models cache
   if (dynamicModels.has(modelName)) {
     return dynamicModels.get(modelName);
   }
 
-  // For synchronous calls, create default config if dynamic models enabled
+  // Check if dynamic models are enabled
   const config = this._lastConfig || {};
   const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels || 
                                config?.providers?.openrouterDynamicModels;
+  
+  // Only allow dynamic models if explicitly enabled AND model has slash format
   if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
     // Note: This is a fallback for synchronous calls
     // The async version should be preferred for accurate model info
@@ -295,6 +297,8 @@ openrouterProvider.getModelConfig = function(modelName) {
     return dynamicConfig;
   }
 
+  // If model has slash format but dynamic models disabled, return null
+  // This will cause the model to be rejected as not found
   return null;
 };
 
@@ -317,6 +321,18 @@ openrouterProvider.invoke = async function(messages, options = {}) {
   const modelName = options.model;
   if (modelName) {
     const existingConfig = this.getModelConfig(modelName);
+    
+    // If model not found and has slash format, check if dynamic models are enabled
+    if (!existingConfig && isOpenRouterModelFormat(modelName)) {
+      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels || 
+                                  options.config?.providers?.openrouterDynamicModels;
+      if (!dynamicModelsEnabled) {
+        throw new OpenRouterProviderError(
+          `Model '${modelName}' requires OPENROUTER_DYNAMIC_MODELS=true to be set`,
+          ErrorCodes.MODEL_NOT_FOUND
+        );
+      }
+    }
     
     // If the model needs API update, fetch it now
     if (existingConfig?.needsApiUpdate) {

@@ -5,6 +5,7 @@
  */
 
 import { getProviders } from '../providers/index.js';
+import { getTools } from '../tools/index.js';
 
 /**
  * Generate comprehensive help content dynamically based on current providers
@@ -56,66 +57,70 @@ export function generateHelpContent() {
     return output;
   };
 
+  // Get tools and format their documentation
+  const tools = getTools();
+  const formatToolParameters = (inputSchema) => {
+    if (!inputSchema || !inputSchema.properties) return '';
+    
+    let params = [];
+    const { properties, required = [] } = inputSchema;
+    
+    for (const [name, prop] of Object.entries(properties)) {
+      const isRequired = required.includes(name);
+      const defaultValue = prop.default !== undefined ? ` (default: ${JSON.stringify(prop.default)})` : '';
+      params.push(`- **${name}** (${isRequired ? 'required' : 'optional'}, ${prop.type}): ${prop.description}${defaultValue}`);
+    }
+    
+    return params.join('\n');
+  };
+
+  const formatToolExample = (toolName) => {
+    if (toolName === 'chat') {
+      return `\`\`\`json
+{
+  "prompt": "Explain the code in main.js",
+  "model": "o3",
+  "files": ["C:\\\\Users\\\\username\\\\project\\\\main.js"],
+  "temperature": 0.7,
+  "use_websearch": false
+}
+\`\`\``;
+    } else if (toolName === 'consensus') {
+      return `\`\`\`json
+{
+  "prompt": "Should we use microservices architecture for our new project?",
+  "models": [
+    {"model": "o3"},
+    {"model": "gemini-2.5-pro"},
+    {"model": "grok-4-0709"}
+  ],
+  "files": ["./requirements.md", "C:\\\\Users\\\\username\\\\architecture.md"],
+  "enable_cross_feedback": true,
+  "temperature": 0.3
+}
+\`\`\``;
+    }
+    return '';
+  };
+
+  const toolsSection = Object.entries(tools).map(([name, tool], index) => {
+    return `### ${index + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)} Tool
+${tool.description}
+
+**Parameters:**
+${formatToolParameters(tool.inputSchema)}
+
+**Example Usage:**
+${formatToolExample(name)}`;
+  }).join('\n\n');
+
   const helpContent = `# Converse MCP Server - Comprehensive Guide
 
 Welcome to the Converse MCP Server! This guide provides detailed information about all available tools, parameters, providers, and models.
 
 ## Available Tools
 
-### 1. Chat Tool
-Single-provider conversational AI with context and continuation support.
-
-**Parameters:**
-- **prompt** (required, string): Your question or message
-- **model** (optional, string): Model to use (default: "auto" - automatically selects based on availability)
-- **files** (optional, array): List of file paths to include as context
-- **images** (optional, array): List of image paths to include in the conversation
-- **continuation_id** (optional, string): ID to continue a previous conversation
-- **temperature** (optional, number): Creativity level 0.0-2.0 (default: 0.5)
-- **use_websearch** (optional, boolean): Enable web search for current information (default: false)
-- **reasoning_effort** (optional, string): Thinking effort for supported models: "minimal", "low", "medium", "high", "max" (default: "medium")
-
-**Example Usage:**
-\`\`\`json
-{
-  "prompt": "Explain the code in main.js",
-  "model": "gpt-4o",
-  "files": ["/path/to/main.js"],
-  "temperature": 0.7,
-  "use_websearch": false
-}
-\`\`\`
-
-### 2. Consensus Tool
-Multi-provider parallel execution with response aggregation and cross-model refinement.
-
-**Parameters:**
-- **prompt** (required, string): Your question or topic for consensus
-- **models** (required, array): List of model configurations to query
-  - Each model object should have: {"model": "model-name"}
-- **files** (optional, array): List of file paths to include as context
-- **images** (optional, array): List of image paths to include
-- **continuation_id** (optional, string): ID to continue a previous conversation
-- **enable_cross_feedback** (optional, boolean): Allow models to see and refine based on other responses (default: true)
-- **cross_feedback_prompt** (optional, string): Custom prompt for refinement phase
-- **temperature** (optional, number): Creativity level 0.0-2.0 (default: 0.2)
-- **reasoning_effort** (optional, string): Thinking effort: "minimal", "low", "medium", "high", "max" (default: "medium")
-- **use_websearch** (optional, boolean): Enable web search (default: false)
-
-**Example Usage:**
-\`\`\`json
-{
-  "prompt": "Should we use microservices architecture for our new project?",
-  "models": [
-    {"model": "o3"},
-    {"model": "gemini-2.5-pro"},
-    {"model": "grok-4"}
-  ],
-  "files": ["/path/to/requirements.md", "/path/to/architecture.md"],
-  "enable_cross_feedback": true,
-  "temperature": 0.3
-}
-\`\`\`
+${toolsSection}
 
 ## Provider Models
 ${formatProviderModels('OpenAI', allModels.openai)}
@@ -197,15 +202,30 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ## Environment Variables
 
-Required (at least one):
+### API Keys (at least one required):
 - \`OPENAI_API_KEY\`: For OpenAI models
 - \`GOOGLE_API_KEY\`: For Google Gemini models
 - \`XAI_API_KEY\`: For X.AI Grok models
+- \`ANTHROPIC_API_KEY\`: For Anthropic Claude models
+- \`MISTRAL_API_KEY\`: For Mistral models
+- \`DEEPSEEK_API_KEY\`: For DeepSeek models
+- \`OPENROUTER_API_KEY\`: For OpenRouter models
 
-Optional:
-- \`MAX_MCP_OUTPUT_TOKENS\`: Maximum response size (default: 200000)
+### OpenRouter Configuration:
+- \`OPENROUTER_REFERER\`: OpenRouter referer header for compliance (required for OpenRouter)
+- \`OPENROUTER_TITLE\`: OpenRouter X-Title header for request tracking (optional)
+- \`OPENROUTER_DYNAMIC_MODELS\`: Enable dynamic model discovery via OpenRouter endpoints API (default: false). Must be set to true to use models in \`provider/model\` format (e.g., \`anthropic/claude-3.5-sonnet\`). When enabled, fetches actual model capabilities from API.
+
+### Server Configuration:
+- \`MAX_MCP_OUTPUT_TOKENS\`: Maximum response size (default: 25000)
 - \`LOG_LEVEL\`: Logging verbosity (debug, info, warn, error)
 - \`PORT\`: HTTP server port (default: 3157)
+- \`HTTP_ENABLED\`: Enable HTTP transport (default: true)
+- \`HTTP_RATE_LIMIT_ENABLED\`: Enable rate limiting (default: false)
+- \`HTTP_RATE_LIMIT_WINDOW\`: Rate limit window in milliseconds (default: 900000 - 15 minutes)
+- \`HTTP_RATE_LIMIT_MAX_REQUESTS\`: Maximum requests per window (default: 1000)
+
+Note: Server name and version are automatically read from package.json.
 
 ## Need More Help?
 

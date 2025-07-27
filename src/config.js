@@ -9,6 +9,9 @@
 import dotenv from 'dotenv';
 import { createLogger, configureLogger } from './utils/logger.js';
 import { ConfigurationError } from './utils/errorHandler.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 
 // Load environment variables from appropriate .env file
 // Priority: .env.test (for test env) > .env (default)
@@ -93,8 +96,6 @@ const CONFIG_SCHEMA = {
 
   // MCP configuration
   mcp: {
-    MCP_SERVER_NAME: { type: 'string', default: 'converse-mcp-server', description: 'MCP server name' },
-    MCP_SERVER_VERSION: { type: 'string', default: '1.0.0', description: 'MCP server version' },
     MAX_MCP_OUTPUT_TOKENS: { type: 'number', default: 25000, description: 'Maximum tokens in MCP tool responses' },
   },
 };
@@ -256,11 +257,24 @@ export async function loadConfig() {
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.mcp)) {
       try {
         const value = validateEnvVar(key, process.env[key], schema);
-        const configKey = key.replace('MCP_SERVER_', '').toLowerCase();
+        const configKey = key.replace('MAX_MCP_OUTPUT_TOKENS', 'max_mcp_output_tokens').toLowerCase();
         config.mcp[configKey] = value;
       } catch (error) {
         errors.push(error.message);
       }
+    }
+    
+    // Load name and version from package.json
+    try {
+      const packagePath = join(dirname(fileURLToPath(import.meta.url)), '../package.json');
+      const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+      config.mcp.name = packageJson.name || 'converse-mcp-server';
+      config.mcp.version = packageJson.version || 'unknown';
+    } catch (error) {
+      // Fallback values if package.json can't be read
+      config.mcp.name = 'converse-mcp-server';
+      config.mcp.version = 'unknown';
+      configLogger.warn('Could not read package.json for name/version', { error: error.message });
     }
 
     // Set environment flags

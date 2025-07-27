@@ -8,6 +8,7 @@ import { logger } from '../../src/utils/logger.js';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,11 +27,11 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Create MCP server instance
       server = new Server(
         {
-          name: config.mcp.serverName,
-          version: config.mcp.serverVersion
+          name: config.mcp.name,
+          version: config.mcp.version
         },
         {
-          capabilities: { tools: {} }
+          capabilities: { tools: {}, prompts: {}, resources: {} }
         }
       );
 
@@ -84,8 +85,12 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       expect(config.server.port).toBeTypeOf('number');
       expect(config.server.node_env).toBeTypeOf('string');
       expect(config.server.log_level).toBeTypeOf('string');
-      expect(config.mcp.name).toBe('converse-mcp-server');
-      expect(config.mcp.version).toBe('1.0.0');
+      // Load expected values from package.json
+      const packagePath = join(__dirname, '../../package.json');
+      const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+      
+      expect(config.mcp.name).toBe(packageJson.name);
+      expect(config.mcp.version).toBe(packageJson.version);
     });
 
     it('should validate environment variables correctly', () => {
@@ -100,8 +105,12 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       const mcpConfig = getMcpClientConfig(config);
 
       expect(mcpConfig).toBeDefined();
-      expect(mcpConfig.name).toBe('converse-mcp-server');
-      expect(mcpConfig.version).toBe('1.0.0');
+      // Load expected values from package.json
+      const packagePath = join(__dirname, '../../package.json');
+      const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+      
+      expect(mcpConfig.name).toBe(packageJson.name);
+      expect(mcpConfig.version).toBe(packageJson.version);
     });
   });
 

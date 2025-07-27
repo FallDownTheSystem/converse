@@ -510,17 +510,17 @@ consensusTool.inputSchema = {
         },
         required: ['model'],
       },
-      description: 'List of models to consult. Example: [{"model": "o3"}, {"model": "gemini-2.5-flash"}, {"model": "grok-4-0709"}]',
+      description: 'List of models to consult. Example: [{"model": "o3"}, {"model": "gemini-2.5-pro"}, {"model": "grok-4-0709"}]',
     },
     files: {
       type: 'array',
       items: { type: 'string' },
-      description: 'File paths for additional context (absolute paths). Example: ["/path/to/architecture.md", "/path/to/requirements.txt"]',
+      description: 'File paths for additional context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\architecture.md", "./requirements.txt"]',
     },
     images: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Image paths for visual context (absolute paths or base64). Example: ["/path/to/current_architecture.png", "/path/to/user_flow.jpg"]',
+      description: 'Image paths for visual context (absolute or relative paths, or base64). Example: ["C:\\Users\\username\\current_architecture.png", "./user_flow.jpg"]',
     },
     continuation_id: {
       type: 'string',
@@ -545,12 +545,12 @@ consensusTool.inputSchema = {
     reasoning_effort: {
       type: 'string',
       enum: ['minimal', 'low', 'medium', 'high', 'max'],
-      description: 'Reasoning depth for thinking models. Examples: "medium" (balanced - default), "high" (complex analysis), "max" (thorough evaluation). Default: "medium"',
+      description: 'Reasoning depth for thinking models. Examples: "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
       default: 'medium'
     },
     use_websearch: {
       type: 'boolean',
-      description: 'Enable web search for current information and best practices. Only works with models that support web search (OpenAI, XAI, Google). Example: true for recent developments, false for analysis. Default: false',
+      description: 'Enable web search for current information. Only works with models that support web search (OpenAI, XAI, Google). Example: true for recent developments or up to date documentation. Default: false',
       default: false
     },
   },

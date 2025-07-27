@@ -68,13 +68,13 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `OPENROUTER_API_KEY` - Your API key
   - `OPENROUTER_REFERER` - Required referer URL (e.g., your GitHub repo)
   - `OPENROUTER_TITLE` - Optional title for request tracking
-  - `OPENROUTER_DYNAMIC_MODELS` - Enable dynamic model discovery (default: false)
+  - `OPENROUTER_DYNAMIC_MODELS` - Enable dynamic model discovery (default: false, required for `provider/model` format)
 - **Static Models**: Pre-configured models available without dynamic discovery
   - `qwen/qwen3-235b-a22b-thinking-2507` - Qwen3 235B with thinking capabilities
   - `qwen/qwen3-coder` - Qwen3 specialized for coding
   - `moonshotai/kimi-k2` - Kimi K2 with 200K context window
   - `openrouter/auto` - Auto-selects best model using NotDiamond routing
-- **Dynamic Models**: When `OPENROUTER_DYNAMIC_MODELS=true`, any model in `provider/model` format
+- **Dynamic Models**: Requires `OPENROUTER_DYNAMIC_MODELS=true` to use any model in `provider/model` format
   - `anthropic/claude-3.5-sonnet`
   - `openai/gpt-4-turbo`
   - `google/gemini-pro`
@@ -98,7 +98,7 @@ OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
 # Optional: Enable dynamic model discovery to use any OpenRouter model
 OPENROUTER_DYNAMIC_MODELS=true
 # Optional: Add title for request tracking
-OPENROUTER_TITLE=YourAppName
+OPENROUTER_TITLE=Converse
 ```
 
 ### Claude Configuration (claude_desktop_config.json)
@@ -116,7 +116,7 @@ OPENROUTER_TITLE=YourAppName
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "OPENROUTER_DYNAMIC_MODELS": "true",
-        "OPENROUTER_TITLE": "YourAppName"
+        "OPENROUTER_TITLE": "Converse"
       }
     }
   }

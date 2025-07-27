@@ -64,10 +64,9 @@ PORT=3157
 LOG_LEVEL=info
 MAX_MCP_OUTPUT_TOKENS=200000
 
-# Optional: Provider-specific settings
-XAI_BASE_URL=https://api.x.ai/v1
+# Optional: OpenRouter configuration
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
-OPENROUTER_TITLE=YourAppName
+OPENROUTER_TITLE=Converse
 OPENROUTER_DYNAMIC_MODELS=true
 ```
 
@@ -105,7 +104,7 @@ There are several ways to add the Converse MCP Server to Claude:
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "OPENROUTER_DYNAMIC_MODELS": "true",
-        "OPENROUTER_TITLE": "YourAppName",
+        "OPENROUTER_TITLE": "Converse",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -133,7 +132,7 @@ There are several ways to add the Converse MCP Server to Claude:
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "OPENROUTER_DYNAMIC_MODELS": "true",
-        "OPENROUTER_TITLE": "YourAppName",
+        "OPENROUTER_TITLE": "Converse",
         "MAX_MCP_OUTPUT_TOKENS": "200000"
       }
     }
@@ -528,7 +527,6 @@ converse/
 | `PORT` | Server port | `3157` | `3157` |
 | `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
 | `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
-| `XAI_BASE_URL` | XAI API endpoint | `https://api.x.ai/v1` | Custom endpoint |
 
 ### Model Selection
 

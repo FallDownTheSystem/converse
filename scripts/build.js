@@ -187,14 +187,6 @@ OPENAI_API_KEY=sk-your-production-openai-key
 XAI_API_KEY=xai-your-production-xai-key
 GOOGLE_API_KEY=your-production-google-key
 
-# Provider Configuration
-GOOGLE_LOCATION=us-central1
-XAI_BASE_URL=https://api.x.ai/v1
-
-# MCP Server Configuration
-MCP_SERVER_NAME=converse-mcp-server
-MCP_SERVER_VERSION=1.0.0
-
 # Production Settings
 # Use 'warn' or 'error' for production logging to reduce noise
 # LOG_LEVEL=warn

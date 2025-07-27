@@ -538,6 +538,26 @@ describe('OpenRouter Provider', () => {
     });
 
     it('should handle model not found errors', async () => {
+      // Test 1: Dynamic model without OPENROUTER_DYNAMIC_MODELS enabled
+      await expect(
+        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
+          model: 'unknown/model',
+          config: mockConfig
+        })
+      ).rejects.toMatchObject({
+        code: ErrorCodes.MODEL_NOT_FOUND,
+        message: expect.stringContaining('requires OPENROUTER_DYNAMIC_MODELS=true')
+      });
+
+      // Test 2: API 404 error with dynamic models enabled
+      const configWithDynamic = {
+        ...mockConfig,
+        providers: {
+          ...mockConfig.providers,
+          openrouterdynamicmodels: true
+        }
+      };
+
       mockCreate.mockRejectedValue({
         response: {
           status: 404,
@@ -548,7 +568,7 @@ describe('OpenRouter Provider', () => {
       await expect(
         openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
           model: 'unknown/model',
-          config: mockConfig
+          config: configWithDynamic
         })
       ).rejects.toMatchObject({
         code: ErrorCodes.MODEL_NOT_FOUND,

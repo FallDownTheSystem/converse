@@ -369,17 +369,17 @@ chatTool.inputSchema = {
     },
     model: {
       type: 'string',
-      description: 'AI model to use. Examples: "auto" (recommended), "gemini-2.5-flash", "o3", "grok-4-0709". Defaults to auto-selection.',
+      description: 'AI model to use. Examples: "auto" (recommended), "o3", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',
       items: { type: 'string' },
-      description: 'File paths to include as context (absolute paths required). Example: ["/path/to/src/auth.js", "/path/to/config.json"]',
+      description: 'File paths to include as context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\src\\auth.js", "./config.json"]',
     },
     images: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Image paths for visual context (absolute paths or base64 data). Example: ["/path/to/diagram.png", "data:image/jpeg;base64,/9j/4AAQ..."]',
+      description: 'Image paths for visual context (absolute or relative paths, or base64 data). Example: ["C:\\Users\\username\\diagram.png", "./screenshot.jpg", "data:image/jpeg;base64,/9j/4AAQ..."]',
     },
     continuation_id: {
       type: 'string',
@@ -395,12 +395,12 @@ chatTool.inputSchema = {
     reasoning_effort: {
       type: 'string',
       enum: ['minimal', 'low', 'medium', 'high', 'max'],
-      description: 'Reasoning depth for thinking models. Examples: "minimal" (quick), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+      description: 'Reasoning depth for thinking models. Examples: "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
       default: 'medium'
     },
     use_websearch: {
       type: 'boolean',
-      description: 'Enable web search for current information and best practices. Example: true for framework documentation, false for private code analysis. Default: false',
+      description: 'Enable web search for current information. Example: true for recent developments or up to date documentation. Default: false',
       default: false
     },
   },
