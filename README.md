@@ -335,9 +335,18 @@ npm run kill-server    # Kill any server running on port 3157
 npm test               # Run all tests
 npm run test:unit      # Unit tests only
 npm run test:integration # Integration tests
-npm run test:mcp-client # MCP client tests (HTTP-based client-server testing)
-npm run test:real-api  # Real API tests (requires keys)
-npm run test:providers # Provider tests
+npm run test:e2e       # End-to-end tests (requires API keys)
+
+# Integration test subcategories
+npm run test:integration:mcp        # MCP protocol tests
+npm run test:integration:tools      # Tool integration tests
+npm run test:integration:providers  # Provider integration tests
+npm run test:integration:performance # Performance tests
+npm run test:integration:general    # General integration tests
+
+# Other test categories
+npm run test:mcp-client # MCP client tests (HTTP-based)
+npm run test:providers # Provider unit tests
 npm run test:tools     # Tool tests
 npm run test:coverage  # Coverage report
 npm run test:watch     # Run tests in watch mode
@@ -389,11 +398,11 @@ OPENAI_API_KEY=sk-proj-...
 GOOGLE_API_KEY=AIzaSy...
 XAI_API_KEY=xai-...
 
-# Run real API tests
-npm run test:real-api
+# Run end-to-end tests with real APIs
+npm run test:e2e
 
-# Run comprehensive integration tests
-node tests/integration/final-integration-test.js
+# Run specific provider tests
+npm run test:integration:providers
 
 # Validate server functionality
 npm run validate

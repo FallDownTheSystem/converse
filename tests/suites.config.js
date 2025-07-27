@@ -83,12 +83,13 @@ export const testSuites = {
    */
   'real-api': {
     include: [
-      'tests/integration/providers/real-api.test.js',
-      'tests/integration/providers/real-api-enhanced.test.js',
-      'tests/integration/providers/new-providers-api.test.js',
-      'tests/integration/providers/provider-image-tests.test.js'
+      'tests/integration/providers/**/*-api.test.js',
+      'tests/integration/providers/**/*-features.test.js',
+      'tests/integration/providers/multi-provider.test.js'
     ],
-    exclude: [],
+    exclude: [
+      'tests/integration/providers/_archived/**/*'
+    ],
     testTimeout: 60000, // 1 minute per test
     setupFiles: ['tests/setup/api-keys-check.js'],
     env: {

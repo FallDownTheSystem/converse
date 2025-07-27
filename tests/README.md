@@ -18,8 +18,8 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Requirements**: None (uses mocked providers)
 - **Use When**: Validating component interactions, CI/CD
 
-### End-to-End Tests (`npm run test:e2e` or `npm run test:real-api`)
-- **Location**: `tests/integration/providers/real-api*.test.js`
+### End-to-End Tests (`npm run test:e2e`)
+- **Location**: `tests/integration/providers/`
 - **Purpose**: Tests that make actual API calls to validate real provider behavior
 - **Execution Time**: ~5-10 minutes
 - **Requirements**: Valid API keys in environment
@@ -47,7 +47,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: Validating MCP protocol implementation
 
 ### Performance Tests (`npm run test:performance`)
-- **Location**: `tests/integration/performance*.test.js`
+- **Location**: `tests/integration/performance/`
 - **Purpose**: Performance and scalability validation
 - **Execution Time**: ~5-15 minutes
 - **Requirements**: Valid API keys recommended
@@ -85,12 +85,21 @@ npm run test:unit
 npm run test:integration
 npm run test:e2e
 
+# Run integration test subcategories
+npm run test:integration:mcp        # MCP protocol tests
+npm run test:integration:tools      # Tool integration tests
+npm run test:integration:providers  # Provider integration tests
+npm run test:integration:performance # Performance tests
+npm run test:integration:general    # General integration tests
+
 # Watch mode for development
 npm run test:watch
 
 # Run with coverage
 npm run test:coverage
 npm run test:coverage:unit
+npm run test:coverage:integration
+npm run test:coverage:mcp-client
 
 # Run CI-friendly tests (no API calls)
 npm run test:ci
@@ -103,20 +112,37 @@ npm run test:ui
 
 ```
 tests/
-├── unit/                 # Isolated unit tests
-│   └── providers/        # Provider unit tests
-├── integration/          # Integration tests
-│   ├── providers/        # Provider integration tests (including real API)
-│   └── *.test.js         # General integration tests
-├── tools/                # Tool-specific tests
-├── utils/                # Utility tests
-├── resources/            # Resource tests
-├── prompts/              # Prompt tests
-├── shared/               # Shared test utilities
-│   ├── mocks/            # Mock implementations
-│   ├── fixtures/         # Test data
-│   └── helpers/          # Test helpers
-└── setup/                # Test setup files
+├── unit/                    # Isolated unit tests
+│   ├── providers/           # Provider unit tests
+│   └── mocks/               # Mock implementation tests
+├── integration/             # Integration tests
+│   ├── providers/           # Provider integration tests
+│   │   ├── openai/          # OpenAI-specific tests
+│   │   │   ├── openai-api.test.js
+│   │   │   ├── openai-features.test.js
+│   │   │   └── openai-image.test.js
+│   │   ├── google/          # Google-specific tests
+│   │   ├── xai/             # XAI-specific tests
+│   │   ├── anthropic/       # Anthropic-specific tests
+│   │   ├── deepseek/        # DeepSeek-specific tests
+│   │   ├── mistral/         # Mistral-specific tests
+│   │   ├── openrouter/      # OpenRouter-specific tests
+│   │   └── multi-*.test.js  # Multi-provider tests
+│   ├── mcp-protocol/        # MCP protocol compliance tests
+│   ├── tools/               # Tool integration tests
+│   ├── performance/         # Performance tests
+│   └── general/             # General integration tests
+├── tools/                   # Tool-specific tests
+├── utils/                   # Utility tests
+├── resources/               # Resource tests
+├── prompts/                 # Prompt tests
+├── fixtures/                # Test data and files
+├── mocks/                   # Mock implementations
+│   ├── providers/           # Provider mocks
+│   └── tools/               # Tool mocks
+├── shared/                  # Shared test utilities
+│   └── helpers/             # Test helpers
+└── setup/                   # Test setup files
 ```
 
 ## Writing Tests
