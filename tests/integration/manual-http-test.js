@@ -105,7 +105,11 @@ class HTTPTestSuite {
         name: 'http-test-client',
         version: '1.0.0'
       }, {
-        capabilities: {}
+        capabilities: {
+          tools: {},
+          prompts: {},
+          resources: {}
+        }
       });
 
       // Connect to server

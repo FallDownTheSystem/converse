@@ -1,0 +1,66 @@
+This is a large text file used for testing file size handling and processing.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+${"=".repeat(80)}
+This file contains multiple paragraphs of text to simulate a realistic document.
+${"Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(50)}
+
+Section 1: Introduction
+${"=".repeat(80)}
+This section introduces the concept of large text files in testing scenarios.
+It's important to test how systems handle files of various sizes.
+
+Section 2: Content Patterns
+${"=".repeat(80)}
+- Repeated patterns: ${"ABC".repeat(30)}
+- Numbers: ${Array.from({length: 100}, (_, i) => i).join(", ")}
+- Special characters: !@#$%^&*()_+-=[]{}|;':",./<>?
+- Unicode: 你好世界 🌍 Здравствуй мир مرحبا بالعالم
+
+Section 3: Edge Cases
+${"=".repeat(80)}
+Very long line without breaks: ${"x".repeat(500)}
+
+Lines with various endings:
+Unix line ending (LF)
+Windows line ending (CR+LF)
+Old Mac line ending (CR)
+
+Section 4: Data Structures
+${"=".repeat(80)}
+JSON-like structure:
+{
+  "key1": "value1",
+  "key2": ["array", "of", "values"],
+  "nested": {
+    "deep": {
+      "structure": true
+    }
+  }
+}
+
+CSV-like structure:
+Name,Age,City,Country
+John Doe,30,New York,USA
+Jane Smith,25,London,UK
+李明,28,Beijing,China
+
+Section 5: Code Examples
+${"=".repeat(80)}
+JavaScript:
+function processLargeFile(content) {
+  const lines = content.split('\\n');
+  return lines.map(line => line.trim()).filter(line => line.length > 0);
+}
+
+Python:
+def process_large_file(content):
+    lines = content.split('\\n')
+    return [line.strip() for line in lines if line.strip()]
+
+Section 6: Conclusion
+${"=".repeat(80)}
+This large text file serves as a comprehensive test fixture for file handling.
+It includes various text patterns, encodings, and structures.
+
+${"End of file marker: ".repeat(10)}
+EOF

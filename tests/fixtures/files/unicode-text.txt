@@ -1,0 +1,102 @@
+Unicode Test File - Testing Various Character Sets and Encodings
+================================================================
+
+1. Basic Latin (ASCII)
+   Hello, World! 123 ABC abc
+
+2. Latin Extended
+   café, naïve, résumé, piñata, Zürich
+
+3. Greek
+   Γειά σου κόσμε (Hello world)
+   Αλφάβητο (Alphabet)
+
+4. Cyrillic
+   Привет мир (Hello world)
+   Алфавит (Alphabet)
+
+5. Arabic
+   مرحبا بالعالم (Hello world)
+   الأبجدية (Alphabet)
+
+6. Hebrew
+   שלום עולם (Hello world)
+   אלפבית (Alphabet)
+
+7. Chinese
+   你好世界 (Hello world - Simplified)
+   你好世界 (Hello world - Traditional)
+
+8. Japanese
+   こんにちは世界 (Konnichiwa sekai - Hello world)
+   ひらがな (Hiragana)
+   カタカナ (Katakana)
+   漢字 (Kanji)
+
+9. Korean
+   안녕하세요 세계 (Hello world)
+   한글 (Hangul)
+
+10. Emoji and Symbols
+    😀😁😂🤣😃😄😅😆😇😈
+    🌍🌎🌏🌐🗺️
+    ❤️🧡💛💚💙💜🖤🤍🤎
+    ✅❌⚠️📌🔔💡🎯🚀
+    👨‍👩‍👧‍👦👨‍💻👩‍🔬🧑‍🎨
+
+11. Mathematical Symbols
+    ∑ ∏ ∫ ∂ ∇ ∆ ∞ ≈ ≠ ≤ ≥
+    α β γ δ ε ζ η θ ι κ λ μ
+
+12. Currency Symbols
+    $ € £ ¥ ₹ ₽ ¢ ₩ ₪ ₨
+
+13. Box Drawing
+    ┌─┬─┐
+    │ │ │
+    ├─┼─┤
+    │ │ │
+    └─┴─┘
+
+14. Arrows
+    ← ↑ → ↓ ↔ ↕ ⇐ ⇑ ⇒ ⇓ ⇔ ⇕
+
+15. Combining Characters
+    é (e + combining acute)
+    ñ (n + combining tilde)
+    ö (o + combining diaeresis)
+
+16. Zero-Width Characters
+    Hello​World (contains zero-width space)
+    Test‌ing (contains zero-width non-joiner)
+    Ex‍ample (contains zero-width joiner)
+
+17. Right-to-Left Override
+    ‏Hello World‏ (RTL override)
+    ‎Mixed מעורב Text‎
+
+18. Special Unicode Spaces
+    Normal space: " "
+    No-break space: " "
+    Em space: " "
+    En space: " "
+    Thin space: " "
+
+19. Control Characters (representation)
+    NULL: \0
+    Tab: \t
+    Line Feed: \n
+    Carriage Return: \r
+
+20. Surrogate Pairs
+    𝕳𝖊𝖑𝖑𝖔 𝖂𝖔𝖗𝖑𝖉 (Mathematical Bold Fraktur)
+    𝓗𝓮𝓵𝓵𝓸 𝓦𝓸𝓻𝓵𝓭 (Mathematical Bold Script)
+
+21. Rare Scripts
+    ᚻᛖᛚᛚᚩ (Runic)
+    𐌷𐌴𐌻𐌻𐍉 (Gothic)
+
+22. Byte Order Mark
+    ﻿This line starts with a UTF-8 BOM
+
+End of Unicode Test File

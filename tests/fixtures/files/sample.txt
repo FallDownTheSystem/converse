@@ -1,0 +1,3 @@
+This is a sample text file for testing file operations.
+It contains multiple lines.
+And can be used to test file reading functionality.

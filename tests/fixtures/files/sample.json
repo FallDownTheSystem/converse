@@ -1,0 +1,12 @@
+{
+  "name": "Test JSON",
+  "description": "A sample JSON file for testing",
+  "data": {
+    "key1": "value1",
+    "key2": 42,
+    "key3": true,
+    "nested": {
+      "array": [1, 2, 3]
+    }
+  }
+}

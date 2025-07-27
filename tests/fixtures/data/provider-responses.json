@@ -1,0 +1,789 @@
+{
+  "openai": {
+    "default": {
+      "id": "chatcmpl-abc123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "gpt-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "models": {
+      "gpt-4": {
+        "id": "chatcmpl-gpt4-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "gpt-4",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "GPT-4 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 15,
+          "completion_tokens": 25,
+          "total_tokens": 40
+        }
+      },
+      "gpt-4o": {
+        "id": "chatcmpl-gpt4o-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "gpt-4o",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "GPT-4o test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 18,
+          "total_tokens": 30
+        }
+      },
+      "gpt-4o-mini": {
+        "id": "chatcmpl-gpt4omini-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "gpt-4o-mini",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "GPT-4o-mini test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 10,
+          "completion_tokens": 15,
+          "total_tokens": 25
+        }
+      },
+      "gpt-3.5-turbo": {
+        "id": "chatcmpl-gpt35-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "gpt-3.5-turbo",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "GPT-3.5-turbo test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 8,
+          "completion_tokens": 12,
+          "total_tokens": 20
+        }
+      },
+      "o1": {
+        "id": "chatcmpl-o1-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "o1",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "O1 reasoning model test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 20,
+          "completion_tokens": 30,
+          "total_tokens": 50,
+          "completion_tokens_details": {
+            "reasoning_tokens": 15
+          }
+        }
+      },
+      "o1-mini": {
+        "id": "chatcmpl-o1mini-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "o1-mini",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "O1-mini reasoning model test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 15,
+          "completion_tokens": 20,
+          "total_tokens": 35,
+          "completion_tokens_details": {
+            "reasoning_tokens": 10
+          }
+        }
+      },
+      "o3": {
+        "id": "chatcmpl-o3-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "o3",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "O3 advanced reasoning model test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 25,
+          "completion_tokens": 40,
+          "total_tokens": 65,
+          "completion_tokens_details": {
+            "reasoning_tokens": 25
+          }
+        }
+      },
+      "o3-mini": {
+        "id": "chatcmpl-o3mini-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "o3-mini",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "O3-mini reasoning model test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 18,
+          "completion_tokens": 25,
+          "total_tokens": 43,
+          "completion_tokens_details": {
+            "reasoning_tokens": 12
+          }
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "id": "chatcmpl-streaming",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "gpt-4",
+        "choices": [{
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
+      }
+    },
+    "websearch": {
+      "id": "chatcmpl-websearch",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "gpt-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Based on my web search, here's what I found..."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 50,
+        "completion_tokens": 100,
+        "total_tokens": 150
+      }
+    }
+  },
+  "google": {
+    "default": {
+      "candidates": [{
+        "content": {
+          "parts": [{
+            "text": "This is a test response."
+          }],
+          "role": "model"
+        },
+        "finishReason": "STOP",
+        "index": 0,
+        "safetyRatings": []
+      }],
+      "usageMetadata": {
+        "promptTokenCount": 10,
+        "candidatesTokenCount": 20,
+        "totalTokenCount": 30
+      }
+    },
+    "models": {
+      "gemini-2.5-pro": {
+        "candidates": [{
+          "content": {
+            "parts": [{
+              "text": "Gemini 2.5 Pro test response."
+            }],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "safetyRatings": []
+        }],
+        "usageMetadata": {
+          "promptTokenCount": 15,
+          "candidatesTokenCount": 25,
+          "totalTokenCount": 40
+        }
+      },
+      "gemini-2.5-flash": {
+        "candidates": [{
+          "content": {
+            "parts": [{
+              "text": "Gemini 2.5 Flash test response."
+            }],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "safetyRatings": []
+        }],
+        "usageMetadata": {
+          "promptTokenCount": 8,
+          "candidatesTokenCount": 12,
+          "totalTokenCount": 20
+        }
+      },
+      "gemini-1.5-pro": {
+        "candidates": [{
+          "content": {
+            "parts": [{
+              "text": "Gemini 1.5 Pro test response."
+            }],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "safetyRatings": []
+        }],
+        "usageMetadata": {
+          "promptTokenCount": 12,
+          "candidatesTokenCount": 18,
+          "totalTokenCount": 30
+        }
+      },
+      "gemini-1.5-flash": {
+        "candidates": [{
+          "content": {
+            "parts": [{
+              "text": "Gemini 1.5 Flash test response."
+            }],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "safetyRatings": []
+        }],
+        "usageMetadata": {
+          "promptTokenCount": 10,
+          "candidatesTokenCount": 15,
+          "totalTokenCount": 25
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "candidates": [{
+          "content": {
+            "parts": [{
+              "text": ""
+            }],
+            "role": "model"
+          },
+          "finishReason": null,
+          "index": 0
+        }]
+      }
+    }
+  },
+  "xai": {
+    "default": {
+      "id": "xai-abc123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "grok-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "models": {
+      "grok-4": {
+        "id": "xai-grok4-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "grok-4",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Grok-4 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 15,
+          "completion_tokens": 25,
+          "total_tokens": 40
+        }
+      },
+      "grok-4-0709": {
+        "id": "xai-grok40709-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "grok-4-0709",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Grok-4-0709 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 14,
+          "completion_tokens": 22,
+          "total_tokens": 36
+        }
+      },
+      "grok-3": {
+        "id": "xai-grok3-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "grok-3",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Grok-3 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 18,
+          "total_tokens": 30
+        }
+      },
+      "grok-2": {
+        "id": "xai-grok2-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "grok-2",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Grok-2 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 10,
+          "completion_tokens": 15,
+          "total_tokens": 25
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "id": "xai-streaming",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "grok-4",
+        "choices": [{
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
+      }
+    },
+    "websearch": {
+      "id": "xai-websearch",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "grok-3",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "After searching the web, I found..."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 60,
+        "completion_tokens": 120,
+        "total_tokens": 180
+      }
+    }
+  },
+  "anthropic": {
+    "default": {
+      "id": "msg_01XYZ",
+      "type": "message",
+      "role": "assistant",
+      "content": [{
+        "type": "text",
+        "text": "This is a test response."
+      }],
+      "model": "claude-3-5-sonnet-20241022",
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 20
+      }
+    },
+    "models": {
+      "claude-3-5-sonnet-20241022": {
+        "id": "msg_sonnet35",
+        "type": "message",
+        "role": "assistant",
+        "content": [{
+          "type": "text",
+          "text": "Claude 3.5 Sonnet test response."
+        }],
+        "model": "claude-3-5-sonnet-20241022",
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 15,
+          "output_tokens": 25
+        }
+      },
+      "claude-3-5-haiku-20241022": {
+        "id": "msg_haiku35",
+        "type": "message",
+        "role": "assistant",
+        "content": [{
+          "type": "text",
+          "text": "Claude 3.5 Haiku test response."
+        }],
+        "model": "claude-3-5-haiku-20241022",
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 8,
+          "output_tokens": 12
+        }
+      },
+      "claude-3-opus-20240229": {
+        "id": "msg_opus3",
+        "type": "message",
+        "role": "assistant",
+        "content": [{
+          "type": "text",
+          "text": "Claude 3 Opus test response."
+        }],
+        "model": "claude-3-opus-20240229",
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 30
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": ""
+        }
+      }
+    }
+  },
+  "openrouter": {
+    "default": {
+      "id": "openrouter-abc123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "openai/gpt-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "models": {
+      "openai/gpt-4": {
+        "id": "or-gpt4-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "openai/gpt-4",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "OpenRouter GPT-4 test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 15,
+          "completion_tokens": 25,
+          "total_tokens": 40
+        }
+      },
+      "anthropic/claude-3-5-sonnet": {
+        "id": "or-claude-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "anthropic/claude-3-5-sonnet",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "OpenRouter Claude test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 18,
+          "total_tokens": 30
+        }
+      },
+      "google/gemini-2-flash-thinking-exp-1219": {
+        "id": "or-gemini-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "google/gemini-2-flash-thinking-exp-1219",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "OpenRouter Gemini test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 10,
+          "completion_tokens": 15,
+          "total_tokens": 25
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "id": "or-streaming",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "openai/gpt-4",
+        "choices": [{
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
+      }
+    }
+  },
+  "deepseek": {
+    "default": {
+      "id": "deepseek-abc123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "deepseek-chat",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "models": {
+      "deepseek-chat": {
+        "id": "ds-chat-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "deepseek-chat",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "DeepSeek Chat test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 18,
+          "total_tokens": 30
+        }
+      },
+      "deepseek-coder": {
+        "id": "ds-coder-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "deepseek-coder",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "DeepSeek Coder test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 10,
+          "completion_tokens": 15,
+          "total_tokens": 25
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "id": "ds-streaming",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "deepseek-chat",
+        "choices": [{
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
+      }
+    }
+  },
+  "mistral": {
+    "default": {
+      "id": "mistral-abc123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "mistral-large-latest",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "models": {
+      "mistral-large-latest": {
+        "id": "mistral-large-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "mistral-large-latest",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Mistral Large test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 15,
+          "completion_tokens": 25,
+          "total_tokens": 40
+        }
+      },
+      "mistral-small-latest": {
+        "id": "mistral-small-test",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "mistral-small-latest",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Mistral Small test response."
+          },
+          "finish_reason": "stop"
+        }],
+        "usage": {
+          "prompt_tokens": 8,
+          "completion_tokens": 12,
+          "total_tokens": 20
+        }
+      }
+    },
+    "streaming": {
+      "chunk": {
+        "id": "mistral-streaming",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "mistral-large-latest",
+        "choices": [{
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
+      }
+    }
+  }
+}

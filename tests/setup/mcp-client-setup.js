@@ -5,7 +5,7 @@
  * Ensures proper test environment setup for server subprocess execution.
  */
 
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { beforeAll, afterAll, beforeEach, afterEach, expect } from 'vitest';
 
 // Test environment state
 const testServerPorts = new Set();
@@ -22,7 +22,7 @@ beforeAll(async () => {
 
   // Configure HTTP transport for testing
   process.env.HTTP_PORT = '0'; // Use random ports
-  process.env.HTTP_SESSION_TIMEOUT = '30000'; // Short timeout for tests
+  process.env.HTTP_SESSION_TIMEOUT = '60000'; // Minimum allowed timeout for tests
   process.env.HTTP_MAX_CONCURRENT_SESSIONS = '5'; // Limit for test stability
   process.env.HTTP_REQUEST_TIMEOUT = '15000'; // Shorter request timeout
 

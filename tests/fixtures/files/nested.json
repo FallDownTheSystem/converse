@@ -1,0 +1,90 @@
+{
+  "level1": {
+    "string": "value",
+    "number": 42,
+    "boolean": true,
+    "null": null,
+    "array": [1, 2, 3],
+    "level2": {
+      "description": "Second level of nesting",
+      "properties": {
+        "id": 123,
+        "name": "Test Object",
+        "tags": ["test", "nested", "json"]
+      },
+      "level3": {
+        "deep": true,
+        "data": {
+          "level4": {
+            "message": "Four levels deep",
+            "coordinates": {
+              "x": 10,
+              "y": 20,
+              "z": 30
+            },
+            "level5": {
+              "ultra_deep": "Five levels of nesting",
+              "matrix": [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9]
+              ],
+              "level6": {
+                "seriously": "This is getting deep",
+                "level7": {
+                  "wow": "Seven levels",
+                  "level8": {
+                    "extreme": "Eight levels deep",
+                    "level9": {
+                      "insane": "Nine levels",
+                      "level10": {
+                        "maximum": "Ten levels of nesting!",
+                        "the_end": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "metadata": {
+    "created": "2024-01-01T00:00:00Z",
+    "purpose": "Testing deeply nested JSON structures",
+    "warnings": [
+      "Deep nesting can impact performance",
+      "Some parsers have depth limits"
+    ]
+  },
+  "circular_reference_comment": "In real scenarios, circular references would cause issues",
+  "mixed_nesting": {
+    "array_of_objects": [
+      {"id": 1, "data": {"nested": true}},
+      {"id": 2, "data": {"nested": true}}
+    ],
+    "object_with_arrays": {
+      "list1": [1, 2, [3, 4, [5, 6]]],
+      "list2": [
+        {"a": 1},
+        {"b": [2, 3, 4]},
+        {"c": {"d": {"e": 5}}}
+      ]
+    }
+  },
+  "special_values": {
+    "empty_object": {},
+    "empty_array": [],
+    "empty_string": "",
+    "zero": 0,
+    "negative": -42,
+    "float": 3.14159,
+    "scientific": 1.23e-10,
+    "unicode": "Hello 世界 🌍",
+    "escaped": "Line 1\\nLine 2\\tTabbed",
+    "url": "https://example.com/path?query=value&other=true",
+    "regex_pattern": "^[a-zA-Z0-9]+@[a-zA-Z0-9]+\\.[a-zA-Z]{2,}$"
+  }
+}

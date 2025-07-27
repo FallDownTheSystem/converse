@@ -183,12 +183,12 @@ export async function consensusTool(args, dependencies) {
         provider: providerName,
         providerInstance: provider,
         options: {
-          model: resolvedModelName, // Use resolved model name for API call
           temperature,
           reasoning_effort,
           use_websearch,
           config,
-          ...modelSpec // Allow model-specific overrides
+          ...modelSpec, // Allow model-specific overrides
+          model: resolvedModelName // Use resolved model name for API call (must be after spread)
         }
       });
     }

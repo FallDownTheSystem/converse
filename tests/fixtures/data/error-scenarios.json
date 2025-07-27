@@ -1,0 +1,375 @@
+{
+  "openai": {
+    "rateLimit": {
+      "error": {
+        "message": "Rate limit reached for gpt-4 in organization org-abc123 on requests per min (RPM): Limit 3, Used 3, Requested 1.",
+        "type": "rate_limit_error",
+        "param": null,
+        "code": "rate_limit_exceeded"
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "message": "Incorrect API key provided: sk-1234****5678. You can find your API key at https://platform.openai.com/api-keys.",
+        "type": "invalid_request_error",
+        "param": null,
+        "code": "invalid_api_key"
+      }
+    },
+    "modelNotFound": {
+      "error": {
+        "message": "The model `gpt-5` does not exist or you do not have access to it.",
+        "type": "invalid_request_error",
+        "param": null,
+        "code": "model_not_found"
+      }
+    },
+    "contextLengthExceeded": {
+      "error": {
+        "message": "This model's maximum context length is 8192 tokens. However, your messages resulted in 12000 tokens.",
+        "type": "invalid_request_error",
+        "param": "messages",
+        "code": "context_length_exceeded"
+      }
+    },
+    "invalidParameter": {
+      "error": {
+        "message": "Invalid value for 'temperature': 2.5 is greater than the maximum of 2.",
+        "type": "invalid_request_error",
+        "param": "temperature",
+        "code": "invalid_value"
+      }
+    },
+    "serverError": {
+      "error": {
+        "message": "The server had an error while processing your request. Sorry about that!",
+        "type": "server_error",
+        "param": null,
+        "code": "internal_error"
+      }
+    },
+    "timeout": {
+      "error": {
+        "message": "Request timeout",
+        "type": "timeout_error",
+        "param": null,
+        "code": "timeout"
+      }
+    }
+  },
+  "google": {
+    "quotaExceeded": {
+      "error": {
+        "code": 429,
+        "message": "Quota exceeded for quota metric 'Generate requests' and limit 'Generate requests per minute' of service 'generativelanguage.googleapis.com'",
+        "status": "RESOURCE_EXHAUSTED",
+        "details": [{
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          "reason": "RATE_LIMIT_EXCEEDED",
+          "domain": "googleapis.com"
+        }]
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "code": 403,
+        "message": "API key not valid. Please pass a valid API key.",
+        "status": "PERMISSION_DENIED",
+        "details": [{
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          "reason": "API_KEY_INVALID",
+          "domain": "googleapis.com"
+        }]
+      }
+    },
+    "modelNotFound": {
+      "error": {
+        "code": 404,
+        "message": "models/gemini-ultra is not found for API version v1",
+        "status": "NOT_FOUND"
+      }
+    },
+    "invalidRequest": {
+      "error": {
+        "code": 400,
+        "message": "Invalid value at 'contents[0].parts[0].text': empty string",
+        "status": "INVALID_ARGUMENT"
+      }
+    },
+    "safetyBlock": {
+      "candidates": [{
+        "content": {
+          "parts": [{
+            "text": ""
+          }],
+          "role": "model"
+        },
+        "finishReason": "SAFETY",
+        "safetyRatings": [{
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "HIGH"
+        }]
+      }],
+      "promptFeedback": {
+        "blockReason": "SAFETY",
+        "safetyRatings": [{
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "HIGH"
+        }]
+      }
+    }
+  },
+  "xai": {
+    "rateLimit": {
+      "error": {
+        "message": "Rate limit exceeded. Please try again later.",
+        "type": "rate_limit_error",
+        "code": "rate_limit_exceeded"
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "message": "Invalid authentication credentials",
+        "type": "authentication_error",
+        "code": "invalid_api_key"
+      }
+    },
+    "modelNotFound": {
+      "error": {
+        "message": "Model grok-5 not found",
+        "type": "invalid_request_error",
+        "code": "model_not_found"
+      }
+    },
+    "serverError": {
+      "error": {
+        "message": "Internal server error",
+        "type": "server_error",
+        "code": "internal_error"
+      }
+    }
+  },
+  "anthropic": {
+    "rateLimit": {
+      "error": {
+        "type": "error",
+        "error": {
+          "type": "rate_limit_error",
+          "message": "Your account has hit a rate limit"
+        }
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "type": "error",
+        "error": {
+          "type": "authentication_error",
+          "message": "Invalid API key"
+        }
+      }
+    },
+    "modelNotFound": {
+      "error": {
+        "type": "error",
+        "error": {
+          "type": "invalid_request_error",
+          "message": "model: model \"claude-4\" not found"
+        }
+      }
+    },
+    "contextLengthExceeded": {
+      "error": {
+        "type": "error",
+        "error": {
+          "type": "invalid_request_error",
+          "message": "messages: total token count for all messages exceeds model context window"
+        }
+      }
+    },
+    "overloaded": {
+      "error": {
+        "type": "error",
+        "error": {
+          "type": "overloaded_error",
+          "message": "Overloaded. Please try again later."
+        }
+      }
+    }
+  },
+  "openrouter": {
+    "rateLimit": {
+      "error": {
+        "error": {
+          "message": "Rate limit exceeded for model openai/gpt-4",
+          "type": "rate_limit_error",
+          "code": 429
+        }
+      }
+    },
+    "insufficientCredits": {
+      "error": {
+        "error": {
+          "message": "Insufficient credits",
+          "type": "insufficient_credits",
+          "code": 402
+        }
+      }
+    },
+    "modelNotAvailable": {
+      "error": {
+        "error": {
+          "message": "Model anthropic/claude-3-opus is not currently available",
+          "type": "model_not_available",
+          "code": 503
+        }
+      }
+    }
+  },
+  "deepseek": {
+    "rateLimit": {
+      "error": {
+        "message": "Rate limit exceeded",
+        "type": "rate_limit_error",
+        "code": "rate_limit_exceeded"
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "message": "Invalid API key",
+        "type": "invalid_request_error",
+        "code": "invalid_api_key"
+      }
+    },
+    "contextLengthExceeded": {
+      "error": {
+        "message": "Maximum context length exceeded",
+        "type": "invalid_request_error",
+        "code": "context_length_exceeded"
+      }
+    }
+  },
+  "mistral": {
+    "rateLimit": {
+      "error": {
+        "message": "Too many requests",
+        "type": "rate_limit_error",
+        "code": 429
+      }
+    },
+    "invalidKey": {
+      "error": {
+        "message": "Unauthorized",
+        "type": "authentication_error",
+        "code": 401
+      }
+    },
+    "modelNotFound": {
+      "error": {
+        "message": "Model not found",
+        "type": "invalid_request_error",
+        "code": 404
+      }
+    }
+  },
+  "validation": {
+    "missingPrompt": {
+      "type": "validation_error",
+      "message": "Missing required parameter: prompt",
+      "param": "prompt"
+    },
+    "invalidModel": {
+      "type": "validation_error",
+      "message": "Invalid model format. Expected format: 'provider/model' or known model name",
+      "param": "model"
+    },
+    "invalidTemperature": {
+      "type": "validation_error",
+      "message": "Temperature must be between 0 and 2",
+      "param": "temperature"
+    },
+    "invalidFileFormat": {
+      "type": "validation_error",
+      "message": "Invalid file format. File must be a string path",
+      "param": "files"
+    },
+    "fileNotFound": {
+      "type": "file_error",
+      "message": "File not found: /invalid/path/file.txt",
+      "path": "/invalid/path/file.txt"
+    },
+    "fileTooLarge": {
+      "type": "file_error",
+      "message": "File too large: 15MB exceeds maximum size of 10MB",
+      "path": "/path/to/large/file.txt"
+    },
+    "unsupportedImageFormat": {
+      "type": "validation_error",
+      "message": "Unsupported image format. Supported formats: jpeg, jpg, png, gif, webp",
+      "param": "images"
+    },
+    "consensusNoModels": {
+      "type": "validation_error",
+      "message": "At least one model must be specified for consensus",
+      "param": "models"
+    },
+    "consensusInvalidModelFormat": {
+      "type": "validation_error",
+      "message": "Each model in consensus must be an object with 'model' property",
+      "param": "models"
+    }
+  },
+  "network": {
+    "connectionRefused": {
+      "code": "ECONNREFUSED",
+      "message": "connect ECONNREFUSED 127.0.0.1:3000",
+      "errno": -4078,
+      "syscall": "connect"
+    },
+    "dnsNotFound": {
+      "code": "ENOTFOUND",
+      "message": "getaddrinfo ENOTFOUND api.invalid-domain.com",
+      "errno": -3008,
+      "syscall": "getaddrinfo"
+    },
+    "timeout": {
+      "code": "ETIMEDOUT",
+      "message": "Request timeout after 30000ms",
+      "errno": -4039,
+      "syscall": "connect"
+    },
+    "socketHangUp": {
+      "code": "ECONNRESET",
+      "message": "socket hang up",
+      "errno": -4077,
+      "syscall": "read"
+    }
+  },
+  "mcp": {
+    "toolNotFound": {
+      "jsonrpc": "2.0",
+      "error": {
+        "code": -32601,
+        "message": "Tool not found: invalid_tool"
+      }
+    },
+    "invalidParams": {
+      "jsonrpc": "2.0",
+      "error": {
+        "code": -32602,
+        "message": "Invalid parameters: missing required field 'prompt'"
+      }
+    },
+    "internalError": {
+      "jsonrpc": "2.0",
+      "error": {
+        "code": -32603,
+        "message": "Internal error"
+      }
+    },
+    "transportError": {
+      "type": "transport_error",
+      "message": "Failed to communicate with MCP server",
+      "details": "Connection closed unexpectedly"
+    }
+  }
+}

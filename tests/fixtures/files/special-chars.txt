@@ -1,0 +1,126 @@
+Special Characters Test File
+============================
+
+1. Basic Special Characters
+   !@#$%^&*()_+-=[]{}|;':",./<>?
+
+2. Quotes and Apostrophes
+   Single quotes: 'text' 'nested 'quotes' here'
+   Double quotes: "text" "nested "quotes" here"
+   Backticks: `text` `nested `backticks` here`
+   Smart quotes: "curly quotes" 'single curly'
+
+3. Escape Sequences
+   Newline: Line1\nLine2
+   Tab: Column1\tColumn2
+   Backslash: C:\\Users\\Path
+   Quote escape: She said \"Hello\"
+
+4. HTML Entities
+   Less than: &lt;
+   Greater than: &gt;
+   Ampersand: &amp;
+   Non-breaking space: &nbsp;
+   Copyright: &copy;
+   Registered: &reg;
+
+5. SQL Injection Patterns
+   '; DROP TABLE users; --
+   " OR 1=1 --
+   ' UNION SELECT * FROM passwords --
+   `; DELETE FROM data WHERE 1=1;`
+
+6. XSS Patterns
+   <script>alert('XSS')</script>
+   <img src=x onerror="alert('XSS')">
+   javascript:alert('XSS')
+   <svg onload="alert('XSS')">
+
+7. Path Traversal Patterns
+   ../../../etc/passwd
+   ..\\..\\..\\windows\\system32
+   %2e%2e%2f%2e%2e%2f
+   ....//....//....//
+
+8. Command Injection Patterns
+   ; ls -la
+   | whoami
+   && cat /etc/passwd
+   || rm -rf /
+
+9. Regular Expression Special Characters
+   . * + ? ^ $ { } [ ] ( ) | \
+
+10. URL Encoding
+    Space: %20
+    Equals: %3D
+    Ampersand: %26
+    Question: %3F
+
+11. Shell Special Characters
+    Pipe: |
+    Redirect: > < >>
+    Background: &
+    Variable: $VAR ${VAR}
+    Command substitution: $(command) `command`
+
+12. Null and Control Characters
+    Null byte: \0
+    Bell: \a
+    Backspace: \b
+    Form feed: \f
+    Vertical tab: \v
+
+13. Unicode Special Characters
+    Zero-width space: ​
+    Zero-width joiner: ‍
+    Right-to-left mark: ‏
+    Left-to-right mark: ‎
+
+14. File Name Special Cases
+    CON PRN AUX NUL (Windows reserved)
+    .hidden (Unix hidden file)
+    file.txt:stream (NTFS alternate stream)
+
+15. Mixed Encoding Attacks
+    %00<script>alert('XSS')</script>
+    \x3cscript\x3ealert('XSS')\x3c/script\x3e
+    &#60;script&#62;alert('XSS')&#60;/script&#62;
+
+16. Business Logic Special Cases
+    -1 (negative numbers)
+    0 (zero)
+    999999999 (large numbers)
+    0.00000001 (small decimals)
+    NaN (not a number)
+    Infinity
+    null
+    undefined
+
+17. Time and Date Special Cases
+    0000-00-00 00:00:00
+    9999-12-31 23:59:59
+    1970-01-01 00:00:00 (Unix epoch)
+    2038-01-19 03:14:07 (32-bit overflow)
+
+18. Network Special Cases
+    127.0.0.1 (localhost)
+    0.0.0.0 (all interfaces)
+    ::1 (IPv6 localhost)
+    255.255.255.255 (broadcast)
+
+19. Email Special Cases
+    test@example.com
+    test+tag@example.com
+    "test@test"@example.com
+    test@[127.0.0.1]
+
+20. Comments in Various Languages
+    // JavaScript comment
+    /* Multi-line comment */
+    # Python/Shell comment
+    -- SQL comment
+    <!-- HTML comment -->
+    <%-- JSP comment --%>
+
+End of Special Characters Test File

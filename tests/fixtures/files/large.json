@@ -1,0 +1,91 @@
+{
+  "description": "Large JSON file for testing performance and memory handling",
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2024-01-01T00:00:00Z",
+    "records_count": 1000
+  },
+  "settings": {
+    "max_items": 10000,
+    "batch_size": 100,
+    "timeout": 30000,
+    "retry_attempts": 3,
+    "cache_enabled": true
+  },
+  "large_array": [
+${Array.from({length: 100}, (_, i) => `    {
+      "id": ${i + 1},
+      "uuid": "${crypto.randomUUID ? 'uuid-placeholder' : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      })}",
+      "name": "Item ${i + 1}",
+      "description": "This is a longer description for item number ${i + 1} that contains more text to increase the file size",
+      "category": "${['electronics', 'books', 'clothing', 'food', 'toys'][i % 5]}",
+      "price": ${(Math.random() * 1000).toFixed(2)},
+      "quantity": ${Math.floor(Math.random() * 100)},
+      "in_stock": ${i % 2 === 0 ? 'true' : 'false'},
+      "tags": [${['tag1', 'tag2', 'tag3', 'tag4', 'tag5'].slice(0, (i % 5) + 1).map(t => `"${t}"`).join(', ')}],
+      "attributes": {
+        "color": "${['red', 'blue', 'green', 'yellow', 'purple'][i % 5]}",
+        "size": "${['small', 'medium', 'large', 'xl', 'xxl'][i % 5]}",
+        "weight": ${(Math.random() * 10).toFixed(2)},
+        "dimensions": {
+          "length": ${(Math.random() * 100).toFixed(1)},
+          "width": ${(Math.random() * 100).toFixed(1)},
+          "height": ${(Math.random() * 100).toFixed(1)}
+        }
+      },
+      "timestamps": {
+        "created": "2024-01-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z",
+        "updated": "2024-02-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z",
+        "last_accessed": "2024-03-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z"
+      }
+    }`).join(',\n')}
+  ],
+  "nested_structure": {
+    "level1": {
+      "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(10),
+      "level2": {
+        "array": [${Array.from({length: 50}, (_, i) => i).join(', ')}],
+        "level3": {
+          "text": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ".repeat(10),
+          "numbers": {
+            "integers": [${Array.from({length: 100}, (_, i) => i * 2).join(', ')}],
+            "floats": [${Array.from({length: 100}, (_, i) => (i * Math.PI).toFixed(4)).join(', ')}]
+          }
+        }
+      }
+    }
+  },
+  "lookup_table": {
+${Array.from({length: 50}, (_, i) => `    "key_${i}": {
+      "value": "Value for key ${i}",
+      "metadata": {
+        "type": "lookup",
+        "index": ${i},
+        "active": ${i % 3 !== 0 ? 'true' : 'false'}
+      }
+    }`).join(',\n')}
+  },
+  "string_data": {
+    "long_text": "${'A'.repeat(1000)}",
+    "repeated_pattern": "${'pattern '.repeat(100)}",
+    "base64_encoded": "${Buffer.from('This is a test string for base64 encoding'.repeat(10)).toString('base64')}",
+    "unicode_test": "${'Hello 世界 🌍 '.repeat(50)}",
+    "escaped_chars": "${'\\n\\t\\r\\b\\f\\\"\\\' '.repeat(50)}"
+  },
+  "numerical_data": {
+    "sequence": [${Array.from({length: 200}, (_, i) => i).join(', ')}],
+    "fibonacci": [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181],
+    "primes": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71],
+    "random": [${Array.from({length: 100}, () => Math.floor(Math.random() * 1000)).join(', ')}]
+  },
+  "footer": {
+    "checksum": "placeholder-checksum-value",
+    "size_hint": "This file should be several hundred KB when formatted",
+    "compression_ratio": 0.65,
+    "encoding": "UTF-8"
+  }
+}

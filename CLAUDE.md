@@ -108,14 +108,29 @@ npm run test:unit
 # Integration tests only
 npm run test:integration
 
-# MCP client tests (HTTP-based client-server testing)
-npm run test:mcp-client
+# End-to-end tests with real API calls
+npm run test:e2e
 
 # Provider tests
 npm run test:providers
 
 # Tool tests
 npm run test:tools
+
+# MCP client tests (HTTP-based client-server testing)
+npm run test:mcp-client
+
+# Performance tests
+npm run test:performance
+
+# Utility tests
+npm run test:utils
+
+# Resource tests
+npm run test:resources
+
+# Prompt tests
+npm run test:prompts
 ```
 
 ### Development Workflow

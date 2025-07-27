@@ -1,0 +1,273 @@
+{
+  "strings": {
+    "empty": "",
+    "whitespace": "   ",
+    "newlines": "\n\n\n",
+    "tabs": "\t\t\t",
+    "mixed_whitespace": " \t \n \r ",
+    "unicode": "Hello 世界 🌍 émojis ñ",
+    "emoji": "🚀💻🔥🎉😊",
+    "special_chars": "!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    "html_entities": "&lt;script&gt;alert('xss')&lt;/script&gt;",
+    "sql_injection": "'; DROP TABLE users; --",
+    "very_long": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(1000),
+    "zero_width": "Hello​World",
+    "rtl": "مرحبا بالعالم",
+    "control_chars": "Hello\x00World\x01Test\x1F",
+    "surrogate_pairs": "𝕳𝖊𝖑𝖑𝖔 𝖂𝖔𝖗𝖑𝖉",
+    "combining_chars": "é = e + ́",
+    "bom": "\uFEFFHello World",
+    "null_byte": "Hello\0World"
+  },
+  "numbers": {
+    "zero": 0,
+    "negative": -1,
+    "float": 3.14159,
+    "scientific": 1.23e-10,
+    "infinity": "Infinity",
+    "negative_infinity": "-Infinity",
+    "nan": "NaN",
+    "max_safe_integer": 9007199254740991,
+    "min_safe_integer": -9007199254740991,
+    "very_small": 0.0000000001,
+    "very_large": 999999999999999999999
+  },
+  "arrays": {
+    "empty": [],
+    "single": [1],
+    "mixed_types": [1, "two", true, null, {"key": "value"}],
+    "nested": [[1, 2], [3, 4], [[5, 6], [7, 8]]],
+    "sparse": [1, , , 4],
+    "circular_reference_note": "Cannot be represented in JSON - would cause circular reference",
+    "very_large": Array(10000).fill(0),
+    "with_undefined": [1, 2, null, 4]
+  },
+  "objects": {
+    "empty": {},
+    "nested": {
+      "level1": {
+        "level2": {
+          "level3": {
+            "level4": {
+              "level5": "deep"
+            }
+          }
+        }
+      }
+    },
+    "special_keys": {
+      "": "empty key",
+      " ": "space key",
+      "123": "numeric key",
+      "with spaces": "key with spaces",
+      "with-dashes": "key with dashes",
+      "with.dots": "key with dots",
+      "with[brackets]": "key with brackets",
+      "with\"quotes": "key with quotes"
+    },
+    "prototype_pollution": {
+      "__proto__": {"polluted": true},
+      "constructor": {"prototype": {"polluted": true}}
+    },
+    "very_wide": {
+      "key1": "value1",
+      "key2": "value2",
+      "...": "... 1000 more keys ..."
+    }
+  },
+  "files": {
+    "paths": {
+      "absolute_unix": "/home/user/documents/file.txt",
+      "absolute_windows": "C:\\Users\\Username\\Documents\\file.txt",
+      "relative": "./data/file.txt",
+      "parent_directory": "../../../etc/passwd",
+      "with_spaces": "/path with spaces/file name.txt",
+      "with_special_chars": "/path/to/file!@#$%.txt",
+      "unicode_path": "/路径/文件.txt",
+      "very_long_path": "/very/long/path/that/exceeds/normal/limits/and/continues/for/many/more/segments/until/reaching/file.txt",
+      "null_byte_injection": "/path/to/file.txt\0.jpg",
+      "url_encoded": "/path%20to%20file%2Etxt"
+    },
+    "names": {
+      "no_extension": "filename",
+      "multiple_dots": "file.name.with.dots.txt",
+      "hidden_unix": ".hidden_file",
+      "hidden_windows": "file.txt:hidden_stream",
+      "reserved_windows": ["CON", "PRN", "AUX", "NUL", "COM1", "LPT1"],
+      "case_sensitive": ["File.txt", "file.txt", "FILE.TXT", "FiLe.TxT"]
+    },
+    "content": {
+      "empty": "",
+      "single_byte": "a",
+      "binary_marker": "\x00\x01\x02\x03\x04\x05",
+      "line_endings": {
+        "unix": "Line 1\nLine 2\nLine 3",
+        "windows": "Line 1\r\nLine 2\r\nLine 3",
+        "old_mac": "Line 1\rLine 2\rLine 3",
+        "mixed": "Line 1\nLine 2\r\nLine 3\r"
+      },
+      "no_final_newline": "Last line without newline",
+      "only_newlines": "\n\n\n\n\n",
+      "very_long_line": "A".repeat(10000),
+      "unicode_bom": {
+        "utf8": "\uFEFFContent",
+        "utf16_be": "\uFEFF\u0043\u006F\u006E\u0074\u0065\u006E\u0074",
+        "utf16_le": "\uFFFE\u0043\u006F\u006E\u0074\u0065\u006E\u0074"
+      }
+    }
+  },
+  "images": {
+    "formats": {
+      "minimal_png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "minimal_jpeg": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=",
+      "minimal_gif": "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "minimal_webp": "UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAQAcJaQAA3AA/v3AgAA=",
+      "corrupted": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ_CORRUPTED_DATA",
+      "empty": "",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1\" height=\"1\"><rect width=\"1\" height=\"1\" fill=\"red\"/></svg>"
+    },
+    "sizes": {
+      "1x1": {
+        "width": 1,
+        "height": 1
+      },
+      "0x0": {
+        "width": 0,
+        "height": 0
+      },
+      "very_large": {
+        "width": 10000,
+        "height": 10000
+      },
+      "aspect_ratios": {
+        "square": {"width": 100, "height": 100},
+        "wide": {"width": 1920, "height": 1080},
+        "tall": {"width": 1080, "height": 1920},
+        "extreme": {"width": 10000, "height": 1}
+      }
+    }
+  },
+  "models": {
+    "invalid_names": [
+      "",
+      " ",
+      "invalid model",
+      "provider/",
+      "/model",
+      "provider//model",
+      "provider/model/extra",
+      "../../etc/passwd",
+      "provider/model\0",
+      "provider/model; rm -rf /",
+      "very_long_model_name_that_exceeds_reasonable_limits_and_continues_for_many_more_characters"
+    ],
+    "case_variations": [
+      "gpt-4",
+      "GPT-4",
+      "GpT-4",
+      "gpt-4-turbo",
+      "GPT-4-TURBO"
+    ],
+    "special_formats": [
+      "provider/model@version",
+      "provider/model:latest",
+      "provider/model-v2.0",
+      "provider/model_beta",
+      "provider/model.experimental"
+    ]
+  },
+  "parameters": {
+    "temperature": {
+      "min": 0,
+      "max": 2,
+      "negative": -1,
+      "over_max": 3,
+      "float_precision": 0.7777777,
+      "scientific": 1e-10
+    },
+    "max_tokens": {
+      "zero": 0,
+      "negative": -100,
+      "very_large": 1000000,
+      "float": 100.5
+    },
+    "reasoning_effort": {
+      "valid": ["minimal", "low", "medium", "high", "max"],
+      "invalid": ["", "none", "extreme", "11", "HIGH", "Medium"]
+    }
+  },
+  "responses": {
+    "empty_content": {
+      "choices": [{
+        "message": {
+          "content": ""
+        }
+      }]
+    },
+    "null_content": {
+      "choices": [{
+        "message": {
+          "content": null
+        }
+      }]
+    },
+    "missing_fields": {
+      "choices": [{
+        "message": {}
+      }]
+    },
+    "extra_fields": {
+      "choices": [{
+        "message": {
+          "content": "Response",
+          "extra_field": "unexpected",
+          "another_field": 123
+        }
+      }],
+      "unexpected_array": [1, 2, 3]
+    },
+    "wrong_types": {
+      "choices": "not an array",
+      "usage": "not an object"
+    },
+    "multiple_choices": {
+      "choices": [
+        {"message": {"content": "First choice"}},
+        {"message": {"content": "Second choice"}},
+        {"message": {"content": "Third choice"}}
+      ]
+    },
+    "streaming_edge_cases": {
+      "empty_delta": {
+        "choices": [{"delta": {}}]
+      },
+      "multiple_stop_reasons": {
+        "choices": [{"delta": {"content": "Hello"}, "finish_reason": "stop"}]
+      },
+      "out_of_order": {
+        "chunks": [
+          {"choices": [{"index": 2, "delta": {"content": "Third"}}]},
+          {"choices": [{"index": 0, "delta": {"content": "First"}}]},
+          {"choices": [{"index": 1, "delta": {"content": "Second"}}]}
+        ]
+      }
+    }
+  },
+  "timing": {
+    "delays": {
+      "immediate": 0,
+      "fast": 100,
+      "normal": 1000,
+      "slow": 5000,
+      "timeout": 30000,
+      "beyond_timeout": 60000
+    },
+    "patterns": {
+      "steady": [100, 100, 100, 100],
+      "increasing": [100, 200, 400, 800],
+      "decreasing": [800, 400, 200, 100],
+      "sporadic": [100, 1000, 50, 2000, 100],
+      "burst": [10, 10, 10, 1000, 10, 10, 10]
+    }
+  }
+}

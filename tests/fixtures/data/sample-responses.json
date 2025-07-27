@@ -1,0 +1,69 @@
+{
+  "openai": {
+    "success": {
+      "id": "chatcmpl-test123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "gpt-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response from OpenAI."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30
+      }
+    },
+    "error": {
+      "error": {
+        "message": "Invalid API key provided",
+        "type": "invalid_request_error",
+        "code": "invalid_api_key"
+      }
+    }
+  },
+  "google": {
+    "success": {
+      "candidates": [{
+        "content": {
+          "parts": [{
+            "text": "This is a test response from Google Gemini."
+          }],
+          "role": "model"
+        },
+        "finishReason": "STOP"
+      }],
+      "usageMetadata": {
+        "promptTokenCount": 15,
+        "candidatesTokenCount": 25,
+        "totalTokenCount": 40
+      }
+    }
+  },
+  "xai": {
+    "success": {
+      "id": "xai-test123",
+      "object": "chat.completion",
+      "created": 1234567890,
+      "model": "grok-4",
+      "choices": [{
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a test response from XAI Grok."
+        },
+        "finish_reason": "stop"
+      }],
+      "usage": {
+        "prompt_tokens": 12,
+        "completion_tokens": 18,
+        "total_tokens": 30
+      }
+    }
+  }
+}

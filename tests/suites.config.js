@@ -18,7 +18,7 @@ export const testSuites = {
    */
   unit: {
     include: [
-      'tests/providers/**/*.test.js',
+      'tests/unit/providers/**/*.test.js',
       'tests/tools/**/*.test.js'
     ],
     exclude: [
@@ -40,20 +40,34 @@ export const testSuites = {
    */
   integration: {
     include: [
-      'tests/integration/mcp-protocol.test.js',
-      'tests/integration/mcp-protocol-enhanced.test.js',
-      'tests/integration/mcp-server-lifecycle.test.js',
-      'tests/integration/tools-integration.test.js',
-      'tests/integration/continuation-flow.test.js',
-      'tests/integration/error-recovery.test.js',
-      'tests/integration/mcp-client-integration.test.js',
-      'tests/integration/consensus-image.test.js',
+      'tests/integration/mcp-protocol/**/*.test.js',
+      'tests/integration/tools/**/*.test.js',
+      'tests/integration/general/**/*.test.js',
+      'tests/integration/performance/**/*.test.js'
     ],
     exclude: [
-      'tests/integration/real-api*.test.js',
-      'tests/integration/performance*.test.js'
+      'tests/integration/providers/**/*.test.js'
     ],
     testTimeout: 45000, // 45 seconds for HTTP transport
+    setupFiles: [],
+    env: {
+      NODE_ENV: 'test',
+      LOG_LEVEL: 'error'
+    }
+  },
+
+  /**
+   * Provider Tests - Unit tests for all provider implementations
+   * Suitable for: Development, CI/CD
+   * Requirements: None (uses mocks)
+   * Execution time: ~15 seconds
+   */
+  providers: {
+    include: [
+      'tests/unit/providers/**/*.test.js'
+    ],
+    exclude: [],
+    testTimeout: 10000, // 10 seconds
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
@@ -69,8 +83,10 @@ export const testSuites = {
    */
   'real-api': {
     include: [
-      'tests/integration/real-api.test.js',
-      'tests/integration/real-api-enhanced.test.js'
+      'tests/integration/providers/real-api.test.js',
+      'tests/integration/providers/real-api-enhanced.test.js',
+      'tests/integration/providers/new-providers-api.test.js',
+      'tests/integration/providers/provider-image-tests.test.js'
     ],
     exclude: [],
     testTimeout: 60000, // 1 minute per test
@@ -89,15 +105,12 @@ export const testSuites = {
    */
   'mcp-client': {
     include: [
-      'tests/integration/mcp-client-integration.test.js',
-      'tests/integration/mcp-protocol-enhanced.test.js',
-      'tests/integration/mcp-server-lifecycle.test.js',
+      'tests/integration/mcp-protocol/**/*.test.js',
       'tests/utils/HTTPMCPServerManager.test.js',
       'tests/utils/HTTPMCPTestClient.test.js'
     ],
     exclude: [
-      'tests/integration/real-api*.test.js',
-      'tests/integration/performance*.test.js'
+      'tests/integration/providers/**/*.test.js'
     ],
     testTimeout: 45000, // 45 seconds for HTTP transport
     setupFiles: ['tests/setup/mcp-client-setup.js'],
@@ -119,7 +132,7 @@ export const testSuites = {
    */
   performance: {
     include: [
-      'tests/integration/performance-consensus.test.js'
+      'tests/integration/performance/**/*.test.js'
     ],
     exclude: [],
     testTimeout: 300000, // 5 minutes per test
@@ -138,20 +151,16 @@ export const testSuites = {
    */
   ci: {
     include: [
-      'tests/providers/**/*.test.js',
+      'tests/unit/providers/**/*.test.js',
       'tests/tools/**/*.test.js',
-      'tests/integration/mcp-protocol.test.js',
-      'tests/integration/mcp-protocol-enhanced.test.js',
-      'tests/integration/mcp-server-lifecycle.test.js',
-      'tests/integration/tools-integration.test.js',
-      'tests/integration/continuation-flow.test.js',
-      'tests/integration/error-recovery.test.js',
-      'tests/integration/mcp-client-integration.test.js',
+      'tests/integration/mcp-protocol/**/*.test.js',
+      'tests/integration/tools/**/*.test.js',
+      'tests/integration/general/**/*.test.js',
       'tests/utils/HTTPMCPServerManager.test.js',
     ],
     exclude: [
-      'tests/integration/real-api*.test.js',
-      'tests/integration/performance*.test.js'
+      'tests/integration/providers/**/*.test.js',
+      'tests/integration/performance/**/*.test.js'
     ],
     testTimeout: 45000, // 45 seconds for HTTP transport
     setupFiles: [],
