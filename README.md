@@ -2,75 +2,13 @@
 
 [![npm version](https://img.shields.io/npm/v/converse-mcp-server.svg)](https://www.npmjs.com/package/converse-mcp-server)
 
-A simplified, functional Node.js implementation of an MCP (Model Context Protocol) server with chat and consensus tools. Built with modern Node.js practices and official SDKs for seamless AI provider integration.
+An MCP (Model Context Protocol) server that enables Claude and other AI assistants to interact with multiple AI providers (OpenAI, Google, Anthropic, X.AI, Mistral, DeepSeek, OpenRouter) through unified chat and consensus tools. Chat with any AI model individually or gather multi-model consensus on complex decisions - all from within your Claude conversation.
 
 ## 🚀 Quick Start
 
-### Option 1: Direct from NPM (Recommended)
+### Step 1: Get Your API Keys
 
-```bash
-# Using npx (recommended)
-npx converse-mcp-server
-
-# Using pnpm dlx (alternative)
-pnpm dlx converse-mcp-server
-
-# Using yarn dlx (alternative)  
-yarn dlx converse-mcp-server
-```
-
-### Option 2: Clone and Install
-
-```bash
-# Clone the repository
-git clone https://github.com/FallDownTheSystem/converse.git
-cd converse
-
-# Install dependencies
-npm install
-
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# Start the server
-npm start
-```
-
-## 📋 Requirements
-
-- **Node.js**: >= 20.0.0 (LTS recommended)
-- **Package Manager**: npm, pnpm, or yarn
-- **API Keys**: At least one provider API key (OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, or OpenRouter)
-
-## 🔑 Configuration
-
-### 1. Environment Variables
-
-Create a `.env` file in your project root:
-
-```bash
-# Required: At least one API key
-OPENAI_API_KEY=sk-proj-your_openai_key_here
-GOOGLE_API_KEY=your_google_api_key_here  
-XAI_API_KEY=xai-your_xai_key_here
-ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
-MISTRAL_API_KEY=your_mistral_key_here
-DEEPSEEK_API_KEY=your_deepseek_key_here
-OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
-
-# Optional: Server configuration
-PORT=3157
-LOG_LEVEL=info
-MAX_MCP_OUTPUT_TOKENS=200000
-
-# Optional: OpenRouter configuration
-OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
-OPENROUTER_TITLE=Converse
-OPENROUTER_DYNAMIC_MODELS=true
-```
-
-### 2. Get API Keys
+You'll need at least one API key from the providers below:
 
 | Provider | Where to Get | Example Format |
 |----------|-------------|----------------|
@@ -82,11 +20,23 @@ OPENROUTER_DYNAMIC_MODELS=true
 | **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | 32+ chars |
 | **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `sk-or-...` |
 
-### 3. Installing in Claude Code or Claude Desktop
+### Step 2: Add to Claude Code or Claude Desktop
 
-There are several ways to add the Converse MCP Server to Claude:
+#### For Claude Code (Recommended)
+```bash
+# Add the server globally (for all projects)
+claude mcp add converse npx converse-mcp-server -s user
 
-#### Option A: Using NPX (Recommended)
+# Then set your API keys
+claude mcp set-env converse OPENAI_API_KEY=your_key_here -s user
+claude mcp set-env converse GOOGLE_API_KEY=your_key_here -s user
+claude mcp set-env converse XAI_API_KEY=your_key_here -s user
+# Add other API keys as needed
+```
+
+#### For Claude Desktop
+
+Add this configuration to your Claude Desktop settings:
 
 ```json
 {
@@ -101,94 +51,14 @@ There are several ways to add the Converse MCP Server to Claude:
         "ANTHROPIC_API_KEY": "your_key_here",
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
-        "OPENROUTER_DYNAMIC_MODELS": "true",
-        "OPENROUTER_TITLE": "Converse",
-        "MAX_MCP_OUTPUT_TOKENS": "200000"
+        "OPENROUTER_API_KEY": "your_key_here"
       }
     }
   }
 }
 ```
 
-#### Option B: Direct Node.js execution
-
-```json
-{
-  "mcpServers": {
-    "converse": {
-      "command": "node",
-      "args": [
-        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js"
-      ],
-      "env": {
-        "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
-        "XAI_API_KEY": "your_key_here",
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "MISTRAL_API_KEY": "your_key_here",
-        "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
-        "OPENROUTER_DYNAMIC_MODELS": "true",
-        "OPENROUTER_TITLE": "Converse",
-        "MAX_MCP_OUTPUT_TOKENS": "200000"
-      }
-    }
-  }
-}
-```
-
-#### Option C: Local HTTP Development (Advanced)
-
-For local development with HTTP transport (optional, for debugging):
-
-1. **First, start the server manually with HTTP transport**:
-   ```bash
-   # In a terminal, navigate to the project directory
-   cd converse
-   MCP_TRANSPORT=http npm run dev  # Starts server on http://localhost:3157/mcp
-   ```
-
-2. **Then configure Claude to connect to it**:
-   ```json
-   {
-     "mcpServers": {
-       "converse-local": {
-         "url": "http://localhost:3157/mcp"
-       }
-     }
-   }
-   ```
-
-**Important**: HTTP transport requires the server to be running before Claude can connect to it. Keep the terminal with the server open while using Claude.
-
-#### Installation Steps
-
-1. **For Claude Code**: 
-   ```bash
-   # Add the server globally (for all projects)
-   claude mcp add converse npx converse-mcp-server -s user
-   
-   # Then set your API keys
-   claude mcp set-env converse OPENAI_API_KEY=your_key_here -s user
-   claude mcp set-env converse GOOGLE_API_KEY=your_key_here -s user
-   claude mcp set-env converse XAI_API_KEY=your_key_here -s user
-   # Add other API keys as needed
-   ```
-
-2. **For Claude Desktop**:
-   - Navigate to Settings → Developer → MCP Servers
-   - Click "Add Server" and paste one of the configurations above
-
-3. **Manual Configuration**:
-   - The configuration file is typically located at:
-     - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-     - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-     - Linux: `~/.config/Claude/claude_desktop_config.json`
-
-**Windows Troubleshooting**: If `npx converse-mcp-server` doesn't work on Windows, try using:
+**Windows Troubleshooting**: If `npx converse-mcp-server` doesn't work on Windows, try:
 ```json
 {
   "command": "cmd",
@@ -196,7 +66,13 @@ For local development with HTTP transport (optional, for debugging):
 }
 ```
 
-For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
+### Step 3: Start Using Converse
+
+Once installed, you can use these commands in Claude:
+
+- **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
+- **Get consensus from multiple models**: Ask Claude to use the consensus tool for complex decisions
+- **Get help**: Type `/converse:help` in Claude for full documentation
 
 ## 🛠️ Available Tools
 
@@ -236,6 +112,131 @@ Multi-provider parallel execution with cross-model feedback.
   "enable_cross_feedback": true,
   "temperature": 0.2
 }
+```
+
+## 📋 Requirements
+
+- **Node.js**: >= 20.0.0 (LTS recommended)
+- **Package Manager**: npm, pnpm, or yarn
+- **API Keys**: At least one provider API key (OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, or OpenRouter)
+
+## 🔑 Advanced Configuration
+
+### Manual Installation Options
+
+#### Option A: Direct Node.js execution
+
+If you've cloned the repository locally:
+
+```json
+{
+  "mcpServers": {
+    "converse": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your_key_here",
+        "GOOGLE_API_KEY": "your_key_here",
+        "XAI_API_KEY": "your_key_here",
+        "ANTHROPIC_API_KEY": "your_key_here",
+        "MISTRAL_API_KEY": "your_key_here",
+        "DEEPSEEK_API_KEY": "your_key_here",
+        "OPENROUTER_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
+
+#### Option B: Local HTTP Development (Advanced)
+
+For local development with HTTP transport (optional, for debugging):
+
+1. **First, start the server manually with HTTP transport**:
+   ```bash
+   # In a terminal, navigate to the project directory
+   cd converse
+   MCP_TRANSPORT=http npm run dev  # Starts server on http://localhost:3157/mcp
+   ```
+
+2. **Then configure Claude to connect to it**:
+   ```json
+   {
+     "mcpServers": {
+       "converse-local": {
+         "url": "http://localhost:3157/mcp"
+       }
+     }
+   }
+   ```
+
+**Important**: HTTP transport requires the server to be running before Claude can connect to it. Keep the terminal with the server open while using Claude.
+
+### Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash
+# Required: At least one API key
+OPENAI_API_KEY=sk-proj-your_openai_key_here
+GOOGLE_API_KEY=your_google_api_key_here  
+XAI_API_KEY=xai-your_xai_key_here
+ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
+MISTRAL_API_KEY=your_mistral_key_here
+DEEPSEEK_API_KEY=your_deepseek_key_here
+OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
+
+# Optional: Server configuration
+PORT=3157
+LOG_LEVEL=info
+MAX_MCP_OUTPUT_TOKENS=200000
+
+# Optional: OpenRouter configuration
+OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
+OPENROUTER_TITLE=Converse
+OPENROUTER_DYNAMIC_MODELS=true
+```
+
+### Configuration File Locations
+
+The Claude configuration file is typically located at:
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
+
+## 🚀 Running Directly (Without Claude)
+
+### Option 1: Using NPX (No Installation Required)
+
+```bash
+# Run directly from npm registry
+npx converse-mcp-server
+
+# Alternative package managers
+pnpm dlx converse-mcp-server
+yarn dlx converse-mcp-server
+```
+
+### Option 2: Clone and Run
+
+```bash
+# Clone the repository
+git clone https://github.com/FallDownTheSystem/converse.git
+cd converse
+
+# Install dependencies
+npm install
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your API keys
+
+# Start the server
+npm start
 ```
 
 ## 📚 Help & Documentation
