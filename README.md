@@ -22,8 +22,8 @@ You need at least one API key from these providers:
 | **Google** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
 | **X.AI** | [console.x.ai](https://console.x.ai/) | `xai-...` |
 | **Anthropic** | [console.anthropic.com](https://console.anthropic.com/) | `sk-ant-...` |
-| **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | 32+ chars |
-| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | 32+ chars |
+| **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | `wfBMkWL0...` |
+| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | `sk-...` |
 | **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `sk-or-...` |
 
 ### Step 2: Add to Claude Code or Claude Desktop
