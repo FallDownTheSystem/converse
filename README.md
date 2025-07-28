@@ -2,13 +2,19 @@
 
 [![npm version](https://img.shields.io/npm/v/converse-mcp-server.svg)](https://www.npmjs.com/package/converse-mcp-server)
 
-An MCP (Model Context Protocol) server that enables Claude and other AI assistants to interact with multiple AI providers (OpenAI, Google, Anthropic, X.AI, Mistral, DeepSeek, OpenRouter) through unified chat and consensus tools. Chat with any AI model individually or gather multi-model consensus on complex decisions - all from within your Claude conversation.
+An MCP (Model Context Protocol) server that lets Claude talk to other AI models. Use it to chat with models from OpenAI, Google, Anthropic, X.AI, Mistral, DeepSeek, or OpenRouter. You can either talk to one model at a time or get multiple models to weigh in on complex decisions.
+
+## 📋 Requirements
+
+- **Node.js**: Version 20 or higher
+- **Package Manager**: npm (or pnpm/yarn)
+- **API Keys**: At least one from any supported provider
 
 ## 🚀 Quick Start
 
 ### Step 1: Get Your API Keys
 
-You'll need at least one API key from the providers below:
+You need at least one API key from these providers:
 
 | Provider | Where to Get | Example Format |
 |----------|-------------|----------------|
@@ -68,17 +74,17 @@ Add this configuration to your Claude Desktop settings:
 
 ### Step 3: Start Using Converse
 
-Once installed, you can use these commands in Claude:
+Once installed, you can:
 
 - **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
-- **Get consensus from multiple models**: Ask Claude to use the consensus tool for complex decisions
-- **Get help**: Type `/converse:help` in Claude for full documentation
+- **Get consensus**: Ask Claude to use the consensus tool when you need multiple perspectives
+- **Get help**: Type `/converse:help` in Claude
 
 ## 🛠️ Available Tools
 
 ### 1. Chat Tool
 
-General conversational AI with context and continuation support. Supports automatic model routing - simple names route by keyword, slash format (e.g., `anthropic/claude-3.5-sonnet`) checks native providers first before routing to OpenRouter.
+Talk to any AI model with support for files, images, and conversation history. The tool automatically routes your request to the right provider based on the model name.
 
 ```javascript
 // Example usage
@@ -97,7 +103,7 @@ General conversational AI with context and continuation support. Supports automa
 
 ### 2. Consensus Tool
 
-Multi-provider parallel execution with cross-model feedback.
+Get multiple AI models to analyze the same question simultaneously. Each model can see and respond to the others' answers, creating a rich discussion.
 
 ```javascript
 // Example usage
@@ -113,148 +119,6 @@ Multi-provider parallel execution with cross-model feedback.
   "temperature": 0.2
 }
 ```
-
-## 📋 Requirements
-
-- **Node.js**: >= 20.0.0 (LTS recommended)
-- **Package Manager**: npm, pnpm, or yarn
-- **API Keys**: At least one provider API key (OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, or OpenRouter)
-
-## 🔑 Advanced Configuration
-
-### Manual Installation Options
-
-#### Option A: Direct Node.js execution
-
-If you've cloned the repository locally:
-
-```json
-{
-  "mcpServers": {
-    "converse": {
-      "command": "node",
-      "args": [
-        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js"
-      ],
-      "env": {
-        "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
-        "XAI_API_KEY": "your_key_here",
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "MISTRAL_API_KEY": "your_key_here",
-        "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here"
-      }
-    }
-  }
-}
-```
-
-#### Option B: Local HTTP Development (Advanced)
-
-For local development with HTTP transport (optional, for debugging):
-
-1. **First, start the server manually with HTTP transport**:
-   ```bash
-   # In a terminal, navigate to the project directory
-   cd converse
-   MCP_TRANSPORT=http npm run dev  # Starts server on http://localhost:3157/mcp
-   ```
-
-2. **Then configure Claude to connect to it**:
-   ```json
-   {
-     "mcpServers": {
-       "converse-local": {
-         "url": "http://localhost:3157/mcp"
-       }
-     }
-   }
-   ```
-
-**Important**: HTTP transport requires the server to be running before Claude can connect to it. Keep the terminal with the server open while using Claude.
-
-### Environment Variables
-
-Create a `.env` file in your project root:
-
-```bash
-# Required: At least one API key
-OPENAI_API_KEY=sk-proj-your_openai_key_here
-GOOGLE_API_KEY=your_google_api_key_here  
-XAI_API_KEY=xai-your_xai_key_here
-ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
-MISTRAL_API_KEY=your_mistral_key_here
-DEEPSEEK_API_KEY=your_deepseek_key_here
-OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
-
-# Optional: Server configuration
-PORT=3157
-LOG_LEVEL=info
-MAX_MCP_OUTPUT_TOKENS=200000
-
-# Optional: OpenRouter configuration
-OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
-OPENROUTER_TITLE=Converse
-OPENROUTER_DYNAMIC_MODELS=true
-```
-
-### Configuration File Locations
-
-The Claude configuration file is typically located at:
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
-
-For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
-
-## 🚀 Running Directly (Without Claude)
-
-### Option 1: Using NPX (No Installation Required)
-
-```bash
-# Run directly from npm registry
-npx converse-mcp-server
-
-# Alternative package managers
-pnpm dlx converse-mcp-server
-yarn dlx converse-mcp-server
-```
-
-### Option 2: Clone and Run
-
-```bash
-# Clone the repository
-git clone https://github.com/FallDownTheSystem/converse.git
-cd converse
-
-# Install dependencies
-npm install
-
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# Start the server
-npm start
-```
-
-## 📚 Help & Documentation
-
-The Converse MCP Server provides built-in help through:
-
-### Help Prompt
-Access comprehensive documentation directly in Claude:
-- `/converse:help` - Full documentation
-- `/converse:help tools` - Tool-specific help
-- `/converse:help models` - Model information
-- `/converse:help parameters` - Configuration details
-- `/converse:help examples` - Usage examples
-
-### Help Resource
-Programmatic access to documentation:
-- Resource URI: `converse://help`
-- Includes all documentation plus current server version
 
 ## 📊 Supported Models
 
@@ -299,24 +163,196 @@ Programmatic access to documentation:
 - **qwen3-coder**: Specialized for programming tasks (32K context)
 - **kimi-k2**: Moonshot AI Kimi K2 with extended context (200K context)
 
-## 🚀 Development
+## 📚 Help & Documentation
 
-### Install from Source
+### Built-in Help
+Type these commands directly in Claude:
+- `/converse:help` - Full documentation
+- `/converse:help tools` - Tool-specific help
+- `/converse:help models` - Model information
+- `/converse:help parameters` - Configuration details
+- `/converse:help examples` - Usage examples
+
+### Additional Resources
+- **API Reference**: [docs/API.md](docs/API.md)
+- **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Integration Examples**: [docs/EXAMPLES.md](docs/EXAMPLES.md)
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file in your project root:
 
 ```bash
-# Clone and setup
+# Required: At least one API key
+OPENAI_API_KEY=sk-proj-your_openai_key_here
+GOOGLE_API_KEY=your_google_api_key_here  
+XAI_API_KEY=xai-your_xai_key_here
+ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
+MISTRAL_API_KEY=your_mistral_key_here
+DEEPSEEK_API_KEY=your_deepseek_key_here
+OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
+
+# Optional: Server configuration
+PORT=3157
+LOG_LEVEL=info
+MAX_MCP_OUTPUT_TOKENS=200000
+
+# Optional: OpenRouter configuration
+OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
+OPENROUTER_TITLE=Converse
+OPENROUTER_DYNAMIC_MODELS=true
+```
+
+### Configuration Options
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `PORT` | Server port | `3157` | `3157` |
+| `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
+| `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
+
+### Model Selection
+
+Use `"auto"` for automatic model selection, or specify exact models:
+
+```javascript
+// Auto-selection (recommended)
+{ "model": "auto" }
+
+// Specific models
+{ "model": "gemini-2.5-flash" }
+{ "model": "o3" }
+{ "model": "grok-4-0709" }
+
+// Using aliases
+{ "model": "flash" }    // -> gemini-2.5-flash
+{ "model": "pro" }      // -> gemini-2.5-pro
+{ "model": "grok" }     // -> grok-4-0709
+```
+
+### Advanced Configuration
+
+#### Manual Installation Options
+
+##### Option A: Direct Node.js execution
+
+If you've cloned the repository locally:
+
+```json
+{
+  "mcpServers": {
+    "converse": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\YourUsername\\Documents\\Projects\\converse\\src\\index.js"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your_key_here",
+        "GOOGLE_API_KEY": "your_key_here",
+        "XAI_API_KEY": "your_key_here",
+        "ANTHROPIC_API_KEY": "your_key_here",
+        "MISTRAL_API_KEY": "your_key_here",
+        "DEEPSEEK_API_KEY": "your_key_here",
+        "OPENROUTER_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
+
+##### Option B: Local HTTP Development (Advanced)
+
+For local development with HTTP transport (optional, for debugging):
+
+1. **First, start the server manually with HTTP transport**:
+   ```bash
+   # In a terminal, navigate to the project directory
+   cd converse
+   MCP_TRANSPORT=http npm run dev  # Starts server on http://localhost:3157/mcp
+   ```
+
+2. **Then configure Claude to connect to it**:
+   ```json
+   {
+     "mcpServers": {
+       "converse-local": {
+         "url": "http://localhost:3157/mcp"
+       }
+     }
+   }
+   ```
+
+**Important**: HTTP transport requires the server to be running before Claude can connect to it. Keep the terminal with the server open while using Claude.
+
+### Configuration File Locations
+
+The Claude configuration file is typically located at:
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+For more detailed instructions, see the [official MCP configuration guide](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers).
+
+## 💻 Running Standalone (Without Claude)
+
+You can run the server directly without Claude for testing or development:
+
+```bash
+# Quick run (no installation needed)
+npx converse-mcp-server
+
+# Alternative package managers
+pnpm dlx converse-mcp-server
+yarn dlx converse-mcp-server
+```
+
+For development setup, see the [Development](#-development) section below.
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Server won't start:**
+- Check Node.js version: `node --version` (needs v20+)
+- Try a different port: `PORT=3001 npm start`
+
+**API key errors:**
+- Verify your .env file has the correct format
+- Test with: `npm run test:real-api`
+
+**Module import errors:**
+- Clear cache and reinstall: `npm run clean`
+
+### Debug Mode
+
+```bash
+# Enable debug logging
+LOG_LEVEL=debug npm run dev
+
+# Start with debugger
+npm run debug
+
+# Trace all operations
+LOG_LEVEL=trace npm run dev
+```
+
+## 🔧 Development
+
+### Getting Started
+
+```bash
+# Clone the repository
 git clone https://github.com/FallDownTheSystem/converse.git
 cd converse
 npm install
 
-# Development with hot reload
+# Copy environment file and add your API keys
+cp .env.example .env
+
+# Start development server
 npm run dev
-
-# Run tests
-npm test
-
-# Run with specific log level
-LOG_LEVEL=debug npm run dev
 ```
 
 ### Scripts Available
@@ -365,73 +401,74 @@ npm run check-deps     # Check for outdated dependencies
 npm run kill-server    # Kill any server running on port 3157
 ```
 
-### 💡 Development Notes
+### Development Notes
 
-**Port Management**: The server runs on port 3157 by default for HTTP transport. If you encounter "EADDRINUSE" errors:
-
-1. **Automatic cleanup**: `npm start` and `npm run dev` will automatically attempt to kill existing processes on port 3157
-2. **Manual cleanup**: Run `npm run kill-server` to manually free up port 3157  
-3. **Clean start**: Use `:clean` variants (`npm run start:clean`, `npm run dev:clean`) to skip auto-cleanup
-4. **Persistent issues**: If port conflicts persist, manually kill Node.js processes or restart your terminal
-
-**Troubleshooting EADDRINUSE errors**:
-```bash
-# Try manual cleanup first
-npm run kill-server
-
-# Or use a different port
-PORT=3001 npm start
-
-# Or use stdio transport instead
-npm start -- --transport=stdio
-```
+**Port conflicts**: The server uses port 3157 by default. If you get an "EADDRINUSE" error:
+- Run `npm run kill-server` to free the port
+- Or use a different port: `PORT=3001 npm start`
 
 **Transport Modes**: 
-- **Stdio Transport** (default): Traditional stdio communication (launched automatically by Claude)
-- **HTTP Transport**: Use `--transport=http` or set `MCP_TRANSPORT=http` for `http://localhost:3157/mcp` - Better for development and debugging
-  - **Note**: When using HTTP transport, the server must be started manually (e.g., `npm start` or `npm run dev`) as it runs as a standalone process, unlike stdio which is launched as a subprocess by Claude
+- **Stdio** (default): Works automatically with Claude
+- **HTTP**: Better for debugging, requires manual start (`MCP_TRANSPORT=http npm run dev`)
 
 ### Testing with Real APIs
 
-```bash
-# Set up your API keys in .env first
-OPENAI_API_KEY=sk-proj-...
-GOOGLE_API_KEY=AIzaSy...
-XAI_API_KEY=xai-...
+After setting up your API keys in `.env`:
 
-# Run end-to-end tests with real APIs
+```bash
+# Run end-to-end tests
 npm run test:e2e
 
-# Run specific provider tests
+# Test specific providers
 npm run test:integration:providers
 
-# Validate server functionality
+# Full validation
 npm run validate
 ```
 
-### ✅ Validation Steps
+### Validation Steps
 
-After installation, verify everything is working:
+After installation, run these tests to verify everything works:
 
 ```bash
-# 1. Quick server test (should show startup message)
-npm start
-
-# 2. Run basic functionality tests
-npm test
-
-# 3. Test real API connectivity (requires API keys)
-npm run test:real-api
-
-# 4. Comprehensive validation
-node tests/integration/final-integration-test.js
+npm start           # Should show startup message
+npm test            # Should pass all unit tests
+npm run validate    # Full validation suite
 ```
 
-**Expected Results:**
-- Server starts without errors on port 3157
-- All unit tests pass
-- Real API tests connect successfully (if keys configured)
-- Some real API integration tests may occasionally timeout
+### Project Structure
+
+```
+converse/
+├── src/
+│   ├── index.js              # Main server entry point
+│   ├── config.js             # Configuration management
+│   ├── router.js             # Central request dispatcher
+│   ├── continuationStore.js  # State management
+│   ├── systemPrompts.js      # Tool system prompts
+│   ├── providers/            # AI provider implementations
+│   │   ├── index.js          # Provider registry
+│   │   ├── interface.js      # Unified provider interface
+│   │   ├── openai.js         # OpenAI provider
+│   │   ├── xai.js            # XAI provider
+│   │   ├── google.js         # Google provider
+│   │   ├── anthropic.js      # Anthropic provider
+│   │   ├── mistral.js        # Mistral AI provider
+│   │   ├── deepseek.js       # DeepSeek provider
+│   │   ├── openrouter.js     # OpenRouter provider
+│   │   └── openai-compatible.js # Base for OpenAI-compatible APIs
+│   ├── tools/                # MCP tool implementations
+│   │   ├── index.js          # Tool registry
+│   │   ├── chat.js           # Chat tool
+│   │   └── consensus.js      # Consensus tool
+│   └── utils/                # Utility modules
+│       ├── contextProcessor.js # File/image processing
+│       ├── errorHandler.js   # Error handling
+│       └── logger.js         # Logging utilities
+├── tests/                    # Comprehensive test suite
+├── docs/                     # API and architecture docs
+└── package.json              # Dependencies and scripts
+```
 
 ## 📦 Publishing to NPM
 
@@ -493,116 +530,6 @@ npx converse
 - **Tests failing**: Fix issues before publishing
 - **Version conflicts**: Check existing versions with `npm view converse-mcp-server versions`
 - **Permission issues**: Ensure you're logged in with `npm whoami`
-
-## 📁 Project Structure
-
-```
-converse/
-├── src/
-│   ├── index.js              # Main server entry point
-│   ├── config.js             # Configuration management
-│   ├── router.js             # Central request dispatcher
-│   ├── continuationStore.js  # State management
-│   ├── systemPrompts.js      # Tool system prompts
-│   ├── providers/            # AI provider implementations
-│   │   ├── index.js          # Provider registry
-│   │   ├── interface.js      # Unified provider interface
-│   │   ├── openai.js         # OpenAI provider
-│   │   ├── xai.js            # XAI provider
-│   │   ├── google.js         # Google provider
-│   │   ├── anthropic.js      # Anthropic provider
-│   │   ├── mistral.js        # Mistral AI provider
-│   │   ├── deepseek.js       # DeepSeek provider
-│   │   ├── openrouter.js     # OpenRouter provider
-│   │   └── openai-compatible.js # Base for OpenAI-compatible APIs
-│   ├── tools/                # MCP tool implementations
-│   │   ├── index.js          # Tool registry
-│   │   ├── chat.js           # Chat tool
-│   │   └── consensus.js      # Consensus tool
-│   └── utils/                # Utility modules
-│       ├── contextProcessor.js # File/image processing
-│       ├── errorHandler.js   # Error handling
-│       └── logger.js         # Logging utilities
-├── tests/                    # Comprehensive test suite
-├── docs/                     # API and architecture docs
-└── package.json              # Dependencies and scripts
-```
-
-## 🔧 Configuration Options
-
-### Environment Variables
-
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `PORT` | Server port | `3157` | `3157` |
-| `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
-| `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
-
-### Model Selection
-
-Use `"auto"` for automatic model selection, or specify exact models:
-
-```javascript
-// Auto-selection (recommended)
-{ "model": "auto" }
-
-// Specific models
-{ "model": "gemini-2.5-flash" }
-{ "model": "o3" }
-{ "model": "grok-4-0709" }
-
-// Using aliases
-{ "model": "flash" }    // -> gemini-2.5-flash
-{ "model": "pro" }      // -> gemini-2.5-pro
-{ "model": "grok" }     // -> grok-4-0709
-```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Server won't start:**
-```bash
-# Check Node.js version
-node --version  # Should be >= 20.0.0
-
-# Check for port conflicts
-PORT=3001 npm start
-```
-
-**API key errors:**
-```bash
-# Verify your .env file format
-cat .env
-
-# Test API keys
-npm run test:real-api
-```
-
-**Module import errors:**
-```bash
-# Clear cache and reinstall
-npm run clean
-```
-
-### Debug Mode
-
-```bash
-# Enable debug logging
-LOG_LEVEL=debug npm run dev
-
-# Start with debugger
-npm run debug
-
-# Trace all operations
-LOG_LEVEL=trace npm run dev
-```
-
-## 📚 Documentation
-
-- **API Reference**: [docs/API.md](docs/API.md)
-- **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Integration Examples**: [docs/EXAMPLES.md](docs/EXAMPLES.md)
 
 ## 🤝 Contributing
 
