@@ -40,7 +40,7 @@ claude mcp add converse \
   -e DEEPSEEK_API_KEY=your_key_here \
   -e OPENROUTER_API_KEY=your_key_here \
   -s user \
-  -- npx converse-mcp-server
+  npx converse-mcp-server
 ```
 
 #### For Claude Desktop
