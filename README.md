@@ -30,14 +30,17 @@ You need at least one API key from these providers:
 
 #### For Claude Code (Recommended)
 ```bash
-# Add the server globally (for all projects)
-claude mcp add converse npx converse-mcp-server -s user
-
-# Then set your API keys
-claude mcp set-env converse OPENAI_API_KEY=your_key_here -s user
-claude mcp set-env converse GOOGLE_API_KEY=your_key_here -s user
-claude mcp set-env converse XAI_API_KEY=your_key_here -s user
-# Add other API keys as needed
+# Add the server with your API keys
+claude mcp add converse \
+  -e OPENAI_API_KEY=your_key_here \
+  -e GOOGLE_API_KEY=your_key_here \
+  -e XAI_API_KEY=your_key_here \
+  -e ANTHROPIC_API_KEY=your_key_here \
+  -e MISTRAL_API_KEY=your_key_here \
+  -e DEEPSEEK_API_KEY=your_key_here \
+  -e OPENROUTER_API_KEY=your_key_here \
+  -s user \
+  -- npx converse-mcp-server
 ```
 
 #### For Claude Desktop
