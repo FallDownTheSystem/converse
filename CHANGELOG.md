@@ -5,6 +5,32 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2025-08-02
+
+### Fixed
+- **Test Suite**: Fixed numerous test failures across the codebase
+  - Fixed syntax errors in fixture files (duplicate `__dirname` declarations, invalid JSON)
+  - Fixed JSON parsing errors in edge-cases.json (sparse arrays, JavaScript expressions, hex escape sequences)
+  - Fixed performance test reliability by using consistent model selection
+  - Fixed consensus tool cross-feedback by ensuring proper message alternation for Anthropic API
+  - Fixed image validation to handle base64 data URLs properly
+  - Fixed mock provider implementations to properly track method calls
+- **Image Processing**: Enhanced image quality settings
+  - Updated OpenAI provider to use `detail: 'high'` for better image analysis
+  - Updated XAI provider to use `detail: 'high'` for better image analysis
+- **Path Utilities**: Removed shebang line from pathUtils.js module
+
+### Added
+- **Test Images**: Added test images (fruits.png, tulips.png, baboon.png) for image processing tests
+- **Dependencies**: Added vite as a dependency (was missing)
+
+### Improved
+- **Test Coverage**: Enhanced test reliability and coverage
+  - Updated image tests to use real images instead of invalid base64 strings
+  - Added proper base64 encoding helper for XAI image tests
+  - Fixed mock provider tests to properly handle call tracking
+  - Improved error message matching in provider tests
+
 ## [1.7.2] - 2025-01-27
 
 ### Added
