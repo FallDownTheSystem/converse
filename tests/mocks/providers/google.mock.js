@@ -93,8 +93,13 @@ export const MockGoogleGenerativeAI = vi.fn().mockImplementation(() => ({
 
 // Create Google-specific mock provider
 export function createMockGoogleProvider(overrides = {}) {
-  return createMockProvider({
-    name: 'google',
+  const baseProvider = createMockProvider({
+    name: 'google'
+  });
+
+  // Create Google-specific provider with proper tracker access
+  const googleProvider = {
+    ...baseProvider,
 
     getSupportedModels: vi.fn().mockImplementation(() => GOOGLE_MODELS),
 
@@ -115,6 +120,9 @@ export function createMockGoogleProvider(overrides = {}) {
     }),
 
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
+      // Track the call
+      baseProvider.tracker.recordCall('invoke', { messages, options });
+      
       const modelConfig = GOOGLE_MODELS[options.model] || GOOGLE_MODELS['gemini-1.5-flash'];
 
       // Simulate Google-specific validations
@@ -156,10 +164,11 @@ export function createMockGoogleProvider(overrides = {}) {
         .withModel(options.model || 'gemini-1.5-flash')
         .withProvider('google')
         .build();
-    }),
+    })
+  };
 
-    ...overrides
-  });
+  // Apply overrides and return
+  return Object.assign(googleProvider, overrides);
 }
 
 // Export default instance

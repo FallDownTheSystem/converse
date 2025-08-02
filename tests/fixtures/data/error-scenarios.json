@@ -58,6 +58,18 @@
     }
   },
   "google": {
+    "rateLimit": {
+      "error": {
+        "code": 429,
+        "message": "Quota exceeded for quota metric 'Generate requests' and limit 'Generate requests per minute' of service 'generativelanguage.googleapis.com'",
+        "status": "RESOURCE_EXHAUSTED",
+        "details": [{
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          "reason": "RATE_LIMIT_EXCEEDED",
+          "domain": "googleapis.com"
+        }]
+      }
+    },
     "quotaExceeded": {
       "error": {
         "code": 429,

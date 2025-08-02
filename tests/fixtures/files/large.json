@@ -13,79 +13,117 @@
     "cache_enabled": true
   },
   "large_array": [
-${Array.from({length: 100}, (_, i) => `    {
-      "id": ${i + 1},
-      "uuid": "${crypto.randomUUID ? 'uuid-placeholder' : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      })}",
-      "name": "Item ${i + 1}",
-      "description": "This is a longer description for item number ${i + 1} that contains more text to increase the file size",
-      "category": "${['electronics', 'books', 'clothing', 'food', 'toys'][i % 5]}",
-      "price": ${(Math.random() * 1000).toFixed(2)},
-      "quantity": ${Math.floor(Math.random() * 100)},
-      "in_stock": ${i % 2 === 0 ? 'true' : 'false'},
-      "tags": [${['tag1', 'tag2', 'tag3', 'tag4', 'tag5'].slice(0, (i % 5) + 1).map(t => `"${t}"`).join(', ')}],
+    {
+      "id": 1,
+      "uuid": "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx",
+      "name": "Item 1",
+      "description": "This is a longer description for item number 1 that contains more text to increase the file size",
+      "category": "electronics",
+      "price": 123.45,
+      "quantity": 10,
+      "in_stock": true,
+      "tags": ["tag1"],
       "attributes": {
-        "color": "${['red', 'blue', 'green', 'yellow', 'purple'][i % 5]}",
-        "size": "${['small', 'medium', 'large', 'xl', 'xxl'][i % 5]}",
-        "weight": ${(Math.random() * 10).toFixed(2)},
+        "color": "red",
+        "size": "small",
+        "weight": 2.5,
         "dimensions": {
-          "length": ${(Math.random() * 100).toFixed(1)},
-          "width": ${(Math.random() * 100).toFixed(1)},
-          "height": ${(Math.random() * 100).toFixed(1)}
+          "length": 10.0,
+          "width": 5.0,
+          "height": 3.0
         }
       },
       "timestamps": {
-        "created": "2024-01-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z",
-        "updated": "2024-02-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z",
-        "last_accessed": "2024-03-${String(i % 28 + 1).padStart(2, '0')}T${String(i % 24).padStart(2, '0')}:00:00Z"
+        "created": "2024-01-01T00:00:00Z",
+        "updated": "2024-02-01T00:00:00Z",
+        "last_accessed": "2024-03-01T00:00:00Z"
       }
-    }`).join(',\n')}
+    },
+    {
+      "id": 2,
+      "uuid": "yyyyyyyy-yyyy-4yyy-yyyy-yyyyyyyyyyyy",
+      "name": "Item 2",
+      "description": "This is a longer description for item number 2 that contains more text to increase the file size",
+      "category": "books",
+      "price": 234.56,
+      "quantity": 20,
+      "in_stock": false,
+      "tags": ["tag1", "tag2"],
+      "attributes": {
+        "color": "blue",
+        "size": "medium",
+        "weight": 3.5,
+        "dimensions": {
+          "length": 20.0,
+          "width": 10.0,
+          "height": 6.0
+        }
+      },
+      "timestamps": {
+        "created": "2024-01-02T01:00:00Z",
+        "updated": "2024-02-02T01:00:00Z",
+        "last_accessed": "2024-03-02T01:00:00Z"
+      }
+    },
+    {
+      "id": 3,
+      "uuid": "zzzzzzzz-zzzz-4zzz-zzzz-zzzzzzzzzzzz",
+      "name": "Item 3",
+      "description": "This is a longer description for item number 3 that contains more text to increase the file size",
+      "category": "clothing",
+      "price": 345.67,
+      "quantity": 30,
+      "in_stock": true,
+      "tags": ["tag1", "tag2", "tag3"],
+      "attributes": {
+        "color": "green",
+        "size": "large",
+        "weight": 4.5,
+        "dimensions": {
+          "length": 30.0,
+          "width": 15.0,
+          "height": 9.0
+        }
+      },
+      "timestamps": {
+        "created": "2024-01-03T02:00:00Z",
+        "updated": "2024-02-03T02:00:00Z",
+        "last_accessed": "2024-03-03T02:00:00Z"
+      }
+    }
   ],
   "nested_structure": {
     "level1": {
-      "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(10),
+      "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
       "level2": {
-        "array": [${Array.from({length: 50}, (_, i) => i).join(', ')}],
+        "data": "Nested data at level 2",
+        "items": [1, 2, 3, 4, 5],
         "level3": {
-          "text": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ".repeat(10),
-          "numbers": {
-            "integers": [${Array.from({length: 100}, (_, i) => i * 2).join(', ')}],
-            "floats": [${Array.from({length: 100}, (_, i) => (i * Math.PI).toFixed(4)).join(', ')}]
+          "data": "Deeply nested data at level 3",
+          "more_items": ["a", "b", "c"],
+          "level4": {
+            "data": "Even more deeply nested at level 4",
+            "final": true
           }
         }
       }
     }
   },
-  "lookup_table": {
-${Array.from({length: 50}, (_, i) => `    "key_${i}": {
-      "value": "Value for key ${i}",
-      "metadata": {
-        "type": "lookup",
-        "index": ${i},
-        "active": ${i % 3 !== 0 ? 'true' : 'false'}
-      }
-    }`).join(',\n')}
-  },
-  "string_data": {
-    "long_text": "${'A'.repeat(1000)}",
-    "repeated_pattern": "${'pattern '.repeat(100)}",
-    "base64_encoded": "${Buffer.from('This is a test string for base64 encoding'.repeat(10)).toString('base64')}",
-    "unicode_test": "${'Hello 世界 🌍 '.repeat(50)}",
-    "escaped_chars": "${'\\n\\t\\r\\b\\f\\\"\\\' '.repeat(50)}"
-  },
-  "numerical_data": {
-    "sequence": [${Array.from({length: 200}, (_, i) => i).join(', ')}],
-    "fibonacci": [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181],
-    "primes": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71],
-    "random": [${Array.from({length: 100}, () => Math.floor(Math.random() * 1000)).join(', ')}]
+  "statistics": {
+    "total_items": 3,
+    "total_value": 703.68,
+    "average_price": 234.56,
+    "categories": {
+      "electronics": 1,
+      "books": 1,
+      "clothing": 1,
+      "food": 0,
+      "toys": 0
+    }
   },
   "footer": {
-    "checksum": "placeholder-checksum-value",
-    "size_hint": "This file should be several hundred KB when formatted",
-    "compression_ratio": 0.65,
-    "encoding": "UTF-8"
+    "generated_at": "2024-01-01T00:00:00Z",
+    "generator_version": "1.0.0",
+    "checksum": "placeholder-checksum"
   }
 }

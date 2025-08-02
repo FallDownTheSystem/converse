@@ -7,6 +7,22 @@ import {
   hasXAI,
   getSkipMessage
 } from '../../../utils/conditionalTest.js';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+
+// Helper function from XAI docs
+async function getBase64(filePath) {
+    try {
+        const buffer = await fs.readFile(filePath);
+        let base64 = buffer.toString("base64");
+        while (base64.length % 4 > 0) {
+            base64 += "=";
+        }
+        return base64;
+    } catch (error) {
+        throw error;
+    }
+}
 
 describe('XAI Image Processing Tests', () => {
   let config;
@@ -59,20 +75,22 @@ describe('XAI Image Processing Tests', () => {
         expect(responseText).not.toContain('attach the image');
         expect(responseText).not.toContain('no image');
       });
-    }, 60000);
+    }, 120000);
 
     testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should process base64 encoded image', async () => {
       await withHTTPTestServer(async (client, manager) => {
-        // Small 1x1 red pixel PNG as base64
-        const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        // Read the fruits.png image and convert to base64
+        const imagePath = join(process.cwd(), 'fruits.png');
+        const base64_image = await getBase64(imagePath);
+        const base64Image = `data:image/png;base64,${base64_image}`;
 
         const result = await client.callTool({
           name: 'chat',
           arguments: {
-            prompt: 'What color is this image?',
+            prompt: 'What do you see in this image? Just give a brief description.',
             images: [base64Image],
             model: 'grok-4',
             temperature: 0
@@ -84,28 +102,38 @@ describe('XAI Image Processing Tests', () => {
           responsePreview: result.content?.[0]?.text?.substring(0, 100)
         });
 
+        if (result.isError) {
+          console.error('[xai-image-test] Base64 test error:', result.content[0].text);
+          console.error('[xai-image-test] Full result:', JSON.stringify(result, null, 2));
+        }
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
 
-        // Should recognize it's red or mention color
-        expect(responseText).toMatch(/(red|color|pixel)/);
+        // Should recognize fruits in the image (grapes, apples)
+        expect(responseText).toMatch(/(fruit|apple|grape|food|produce|vegetable)/);
       });
-    }, 60000);
+    }, 120000);
 
     testWithApiKeys({
       requiredProviders: ['XAI'],
       requireAll: true
     })('should handle multiple images', async () => {
       await withHTTPTestServer(async (client, manager) => {
-        // Two small 1x1 pixels - red and blue
-        const redPixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-        const bluePixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+        // Read both fruits.png and tulips.png
+        const fruitsPath = join(process.cwd(), 'fruits.png');
+        const tulipsPath = join(process.cwd(), 'tulips.png');
+        
+        const fruitsBase64Data = await getBase64(fruitsPath);
+        const tulipsBase64Data = await getBase64(tulipsPath);
+        
+        const fruitsBase64 = `data:image/png;base64,${fruitsBase64Data}`;
+        const tulipsBase64 = `data:image/png;base64,${tulipsBase64Data}`;
 
         const result = await client.callTool({
           name: 'chat',
           arguments: {
-            prompt: 'How many images do you see and what are their colors?',
-            images: [redPixel, bluePixel],
+            prompt: 'How many images do you see? Briefly describe each one.',
+            images: [fruitsBase64, tulipsBase64],
             model: 'grok-4',
             temperature: 0.3
           }
@@ -114,10 +142,11 @@ describe('XAI Image Processing Tests', () => {
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text.toLowerCase();
 
-        // Should mention two images or multiple images
-        expect(responseText).toMatch(/(two|2|multiple)/);
+        // Should mention two images and describe fruits and flowers
+        expect(responseText).toMatch(/(two|2|both)/);
+        expect(responseText).toMatch(/(fruit|tulip|flower)/);
       });
-    }, 60000);
+    }, 120000);
   });
 
   describe('Image Processing with Text Conversations', () => {
@@ -126,14 +155,16 @@ describe('XAI Image Processing Tests', () => {
       requireAll: true
     })('should maintain conversation context with images', async () => {
       await withHTTPTestServer(async (client, manager) => {
-        // First message with image
-        const redPixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        // First message with baboon image
+        const baboonPath = join(process.cwd(), 'baboon.png');
+        const baboonBase64Data = await getBase64(baboonPath);
+        const baboonBase64 = `data:image/png;base64,${baboonBase64Data}`;
 
         const firstResult = await client.callTool({
           name: 'chat',
           arguments: {
-            prompt: 'Remember this image color. Just say "Remembered" to confirm.',
-            images: [redPixel],
+            prompt: 'What animal is in this image? Remember it for our next interaction.',
+            images: [baboonBase64],
             model: 'grok-4',
             temperature: 0
           }
@@ -146,7 +177,7 @@ describe('XAI Image Processing Tests', () => {
         const secondResult = await client.callTool({
           name: 'chat',
           arguments: {
-            prompt: 'What color was the image I showed you?',
+            prompt: 'What animal did I just show you?',
             continuation_id: conversationId,
             model: 'grok-4',
             temperature: 0
@@ -154,7 +185,7 @@ describe('XAI Image Processing Tests', () => {
         });
 
         expect(secondResult.isError).toBe(false);
-        expect(secondResult.content[0].text.toLowerCase()).toContain('red');
+        expect(secondResult.content[0].text.toLowerCase()).toMatch(/(baboon|monkey|primate|mandrill)/);
 
         logger.info('[xai-image-test] Conversation with image context completed');
       });

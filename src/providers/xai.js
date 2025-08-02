@@ -142,7 +142,7 @@ function convertMessages(messages) {
             type: 'image_url',
             image_url: {
               url: `data:${item.source.media_type};base64,${item.source.data}`,
-              detail: 'auto'
+              detail: 'high'
             }
           });
           debugLog(`[XAI] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);

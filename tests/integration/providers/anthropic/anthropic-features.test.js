@@ -137,6 +137,14 @@ describe('Anthropic Feature-Specific Tests', () => {
         expect(consensusResult.phases.refined).toBeDefined();
         expect(consensusResult.refined_responses).toBeGreaterThan(0);
 
+        // Verify that models actually refined their responses
+        if (consensusResult.phases.refined) {
+          expect(consensusResult.phases.refined.length).toBeGreaterThan(0);
+          // Check that at least one model successfully refined
+          const successfulRefinements = consensusResult.phases.refined.filter(r => r.status === 'success');
+          expect(successfulRefinements.length).toBeGreaterThan(0);
+        }
+
         logger.info('[anthropic-features-test] Cross-feedback consensus test completed');
       });
     }, 180000);

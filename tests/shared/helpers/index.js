@@ -3,7 +3,7 @@
  * Consolidates all common testing helpers
  */
 
-import { vi } from 'vitest';
+import { vi, expect } from 'vitest';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';

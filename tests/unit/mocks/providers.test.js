@@ -403,13 +403,21 @@ describe('Mock Provider Registry', () => {
     expect(Object.keys(available)).toContain('google');
   });
 
-  it('should reset all providers', () => {
+  it('should reset all providers', async () => {
     const openai = registry.get('openai');
     const google = registry.get('google');
 
+    // Mock config with API keys
+    const mockConfig = {
+      apiKeys: {
+        openai: 'test-openai-key',
+        google: 'test-google-key'
+      }
+    };
+
     // Make some calls
-    openai.invoke([]);
-    google.invoke([]);
+    await openai.invoke([], { config: mockConfig });
+    await google.invoke([], { config: mockConfig });
 
     expect(openai.tracker.getCallCount()).toBe(1);
     expect(google.tracker.getCallCount()).toBe(1);

@@ -16,6 +16,16 @@ export {
   CallTracker
 } from './base.mock.js';
 
+// Import provider creators separately to use in registry
+import { createMockOpenAIProvider as _createMockOpenAIProvider } from './openai.mock.js';
+import { createMockGoogleProvider as _createMockGoogleProvider } from './google.mock.js';
+import { createMockXAIProvider as _createMockXAIProvider } from './xai.mock.js';
+import { createMockAnthropicProvider as _createMockAnthropicProvider } from './anthropic.mock.js';
+import { createMockOpenRouterProvider as _createMockOpenRouterProvider } from './openrouter.mock.js';
+import { createMockMistralProvider as _createMockMistralProvider } from './mistral.mock.js';
+import { createMockDeepSeekProvider as _createMockDeepSeekProvider } from './deepseek.mock.js';
+import { resetAllMocks as _resetAllMocks } from './base.mock.js';
+
 // OpenAI mocks
 export {
   createMockOpenAIProvider,
@@ -95,14 +105,15 @@ export {
  * Create a mock provider registry for testing
  */
 export function createMockProviderRegistry(providers = {}) {
+  // Create providers on demand to avoid initialization issues
   const defaultProviders = {
-    openai: mockOpenAIProvider,
-    google: mockGoogleProvider,
-    xai: mockXAIProvider,
-    anthropic: mockAnthropicProvider,
-    openrouter: mockOpenRouterProvider,
-    mistral: mockMistralProvider,
-    deepseek: mockDeepSeekProvider
+    openai: _createMockOpenAIProvider(),
+    google: _createMockGoogleProvider(),
+    xai: _createMockXAIProvider(),
+    anthropic: _createMockAnthropicProvider(),
+    openrouter: _createMockOpenRouterProvider(),
+    mistral: _createMockMistralProvider(),
+    deepseek: _createMockDeepSeekProvider()
   };
 
   return {
@@ -126,7 +137,7 @@ export function createMockProviderRegistry(providers = {}) {
     },
 
     reset() {
-      resetAllMocks(...Object.values(this.providers));
+      _resetAllMocks(...Object.values(this.providers));
     }
   };
 }

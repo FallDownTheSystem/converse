@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Cross-platform path utilities
  * Handles platform-specific path operations to ensure compatibility across Windows, Linux, and macOS

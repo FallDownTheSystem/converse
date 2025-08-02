@@ -123,8 +123,13 @@ export const MockOpenAI = vi.fn().mockImplementation(() => ({
 
 // Create OpenAI-specific mock provider
 export function createMockOpenAIProvider(overrides = {}) {
-  return createMockProvider({
-    name: 'openai',
+  const baseProvider = createMockProvider({
+    name: 'openai'
+  });
+
+  // Create OpenAI-specific provider with proper tracker access
+  const openAIProvider = {
+    ...baseProvider,
 
     getSupportedModels: vi.fn().mockImplementation(() => OPENAI_MODELS),
 
@@ -145,6 +150,9 @@ export function createMockOpenAIProvider(overrides = {}) {
     }),
 
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
+      // Track the call
+      baseProvider.tracker.recordCall('invoke', { messages, options });
+      
       const modelConfig = OPENAI_MODELS[options.model] || OPENAI_MODELS['gpt-4'];
 
       // Simulate OpenAI-specific validations
@@ -206,10 +214,11 @@ export function createMockOpenAIProvider(overrides = {}) {
         .withModel(options.model || 'gpt-4')
         .withProvider('openai')
         .build();
-    }),
+    })
+  };
 
-    ...overrides
-  });
+  // Apply overrides and return
+  return Object.assign(openAIProvider, overrides);
 }
 
 // Export default instance

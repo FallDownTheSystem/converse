@@ -28,6 +28,11 @@ export async function validateFilePaths(filePaths, fileType = 'file') {
       continue;
     }
 
+    // Skip validation for base64 data URLs
+    if (filePath.startsWith('data:')) {
+      continue;
+    }
+
     // Convert to absolute path if needed
     const absolutePath = isAbsolute(filePath)
       ? filePath

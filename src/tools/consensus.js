@@ -268,19 +268,29 @@ ${initialPhase.successful.map((r, i) => `${i + 1}. ${r.model}: ${r.response}`).j
 
 Please provide your refined response:`;
 
-      // Build feedback messages
+      // Build feedback messages - need to add the assistant's initial response first
       const feedbackMessages = [...messages];
-      feedbackMessages.push({
-        role: 'user',
-        content: feedbackPrompt
-      });
 
       // Run refinement calls in parallel
       const refinementResults = await Promise.allSettled(
         initialPhase.successful.map(async (initialResult) => {
           try {
             const call = providerCalls.find(c => c.model === initialResult.model);
-            const response = await call.providerInstance.invoke(feedbackMessages, call.options);
+            
+            // Build model-specific feedback messages with the assistant's initial response
+            const modelFeedbackMessages = [...messages];
+            // Add the assistant's initial response
+            modelFeedbackMessages.push({
+              role: 'assistant',
+              content: initialResult.response
+            });
+            // Now add the feedback prompt
+            modelFeedbackMessages.push({
+              role: 'user',
+              content: feedbackPrompt
+            });
+            
+            const response = await call.providerInstance.invoke(modelFeedbackMessages, call.options);
 
             return {
               ...initialResult,

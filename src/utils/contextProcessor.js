@@ -102,7 +102,34 @@ async function validateFilePath(filePath, options = {}) {
  */
 export async function processFileContent(filePath, options = {}) {
   try {
-    // Security validation
+    // Handle base64 data URLs
+    if (filePath.startsWith('data:')) {
+      const dataUrlMatch = filePath.match(/^data:([^;]+);base64,(.+)$/);
+      if (!dataUrlMatch) {
+        throw new ContextProcessorError(
+          'Invalid data URL format',
+          'INVALID_DATA_URL'
+        );
+      }
+
+      const [, mimeType, base64Data] = dataUrlMatch;
+      const extension = `.${mimeType.split('/')[1]}`;
+      
+      return {
+        path: filePath,
+        originalPath: filePath,
+        size: base64Data.length,
+        extension,
+        type: 'image',
+        content: base64Data,
+        error: null,
+        lastModified: new Date(),
+        encoding: 'base64',
+        mimeType
+      };
+    }
+
+    // Security validation for file paths
     const validatedPath = await validateFilePath(filePath, options);
 
     const fileStats = await stat(validatedPath);

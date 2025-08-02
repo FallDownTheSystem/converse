@@ -108,7 +108,7 @@ describe('Anthropic API Integration Tests', () => {
         });
 
         expect(result.isError).toBeTruthy();
-        expect(result.content[0].text).toMatch(/model.*not found/i);
+        expect(result.content[0].text).toMatch(/not_found_error|model.*claude-nonexistent/i);
       });
     });
   });

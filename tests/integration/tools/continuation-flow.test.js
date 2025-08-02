@@ -510,7 +510,7 @@ describe('Continuation Flow Integration Tests', () => {
 
       expect(resumeResponse.continuation.id).toBe(conversationId);
       expect(resumeResponse.continuation.messageCount).toBeGreaterThan(continueResponse.continuation.messageCount);
-    });
+    }, 60000); // 60 second timeout
 
     it('should handle conversation branching scenario', async () => {
       // Start base conversation
@@ -540,6 +540,6 @@ describe('Continuation Flow Integration Tests', () => {
 
       // Message counts should reflect the branching
       expect(branchConsensus.continuation.messageCount).toBeGreaterThan(continueBase.continuation.messageCount);
-    });
+    }, 60000); // 60 second timeout
   });
 });

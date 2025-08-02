@@ -228,7 +228,7 @@ function convertMessages(messages, useResponsesAPI = false) {
               type: 'image_url',
               image_url: {
                 url: imageUrl,
-                detail: 'auto'
+                detail: 'high'
               }
             });
           }

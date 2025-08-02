@@ -176,7 +176,7 @@ export class FixtureLoader {
       },
       edgeCaseStrings: {
         tool: 'chat',
-        testCases: Object.entries(this.getEdgeCase('strings', 'all')).map(([name, value]) => ({
+        testCases: Object.entries(fixtures.edgeCases.strings).map(([name, value]) => ({
           name,
           value,
           request: { prompt: value, model: 'gpt-3.5-turbo' }

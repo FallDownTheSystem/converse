@@ -2,25 +2,33 @@
  * Example test demonstrating usage of shared test utilities
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import testUtils, {
-  createMockProvider,
-  createMockOpenAIProvider,
-  createMockChatTool,
-  createMockProviderRegistry,
-  createMockResponse,
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import testUtils from '../index.js';
+
+// Destructure from testUtils
+const {
+  mocks: { providers: mockProviders, tools: mockTools },
   helpers,
   fixtures
-} from '../index.js';
+} = testUtils;
+
+// Get specific functions
+const {
+  createMockProvider,
+  createMockOpenAIProvider,
+  createMockProviderRegistry
+} = mockProviders;
+const { createMockChatTool } = mockTools;
+const { createMockResponse } = mockProviders;
 
 describe('Shared Test Utilities Usage Examples', () => {
   let mockConfig;
   let mockLogger;
   let env;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Use setup helper
-    helpers.setup.beforeEachTest();
+    await helpers.setup.beforeEachTest();
 
     // Create mock configuration
     mockConfig = helpers.config.createMockConfig({
@@ -36,9 +44,9 @@ describe('Shared Test Utilities Usage Examples', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Cleanup
-    helpers.setup.afterEachTest();
+    await helpers.setup.afterEachTest();
     env.restore();
   });
 

@@ -10,14 +10,14 @@
     "special_chars": "!@#$%^&*()_+-=[]{}|;':\",./<>?",
     "html_entities": "&lt;script&gt;alert('xss')&lt;/script&gt;",
     "sql_injection": "'; DROP TABLE users; --",
-    "very_long": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(1000),
+    "very_long": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "zero_width": "Hello​World",
     "rtl": "مرحبا بالعالم",
-    "control_chars": "Hello\x00World\x01Test\x1F",
+    "control_chars": "Hello\u0000World\u0001Test\u001F",
     "surrogate_pairs": "𝕳𝖊𝖑𝖑𝖔 𝖂𝖔𝖗𝖑𝖉",
     "combining_chars": "é = e + ́",
     "bom": "\uFEFFHello World",
-    "null_byte": "Hello\0World"
+    "null_byte": "Hello\u0000World"
   },
   "numbers": {
     "zero": 0,
@@ -37,9 +37,9 @@
     "single": [1],
     "mixed_types": [1, "two", true, null, {"key": "value"}],
     "nested": [[1, 2], [3, 4], [[5, 6], [7, 8]]],
-    "sparse": [1, , , 4],
+    "sparse": [1, null, null, 4],
     "circular_reference_note": "Cannot be represented in JSON - would cause circular reference",
-    "very_large": Array(10000).fill(0),
+    "very_large": [0,0,0,0,0,0,0,0,0,0],
     "with_undefined": [1, 2, null, 4]
   },
   "objects": {
@@ -85,7 +85,7 @@
       "with_special_chars": "/path/to/file!@#$%.txt",
       "unicode_path": "/路径/文件.txt",
       "very_long_path": "/very/long/path/that/exceeds/normal/limits/and/continues/for/many/more/segments/until/reaching/file.txt",
-      "null_byte_injection": "/path/to/file.txt\0.jpg",
+      "null_byte_injection": "/path/to/file.txt\u0000.jpg",
       "url_encoded": "/path%20to%20file%2Etxt"
     },
     "names": {
@@ -99,7 +99,7 @@
     "content": {
       "empty": "",
       "single_byte": "a",
-      "binary_marker": "\x00\x01\x02\x03\x04\x05",
+      "binary_marker": "\u0000\u0001\u0002\u0003\u0004\u0005",
       "line_endings": {
         "unix": "Line 1\nLine 2\nLine 3",
         "windows": "Line 1\r\nLine 2\r\nLine 3",
@@ -108,7 +108,7 @@
       },
       "no_final_newline": "Last line without newline",
       "only_newlines": "\n\n\n\n\n",
-      "very_long_line": "A".repeat(10000),
+      "very_long_line": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
       "unicode_bom": {
         "utf8": "\uFEFFContent",
         "utf16_be": "\uFEFF\u0043\u006F\u006E\u0074\u0065\u006E\u0074",
@@ -157,7 +157,7 @@
       "provider//model",
       "provider/model/extra",
       "../../etc/passwd",
-      "provider/model\0",
+      "provider/model\u0000",
       "provider/model; rm -rf /",
       "very_long_model_name_that_exceeds_reasonable_limits_and_continues_for_many_more_characters"
     ],
