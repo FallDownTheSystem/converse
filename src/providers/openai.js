@@ -107,6 +107,36 @@ const SUPPORTED_MODELS = {
     timeout: 120000,
     description: 'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
     aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini']
+  },
+  'o3-deep-research-2025-06-26': {
+    modelName: 'o3-deep-research-2025-06-26',
+    friendlyName: 'OpenAI (O3 Deep Research)',
+    contextWindow: 200000,
+    maxOutputTokens: 100000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsDeepResearch: true,
+    timeout: 5400000, // 90 minutes for deep research
+    description: 'Deep research model (200K context) - In-depth synthesis, comprehensive reports, multi-source analysis (30-90 min runtime)',
+    aliases: ['o3-deep-research', 'o3-research', 'o3 deep research', 'deep-research-o3']
+  },
+  'o4-mini-deep-research-2025-06-26': {
+    modelName: 'o4-mini-deep-research-2025-06-26',
+    friendlyName: 'OpenAI (O4-mini Deep Research)',
+    contextWindow: 200000,
+    maxOutputTokens: 100000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsDeepResearch: true,
+    timeout: 3600000, // 60 minutes for faster deep research
+    description: 'Fast deep research model (200K context) - Lightweight research, faster results, latency-sensitive analysis (15-60 min runtime)',
+    aliases: ['o4-mini-deep-research', 'o4-mini-research', 'o4-research', 'o4 mini deep research', 'deep-research-o4-mini', 'o4-deep-research']
   }
 };
 
@@ -304,7 +334,8 @@ export const openaiProvider = {
 
       // Add web search tools only if requested and model supports it
       if (use_websearch && modelConfig.supportsWebSearch) {
-        requestPayload.tools = [{ type: 'web_search' }];
+        // Use web_search_preview tool for all models in Responses API
+        requestPayload.tools = [{ type: 'web_search_preview' }];
       }
 
       // Add temperature if model supports it
@@ -348,7 +379,8 @@ export const openaiProvider = {
 
     try {
       const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
-      debugLog(`[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with web search)' : ''}`);
+      const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
+      debugLog(`[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${searchInfo}`);
 
       const startTime = Date.now();
 
@@ -389,6 +421,10 @@ export const openaiProvider = {
         usage = response.usage || {};
       }
 
+      // Determine web search usage
+      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+      const webSearchType = webSearchUsed ? 'web_search_preview' : null;
+
       // Return unified response format
       return {
         content,
@@ -405,7 +441,8 @@ export const openaiProvider = {
           finish_reason: stopReason,
           provider: 'openai',
           api_type: apiType,
-          web_search_used: use_websearch && modelConfig.supportsWebSearch
+          web_search_used: webSearchUsed,
+          web_search_type: webSearchType
         }
       };
 
