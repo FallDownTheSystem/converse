@@ -202,8 +202,6 @@ OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
 # Optional: Server configuration
 PORT=3157
 LOG_LEVEL=info
-MAX_MCP_OUTPUT_TOKENS=200000
-MCP_TOOL_TIMEOUT=5400000  # For deep research models (90 minutes)
 
 # Optional: OpenRouter configuration
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
@@ -213,12 +211,26 @@ OPENROUTER_DYNAMIC_MODELS=true
 
 ### Configuration Options
 
+#### Server Environment Variables (.env file)
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `PORT` | Server port | `3157` | `3157` |
 | `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
+
+#### Claude Code Environment Variables (System/Global)
+These must be set in your system environment or when launching Claude Code, NOT in the project .env file:
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
 | `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
-| `MCP_TOOL_TIMEOUT` | Tool execution timeout (ms) | `120000` | `5400000` (90 min) |
+| `MCP_TOOL_TIMEOUT` | Tool execution timeout (ms) | `120000` | `5400000` (90 min for deep research) |
+
+```bash
+# Example: Set globally before starting Claude Code
+export MAX_MCP_OUTPUT_TOKENS=200000
+export MCP_TOOL_TIMEOUT=5400000  # 90 minutes for deep research models
+claude  # Then start Claude Code
+```
 
 ### Model Selection
 
