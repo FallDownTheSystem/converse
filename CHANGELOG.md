@@ -5,6 +5,28 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2025-08-04
+
+### Added
+- **OpenAI Deep Research Models**: Added support for OpenAI's deep research models
+  - Added `o3-deep-research-2025-06-26` model with 90-minute timeout for comprehensive research
+  - Added `o4-mini-deep-research-2025-06-26` model with 60-minute timeout for faster research
+  - Both models support web search via `web_search_preview` tool
+  - Models can run 30-90 minutes for in-depth analysis and multi-source synthesis
+  - Requires setting `MCP_TOOL_TIMEOUT` environment variable (e.g., `5400000` for 90 minutes)
+
+### Changed
+- **Web Search Implementation**: Simplified web search to use only `web_search_preview` tool type
+  - Removed unused `web_search` tool type references
+  - All OpenAI models now consistently use `web_search_preview` when web search is enabled
+  - Removed support for always-search models (`gpt-4o-search-preview`, `gpt-4o-mini-search-preview`)
+
+### Technical Details
+- Deep research models work with existing chat tool - no separate research tool needed
+- Models are integrated into the standard OpenAI provider implementation
+- Supports all standard features: streaming, images, context, continuation
+- Progress notifications and cancellation infrastructure ready for future Claude Code UI support
+
 ## [1.7.3] - 2025-08-02
 
 ### Fixed

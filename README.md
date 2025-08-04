@@ -129,7 +129,9 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 - **o3**: Strong reasoning (200K context)
 - **o3-mini**: Fast O3 variant (200K context)  
 - **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE
+- **o3-deep-research**: Deep research model (200K context) - 30-90 min runtime
 - **o4-mini**: Latest reasoning model (200K context)
+- **o4-mini-deep-research**: Fast deep research model (200K context) - 15-60 min runtime
 - **gpt-4.1**: Advanced reasoning (1M context)
 - **gpt-4o**: Multimodal flagship (128K context)
 - **gpt-4o-mini**: Fast multimodal (128K context)
