@@ -8,12 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.0] - 2025-08-07
 
 ### Added
-- **OpenAI Provider**: Added support for GPT-5, OpenAI's latest flagship model
-  - GPT-5 features: 400K context window, 128K max output tokens
-  - Superior reasoning, code generation, and analysis capabilities
-  - Full support for streaming, function calling, structured outputs, web search, and MCP
-  - Added aliases: `gpt5`, `gpt 5`, `gpt-5-2025-08-07`
-  - Updated model recommendations to prefer GPT-5 over O3 for complex reasoning tasks
+- **OpenAI Provider**: Added support for GPT-5 family models, OpenAI's latest flagship series
+  - **GPT-5**: Latest flagship model with 400K context window, 128K max output tokens
+    - Superior reasoning, code generation, and analysis capabilities
+    - Full support for streaming, function calling, structured outputs, web search, and MCP
+    - Aliases: `gpt5`, `gpt 5`, `gpt-5-2025-08-07`
+  - **GPT-5-mini**: Faster, cost-efficient version for well-defined tasks
+    - Same 400K context and 128K output as GPT-5
+    - Optimized for speed and cost ($0.25 input, $2 output per 1M tokens)
+    - Aliases: `gpt5-mini`, `gpt-5mini`, `gpt 5 mini`, `gpt-5-mini-2025-08-07`
+  - **GPT-5-nano**: Fastest, most cost-efficient version
+    - Same 400K context and 128K output capabilities
+    - Best for summarization and classification ($0.05 input, $0.40 output per 1M tokens)
+    - No web search support
+    - Aliases: `gpt5-nano`, `gpt-5nano`, `gpt 5 nano`, `gpt-5-nano-2025-08-07`
+  - All GPT-5 models don't support temperature parameter
+  - Updated model recommendations to prefer GPT-5 family over O3 for various use cases
 
 ## [1.8.3] - 2025-08-07
 

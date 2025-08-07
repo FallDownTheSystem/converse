@@ -135,21 +135,21 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ### For Complex Reasoning Tasks
 - **Most Intelligent**: gpt-5, o3-pro, gemini-2.5-pro, grok-4
-- **Fast & Smart**: o3-mini, o4-mini, gemini-2.5-flash
-- **Budget-Friendly**: gpt-4o-mini, gemini-2.0-flash-lite
+- **Fast & Smart**: gpt-5-mini, o3-mini, o4-mini, gemini-2.5-flash
+- **Budget-Friendly**: gpt-5-nano, gpt-4o-mini, gemini-2.0-flash-lite
 
 ### For Quick Responses
-- **Ultra-Fast**: gemini-2.5-flash, gemini-2.0-flash, gpt-4o-mini
-- **Good Balance**: o4-mini, grok-3-fast
+- **Ultra-Fast**: gpt-5-nano, gemini-2.5-flash, gemini-2.0-flash, gpt-4o-mini
+- **Good Balance**: gpt-5-mini, o4-mini, grok-3-fast
 
 ### For Large Context Windows
 - **1M+ Tokens**: gpt-4.1 (1M), all Gemini models (1M)
-- **400K Tokens**: gpt-5
+- **400K Tokens**: gpt-5 family (gpt-5, gpt-5-mini, gpt-5-nano)
 - **256K Tokens**: grok-4 series
 - **200K Tokens**: o3 series, o4-mini
 
 ### Special Features
-- **Web Search**: o3 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
+- **Web Search**: gpt-5, gpt-5-mini, o3 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
 - **Thinking Mode**: o3 series (reasoning_effort), gemini models (thinking budget)
 - **Image Support**: All models except gemini-2.0-flash-lite and grok-3 series
 

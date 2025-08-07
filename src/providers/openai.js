@@ -24,6 +24,34 @@ const SUPPORTED_MODELS = {
     description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis',
     aliases: ['gpt5', 'gpt 5', 'gpt-5-2025-08-07']
   },
+  'gpt-5-mini': {
+    modelName: 'gpt-5-mini',
+    friendlyName: 'OpenAI (GPT-5-mini)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,  // GPT-5 models don't support temperature
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    timeout: 180000, // 3 minutes
+    description: 'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
+    aliases: ['gpt5-mini', 'gpt-5mini', 'gpt 5 mini', 'gpt-5-mini-2025-08-07']
+  },
+  'gpt-5-nano': {
+    modelName: 'gpt-5-nano',
+    friendlyName: 'OpenAI (GPT-5-nano)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,  // GPT-5 models don't support temperature
+    supportsWebSearch: false,    // GPT-5-nano doesn't support web search
+    supportsResponsesAPI: true,
+    timeout: 120000, // 2 minutes
+    description: 'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
+    aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07']
+  },
   'o3': {
     modelName: 'o3',
     friendlyName: 'OpenAI (O3)',

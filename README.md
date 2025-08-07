@@ -127,6 +127,8 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 
 ### OpenAI Models
 - **gpt-5**: Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis
+- **gpt-5-mini**: Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts
+- **gpt-5-nano**: Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification
 - **o3**: Strong reasoning (200K context)
 - **o3-mini**: Fast O3 variant (200K context)  
 - **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE
