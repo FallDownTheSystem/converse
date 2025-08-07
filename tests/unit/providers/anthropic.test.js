@@ -272,7 +272,7 @@ describe('Anthropic Provider', () => {
         mockCreate.mockClear();
 
         await anthropicProvider.invoke(messages, {
-          model: 'claude-opus-4-20250514',
+          model: 'claude-opus-4-1-20250805',
           reasoning_effort: effort,
           config: mockConfig
         });
@@ -289,7 +289,7 @@ describe('Anthropic Provider', () => {
       // Test 'max' effort - should not enable thinking since budget (32000) is not < max_tokens (32000)
       mockCreate.mockClear();
       await anthropicProvider.invoke(messages, {
-        model: 'claude-opus-4-20250514',
+        model: 'claude-opus-4-1-20250805',
         reasoning_effort: 'max',
         config: mockConfig
       });

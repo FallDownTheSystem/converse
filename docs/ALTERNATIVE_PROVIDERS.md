@@ -52,7 +52,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 **Configuration Needed**:
 - AWS credentials (access key, secret key)
 - AWS region selection
-- Model ID mapping (e.g., `anthropic.claude-opus-4-20250514-v1:0`)
+- Model ID mapping (e.g., `anthropic.claude-opus-4-1-20250805-v1:0`)
 - Timeout adjustments (default AWS SDK timeout is 1 minute, needs to be increased to 60 minutes)
 
 ### Google Vertex AI
@@ -422,7 +422,7 @@ Create a mapping system for model names across platforms:
 const MODEL_MAPPINGS = {
   anthropic: {
     bedrock: {
-      'claude-opus-4': 'anthropic.claude-opus-4-20250514-v1:0',
+      'claude-opus-4': 'anthropic.claude-opus-4-1-20250805-v1:0',
       'claude-sonnet-4': 'anthropic.claude-sonnet-4-20250514-v1:0'
     },
     vertex: {

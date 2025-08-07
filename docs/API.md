@@ -295,7 +295,7 @@ MCP_TRANSPORT=stdio npm start
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
-| `claude-opus-4-20250514` | `opus-4`, `opus` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
+| `claude-opus-4-1-20250805` | `opus-4.1`, `opus-4`, `opus` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
 | `claude-sonnet-4-20250514` | `sonnet-4`, `sonnet` | 200K | 64K | Extended thinking, images, caching | High performance, balanced |
 | `claude-3-7-sonnet-20250219` | `sonnet-3.7` | 200K | 64K | Extended thinking, images, caching | Enhanced 3.x generation |
 | `claude-3-5-sonnet-20241022` | `claude-3.5-sonnet` | 200K | 8K | Images, caching | Fast and intelligent |

@@ -36,7 +36,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.anthropic.com](https://console.anthropic.com/)
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Supported Models**:
-  - `claude-opus-4-20250514` - Highest intelligence with extended thinking (32K output)
+  - `claude-opus-4-1-20250805` - Highest intelligence with extended thinking (32K output)
   - `claude-sonnet-4-20250514` - Balanced performance with extended thinking (64K output)
   - `claude-3-7-sonnet-20250219` - Enhanced 3.x generation with thinking (64K output)
   - `claude-3-5-sonnet-20241022` - Fast and intelligent model (8K output)

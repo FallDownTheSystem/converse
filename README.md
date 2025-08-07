@@ -148,7 +148,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 - **grok-3-fast**: Higher performance variant
 
 ### Anthropic Models
-- **claude-opus-4**: Highest intelligence with extended thinking (200K context)
+- **claude-opus-4.1**: Highest intelligence with extended thinking (200K context)
 - **claude-sonnet-4**: Balanced performance with extended thinking (200K context)
 - **claude-3.7-sonnet**: Enhanced 3.x generation with thinking (200K context)
 - **claude-3.5-sonnet**: Fast and intelligent (200K context)

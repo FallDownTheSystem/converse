@@ -5,6 +5,15 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Anthropic Provider**: Updated Claude Opus 4 to the new Opus 4.1 model
+  - Model ID changed from `claude-opus-4-20250514` to `claude-opus-4-1-20250805`
+  - Added new aliases: `claude-opus-4-1`, `opus-4.1`, `opus4.1`, `claude-opus-4.1`
+  - Maintains all existing aliases for backward compatibility
+  - Same capabilities: 200K context, 32K output tokens, extended thinking, image support
+
 ## [1.8.0] - 2025-08-04
 
 ### Added

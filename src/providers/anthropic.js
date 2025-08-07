@@ -13,9 +13,9 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
-  'claude-opus-4-20250514': {
-    modelName: 'claude-opus-4-20250514',
-    friendlyName: 'Claude Opus 4',
+  'claude-opus-4-1-20250805': {
+    modelName: 'claude-opus-4-1-20250805',
+    friendlyName: 'Claude Opus 4.1',
     contextWindow: 200000,
     maxOutputTokens: 32000,
     supportsStreaming: true,
@@ -26,8 +26,8 @@ const SUPPORTED_MODELS = {
     minThinkingTokens: 1024,
     maxThinkingTokens: 32000,
     timeout: 300000,
-    description: 'Claude Opus 4 - Highest level of intelligence and capability with extended thinking',
-    aliases: ['claude-4-opus', 'opus-4', 'opus', 'claude-opus', 'claude-opus-4', 'opus4']
+    description: 'Claude Opus 4.1 - Highest level of intelligence and capability with extended thinking',
+    aliases: ['claude-opus-4-1', 'claude-4.1-opus', 'claude-4-1-opus', 'opus-4.1', 'opus-4-1', 'claude-4-opus', 'opus-4', 'opus', 'claude-opus', 'claude-opus-4', 'opus4', 'opus4.1', 'claude-opus-4.1']
   },
   'claude-sonnet-4-20250514': {
     modelName: 'claude-sonnet-4-20250514',
