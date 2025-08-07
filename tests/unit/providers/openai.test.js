@@ -275,7 +275,8 @@ describe('OpenAI Provider', () => {
           finish_reason: 'completed',
           provider: 'openai',
           api_type: 'Responses API',
-          web_search_used: false
+          web_search_used: false,
+          web_search_type: null
         }
       });
 
