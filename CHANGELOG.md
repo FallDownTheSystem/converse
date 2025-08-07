@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Aliases: `gpt5-nano`, `gpt-5nano`, `gpt 5 nano`, `gpt-5-nano-2025-08-07`
   - All GPT-5 models don't support temperature parameter
   - Updated model recommendations to prefer GPT-5 family over O3 for various use cases
+- **New API Features for GPT-5**:
+  - **Minimal reasoning effort**: New `minimal` option for fastest responses with few reasoning tokens
+  - **Verbosity control**: New `verbosity` parameter (low/medium/high) to control output length
+    - Low: Concise answers, minimal code commentary
+    - Medium: Balanced responses (default)
+    - High: Thorough explanations and detailed code
+  - Both features supported across entire GPT-5 family (GPT-5, GPT-5-mini, GPT-5-nano)
+  - Enhanced chat tool to support these new parameters with proper defaults
 
 ## [1.8.3] - 2025-08-07
 

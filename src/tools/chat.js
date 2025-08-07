@@ -40,7 +40,8 @@ export async function chatTool(args, dependencies) {
       temperature = 0.5,
       use_websearch = false,
       images = [],
-      reasoning_effort = 'medium'
+      reasoning_effort = 'medium',
+      verbosity = 'medium'
     } = args;
 
     let conversationHistory = [];
@@ -177,6 +178,7 @@ export async function chatTool(args, dependencies) {
       model: resolvedModel,
       temperature,
       reasoning_effort,
+      verbosity,
       use_websearch,
       config
     };
@@ -395,7 +397,13 @@ chatTool.inputSchema = {
     reasoning_effort: {
       type: 'string',
       enum: ['minimal', 'low', 'medium', 'high', 'max'],
-      description: 'Reasoning depth for thinking models. Examples: "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+      description: 'Reasoning depth for thinking models. Examples: "minimal" (fastest, few reasoning tokens), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+      default: 'medium'
+    },
+    verbosity: {
+      type: 'string',
+      enum: ['low', 'medium', 'high'],
+      description: 'Output verbosity for GPT-5 models. Examples: "low" (concise answers), "medium" (balanced), "high" (thorough explanations). Default: "medium"',
       default: 'medium'
     },
     use_websearch: {

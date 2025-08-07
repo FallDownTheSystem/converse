@@ -82,7 +82,13 @@ MCP_TRANSPORT=stdio npm start
       "type": "string",
       "enum": ["minimal", "low", "medium", "high", "max"],
       "default": "medium", 
-      "description": "Reasoning depth for thinking models. Examples: 'minimal' (quick), 'medium' (balanced), 'high' (complex analysis)"
+      "description": "Reasoning depth for thinking models. Examples: 'minimal' (fastest, few reasoning tokens), 'low' (light analysis), 'medium' (balanced), 'high' (complex analysis)"
+    },
+    "verbosity": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "default": "medium",
+      "description": "Output verbosity for GPT-5 models. Examples: 'low' (concise answers), 'medium' (balanced), 'high' (thorough explanations)"
     },
     "use_websearch": {
       "type": "boolean",

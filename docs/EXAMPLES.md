@@ -48,6 +48,51 @@
 }
 ```
 
+## 🚀 GPT-5 Advanced Features
+
+### Using Minimal Reasoning for Fast Responses
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Write a simple SQL query to get all users created today",
+    "model": "gpt-5",
+    "reasoning_effort": "minimal",
+    "verbosity": "low"
+  }
+}
+```
+
+### High Verbosity for Detailed Explanations
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Explain the architecture of this authentication system and suggest improvements",
+    "model": "gpt-5",
+    "files": ["/c/Users/username/project/src/auth.js"],
+    "reasoning_effort": "high",
+    "verbosity": "high"
+  }
+}
+```
+
+### Cost-Efficient with GPT-5-nano
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Summarize the main points from this document",
+    "model": "gpt-5-nano",
+    "files": ["/c/Users/username/docs/report.md"],
+    "verbosity": "low"
+  }
+}
+```
+
 ## 🔧 Code Analysis Examples
 
 ### Single File Analysis

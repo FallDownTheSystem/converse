@@ -332,6 +332,7 @@ export const openaiProvider = {
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',
+      verbosity = 'medium',
       use_websearch = false,
       config,
       ...otherOptions
@@ -385,13 +386,18 @@ export const openaiProvider = {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
-      // Add reasoning effort for thinking models (o3 series only)
-      if (resolvedModel.startsWith('o3') && reasoning_effort) {
+      // Add reasoning effort for thinking models (o3 series and GPT-5 family)
+      if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
         requestPayload.reasoning = { effort: reasoning_effort };
+      }
+      
+      // Add verbosity for GPT-5 models
+      if (resolvedModel.startsWith('gpt-5') && verbosity) {
+        requestPayload.text = { verbosity: verbosity };
       }
     } else {
       // Build Chat Completions API payload
-      const { reasoning_effort: _unused, ...cleanOptions } = otherOptions;
+      const { reasoning_effort: _unused, verbosity: _unused2, ...cleanOptions } = otherOptions;
       requestPayload = {
         model: resolvedModel,
         messages: openaiMessages,
@@ -404,9 +410,14 @@ export const openaiProvider = {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
-      // Add reasoning effort for thinking models (o3 series only)
-      if (resolvedModel.startsWith('o3') && reasoning_effort) {
+      // Add reasoning effort for thinking models (o3 series and GPT-5 family)
+      if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
         requestPayload.reasoning_effort = reasoning_effort;
+      }
+      
+      // Add verbosity for GPT-5 models
+      if (resolvedModel.startsWith('gpt-5') && verbosity) {
+        requestPayload.verbosity = verbosity;
       }
     }
 
