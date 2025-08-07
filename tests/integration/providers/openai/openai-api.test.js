@@ -51,6 +51,38 @@ describe('OpenAI API Integration Tests', () => {
     testWithApiKeys({
       requiredProviders: ['OPENAI'],
       requireAll: true
+    })('should work with GPT-5 model', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        const result = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'What is 10 divided by 2? Answer with just the number.',
+            model: 'gpt-5'
+            // Note: GPT-5 doesn't support temperature parameter
+          }
+        });
+
+        // If GPT-5 is not available yet (just released), skip the test
+        if (result.isError && result.error?.message?.includes('Model gpt-5 not found')) {
+          console.log('[GPT-5 Test] Model not available yet - OpenAI may still be rolling it out');
+          return; // Skip test gracefully
+        }
+
+        // Log other error details if the call failed
+        if (result.isError) {
+          console.log('[GPT-5 Test] Error details:', JSON.stringify(result, null, 2));
+        }
+
+        expect(result.isError).toBeFalsy();
+        expect(result.content[0].text).toContain('5');
+
+        logger.info('[openai-api-test] GPT-5 test completed');
+      });
+    }, 60000);
+
+    testWithApiKeys({
+      requiredProviders: ['OPENAI'],
+      requireAll: true
     })('should maintain conversation continuity', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // First message

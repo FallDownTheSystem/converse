@@ -5,6 +5,16 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **OpenAI Provider**: Added support for GPT-5, OpenAI's latest flagship model
+  - GPT-5 features: 400K context window, 128K max output tokens
+  - Superior reasoning, code generation, and analysis capabilities
+  - Full support for streaming, function calling, structured outputs, web search, and MCP
+  - Added aliases: `gpt5`, `gpt 5`, `gpt-5-2025-08-07`
+  - Updated model recommendations to prefer GPT-5 over O3 for complex reasoning tasks
+
 ## [1.8.3] - 2025-08-07
 
 ### Changed

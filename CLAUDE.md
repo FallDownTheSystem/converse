@@ -179,7 +179,7 @@ The consensus tool operates with parallel processing across multiple AI provider
 {
   "prompt": "Should we implement real-time collaboration features?",
   "models": [
-    {"model": "o3"},        // Most intelligent: Complex reasoning
+    {"model": "gpt-5"},        // Most intelligent: Superior reasoning
     {"model": "grok-4"},    // Most intelligent: Advanced analysis 
     {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
   ],

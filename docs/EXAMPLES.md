@@ -181,7 +181,7 @@
   "arguments": {
     "prompt": "Given our current system architecture, what's the best approach for implementing real-time notifications?",
     "models": [
-      {"model": "o3"},        // Most intelligent: Complex reasoning
+      {"model": "gpt-5"},        // Most intelligent: Superior reasoning
       {"model": "grok-4"},    // Most intelligent: Advanced analysis
       {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
     ],

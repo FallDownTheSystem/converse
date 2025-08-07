@@ -113,7 +113,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 {
   "prompt": "Should we use microservices or monolith architecture for our e-commerce platform?",
   "models": [
-    {"model": "o3"},
+    {"model": "gpt-5"},
     {"model": "gemini-2.5-flash"},
     {"model": "grok-4-0709"}
   ],
@@ -126,6 +126,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 ## 📊 Supported Models
 
 ### OpenAI Models
+- **gpt-5**: Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis
 - **o3**: Strong reasoning (200K context)
 - **o3-mini**: Fast O3 variant (200K context)  
 - **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE

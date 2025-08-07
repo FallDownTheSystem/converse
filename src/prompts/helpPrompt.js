@@ -134,7 +134,7 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 ## Model Selection Tips
 
 ### For Complex Reasoning Tasks
-- **Most Intelligent**: o3, o3-pro, gemini-2.5-pro, grok-4
+- **Most Intelligent**: gpt-5, o3-pro, gemini-2.5-pro, grok-4
 - **Fast & Smart**: o3-mini, o4-mini, gemini-2.5-flash
 - **Budget-Friendly**: gpt-4o-mini, gemini-2.0-flash-lite
 
@@ -144,6 +144,7 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ### For Large Context Windows
 - **1M+ Tokens**: gpt-4.1 (1M), all Gemini models (1M)
+- **400K Tokens**: gpt-5
 - **256K Tokens**: grok-4 series
 - **200K Tokens**: o3 series, o4-mini
 

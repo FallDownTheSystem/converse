@@ -369,7 +369,7 @@ chatTool.inputSchema = {
     },
     model: {
       type: 'string',
-      description: 'AI model to use. Examples: "auto" (recommended), "o3", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
+      description: 'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

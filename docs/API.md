@@ -55,7 +55,7 @@ MCP_TRANSPORT=stdio npm start
     },
     "model": {
       "type": "string", 
-      "description": "AI model to use. Examples: 'auto' (recommended), 'gemini-2.5-flash', 'o3', 'grok-4-0709'. Default: 'auto'"
+      "description": "AI model to use. Examples: 'auto' (recommended), 'gemini-2.5-flash', 'gpt-5', 'grok-4-0709'. Default: 'auto'"
     },
     "files": {
       "type": "array",

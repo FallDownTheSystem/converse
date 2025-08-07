@@ -10,6 +10,20 @@ import { debugLog, debugError } from '../utils/console.js';
 
 // Define supported models with their capabilities
 const SUPPORTED_MODELS = {
+  'gpt-5': {
+    modelName: 'gpt-5',
+    friendlyName: 'OpenAI (GPT-5)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,  // GPT-5 doesn't support temperature
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    timeout: 300000, // 5 minutes
+    description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis',
+    aliases: ['gpt5', 'gpt 5', 'gpt-5-2025-08-07']
+  },
   'o3': {
     modelName: 'o3',
     friendlyName: 'OpenAI (O3)',
