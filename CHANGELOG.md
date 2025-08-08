@@ -5,6 +5,32 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2025-08-08
+
+### Added
+- **Google Provider**: Added comprehensive Google API configuration options
+  - **GEMINI_API_KEY support**: Primary API key for Google Gemini models (recommended)
+  - **GOOGLE_API_KEY fallback**: Still supported, but GEMINI_API_KEY takes priority
+  - **Google Vertex AI support**: Full enterprise-grade Vertex AI integration
+    - `GOOGLE_GENAI_USE_VERTEXAI`: Enable Vertex AI mode
+    - `GOOGLE_CLOUD_PROJECT`: Google Cloud project ID
+    - `GOOGLE_CLOUD_LOCATION`: Deployment region (e.g., us-central1)
+    - `GOOGLE_API_VERSION`: API version selection (v1, v1beta, v1alpha)
+  - Automatic detection of configuration mode (API Key vs Vertex AI)
+  - Support for both Gemini Developer API and Vertex AI API endpoints
+
+### Changed
+- **Environment Configuration**: Updated .env files to use GEMINI_API_KEY for clarity
+- **Documentation**: Enhanced README with Google/Gemini API options and Vertex AI setup
+
+### Technical Details
+- Google provider now supports three initialization modes:
+  1. Gemini Developer API with GEMINI_API_KEY (simplest)
+  2. Gemini Developer API with GOOGLE_API_KEY (backward compatible)
+  3. Google Vertex AI with project/location configuration (enterprise)
+- API version can be configured for both Gemini and Vertex AI modes
+- Improved validation to handle both API key and Vertex AI configurations
+
 ## [1.9.0] - 2025-08-07
 
 ### Added
