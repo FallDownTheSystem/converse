@@ -19,7 +19,7 @@ You need at least one API key from these providers:
 | Provider | Where to Get | Example Format |
 |----------|-------------|----------------|
 | **OpenAI** | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | `sk-proj-...` |
-| **Google** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
+| **Google/Gemini** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
 | **X.AI** | [console.x.ai](https://console.x.ai/) | `xai-...` |
 | **Anthropic** | [console.anthropic.com](https://console.anthropic.com/) | `sk-ant-...` |
 | **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | `wfBMkWL0...` |
@@ -33,7 +33,7 @@ You need at least one API key from these providers:
 # Add the server with your API keys
 claude mcp add converse \
   -e OPENAI_API_KEY=your_key_here \
-  -e GOOGLE_API_KEY=your_key_here \
+  -e GEMINI_API_KEY=your_key_here \
   -e XAI_API_KEY=your_key_here \
   -e ANTHROPIC_API_KEY=your_key_here \
   -e MISTRAL_API_KEY=your_key_here \
@@ -55,7 +55,7 @@ Add this configuration to your Claude Desktop settings:
       "args": ["converse-mcp-server"],
       "env": {
         "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
+        "GEMINI_API_KEY": "your_key_here",
         "XAI_API_KEY": "your_key_here",
         "ANTHROPIC_API_KEY": "your_key_here",
         "MISTRAL_API_KEY": "your_key_here",
@@ -140,6 +140,11 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 - **gpt-4o-mini**: Fast multimodal (128K context)
 
 ### Google/Gemini Models
+
+**API Key Options**:
+- **GEMINI_API_KEY**: For Gemini Developer API (recommended)
+- **GOOGLE_API_KEY**: Alternative name (GEMINI_API_KEY takes priority)
+- **Vertex AI**: Use `GOOGLE_GENAI_USE_VERTEXAI=true` with project/location settings
 - **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context)
 - **gemini-2.5-pro** (alias: `pro`): Deep reasoning (1M context)
 - **gemini-2.0-flash**: Latest with experimental thinking
@@ -195,7 +200,7 @@ Create a `.env` file in your project root:
 ```bash
 # Required: At least one API key
 OPENAI_API_KEY=sk-proj-your_openai_key_here
-GOOGLE_API_KEY=your_google_api_key_here  
+GEMINI_API_KEY=your_gemini_api_key_here  # Or GOOGLE_API_KEY (GEMINI_API_KEY takes priority)  
 XAI_API_KEY=xai-your_xai_key_here
 ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
 MISTRAL_API_KEY=your_mistral_key_here
@@ -272,7 +277,7 @@ If you've cloned the repository locally:
       ],
       "env": {
         "OPENAI_API_KEY": "your_key_here",
-        "GOOGLE_API_KEY": "your_key_here",
+        "GEMINI_API_KEY": "your_key_here",
         "XAI_API_KEY": "your_key_here",
         "ANTHROPIC_API_KEY": "your_key_here",
         "MISTRAL_API_KEY": "your_key_here",

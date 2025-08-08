@@ -122,11 +122,16 @@ function resolveModelName(modelName) {
 }
 
 /**
- * Validate Google API key format
+ * Validate Google API key format or Vertex AI marker
  */
 function validateApiKey(apiKey) {
   if (!apiKey || typeof apiKey !== 'string') {
     return false;
+  }
+
+  // Special marker for Vertex AI mode
+  if (apiKey === 'VERTEX_AI') {
+    return true;
   }
 
   // Google API keys are typically long strings, usually starting with specific patterns
@@ -333,20 +338,58 @@ export const googleProvider = {
       reasoning_effort = 'medium',
       use_websearch = false,
       config,
-      ...otherOptions
+      ..._otherOptions
     } = options;
 
-    // Validate API key
-    if (!config?.apiKeys?.google) {
-      throw new GoogleProviderError('Google API key not configured', 'MISSING_API_KEY');
-    }
+    // Check if using Vertex AI or Gemini Developer API
+    const useVertexAI = config?.providers?.googlegenaiusevertexai;
+    const vertexProject = config?.providers?.googlecloudproject;
+    const vertexLocation = config?.providers?.googlecloudlocation;
+    const apiVersion = config?.providers?.googleapiversion || 'v1beta';
 
-    if (!validateApiKey(config.apiKeys.google)) {
-      throw new GoogleProviderError('Invalid Google API key format', 'INVALID_API_KEY');
-    }
+    let genAI;
 
-    // Initialize Google AI client
-    const genAI = new GoogleGenAI({apiKey: config.apiKeys.google});
+    if (useVertexAI) {
+      // Validate Vertex AI configuration
+      if (!vertexProject || !vertexLocation) {
+        throw new GoogleProviderError(
+          'Vertex AI requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION',
+          'MISSING_VERTEX_CONFIG'
+        );
+      }
+
+      debugLog(`[Google] Using Vertex AI: project=${vertexProject}, location=${vertexLocation}, apiVersion=${apiVersion}`);
+
+      // Initialize with Vertex AI configuration
+      genAI = new GoogleGenAI({
+        vertexai: true,
+        project: vertexProject,
+        location: vertexLocation,
+        apiVersion
+      });
+    } else {
+      // Use Gemini Developer API with API key
+      const apiKey = config?.apiKeys?.google;
+
+      if (!apiKey || apiKey === 'VERTEX_AI') {
+        throw new GoogleProviderError(
+          'Google API key not configured. Set GOOGLE_API_KEY or GEMINI_API_KEY, or configure Vertex AI',
+          'MISSING_API_KEY'
+        );
+      }
+
+      if (!validateApiKey(apiKey)) {
+        throw new GoogleProviderError('Invalid Google API key format', 'INVALID_API_KEY');
+      }
+
+      debugLog(`[Google] Using Gemini Developer API with configured API key, apiVersion=${apiVersion}`);
+
+      // Initialize with API key - SDK will use GOOGLE_API_KEY as the actual key name
+      genAI = new GoogleGenAI({
+        apiKey,
+        apiVersion
+      });
+    }
 
     // Resolve model name
     const resolvedModel = resolveModelName(model);
@@ -466,7 +509,15 @@ export const googleProvider = {
    * @returns {boolean} - True if configuration is valid
    */
   validateConfig(config) {
-    return !!(config?.apiKeys?.google && validateApiKey(config.apiKeys.google));
+    // Check for Vertex AI configuration
+    const hasVertexAI = !!(config?.providers?.googlegenaiusevertexai &&
+                          config?.providers?.googlecloudproject &&
+                          config?.providers?.googlecloudlocation);
+
+    // Check for API key configuration
+    const hasApiKey = !!(config?.apiKeys?.google && validateApiKey(config.apiKeys.google));
+
+    return hasVertexAI || hasApiKey;
   },
 
   /**

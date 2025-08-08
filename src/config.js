@@ -80,6 +80,7 @@ const CONFIG_SCHEMA = {
     OPENAI_API_KEY: { type: 'string', required: false, secret: true, description: 'OpenAI API key' },
     XAI_API_KEY: { type: 'string', required: false, secret: true, description: 'XAI API key' },
     GOOGLE_API_KEY: { type: 'string', required: false, secret: true, description: 'Google API key' },
+    GEMINI_API_KEY: { type: 'string', required: false, secret: true, description: 'Gemini API key (alternative to GOOGLE_API_KEY)' },
     ANTHROPIC_API_KEY: { type: 'string', required: false, secret: true, description: 'Anthropic API key' },
     MISTRAL_API_KEY: { type: 'string', required: false, secret: true, description: 'Mistral API key' },
     DEEPSEEK_API_KEY: { type: 'string', required: false, secret: true, description: 'DeepSeek API key' },
@@ -91,6 +92,12 @@ const CONFIG_SCHEMA = {
     OPENROUTER_REFERER: { type: 'string', required: false, description: 'OpenRouter referer header for compliance' },
     OPENROUTER_TITLE: { type: 'string', required: false, description: 'OpenRouter X-Title header for request tracking' },
     OPENROUTER_DYNAMIC_MODELS: { type: 'boolean', default: false, description: 'Enable dynamic model discovery via OpenRouter endpoints API' },
+
+    // Google Vertex AI configuration
+    GOOGLE_GENAI_USE_VERTEXAI: { type: 'boolean', default: false, description: 'Use Google Vertex AI instead of Gemini Developer API' },
+    GOOGLE_CLOUD_PROJECT: { type: 'string', required: false, description: 'Google Cloud project ID for Vertex AI' },
+    GOOGLE_CLOUD_LOCATION: { type: 'string', required: false, description: 'Google Cloud location for Vertex AI (e.g., us-central1)' },
+    GOOGLE_API_VERSION: { type: 'string', default: 'v1beta', description: 'Google API version (v1, v1beta, v1alpha)' }
   },
 
 
@@ -161,7 +168,10 @@ function validateApiKeyFormat(provider, apiKey) {
   case 'xai':
     return apiKey.startsWith('xai-') && apiKey.length > 20;
   case 'google':
-    return apiKey.length > 20; // Google keys vary in format
+  case 'gemini':
+    // Special case for Vertex AI marker
+    if (apiKey === 'VERTEX_AI') return true;
+    return apiKey.length > 20; // Google/Gemini keys vary in format
   case 'anthropic':
     return apiKey.startsWith('sk-ant-') && apiKey.length >= 30;
   case 'mistral':
@@ -232,7 +242,15 @@ export async function loadConfig() {
         const value = validateEnvVar(key, process.env[key], schema);
         if (value) {
           const providerName = key.replace('_API_KEY', '').toLowerCase();
-          config.apiKeys[providerName] = value;
+          // Map GEMINI_API_KEY to google provider
+          if (providerName === 'gemini') {
+            // Only use GEMINI_API_KEY if GOOGLE_API_KEY is not already set
+            if (!config.apiKeys.google) {
+              config.apiKeys.google = value;
+            }
+          } else {
+            config.apiKeys[providerName] = value;
+          }
         }
       } catch (error) {
         errors.push(error.message);
@@ -285,12 +303,24 @@ export async function loadConfig() {
       nodeEnv,
     };
 
-    // Validate that at least one API key is present
+    // Validate that at least one API key is present OR Vertex AI is configured
     const availableKeys = Object.keys(config.apiKeys);
-    if (availableKeys.length === 0) {
+    const hasVertexAI = config.providers.googlegenaiusevertexai &&
+                        config.providers.googlecloudproject &&
+                        config.providers.googlecloudlocation;
+
+    if (availableKeys.length === 0 && !hasVertexAI) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY'
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI with GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT, and GOOGLE_CLOUD_LOCATION.'
       );
+    }
+
+    // If Vertex AI is enabled, add it as a special google provider config
+    if (hasVertexAI) {
+      // Mark google as available even without API key when using Vertex AI
+      if (!config.apiKeys.google) {
+        config.apiKeys.google = 'VERTEX_AI'; // Special marker for Vertex AI mode
+      }
     }
 
     // Validate API key formats
