@@ -17,6 +17,9 @@ const __dirname = dirname(__filename);
 // Get the project root (parent of bin directory)
 const projectRoot = dirname(__dirname);
 
+// Change working directory to project root so Node.js can find dependencies
+process.chdir(projectRoot);
+
 // Import and start the server
 try {
   const indexPath = join(projectRoot, 'src/index.js');
