@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2025-08-09
+
+### Changed
+- **Consensus Tool Auto Model Selection**: Enhanced `"auto"` model behavior for consensus tool
+  - Now expands to first 3 available providers instead of just one
+  - Provider priority order: OpenAI → Google → XAI → Anthropic → Mistral → DeepSeek → OpenRouter
+  - Automatically selects providers based on configured API keys
+  - Enables multi-model consensus without manual model specification
+- **Default Model Updates**: Changed OpenAI default model from `o3` to `gpt-5` for both chat and consensus tools
+- **Documentation**: Updated README with comprehensive auto model selection behavior for both tools
+
+### Technical Details
+- Consensus tool with `[{"model": "auto"}]` now intelligently expands to multiple providers
+- Chat tool continues to use single provider selection for efficiency
+- Each provider uses its optimal default model when selected via auto
+
 ## [1.10.0] - 2025-08-08
 
 ### Added
