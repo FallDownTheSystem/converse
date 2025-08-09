@@ -272,7 +272,7 @@ function resolveAutoModel(model, providerName) {
   }
 
   const defaults = {
-    'openai': 'o3',
+    'openai': 'gpt-5',
     'xai': 'grok-4-0709',
     'google': 'gemini-2.5-pro',
     'anthropic': 'claude-sonnet-4-20250514',
@@ -281,7 +281,7 @@ function resolveAutoModel(model, providerName) {
     'openrouter': 'qwen/qwen3-coder'
   };
 
-  return defaults[providerName] || 'gpt-4o-mini';
+  return defaults[providerName] || 'gpt-5';
 }
 
 function mapModelToProvider(model, providers) {

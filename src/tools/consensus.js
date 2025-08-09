@@ -143,7 +143,39 @@ export async function consensusTool(args, dependencies) {
     const providerCalls = [];
     const failedModels = [];
 
-    for (const modelSpec of models) {
+    // Special handling for single "auto" model - expand to first 3 available providers
+    let modelsToProcess = models;
+    if (models.length === 1 && models[0].model && models[0].model.toLowerCase() === 'auto') {
+      // Find first 3 available providers
+      const availableProviders = [];
+      const providerOrder = ['openai', 'google', 'xai', 'anthropic', 'mistral', 'deepseek', 'openrouter'];
+      
+      for (const providerName of providerOrder) {
+        if (availableProviders.length >= 3) break;
+        const provider = providers[providerName];
+        if (provider && provider.isAvailable(config)) {
+          availableProviders.push(providerName);
+        }
+      }
+      
+      if (availableProviders.length === 0) {
+        return createToolError('No providers available. Please configure at least one API key.');
+      }
+      
+      // Create model specs for each available provider with their default model
+      modelsToProcess = availableProviders.map(providerName => ({
+        model: getDefaultModelForProvider(providerName)
+      }));
+      
+      logger.debug('Auto-expanded to providers', { 
+        data: { 
+          providers: availableProviders,
+          models: modelsToProcess.map(m => m.model)
+        } 
+      });
+    }
+
+    for (const modelSpec of modelsToProcess) {
       if (!modelSpec.model || typeof modelSpec.model !== 'string') {
         failedModels.push({
           model: modelSpec.model || 'unknown',
@@ -406,15 +438,11 @@ Please provide your refined response:`;
  * @returns {string} Provider name
  */
 /**
- * Resolve "auto" model to default model for the provider
+ * Get default model for a provider
  */
-function resolveAutoModel(model, providerName) {
-  if (model.toLowerCase() !== 'auto') {
-    return model;
-  }
-
+function getDefaultModelForProvider(providerName) {
   const defaults = {
-    'openai': 'o3',
+    'openai': 'gpt-5',
     'xai': 'grok-4-0709',
     'google': 'gemini-2.5-pro',
     'anthropic': 'claude-sonnet-4-20250514',
@@ -423,7 +451,18 @@ function resolveAutoModel(model, providerName) {
     'openrouter': 'qwen/qwen3-coder'
   };
 
-  return defaults[providerName] || 'o3';
+  return defaults[providerName] || 'gpt-5';
+}
+
+/**
+ * Resolve "auto" model to default model for the provider
+ */
+function resolveAutoModel(model, providerName) {
+  if (model.toLowerCase() !== 'auto') {
+    return model;
+  }
+
+  return getDefaultModelForProvider(providerName);
 }
 
 function mapModelToProvider(model, providers) {

@@ -250,7 +250,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 // Specific models
 { "model": "gemini-2.5-flash" }
-{ "model": "o3" }
+{ "model": "gpt-5" }
 { "model": "grok-4-0709" }
 
 // Using aliases
@@ -258,6 +258,21 @@ Use `"auto"` for automatic model selection, or specify exact models:
 { "model": "pro" }      // -> gemini-2.5-pro
 { "model": "grok" }     // -> grok-4-0709
 ```
+
+**Auto Model Behavior:**
+- **Chat Tool**: Selects the first available provider and uses its default model
+- **Consensus Tool**: When using `[{"model": "auto"}]`, automatically expands to the first 3 available providers
+
+Provider priority order (requires corresponding API key):
+  1. OpenAI (`gpt-5`)
+  2. Google (`gemini-2.5-pro`)
+  3. XAI (`grok-4-0709`)
+  4. Anthropic (`claude-sonnet-4-20250514`)
+  5. Mistral (`magistral-medium-2506`)
+  6. DeepSeek (`deepseek-reasoner`)
+  7. OpenRouter (`qwen/qwen3-coder`)
+  
+The system will use the first 3 providers that have valid API keys configured. This enables automatic multi-model consensus without manually specifying models.
 
 ### Advanced Configuration
 
