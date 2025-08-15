@@ -5,9 +5,28 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.11.0] - 2025-01-15
+
+### Added
+- **Automatic Client Working Directory Detection**: The server now automatically detects where it was invoked from
+  - Uses `INIT_CWD`, `PWD`, or `npm_config_local_prefix` environment variables
+  - Enables proper relative path resolution from the client's directory
+  - Works seamlessly with npx and npm execution
 
 ### Changed
+- **File Access Security**: Made file path security restrictions optional (disabled by default)
+  - Removed mandatory directory restrictions that prevented access to files outside the server directory
+  - Security checks can be re-enabled with `enforceSecurityCheck: true` option
+  - Files can now be accessed from any location on the system
+- **Relative Path Resolution**: Fixed to resolve from client's working directory instead of server's directory
+  - Relative paths like `./file.txt` now work correctly from where the command was invoked
+  - Both absolute and relative paths are fully supported
+
+### Fixed
+- Fixed file access issues where both absolute and relative paths were incorrectly rejected
+- Fixed "File access denied" errors when trying to access files outside the Converse directory
+
+### Changed (Previous)
 - **BREAKING CHANGE: Consensus Tool Models Parameter**: Simplified model specification from object array to string array
   - Old format: `[{"model": "gpt-5"}, {"model": "gemini-2.5-pro"}]`
   - New format: `["gpt-5", "gemini-2.5-pro"]`
