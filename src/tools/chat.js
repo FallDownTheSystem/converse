@@ -86,7 +86,11 @@ export async function chatTool(args, dependencies) {
           webSearch: use_websearch ? prompt : null
         };
 
-        const contextResult = await contextProcessor.processUnifiedContext(contextRequest);
+        const contextResult = await contextProcessor.processUnifiedContext(contextRequest, {
+          enforceSecurityCheck: false,  // Allow files from any location
+          skipSecurityCheck: true,       // Legacy flag for backward compatibility
+          clientCwd: config.server?.client_cwd  // Use auto-detected client working directory
+        });
 
         // Create context message from files and images
         const allProcessedFiles = [...contextResult.files, ...contextResult.images];

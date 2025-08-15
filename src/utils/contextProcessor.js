@@ -59,21 +59,25 @@ async function validateFilePath(filePath, options = {}) {
   }
 
   // Convert to absolute path
-  const absolutePath = isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath);
+  // For relative paths, resolve from the client's working directory if provided,
+  // otherwise use process.cwd()
+  const absolutePath = isAbsolute(filePath) ? filePath : resolve(options.clientCwd || process.cwd(), filePath);
 
-  // Security: Check if path is within allowed directories
-  const allowedDirs = options.allowedDirectories || [process.cwd(), PROJECT_ROOT];
-  const isAllowed = allowedDirs.some(dir => {
-    const resolvedDir = resolve(dir);
-    return absolutePath.startsWith(resolvedDir);
-  });
+  // Security check is now optional and disabled by default
+  if (options.enforceSecurityCheck) {
+    const allowedDirs = options.allowedDirectories || [process.cwd(), PROJECT_ROOT];
+    const isAllowed = allowedDirs.some(dir => {
+      const resolvedDir = resolve(dir);
+      return absolutePath.startsWith(resolvedDir);
+    });
 
-  if (!isAllowed && !options.skipSecurityCheck) {
-    throw new ContextProcessorError(
-      'File access denied: path outside allowed directories',
-      'SECURITY_VIOLATION',
-      { path: absolutePath, allowedDirs }
-    );
+    if (!isAllowed) {
+      throw new ContextProcessorError(
+        'File access denied: path outside allowed directories',
+        'SECURITY_VIOLATION',
+        { path: absolutePath, allowedDirs }
+      );
+    }
   }
 
   // Check if file exists and is readable

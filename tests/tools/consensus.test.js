@@ -59,8 +59,19 @@ describe('Consensus Tool Unit Tests', () => {
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn().mockReturnValue({ contextWindow: 128000 })
+      getSupportedModels: vi.fn().mockReturnValue({
+        'gpt-4o-mini': { contextWindow: 128000, maxOutputTokens: 16384 },
+        'gpt-4': { contextWindow: 128000, maxOutputTokens: 8192 },
+        'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 }
+      }),
+      getModelConfig: vi.fn((model) => {
+        const configs = {
+          'gpt-4o-mini': { contextWindow: 128000, maxOutputTokens: 16384 },
+          'gpt-4': { contextWindow: 128000, maxOutputTokens: 8192 },
+          'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 }
+        };
+        return configs[model] || { contextWindow: 128000 };
+      })
     };
 
     const mockXAIProvider = {
@@ -72,8 +83,19 @@ describe('Consensus Tool Unit Tests', () => {
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn().mockReturnValue({ contextWindow: 131000 })
+      getSupportedModels: vi.fn().mockReturnValue({
+        'grok': { contextWindow: 131000, maxOutputTokens: 32768 },
+        'grok-beta': { contextWindow: 131000, maxOutputTokens: 32768 },
+        'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 }
+      }),
+      getModelConfig: vi.fn((model) => {
+        const configs = {
+          'grok': { contextWindow: 131000, maxOutputTokens: 32768 },
+          'grok-beta': { contextWindow: 131000, maxOutputTokens: 32768 },
+          'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 }
+        };
+        return configs[model] || { contextWindow: 131000 };
+      })
     };
 
     const mockGoogleProvider = {
@@ -85,8 +107,21 @@ describe('Consensus Tool Unit Tests', () => {
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn().mockReturnValue({ contextWindow: 1000000 })
+      getSupportedModels: vi.fn().mockReturnValue({
+        'gemini-2.5-flash': { contextWindow: 1000000, maxOutputTokens: 8192 },
+        'gemini-2.5-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
+        'gemini-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
+        'flash': { contextWindow: 1000000, maxOutputTokens: 8192 }
+      }),
+      getModelConfig: vi.fn((model) => {
+        const configs = {
+          'gemini-2.5-flash': { contextWindow: 1000000, maxOutputTokens: 8192 },
+          'gemini-2.5-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
+          'gemini-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
+          'flash': { contextWindow: 1000000, maxOutputTokens: 8192 }
+        };
+        return configs[model] || { contextWindow: 1000000 };
+      })
     };
 
     // Mock providers - consensus tool expects a plain object with provider names as keys
@@ -401,7 +436,7 @@ describe('Consensus Tool Unit Tests', () => {
   describe('Error Handling and Resilience', () => {
     it('should throw error for missing prompt', async () => {
       const args = {
-        models: [{ model: 'gpt-4o-mini' }]
+        models: ['gpt-4o-mini']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -499,7 +534,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should save consensus results to continuation store', async () => {
       const args = {
         prompt: 'Test consensus question',
-        models: [{ model: 'gpt-4o-mini' }]
+        models: ['gpt-4o-mini']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -556,7 +591,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should return MCP-compliant response format', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'gpt-4o-mini' }]
+        models: ['gpt-4o-mini']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -577,7 +612,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should return valid JSON in response content', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'gpt-4o-mini' }]
+        models: ['gpt-4o-mini']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -655,10 +690,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' }  // This one is slow
-        ]
+        models: ['gpt-4o-mini', 'grok']  // grok is slow
       };
 
       const result = await consensusTool(args, mockDependencies);

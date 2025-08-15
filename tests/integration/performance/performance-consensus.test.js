@@ -430,7 +430,7 @@ describe('Consensus Performance Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'This should fail fast',
-          models: [{ model: 'auto' }]
+          models: ['auto']
         }
       });
       const duration = Date.now() - startTime;

@@ -241,18 +241,29 @@ describe('Context Processor Unit Tests', () => {
       expect(result.path).toBe(resolve(process.cwd(), relativePath));
     });
 
-    it('should reject relative paths outside allowed directories', async () => {
+    it('should reject relative paths outside allowed directories when security is enforced', async () => {
       const relativePath = '../../outside-project/file.txt';
       const allowedDirs = [process.cwd()];
 
       const result = await processFileContent(relativePath, {
         allowedDirectories: allowedDirs,
-        skipSecurityCheck: false
+        enforceSecurityCheck: true  // Changed to use the new flag
       });
 
       expect(result.type).toBe('error');
       expect(result.error).toContain('File access denied');
       expect(result.errorCode).toBe('SECURITY_VIOLATION');
+    });
+
+    it('should allow any paths when security check is disabled (default)', async () => {
+      const relativePath = './test.txt';
+      
+      // Without enforceSecurityCheck, should allow any file
+      const result = await processFileContent(relativePath);
+
+      expect(result.type).toBe('text');
+      expect(result.error).toBe(null);
+      expect(result.path).toBe(resolve(process.cwd(), relativePath));
     });
   });
 

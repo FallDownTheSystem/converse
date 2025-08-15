@@ -43,6 +43,7 @@ const CONFIG_SCHEMA = {
     HOST: { type: 'string', default: 'localhost', description: 'Server host' },
     NODE_ENV: { type: 'string', default: 'development', description: 'Environment mode' },
     LOG_LEVEL: { type: 'string', default: 'info', description: 'Logging level' },
+    CLIENT_CWD: { type: 'string', default: null, description: 'Client working directory for relative paths' },
   },
 
   // Transport configuration
@@ -213,7 +214,21 @@ export async function loadConfig() {
     // Load server configuration
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.server)) {
       try {
-        config.server[key.toLowerCase()] = validateEnvVar(key, process.env[key], schema);
+        // Special handling for CLIENT_CWD - auto-detect if not explicitly set
+        if (key === 'CLIENT_CWD' && !process.env[key]) {
+          // Try to detect the client's working directory from various sources
+          // When run via npx, INIT_CWD contains the directory where npx was invoked
+          // PWD is another common variable set to the working directory
+          // npm_config_local_prefix is set when run via npm/npx
+          const detectedCwd = process.env.INIT_CWD || 
+                            process.env.PWD || 
+                            process.env.npm_config_local_prefix ||
+                            process.cwd();
+          config.server.client_cwd = detectedCwd;
+          configLogger.debug(`Auto-detected client working directory: ${detectedCwd}`);
+        } else {
+          config.server[key.toLowerCase()] = validateEnvVar(key, process.env[key], schema);
+        }
       } catch (error) {
         errors.push(error.message);
       }

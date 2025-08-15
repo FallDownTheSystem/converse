@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Updated README with comprehensive auto model selection behavior for both tools
 
 ### Technical Details
-- Consensus tool with `[{"model": "auto"}]` now intelligently expands to multiple providers
+- Consensus tool with `["auto"]` intelligently expands to multiple providers
 - Chat tool continues to use single provider selection for efficiency
 - Each provider uses its optimal default model when selected via auto
 
