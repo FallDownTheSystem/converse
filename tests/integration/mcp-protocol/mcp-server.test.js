@@ -44,7 +44,7 @@ describe('MCP Server Integration Tests', () => {
             toolName: 'consensus',
             args: {
               prompt: 'Test question',
-              models: [{ model: 'flash' }]
+              models: ['flash']
             },
             shouldPass: true
           },

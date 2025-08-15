@@ -175,11 +175,7 @@ async function runFinalTest() {
       const consensusTool = tools.consensus;
       const result = await consensusTool({
         prompt: 'What is 15 + 27? Respond only with the number.',
-        models: [
-          { model: 'gpt-4o-mini' },    // OpenAI
-          { model: 'flash' },          // Google
-          { model: 'grok-beta' }       // XAI
-        ]
+        models: ['gpt-4o-mini', 'flash', 'grok-beta']
       }, dependencies);
 
       if (!result.content?.[0]?.text) {

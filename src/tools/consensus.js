@@ -55,7 +55,7 @@ export async function consensusTool(args, dependencies) {
     // Load existing conversation if continuation_id provided
     if (continuationId) {
       try {
-        const existingState = await continuationStore.get(continuationId);
+        const existingState = await dependencies.continuationStore.get(continuationId);
         if (existingState) {
           conversationHistory = existingState.messages || [];
         } else {
@@ -145,7 +145,7 @@ export async function consensusTool(args, dependencies) {
 
     // Special handling for single "auto" model - expand to first 3 available providers
     let modelsToProcess = models;
-    if (models.length === 1 && models[0].model && models[0].model.toLowerCase() === 'auto') {
+    if (models.length === 1 && models[0].toLowerCase() === 'auto') {
       // Find first 3 available providers
       const availableProviders = [];
       const providerOrder = ['openai', 'google', 'xai', 'anthropic', 'mistral', 'deepseek', 'openrouter'];
@@ -162,30 +162,28 @@ export async function consensusTool(args, dependencies) {
         return createToolError('No providers available. Please configure at least one API key.');
       }
       
-      // Create model specs for each available provider with their default model
-      modelsToProcess = availableProviders.map(providerName => ({
-        model: getDefaultModelForProvider(providerName)
-      }));
+      // Create model names for each available provider with their default model
+      modelsToProcess = availableProviders.map(providerName => 
+        getDefaultModelForProvider(providerName)
+      );
       
       logger.debug('Auto-expanded to providers', { 
         data: { 
           providers: availableProviders,
-          models: modelsToProcess.map(m => m.model)
+          models: modelsToProcess
         } 
       });
     }
 
-    for (const modelSpec of modelsToProcess) {
-      if (!modelSpec.model || typeof modelSpec.model !== 'string') {
+    for (const modelName of modelsToProcess) {
+      if (!modelName || typeof modelName !== 'string') {
         failedModels.push({
-          model: modelSpec.model || 'unknown',
+          model: modelName || 'unknown',
           error: 'Invalid model specification',
           status: 'failed'
         });
         continue;
       }
-
-      const modelName = modelSpec.model;
       const providerName = mapModelToProvider(modelName, providers);
       const resolvedModelName = resolveAutoModel(modelName, providerName);
       const provider = providers[providerName];
@@ -219,8 +217,7 @@ export async function consensusTool(args, dependencies) {
           reasoning_effort,
           use_websearch,
           config,
-          ...modelSpec, // Allow model-specific overrides
-          model: resolvedModelName // Use resolved model name for API call (must be after spread)
+          model: resolvedModelName // Use resolved model name for API call
         }
       });
     }
@@ -381,7 +378,7 @@ Please provide your refined response:`;
         }
       };
 
-      await continuationStore.set(continuationId, conversationState);
+      await dependencies.continuationStore.set(continuationId, conversationState);
     } catch (error) {
       logger.error('Error saving consensus conversation', { error });
       // Continue even if save fails
@@ -406,7 +403,7 @@ Please provide your refined response:`;
       settings: {
         enable_cross_feedback,
         temperature,
-        models_requested: models.map(m => m.model)
+        models_requested: models
       }
     };
 
@@ -415,16 +412,14 @@ Please provide your refined response:`;
     const resultStr = JSON.stringify(result, null, 2);
     const limitedResult = applyTokenLimit(resultStr, tokenLimit);
 
-    // Parse the limited result back to object format to preserve structure
-    let finalResult;
-    try {
-      finalResult = JSON.parse(limitedResult.content);
-    } catch (e) {
-      // Fallback if parsing fails - return original result
-      finalResult = result;
-    }
-
-    return createToolResponse(finalResult);
+    // Return with continuation at top level for test compatibility
+    return createToolResponse({
+      content: limitedResult.content,
+      continuation: {
+        id: continuationId,
+        messageCount: messages.length + 1
+      }
+    });
 
   } catch (error) {
     logger.error('Consensus tool error', { error });
@@ -542,7 +537,7 @@ function mapModelToProvider(model, providers) {
 }
 
 // Tool metadata
-consensusTool.description = 'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Gathers perspectives from multiple AI models simultaneously. Models provide initial responses, then optionally refine based on others\' insights. Returns both phases in a single call. Handles partial failures gracefully. For: complex decisions, architectural choices, technical evaluations.';
+consensusTool.description = 'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Gathers perspectives from multiple AI models simultaneously. Models provide initial responses, then optionally refine based on others\' insights. Returns both phases in a single call. Handles partial failures gracefully. For: complex decisions, architectural choices, technical evaluations. Use models: ["auto"] for automatic model selection.';
 consensusTool.inputSchema = {
   type: 'object',
   properties: {
@@ -552,14 +547,9 @@ consensusTool.inputSchema = {
     },
     models: {
       type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          model: { type: 'string' },
-        },
-        required: ['model'],
-      },
-      description: 'List of models to consult. Example: [{"model": "o3"}, {"model": "gemini-2.5-pro"}, {"model": "grok-4-0709"}]',
+      items: { type: 'string' },
+      minItems: 1,
+      description: 'List of models to consult. Example: ["gpt-5", "gemini-2.5-pro", "grok-4-0709"]',
     },
     files: {
       type: 'array',

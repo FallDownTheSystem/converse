@@ -160,10 +160,7 @@ async function runTests() {
 
         const consensusArgs = {
           prompt: 'What is the best programming language for web development? Give a brief answer.',
-          models: [
-            { model: 'auto' },
-            { model: 'auto' }
-          ],
+          models: ['auto', 'auto'],
           enable_cross_feedback: false, // Disable for faster testing
           temperature: 0.1
         };

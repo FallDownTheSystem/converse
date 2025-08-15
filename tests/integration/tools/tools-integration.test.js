@@ -101,7 +101,7 @@ describe('Tools Integration Tests', () => {
 
       const result = await consensusTool({
         prompt: 'What is 2+2?',
-        models: [{ model: 'auto' }]
+        models: ['auto']
       }, dependencies);
 
       expect(result).toBeDefined();
@@ -120,10 +120,7 @@ describe('Tools Integration Tests', () => {
 
       const result = await consensusTool({
         prompt: 'Simple test question',
-        models: [
-          { model: 'auto' },
-          { model: 'auto' }
-        ],
+        models: ['auto', 'auto'],
         enable_cross_feedback: false
       }, dependencies);
 
@@ -138,7 +135,7 @@ describe('Tools Integration Tests', () => {
 
       const result = await consensusTool({
         prompt: 'Test question for cross-feedback',
-        models: [{ model: 'auto' }, { model: 'auto' }], // Need at least 2 models for cross-feedback
+        models: ['auto', 'auto'], // Need at least 2 models for cross-feedback
         enable_cross_feedback: true
       }, dependencies);
 

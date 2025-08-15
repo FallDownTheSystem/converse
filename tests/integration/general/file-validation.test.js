@@ -103,7 +103,7 @@ describe('File Validation Integration Tests', () => {
           name: 'consensus',
           arguments: {
             prompt: 'Analyze these files',
-            models: [{ model: 'gpt-4o-mini' }],
+            models: ['gpt-4o-mini'],
             files: ['nonexistent-1.txt', 'nonexistent-2.txt']
           }
         });
@@ -121,7 +121,7 @@ describe('File Validation Integration Tests', () => {
           name: 'consensus',
           arguments: {
             prompt: 'Describe these images',
-            models: [{ model: 'gpt-4o-mini' }],
+            models: ['gpt-4o-mini'],
             images: ['missing-consensus-1.png', 'missing-consensus-2.jpg']
           }
         });
@@ -139,7 +139,7 @@ describe('File Validation Integration Tests', () => {
           name: 'consensus',
           arguments: {
             prompt: 'What type of project is this based on package.json?',
-            models: [{ model: 'gpt-4o-mini' }],
+            models: ['gpt-4o-mini'],
             files: ['package.json']
           }
         });

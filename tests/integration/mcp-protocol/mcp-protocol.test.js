@@ -230,7 +230,7 @@ describe('MCP Protocol Workflow Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'What is 1+1?',
-          models: [{ model: 'auto' }]
+          models: ['auto']
         }
       });
 

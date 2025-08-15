@@ -136,11 +136,7 @@
     "basic": {
       "request": {
         "prompt": "Should we use TypeScript or JavaScript?",
-        "models": [
-          {"model": "gpt-4"},
-          {"model": "gemini-2.5-pro"},
-          {"model": "grok-4"}
-        ]
+        "models": ["gpt-4", "gemini-2.5-pro", "grok-4"]
       },
       "response": {
         "initial_responses": [
@@ -198,10 +194,7 @@
       "request": {
         "prompt": "Review this architecture proposal",
         "files": ["/test/files/architecture.md"],
-        "models": [
-          {"model": "o3"},
-          {"model": "claude-3-5-sonnet-20241022"}
-        ]
+        "models": ["o3", "claude-3-5-sonnet-20241022"]
       },
       "response": {
         "initial_responses": [
@@ -237,10 +230,7 @@
     "withoutCrossFeedback": {
       "request": {
         "prompt": "Quick decision: REST or GraphQL?",
-        "models": [
-          {"model": "gpt-3.5-turbo"},
-          {"model": "gemini-2.5-flash"}
-        ],
+        "models": ["gpt-3.5-turbo", "gemini-2.5-flash"],
         "enable_cross_feedback": false
       },
       "response": {

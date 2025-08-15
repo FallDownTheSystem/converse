@@ -222,7 +222,7 @@ describe('Continuation Flow Integration Tests', () => {
       // Start consensus conversation
       const firstResponse = await tools.consensus({
         prompt: 'What is the capital of France? Keep it brief.',
-        models: [{ model: 'auto' }],
+        models: ['auto'],
         enable_cross_feedback: false
       }, dependencies);
 
@@ -232,7 +232,7 @@ describe('Continuation Flow Integration Tests', () => {
       // Continue consensus conversation
       const secondResponse = await tools.consensus({
         prompt: 'What is the population of that city approximately?',
-        models: [{ model: 'auto' }],
+        models: ['auto'],
         continuation_id: conversationId,
         enable_cross_feedback: false
       }, dependencies);
@@ -257,7 +257,7 @@ describe('Continuation Flow Integration Tests', () => {
       // Continue with consensus
       const consensusResponse = await tools.consensus({
         prompt: 'Continue with consensus tool',
-        models: [{ model: 'auto' }],
+        models: ['auto'],
         continuation_id: conversationId,
         enable_cross_feedback: false
       }, dependencies);
@@ -529,7 +529,7 @@ describe('Continuation Flow Integration Tests', () => {
       // Branch to consensus tool from same base
       const branchConsensus = await tools.consensus({
         prompt: 'Branch to consensus tool',
-        models: [{ model: 'auto' }],
+        models: ['auto'],
         continuation_id: baseId,
         enable_cross_feedback: false
       }, dependencies);

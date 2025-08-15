@@ -152,14 +152,9 @@ MCP_TRANSPORT=stdio npm start
     },
     "models": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "model": {"type": "string"}
-        },
-        "required": ["model"]
-      },
-      "description": "List of models to consult. Example: [{'model': 'o3'}, {'model': 'gemini-2.5-flash'}, {'model': 'grok-4-0709'}]"
+      "items": {"type": "string"},
+      "minItems": 1,
+      "description": "List of models to consult. Example: ['o3', 'gemini-2.5-flash', 'grok-4-0709']"
     },
     "files": {
       "type": "array",

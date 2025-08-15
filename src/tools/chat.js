@@ -361,7 +361,7 @@ function mapModelToProvider(model, providers) {
 }
 
 // Tool metadata
-chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - For development assistance, brainstorming, and code analysis. Supports files, images, and conversation continuation.';
+chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - For development assistance, brainstorming, and code analysis. Supports files, images, and conversation continuation. Use model: "auto" for automatic model selection.';
 chatTool.inputSchema = {
   type: 'object',
   properties: {

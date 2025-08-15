@@ -257,7 +257,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'MCP consensus compliance test',
-          models: [{ model: 'auto' }]
+          models: ['auto']
         }
       };
 
@@ -299,7 +299,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           tool: 'consensus',
           args: {
             prompt: 'test',
-            models: [{ model: 'auto' }]
+            models: ['auto']
           },
           shouldFail: false
         }

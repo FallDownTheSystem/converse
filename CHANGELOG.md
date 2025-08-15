@@ -5,6 +5,26 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **BREAKING CHANGE: Consensus Tool Models Parameter**: Simplified model specification from object array to string array
+  - Old format: `[{"model": "gpt-5"}, {"model": "gemini-2.5-pro"}]`
+  - New format: `["gpt-5", "gemini-2.5-pro"]`
+  - Affects all consensus tool calls in client code
+  - Input schema updated to accept `items: { type: "string" }` instead of object structure
+  - All tests, documentation, and examples updated to reflect new format
+
+### Migration Guide
+- Update all consensus tool calls to use string arrays:
+  ```javascript
+  // Before
+  models: [{ model: "gpt-5" }, { model: "gemini-2.5-pro" }]
+  
+  // After
+  models: ["gpt-5", "gemini-2.5-pro"]
+  ```
+
 ## [1.10.1] - 2025-08-09
 
 ### Changed

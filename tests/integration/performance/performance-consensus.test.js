@@ -295,7 +295,7 @@ describe('Consensus Performance Tests', () => {
 
     it('should maintain quality under concurrent load', async () => {
       const concurrentRequests = 3;  // Reduce concurrent load to avoid rate limiting
-      const models = [{ model: 'gpt-4o-mini' }];
+      const models = ['gpt-4o-mini'];
       const testPrompt = 'What is the square root of 16?';
 
       const requests = [];
@@ -337,7 +337,7 @@ describe('Consensus Performance Tests', () => {
       const initialMemory = process.memoryUsage();
 
       // Run a large consensus operation
-      const models = Array(5).fill({ model: 'auto' });
+      const models = Array(5).fill('auto');
 
       const result = await router.callTool({
         name: 'consensus',
@@ -374,7 +374,7 @@ describe('Consensus Performance Tests', () => {
           name: 'consensus',
           arguments: {
             prompt: `Resource cleanup test ${i + 1}`,
-            models: [{ model: 'auto' }],
+            models: ['auto'],
             enable_cross_feedback: false
           }
         });
@@ -539,7 +539,7 @@ describe('Consensus Performance Tests', () => {
 
     it('should handle high-frequency consensus requests', async () => {
       const requestCount = 10;
-      const models = [{ model: 'auto' }];
+      const models = ['auto'];
       const requests = [];
 
       const startTime = Date.now();
@@ -582,21 +582,21 @@ describe('Consensus Performance Tests', () => {
       const benchmarks = [
         {
           name: 'Simple question - 1 model',
-          models: [{ model: 'auto' }],
+          models: ['auto'],
           prompt: 'What is 1+1?',
           maxTime: 30000, // 30 seconds
           crossFeedback: false
         },
         {
           name: 'Medium complexity - 2 models',
-          models: [{ model: 'auto' }, { model: 'auto' }],
+          models: ['auto', 'auto'],
           prompt: 'Explain the concept of machine learning briefly.',
           maxTime: 60000, // 1 minute
           crossFeedback: false
         },
         {
           name: 'Complex with cross-feedback - 2 models',
-          models: [{ model: 'auto' }, { model: 'auto' }],
+          models: ['auto', 'auto'],
           prompt: 'Compare the advantages of renewable vs fossil fuels.',
           maxTime: 120000, // 2 minutes
           crossFeedback: true

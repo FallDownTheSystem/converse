@@ -223,7 +223,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'consensus',
           arguments: {
             prompt: 'What is 2 + 2? Answer with just the number.',
-            models: [{ model: 'auto' }],
+            models: ['auto'],
             enable_cross_feedback: false
           }
         });
@@ -568,7 +568,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'consensus',
           arguments: {
             prompt: 'What is the capital of France? Answer with just the city name.',
-            models: [{ model: 'auto' }],
+            models: ['auto'],
             enable_cross_feedback: false,
             temperature: 0
           }

@@ -102,7 +102,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Review this function for potential bugs and improvements",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/project/src/auth.js"],
     "reasoning_effort": "high",
     "temperature": 0.1
@@ -131,14 +131,14 @@
 
 ## 🎯 Model-Specific Examples
 
-### Using O3 for Complex Reasoning
+### Using GPT-5 for Complex Reasoning
 
 ```json
 {
   "tool": "chat",
   "arguments": {
     "prompt": "Design a distributed caching strategy for a social media platform with 10M+ users",
-    "model": "o3",
+    "model": "gpt-5",
     "reasoning_effort": "max",
     "temperature": 0.1
   }
@@ -180,11 +180,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Should we use PostgreSQL or MongoDB for our e-commerce inventory system?",
-    "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gpt-5", "gemini-2.5-pro", "grok-4"],
     "temperature": 0.2
   }
 }
@@ -200,7 +196,7 @@
   "phases": {
     "initial": [
       {
-        "model": "o3",
+        "model": "gpt-5",
         "status": "success",
         "response": "For an e-commerce inventory system, I recommend PostgreSQL because...",
         "metadata": {"input_tokens": 50, "output_tokens": 180}
@@ -208,7 +204,7 @@
     ],
     "refined": [
       {
-        "model": "o3",
+        "model": "gpt-5",
         "status": "success",
         "initial_response": "For an e-commerce inventory system, I recommend PostgreSQL...",
         "refined_response": "After considering the other perspectives on MongoDB's flexibility, I still lean towards PostgreSQL but acknowledge that MongoDB could work well if..."
@@ -226,9 +222,9 @@
   "arguments": {
     "prompt": "Given our current system architecture, what's the best approach for implementing real-time notifications?",
     "models": [
-      {"model": "gpt-5"},        // Most intelligent: Superior reasoning
-      {"model": "grok-4"},    // Most intelligent: Advanced analysis
-      {"model": "gemini-2.5-pro"}  // Most intelligent: Deep thinking
+      "gpt-5",        // Most intelligent: Superior reasoning
+      "grok-4",    // Most intelligent: Advanced analysis
+      "gemini-2.5-pro"  // Most intelligent: Deep thinking
     ],
     "files": [
       "/c/Users/username/docs/current_architecture.md",
@@ -248,11 +244,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "What's the best CSS framework for rapid prototyping in 2024?",
-    "models": [
-      {"model": "gemini-2.5-flash"},
-      {"model": "o4-mini"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gemini-2.5-flash", "o4-mini", "grok-4"],
     "enable_cross_feedback": false,
     "temperature": 0.3
   }
@@ -282,11 +274,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Compare these three design options and recommend the best one for our mobile app",
-    "models": [
-      {"model": "gpt-4.1"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gpt-4.1", "gemini-2.5-pro", "grok-4"],
     "images": [
       "/c/Users/username/designs/option_a.png",
       "/c/Users/username/designs/option_b.png", 
@@ -304,7 +292,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Review the implementation against the architecture diagram. Are we following the design correctly?",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/services/payment.js", "/c/Users/username/src/models/transaction.js"],
     "images": ["/c/Users/username/docs/payment_flow_diagram.png"],
     "reasoning_effort": "high"
@@ -321,7 +309,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Help me debug this error. The application crashes intermittently with this stack trace.",
-    "model": "o3",
+    "model": "gpt-5",
     "files": [
       "/c/Users/username/src/server.js",
       "/c/Users/username/logs/error.log",
@@ -341,9 +329,9 @@
   "arguments": {
     "prompt": "Our API response times are degrading. What could be the root causes?",
     "models": [
-      {"model": "gemini-2.5-flash"},  // Fast: Quick analysis
-      {"model": "o4-mini"},           // Fast: Rapid responses
-      {"model": "gpt-4.1"}            // Fast: Efficient processing
+      "gemini-2.5-flash",  // Fast: Quick analysis
+      "o4-mini",           // Fast: Rapid responses
+      "gpt-4.1"            // Fast: Efficient processing
     ],
     "files": [
       "/c/Users/username/monitoring/performance_report.json",
@@ -377,7 +365,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Review this code and explain what it does, then suggest best practices improvements",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/utils/encryption.js"],
     "reasoning_effort": "medium",
     "temperature": 0.2
@@ -392,11 +380,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Compare Next.js, Nuxt.js, and SvelteKit for our new web application project",
-    "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-flash"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gpt-5", "gemini-2.5-flash", "grok-4"],
     "files": ["/c/Users/username/docs/project_requirements.md"],
     "temperature": 0.25
   }
@@ -412,11 +396,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Plan the implementation of user authentication with social login support",
-    "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gpt-5", "gemini-2.5-pro", "grok-4"],
     "files": [
       "/c/Users/username/docs/user_requirements.md",
       "/c/Users/username/src/models/user.js"
@@ -447,7 +427,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Help me refactor this legacy code to use modern ES6+ features and improve readability",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/legacy/data-processor.js"],
     "reasoning_effort": "medium",
     "temperature": 0.2
@@ -464,7 +444,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "I need to migrate our monolith to microservices. What's the step-by-step approach?",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/app.js", "/c/Users/username/docs/current_architecture.md"],
     "reasoning_effort": "max",
     "temperature": 0.1
@@ -479,11 +459,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Should we migrate from Python Django to Node.js Express for better performance?",
-    "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "grok-4"}
-    ],
+    "models": ["gpt-5", "gemini-2.5-pro", "grok-4"],
     "files": [
       "/c/Users/username/backend/requirements.txt",
       "/c/Users/username/monitoring/performance_metrics.json",
@@ -528,7 +504,7 @@
   "tool": "chat", 
   "arguments": {
     "prompt": "Fix this bug in my authentication logic",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/auth.js"],
     "temperature": 0.0,
     "reasoning_effort": "high"
@@ -543,7 +519,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Quick syntax check - is this JavaScript valid?",
-    "model": "o3",
+    "model": "gpt-5",
     "reasoning_effort": "minimal",
     "temperature": 0.1
   }
@@ -555,7 +531,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Design a comprehensive testing strategy for this complex system",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/src/", "/tests/"],
     "reasoning_effort": "max",
     "temperature": 0.1
@@ -573,7 +549,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "I'm building a real-time chat application. What architecture should I consider?",
-    "model": "o3"
+    "model": "gpt-5"
   }
 }
 
@@ -605,7 +581,7 @@
   "tool": "chat",
   "arguments": {
     "prompt": "Review this API endpoint implementation",
-    "model": "o3",
+    "model": "gpt-5",
     "files": ["/c/Users/username/src/api/users.js"]
   }
 }
@@ -639,11 +615,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "Brainstorm innovative features for a fitness tracking app that would differentiate us from competitors",
-    "models": [
-      {"model": "grok-4"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "gpt-4.1"}
-    ],
+    "models": ["grok-4", "gemini-2.5-pro", "gpt-4.1"],
     "temperature": 0.7,
     "cross_feedback_prompt": "Build on each other's ideas and suggest combinations"
   }
@@ -673,11 +645,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "What testing strategy should we implement for this e-commerce checkout flow?",
-    "models": [
-      {"model": "o3"},
-      {"model": "gemini-2.5-pro"},
-      {"model": "gemini-2.5-flash"}
-    ],
+    "models": ["gpt-5", "gemini-2.5-pro", "gemini-2.5-flash"],
     "files": [
       "/c/Users/username/src/checkout/payment.js",
       "/c/Users/username/src/checkout/validation.js",
@@ -711,10 +679,7 @@
   "tool": "consensus",
   "arguments": {
     "prompt": "One of our models is unavailable, but we still need consensus",
-    "models": [
-      {"model": "available-model-1"},
-      {"model": "available-model-2"}
-    ],
+    "models": ["available-model-1", "available-model-2"],
     "temperature": 0.2
   }
 }
@@ -755,7 +720,7 @@
       "tool": "chat",
       "arguments": {
         "prompt": "Review this pull request for security issues and best practices",
-        "model": "o3",
+        "model": "gpt-5",
         "files": ["/c/Users/username/src/modified-file.js"],
         "reasoning_effort": "high"
       }

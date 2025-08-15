@@ -112,11 +112,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 // Example usage
 {
   "prompt": "Should we use microservices or monolith architecture for our e-commerce platform?",
-  "models": [
-    {"model": "gpt-5"},
-    {"model": "gemini-2.5-flash"},
-    {"model": "grok-4-0709"}
-  ],
+  "models": ["gpt-5", "gemini-2.5-flash", "grok-4-0709"],
   "files": ["/path/to/requirements.md"],
   "enable_cross_feedback": true,
   "temperature": 0.2
@@ -246,22 +242,22 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 ```javascript
 // Auto-selection (recommended)
-{ "model": "auto" }
+"auto"
 
 // Specific models
-{ "model": "gemini-2.5-flash" }
-{ "model": "gpt-5" }
-{ "model": "grok-4-0709" }
+"gemini-2.5-flash"
+"gpt-5"
+"grok-4-0709"
 
 // Using aliases
-{ "model": "flash" }    // -> gemini-2.5-flash
-{ "model": "pro" }      // -> gemini-2.5-pro
-{ "model": "grok" }     // -> grok-4-0709
+"flash"    // -> gemini-2.5-flash
+"pro"      // -> gemini-2.5-pro
+"grok"     // -> grok-4-0709
 ```
 
 **Auto Model Behavior:**
 - **Chat Tool**: Selects the first available provider and uses its default model
-- **Consensus Tool**: When using `[{"model": "auto"}]`, automatically expands to the first 3 available providers
+- **Consensus Tool**: When using `["auto"]`, automatically expands to the first 3 available providers
 
 Provider priority order (requires corresponding API key):
   1. OpenAI (`gpt-5`)

@@ -127,7 +127,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle basic consensus request with single model', async () => {
       const args = {
         prompt: 'What is 2+2?',
-        models: [{ model: 'gpt-4o-mini' }]
+        models: ['gpt-4o-mini']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -148,11 +148,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle consensus with multiple models', async () => {
       const args = {
         prompt: 'Is AI beneficial for humanity?',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' },
-          { model: 'flash' }
-        ]
+        models: ['gpt-4o-mini', 'grok', 'flash']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -171,10 +167,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should enable cross-feedback by default', async () => {
       const args = {
         prompt: 'Test question',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' }
-        ]
+        models: ['gpt-4o-mini', 'grok']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -191,7 +184,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should disable cross-feedback when requested', async () => {
       const args = {
         prompt: 'Test question',
-        models: [{ model: 'gpt-4o-mini' }],
+        models: ['gpt-4o-mini'],
         enable_cross_feedback: false
       };
 
@@ -211,9 +204,9 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: [
-          { model: 'o3-mini' },        // Should map to openai
-          { model: 'grok-4' },         // Should map to xai
-          { model: 'gemini-pro' }      // Should map to google
+          'o3-mini',        // Should map to openai
+          'grok-4',         // Should map to xai
+          'gemini-pro'      // Should map to google
         ]
       };
 
@@ -228,7 +221,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle auto model selection', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'auto' }]
+        models: ['auto']
       };
 
       await consensusTool(args, mockDependencies);
@@ -240,10 +233,8 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle model-specific options', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [
-          { model: 'gpt-4o-mini', temperature: 0.7 },
-          { model: 'gemini-pro', thinking: 'medium' }
-        ]
+        models: ['gpt-4o-mini', 'gemini-pro'],
+        temperature: 0.7
       };
 
       await consensusTool(args, mockDependencies);
@@ -255,7 +246,7 @@ describe('Consensus Tool Unit Tests', () => {
       );
       expect(mockProviders.google.invoke).toHaveBeenCalledWith(
         expect.any(Array),
-        expect.objectContaining({ thinking: 'medium' })
+        expect.objectContaining({ temperature: 0.7 })
       );
     });
   });
@@ -264,10 +255,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should include other models responses in refinement phase', async () => {
       const args = {
         prompt: 'Complex question requiring multiple perspectives',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' }
-        ],
+        models: ['gpt-4o-mini', 'grok'],
         enable_cross_feedback: true
       };
 
@@ -284,7 +272,7 @@ describe('Consensus Tool Unit Tests', () => {
       const customPrompt = 'Please review and improve your response based on the other perspectives';
       const args = {
         prompt: 'Test question',
-        models: [{ model: 'gpt-4o-mini' }, { model: 'grok' }],
+        models: ['gpt-4o-mini', 'grok'],
         cross_feedback_prompt: customPrompt
       };
 
@@ -326,10 +314,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Should we implement this feature?',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' }
-        ]
+        models: ['gpt-4o-mini', 'grok']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -362,7 +347,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Analyze this data',
-        models: [{ model: 'gpt-4o-mini' }],
+        models: ['gpt-4o-mini'],
         files: ['test.txt']
       };
 
@@ -400,7 +385,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'gpt-4o-mini' }],
+        models: ['gpt-4o-mini'],
         files: ['missing.txt']
       };
 
@@ -452,9 +437,9 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' },          // This will fail
-          { model: 'flash' }
+          'gpt-4o-mini',
+          'grok',          // This will fail
+          'flash'
         ]
       };
 
@@ -476,11 +461,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' },
-          { model: 'flash' }
-        ]
+        models: ['gpt-4o-mini', 'grok', 'flash']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -503,7 +484,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'unknown-model' }]
+        models: ['unknown-model']
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -552,7 +533,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Follow-up consensus question',
-        models: [{ model: 'gpt-4o-mini' }],
+        models: ['gpt-4o-mini'],
         continuation_id: 'conv_existing'
       };
 
@@ -613,7 +594,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should include comprehensive metadata in response', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [{ model: 'gpt-4o-mini' }],
+        models: ['gpt-4o-mini'],
         temperature: 0.5
       };
 
@@ -636,11 +617,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should execute models in parallel', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: [
-          { model: 'gpt-4o-mini' },
-          { model: 'grok' },
-          { model: 'flash' }
-        ]
+        models: ['gpt-4o-mini', 'grok', 'flash']
       };
 
       // Track when each provider is called

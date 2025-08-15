@@ -79,7 +79,7 @@ export function generateHelpContent() {
       return `\`\`\`json
 {
   "prompt": "Explain the code in main.js",
-  "model": "o3",
+  "model": "gpt-5",
   "files": ["C:\\\\Users\\\\username\\\\project\\\\main.js"],
   "temperature": 0.7,
   "use_websearch": false
@@ -89,11 +89,7 @@ export function generateHelpContent() {
       return `\`\`\`json
 {
   "prompt": "Should we use microservices architecture for our new project?",
-  "models": [
-    {"model": "o3"},
-    {"model": "gemini-2.5-pro"},
-    {"model": "grok-4-0709"}
-  ],
+  "models": ["gpt-5", "gemini-2.5-pro", "grok-4-0709"],
   "files": ["./requirements.md", "C:\\\\Users\\\\username\\\\architecture.md"],
   "enable_cross_feedback": true,
   "temperature": 0.3
@@ -134,8 +130,8 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 ## Model Selection Tips
 
 ### For Complex Reasoning Tasks
-- **Most Intelligent**: gpt-5, o3-pro, gemini-2.5-pro, grok-4
-- **Fast & Smart**: gpt-5-mini, o3-mini, o4-mini, gemini-2.5-flash
+- **Most Intelligent**: gpt-5, gpt-5-pro, gemini-2.5-pro, grok-4
+- **Fast & Smart**: gpt-5-mini, gpt-5-mini, o4-mini, gemini-2.5-flash
 - **Budget-Friendly**: gpt-5-nano, gpt-4o-mini, gemini-2.0-flash-lite
 
 ### For Quick Responses
@@ -146,11 +142,11 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 - **1M+ Tokens**: gpt-4.1 (1M), all Gemini models (1M)
 - **400K Tokens**: gpt-5 family (gpt-5, gpt-5-mini, gpt-5-nano)
 - **256K Tokens**: grok-4 series
-- **200K Tokens**: o3 series, o4-mini
+- **200K Tokens**: gpt-5 series, o4-mini
 
 ### Special Features
-- **Web Search**: gpt-5, gpt-5-mini, o3 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
-- **Thinking Mode**: o3 series (reasoning_effort), gemini models (thinking budget)
+- **Web Search**: gpt-5, gpt-5-mini, gpt-5 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
+- **Thinking Mode**: gpt-5 series (reasoning_effort), gemini models (thinking budget)
 - **Image Support**: All models except gemini-2.0-flash-lite and grok-3 series
 
 ## Configuration Tips
