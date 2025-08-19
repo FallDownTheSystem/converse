@@ -5,7 +5,7 @@
  * Calls all available providers simultaneously and aggregates responses.
  */
 
-import { createToolResponse, createToolError } from './index.js';
+import { createToolResponse, createToolError, formatMetadataDisplay, formatFailureDetails } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
@@ -234,6 +234,7 @@ export async function consensusTool(args, dependencies) {
 
     // Phase 1: Initial parallel provider calls
     logger.debug('Calling providers in parallel', { data: { providerCount: providerCalls.length } });
+    const consensusStartTime = Date.now();
     const initialResults = await Promise.allSettled(
       providerCalls.map(async (call) => {
         try {
@@ -388,6 +389,54 @@ Please provide your refined response:`;
       // Continue even if save fails
     }
 
+    const consensusExecutionTime = (Date.now() - consensusStartTime) / 1000; // Convert to seconds
+    
+    // Calculate final success count and collect failure details
+    let finalSuccessCount;
+    let failureDetails = [];
+    
+    if (enable_cross_feedback && refinedPhase) {
+      // When cross-feedback is enabled, count only models that succeeded in both phases
+      finalSuccessCount = refinedPhase.filter(r => r.status === 'success').length;
+      
+      // Collect detailed failure information
+      refinedPhase.forEach(result => {
+        if (result.status === 'partial') {
+          failureDetails.push(`${result.model} (refinement failed)`);
+        }
+      });
+      
+      // Add models that failed in initial phase
+      initialPhase.failed.forEach(failure => {
+        failureDetails.push(`${failure.model} (initial failed)`);
+      });
+    } else {
+      // When cross-feedback is disabled, count initial successes
+      finalSuccessCount = initialPhase.successful.length;
+      
+      // Collect initial failure information
+      initialPhase.failed.forEach(failure => {
+        failureDetails.push(`${failure.model} (${failure.error})`);
+      });
+    }
+    
+    // Prepare metadata for display
+    const displayMetadata = {
+      continuation_id: continuationId,
+      successful_models: finalSuccessCount,
+      total_models: models.length,
+      execution_time: consensusExecutionTime,
+      cross_feedback: enable_cross_feedback,
+      refined_responses: refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : 0,
+      initial_successes: initialPhase.successful.length,
+      partial_successes: refinedPhase ? refinedPhase.filter(r => r.status === 'partial').length : 0,
+      failure_details: failureDetails
+    };
+
+    // Format metadata display (disable in test environment)
+    const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
+    const metadataDisplay = formatMetadataDisplay(displayMetadata, 'consensus', consensusExecutionTime, enableMetadataDisplay);
+    
     // Build result object keeping backward compatibility but removing rawResponse
     const result = {
       status: 'consensus_complete',
@@ -408,7 +457,8 @@ Please provide your refined response:`;
         enable_cross_feedback,
         temperature,
         models_requested: models
-      }
+      },
+      metadata_display: metadataDisplay
     };
 
     // Apply token limiting to the final response
@@ -416,13 +466,22 @@ Please provide your refined response:`;
     const resultStr = JSON.stringify(result, null, 2);
     const limitedResult = applyTokenLimit(resultStr, tokenLimit);
 
+    // Add failure details to the response content if there are failures and display is enabled
+    let finalContent = limitedResult.content;
+    if (enableMetadataDisplay && failureDetails.length > 0) {
+      const failureInfo = formatFailureDetails(failureDetails);
+      finalContent = limitedResult.content + failureInfo;
+    }
+
     // Return with continuation at top level for test compatibility
+    // For consensus, we'll add metadata display to a separate field to maintain JSON structure
     return createToolResponse({
-      content: limitedResult.content,
+      content: finalContent,
       continuation: {
         id: continuationId,
         messageCount: messages.length + 1
-      }
+      },
+      metadata_display: metadataDisplay
     });
 
   } catch (error) {

@@ -37,6 +37,9 @@ describe('Consensus Tool Unit Tests', () => {
       providers: {
         googleLocation: 'us-central1',
         xaiBaseUrl: 'https://api.x.ai/v1'
+      },
+      environment: {
+        nodeEnv: 'test'
       }
     };
 
@@ -540,7 +543,7 @@ describe('Consensus Tool Unit Tests', () => {
       const result = await consensusTool(args, mockDependencies);
 
       expect(mockContinuationStore.set).toHaveBeenCalledWith(
-        expect.stringMatching(/^conv_[a-f0-9-]+$/),
+        expect.stringMatching(/^conv_[A-Za-z0-9_-]{10}$/),
         expect.objectContaining({
           messages: expect.arrayContaining([
             expect.objectContaining({ role: 'user', content: 'Test consensus question' })
@@ -551,7 +554,7 @@ describe('Consensus Tool Unit Tests', () => {
       );
 
       expect(result.continuation).toBeDefined();
-      expect(result.continuation.id).toMatch(/^conv_[a-f0-9-]+$/);
+      expect(result.continuation.id).toMatch(/^conv_[A-Za-z0-9_-]{10}$/);
     });
 
     it('should load previous consensus conversation when continuation provided', async () => {

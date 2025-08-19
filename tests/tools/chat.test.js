@@ -27,6 +27,9 @@ describe('Chat Tool Unit Tests', () => {
       providers: {
         googleLocation: 'us-central1',
         xaiBaseUrl: 'https://api.x.ai/v1'
+      },
+      environment: {
+        nodeEnv: 'test'
       }
     };
 
@@ -154,7 +157,7 @@ describe('Chat Tool Unit Tests', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Test response from provider');
       expect(result.continuation).toBeDefined();
-      expect(result.continuation.id).toMatch(/^conv_[a-f0-9-]+$/);
+      expect(result.continuation.id).toMatch(/^conv_[A-Za-z0-9_-]{10}$/);
     });
 
     it('should handle chat with model specification', async () => {
@@ -216,7 +219,7 @@ describe('Chat Tool Unit Tests', () => {
 
       expect(mockContinuationStore.get).not.toHaveBeenCalled();
       expect(mockContinuationStore.set).toHaveBeenCalledWith(
-        expect.stringMatching(/^conv_[a-f0-9-]+$/),
+        expect.stringMatching(/^conv_[A-Za-z0-9_-]{10}$/),
         expect.objectContaining({
           messages: expect.arrayContaining([
             expect.objectContaining({ role: 'user', content: 'First message' }),

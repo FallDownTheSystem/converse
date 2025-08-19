@@ -67,6 +67,73 @@ export function getAvailableTools() {
 }
 
 /**
+ * Format metadata for display in tool responses
+ * @param {object} metadata - Metadata to format
+ * @param {string} toolName - Name of the tool
+ * @param {number} executionTime - Execution time in seconds
+ * @param {boolean} enableDisplay - Whether to enable metadata display
+ * @returns {string} Formatted metadata string
+ */
+export function formatMetadataDisplay(metadata = {}, toolName = '', executionTime = null, enableDisplay = true) {
+  // Return empty string if display is disabled (useful for testing)
+  if (!enableDisplay) {
+    return '';
+  }
+  
+  const parts = [];
+  
+  if (executionTime !== null) {
+    // Format time appropriately based on duration
+    let timeDisplay;
+    if (executionTime >= 60) {
+      // Show minutes and seconds for long requests
+      const minutes = Math.floor(executionTime / 60);
+      const seconds = Math.round(executionTime % 60);
+      timeDisplay = `${minutes}m${seconds}s`;
+    } else if (executionTime >= 1) {
+      // Show seconds with 1 decimal place for requests over 1 second
+      timeDisplay = `${executionTime.toFixed(1)}s`;
+    } else {
+      // Show seconds with 2 decimal places for sub-second requests
+      timeDisplay = `${executionTime.toFixed(2)}s`;
+    }
+    parts.push(`⏱️ ${timeDisplay}`);
+  }
+  
+  if (metadata.successful_models !== undefined) {
+    parts.push(`✅ ${metadata.successful_models}/${metadata.total_models} models`);
+  }
+  
+  if (metadata.continuation_id) {
+    parts.push(`🔗 ${metadata.continuation_id}`);
+  }
+  
+  if (metadata.provider) {
+    parts.push(`🤖 ${metadata.provider}`);
+  }
+  
+  if (metadata.model) {
+    parts.push(`📱 ${metadata.model}`);
+  }
+  
+  return parts.length > 0 ? `[${parts.join(' | ')}]` : '';
+}
+
+/**
+ * Format failure details for display in tool responses
+ * @param {array} failureDetails - Array of failure detail strings
+ * @returns {string} Formatted failure details string
+ */
+export function formatFailureDetails(failureDetails = []) {
+  if (!failureDetails || failureDetails.length === 0) {
+    return '';
+  }
+  
+  const failureList = failureDetails.map(detail => `• ${detail}`).join('\n');
+  return `\nModel failures:\n${failureList}`;
+}
+
+/**
  * Create MCP-compatible tool response
  * @param {string|object} content - Response content (string) or full response object
  * @param {boolean} isError - Whether this is an error response
@@ -86,12 +153,18 @@ export function createToolResponse(content, isError = false, additionalFields = 
     }
 
     // If it's a tool result object (has continuation, metadata, etc.) convert to MCP format
-    if (content.continuation || content.metadata || content.content) {
+    if (content.continuation || content.metadata || content.content || content.metadata_display) {
+      // Prepare the text content, potentially prefixing with metadata display
+      let textContent = content.content || JSON.stringify(content, null, 2);
+      if (content.metadata_display) {
+        textContent = `${content.metadata_display}\n\n${textContent}`;
+      }
+      
       const mcpResponse = {
         content: [
           {
             type: 'text',
-            text: content.content || JSON.stringify(content, null, 2)
+            text: textContent
           }
         ],
         isError: isError || content.isError || false,

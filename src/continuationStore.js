@@ -6,7 +6,7 @@
  * Provides a consistent interface (get/set/delete) for state management.
  */
 
-import { randomUUID } from 'crypto';
+import { nanoid } from 'nanoid';
 import { debugLog, debugError } from './utils/console.js';
 
 /**
@@ -302,11 +302,12 @@ export function setContinuationStore(store) {
 }
 
 /**
- * Generate a new UUID-based continuation ID
- * @returns {string} Unique continuation ID
+ * Generate a new short continuation ID
+ * @returns {string} Unique continuation ID (format: conv_XXXXXXXXXX)
  */
 export function generateContinuationId() {
-  return `conv_${randomUUID()}`;
+  // Generate a 10-character nanoid for short but unique IDs
+  return `conv_${nanoid(10)}`;
 }
 
 /**
@@ -319,9 +320,14 @@ export function isValidContinuationId(continuationId) {
     return false;
   }
 
-  // Check for conv_ prefix and UUID format
+  // Check for conv_ prefix and nanoid format (10 characters, URL-safe)
+  // nanoid uses URL-safe alphabet: A-Za-z0-9_-
+  const nanoidPattern = /^conv_[A-Za-z0-9_-]{10}$/;
+  
+  // Also accept legacy UUID format for backward compatibility
   const uuidPattern = /^conv_[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidPattern.test(continuationId);
+  
+  return nanoidPattern.test(continuationId) || uuidPattern.test(continuationId);
 }
 
 /**

@@ -5,7 +5,7 @@
  * Handles context processing, provider calls, and state management.
  */
 
-import { createToolResponse, createToolError } from './index.js';
+import { createToolResponse, createToolError, formatMetadataDisplay } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
@@ -189,12 +189,14 @@ export async function chatTool(args, dependencies) {
 
     // Call provider
     let response;
+    const startTime = Date.now();
     try {
       response = await selectedProvider.invoke(messages, providerOptions);
     } catch (error) {
       logger.error('Provider error', { error, data: { provider: providerName } });
       return createToolError(`Provider error: ${error.message}`);
     }
+    const executionTime = (Date.now() - startTime) / 1000; // Convert to seconds
 
     // Validate response
     if (!response || !response.content) {
@@ -224,9 +226,25 @@ export async function chatTool(args, dependencies) {
       // Continue even if save fails
     }
 
-    // Create response with continuation
+    // Prepare metadata for display
+    const displayMetadata = {
+      continuation_id: continuationId,
+      provider: providerName,
+      model: resolvedModel,
+      execution_time: executionTime,
+      message_count: updatedMessages.filter(msg => msg.role !== 'system').length,
+      ...response.metadata
+    };
+
+    // Format metadata display (disable in test environment)
+    const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
+    const metadataDisplay = formatMetadataDisplay(displayMetadata, 'chat', executionTime, enableMetadataDisplay);
+    
+    // Create response with continuation and metadata display
+    const responseContent = metadataDisplay ? `${metadataDisplay}\n\n${response.content}` : response.content;
+    
     const result = {
-      content: response.content,
+      content: responseContent,
       continuation: {
         id: continuationId,
         provider: providerName,
