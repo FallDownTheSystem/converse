@@ -309,6 +309,10 @@ describe('Chat Tool Unit Tests', () => {
         files: ['package.json'],
         images: [],
         webSearch: null
+      }, {
+        enforceSecurityCheck: false,
+        skipSecurityCheck: true,
+        clientCwd: undefined
       });
 
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
@@ -352,6 +356,10 @@ describe('Chat Tool Unit Tests', () => {
         files: [],
         images: ['image.png'],
         webSearch: null
+      }, {
+        enforceSecurityCheck: false,
+        skipSecurityCheck: true,
+        clientCwd: undefined
       });
     });
 
@@ -377,6 +385,10 @@ describe('Chat Tool Unit Tests', () => {
         files: [],
         images: [],
         webSearch: 'Based on recent news'
+      }, {
+        enforceSecurityCheck: false,
+        skipSecurityCheck: true,
+        clientCwd: undefined
       });
     });
 
@@ -633,6 +645,10 @@ describe('Chat Tool Unit Tests', () => {
         files: ['file1.txt', 'file2.json'],
         images: [],
         webSearch: null
+      }, {
+        enforceSecurityCheck: false,
+        skipSecurityCheck: true,
+        clientCwd: undefined
       });
     });
 

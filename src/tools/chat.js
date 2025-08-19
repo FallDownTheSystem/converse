@@ -69,7 +69,7 @@ export async function chatTool(args, dependencies) {
 
     // Validate file paths before processing
     if (files.length > 0 || images.length > 0) {
-      const validation = await validateAllPaths({ files, images });
+      const validation = await validateAllPaths({ files, images }, { clientCwd: config.server?.client_cwd });
       if (!validation.valid) {
         logger.error('File validation failed', { errors: validation.errors });
         return validation.errorResponse;
