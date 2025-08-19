@@ -5,6 +5,15 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2025-01-19
+
+### Fixed
+- **Relative Path Support**: Fixed relative path handling in chat and consensus tools
+  - File validation now uses the same working directory as context processing
+  - Relative paths like `"./file.txt"` and `"file.txt"` now work correctly
+  - Both tools now consistently use auto-detected client working directory for path resolution
+  - Fixed issue where file validation would fail but context processing would succeed with relative paths
+
 ## [1.11.1] - 2025-01-19
 
 ### Fixed
