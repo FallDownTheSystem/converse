@@ -5,6 +5,43 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2025-01-19
+
+### Added
+- **Execution Time Display**: Added smart execution time formatting to tool responses
+  - Shows time in seconds with appropriate precision (0.05s, 1.2s, 15.3s, 1m6s)
+  - Displays in metadata header for both chat and consensus tools
+  - Time measurement accounts for actual LLM response durations
+
+- **Enhanced Metadata Display**: New comprehensive metadata shown at start of responses
+  - **Chat**: `[⏱️ 2.3s | 🤖 openai | 📱 gpt-5 | 🔗 conv_abc123]`
+  - **Consensus**: `[⏱️ 8.7s | ✅ 2/3 models | 🔗 conv_xyz789]`
+  - Environment-aware (automatically disabled in test environments)
+
+- **Detailed Failure Reporting**: Specific model failure information for consensus tool
+  - Shows which models failed and in which phase (initial vs refinement)
+  - Example: "• gemini-2.5-pro (refinement failed)" and "• grok-4 (initial failed)"
+  - Helps users understand exactly what went wrong during consensus gathering
+
+### Changed
+- **BREAKING: Shorter Continuation IDs**: Switched from UUID to nanoid format
+  - **Before**: `conv_f47ac10b-58cc-4372-a567-0e02b2c3d479` (41 characters)
+  - **After**: `conv_nTC5QoA-ml` (15 characters) - **63% shorter**
+  - Uses cryptographically secure nanoid with URL-safe alphabet
+  - **Backward Compatible**: Old UUID format still accepted and validated
+  - Zero collision risk tested with 100,000+ generated IDs
+
+- **Improved Consensus Success Counting**: More accurate model success tracking
+  - When cross-feedback enabled: counts only models succeeding in both phases
+  - When cross-feedback disabled: counts initial phase successes
+  - Properly accounts for refinement phase failures
+
+### Technical
+- Migrated from Node.js `crypto.randomUUID()` to `nanoid` for ID generation
+- Enhanced validation regex to accept both UUID and nanoid formats
+- Updated all test patterns to match new continuation ID format
+- Added comprehensive failure detail collection and formatting
+
 ## [1.11.2] - 2025-01-19
 
 ### Fixed
