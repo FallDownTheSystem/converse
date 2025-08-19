@@ -1,6 +1,6 @@
 {
   "name": "converse-mcp-server",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Converse MCP Server - Converse with other LLMs with chat and consensus tools",
   "type": "module",
   "main": "src/index.js",
