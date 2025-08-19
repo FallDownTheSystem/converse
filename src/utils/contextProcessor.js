@@ -30,14 +30,8 @@ export class ContextProcessorError extends Error {
 }
 
 /**
- * Supported file types for context processing
+ * Supported image extensions (everything else is treated as text)
  */
-const SUPPORTED_TEXT_EXTENSIONS = [
-  '.txt', '.md', '.js', '.ts', '.json', '.yaml', '.yml',
-  '.py', '.java', '.c', '.cpp', '.h', '.css', '.html',
-  '.xml', '.csv', '.sql', '.sh', '.bat', '.log'
-];
-
 const SUPPORTED_IMAGE_EXTENSIONS = [
   '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'
 ];
@@ -164,7 +158,22 @@ export async function processFileContent(filePath, options = {}) {
     const maxTextSize = options.maxTextSize || 1024 * 1024; // 1MB default
     const maxImageSize = options.maxImageSize || 10 * 1024 * 1024; // 10MB default
 
-    if (SUPPORTED_TEXT_EXTENSIONS.includes(extension)) {
+    if (SUPPORTED_IMAGE_EXTENSIONS.includes(extension)) {
+      result.type = 'image';
+
+      if (fileStats.size > maxImageSize) {
+        result.error = `Image too large (${fileStats.size} bytes, max ${maxImageSize})`;
+        return result;
+      }
+
+      // For images, read as base64 for AI processing
+      const buffer = await readFile(validatedPath);
+      result.content = buffer.toString('base64');
+      result.mimeType = getMimeType(extension);
+      result.encoding = 'base64';
+
+    } else {
+      // Read everything else as text
       result.type = 'text';
 
       if (fileStats.size > maxTextSize) {
@@ -177,28 +186,6 @@ export async function processFileContent(filePath, options = {}) {
       result.lineCount = content.split(/\r?\n/).length;
       result.encoding = 'utf8';
       result.charCount = content.length;
-
-    } else if (SUPPORTED_IMAGE_EXTENSIONS.includes(extension)) {
-      result.type = 'image';
-
-      if (fileStats.size > maxImageSize) {
-        result.error = `Image too large (${fileStats.size} bytes, max ${maxImageSize})`;
-        return result;
-      }
-
-      // For images, read as base64 for AI processing (placeholder for advanced features)
-      const buffer = await readFile(validatedPath);
-      result.content = buffer.toString('base64');
-      result.mimeType = getMimeType(extension);
-      result.encoding = 'base64';
-
-      // Placeholder: Advanced image processing could be added here
-      // - Image resizing, format conversion
-      // - EXIF data extraction
-      // - Image analysis/description generation
-
-    } else {
-      result.error = `Unsupported file type: ${extension}`;
     }
 
     return result;
@@ -477,30 +464,3 @@ export async function validateFilePaths(filePaths, options = {}) {
   return results;
 }
 
-/**
- * Get supported file extensions
- * @returns {object} Object containing supported extensions by type
- */
-export function getSupportedExtensions() {
-  return {
-    text: [...SUPPORTED_TEXT_EXTENSIONS],
-    image: [...SUPPORTED_IMAGE_EXTENSIONS],
-    all: [...SUPPORTED_TEXT_EXTENSIONS, ...SUPPORTED_IMAGE_EXTENSIONS]
-  };
-}
-
-/**
- * Check if file type is supported
- * @param {string} filePath - Path to check
- * @returns {object} Support information
- */
-export function isFileTypeSupported(filePath) {
-  const extension = extname(filePath).toLowerCase();
-
-  return {
-    extension,
-    isSupported: SUPPORTED_TEXT_EXTENSIONS.includes(extension) || SUPPORTED_IMAGE_EXTENSIONS.includes(extension),
-    type: SUPPORTED_TEXT_EXTENSIONS.includes(extension) ? 'text' :
-      SUPPORTED_IMAGE_EXTENSIONS.includes(extension) ? 'image' : 'unknown'
-  };
-}
