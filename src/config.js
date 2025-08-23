@@ -220,8 +220,8 @@ export async function loadConfig() {
           // When run via npx, INIT_CWD contains the directory where npx was invoked
           // PWD is another common variable set to the working directory
           // npm_config_local_prefix is set when run via npm/npx
-          const detectedCwd = process.env.INIT_CWD || 
-                            process.env.PWD || 
+          const detectedCwd = process.env.INIT_CWD ||
+                            process.env.PWD ||
                             process.env.npm_config_local_prefix ||
                             process.cwd();
           config.server.client_cwd = detectedCwd;

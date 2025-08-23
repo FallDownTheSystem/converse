@@ -239,10 +239,10 @@ export async function chatTool(args, dependencies) {
     // Format metadata display (disable in test environment)
     const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
     const metadataDisplay = formatMetadataDisplay(displayMetadata, 'chat', executionTime, enableMetadataDisplay);
-    
+
     // Create response with continuation and metadata display
     const responseContent = metadataDisplay ? `${metadataDisplay}\n\n${response.content}` : response.content;
-    
+
     const result = {
       content: responseContent,
       continuation: {

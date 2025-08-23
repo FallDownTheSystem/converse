@@ -323,10 +323,10 @@ export function isValidContinuationId(continuationId) {
   // Check for conv_ prefix and nanoid format (10 characters, URL-safe)
   // nanoid uses URL-safe alphabet: A-Za-z0-9_-
   const nanoidPattern = /^conv_[A-Za-z0-9_-]{10}$/;
-  
+
   // Also accept legacy UUID format for backward compatibility
   const uuidPattern = /^conv_[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  
+
   return nanoidPattern.test(continuationId) || uuidPattern.test(continuationId);
 }
 

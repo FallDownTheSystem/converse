@@ -390,10 +390,10 @@ export const openaiProvider = {
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
         requestPayload.reasoning = { effort: reasoning_effort };
       }
-      
+
       // Add verbosity for GPT-5 models
       if (resolvedModel.startsWith('gpt-5') && verbosity) {
-        requestPayload.text = { verbosity: verbosity };
+        requestPayload.text = { verbosity };
       }
     } else {
       // Build Chat Completions API payload
@@ -414,7 +414,7 @@ export const openaiProvider = {
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
         requestPayload.reasoning_effort = reasoning_effort;
       }
-      
+
       // Add verbosity for GPT-5 models
       if (resolvedModel.startsWith('gpt-5') && verbosity) {
         requestPayload.verbosity = verbosity;

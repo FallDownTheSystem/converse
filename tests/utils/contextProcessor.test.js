@@ -257,7 +257,7 @@ describe('Context Processor Unit Tests', () => {
 
     it('should allow any paths when security check is disabled (default)', async () => {
       const relativePath = './test.txt';
-      
+
       // Without enforceSecurityCheck, should allow any file
       const result = await processFileContent(relativePath);
 

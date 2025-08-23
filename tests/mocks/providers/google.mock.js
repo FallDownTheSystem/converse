@@ -122,7 +122,7 @@ export function createMockGoogleProvider(overrides = {}) {
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       // Track the call
       baseProvider.tracker.recordCall('invoke', { messages, options });
-      
+
       const modelConfig = GOOGLE_MODELS[options.model] || GOOGLE_MODELS['gemini-1.5-flash'];
 
       // Simulate Google-specific validations

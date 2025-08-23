@@ -42,9 +42,9 @@ describe('Consensus Performance Tests', () => {
         mistral: config?.apiKeys?.mistral,
         openrouter: config?.apiKeys?.openrouter
       };
-      
+
       console.log('[performance-consensus-test] Available providers:', Object.entries(providers).filter(([k, v]) => v).map(([k]) => k));
-      
+
       const providerCount = Object.values(providers).filter(Boolean).length;
 
       hasMultipleProviders = providerCount >= 2;
@@ -497,14 +497,14 @@ describe('Consensus Performance Tests', () => {
       // Test with a limited number of providers to avoid timeout
       const maxProvidersToTest = Math.min(3, availableModels.length);
       console.log(`[performance-consensus-test] Will test with up to ${maxProvidersToTest} providers`);
-      
+
       for (let count = 1; count <= maxProvidersToTest; count++) {
         const models = availableModels.slice(0, count);
         console.log(`[performance-consensus-test] Starting test ${count}/${maxProvidersToTest} with models:`, models);
 
         const startTime = Date.now();
         console.log(`[performance-consensus-test] Calling consensus tool at ${new Date().toISOString()}`);
-        
+
         const result = await router.callTool({
           name: 'consensus',
           arguments: {
@@ -518,18 +518,18 @@ describe('Consensus Performance Tests', () => {
         console.log(`[performance-consensus-test] Consensus call completed in ${duration}ms at ${new Date().toISOString()}`);
 
         if (result.isError) {
-          console.error(`[performance-consensus-test] Error in consensus call:`, result);
+          console.error('[performance-consensus-test] Error in consensus call:', result);
         }
         expect(result.isError).toBe(false);
 
         const consensusData = JSON.parse(result.content[0].text);
-        console.log(`[performance-consensus-test] Consensus results:`, {
+        console.log('[performance-consensus-test] Consensus results:', {
           models_consulted: consensusData.models_consulted,
           successful_initial_responses: consensusData.successful_initial_responses,
           failed_responses: consensusData.failed_responses,
           status: consensusData.status
         });
-        
+
         expect(consensusData.models_consulted).toBe(count);
         expect(consensusData.successful_initial_responses).toBeGreaterThan(0);
 

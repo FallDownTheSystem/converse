@@ -12,16 +12,16 @@ import { join } from 'path';
 
 // Helper function from XAI docs
 async function getBase64(filePath) {
-    try {
-        const buffer = await fs.readFile(filePath);
-        let base64 = buffer.toString("base64");
-        while (base64.length % 4 > 0) {
-            base64 += "=";
-        }
-        return base64;
-    } catch (error) {
-        throw error;
+  try {
+    const buffer = await fs.readFile(filePath);
+    let base64 = buffer.toString('base64');
+    while (base64.length % 4 > 0) {
+      base64 += '=';
     }
+    return base64;
+  } catch (error) {
+    throw error;
+  }
 }
 
 describe('XAI Image Processing Tests', () => {
@@ -122,10 +122,10 @@ describe('XAI Image Processing Tests', () => {
         // Read both fruits.png and tulips.png
         const fruitsPath = join(process.cwd(), 'fruits.png');
         const tulipsPath = join(process.cwd(), 'tulips.png');
-        
+
         const fruitsBase64Data = await getBase64(fruitsPath);
         const tulipsBase64Data = await getBase64(tulipsPath);
-        
+
         const fruitsBase64 = `data:image/png;base64,${fruitsBase64Data}`;
         const tulipsBase64 = `data:image/png;base64,${tulipsBase64Data}`;
 

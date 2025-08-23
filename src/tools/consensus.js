@@ -153,7 +153,7 @@ export async function consensusTool(args, dependencies) {
       // Find first 3 available providers
       const availableProviders = [];
       const providerOrder = ['openai', 'google', 'xai', 'anthropic', 'mistral', 'deepseek', 'openrouter'];
-      
+
       for (const providerName of providerOrder) {
         if (availableProviders.length >= 3) break;
         const provider = providers[providerName];
@@ -161,21 +161,21 @@ export async function consensusTool(args, dependencies) {
           availableProviders.push(providerName);
         }
       }
-      
+
       if (availableProviders.length === 0) {
         return createToolError('No providers available. Please configure at least one API key.');
       }
-      
+
       // Create model names for each available provider with their default model
-      modelsToProcess = availableProviders.map(providerName => 
+      modelsToProcess = availableProviders.map(providerName =>
         getDefaultModelForProvider(providerName)
       );
-      
-      logger.debug('Auto-expanded to providers', { 
-        data: { 
+
+      logger.debug('Auto-expanded to providers', {
+        data: {
           providers: availableProviders,
           models: modelsToProcess
-        } 
+        }
       });
     }
 
@@ -310,7 +310,7 @@ Please provide your refined response:`;
         initialPhase.successful.map(async (initialResult) => {
           try {
             const call = providerCalls.find(c => c.model === initialResult.model);
-            
+
             // Build model-specific feedback messages with the assistant's initial response
             const modelFeedbackMessages = [...messages];
             // Add the assistant's initial response
@@ -323,7 +323,7 @@ Please provide your refined response:`;
               role: 'user',
               content: feedbackPrompt
             });
-            
+
             const response = await call.providerInstance.invoke(modelFeedbackMessages, call.options);
 
             return {
@@ -390,22 +390,22 @@ Please provide your refined response:`;
     }
 
     const consensusExecutionTime = (Date.now() - consensusStartTime) / 1000; // Convert to seconds
-    
+
     // Calculate final success count and collect failure details
     let finalSuccessCount;
-    let failureDetails = [];
-    
+    const failureDetails = [];
+
     if (enable_cross_feedback && refinedPhase) {
       // When cross-feedback is enabled, count only models that succeeded in both phases
       finalSuccessCount = refinedPhase.filter(r => r.status === 'success').length;
-      
+
       // Collect detailed failure information
       refinedPhase.forEach(result => {
         if (result.status === 'partial') {
           failureDetails.push(`${result.model} (refinement failed)`);
         }
       });
-      
+
       // Add models that failed in initial phase
       initialPhase.failed.forEach(failure => {
         failureDetails.push(`${failure.model} (initial failed)`);
@@ -413,13 +413,13 @@ Please provide your refined response:`;
     } else {
       // When cross-feedback is disabled, count initial successes
       finalSuccessCount = initialPhase.successful.length;
-      
+
       // Collect initial failure information
       initialPhase.failed.forEach(failure => {
         failureDetails.push(`${failure.model} (${failure.error})`);
       });
     }
-    
+
     // Prepare metadata for display
     const displayMetadata = {
       continuation_id: continuationId,
@@ -436,7 +436,7 @@ Please provide your refined response:`;
     // Format metadata display (disable in test environment)
     const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
     const metadataDisplay = formatMetadataDisplay(displayMetadata, 'consensus', consensusExecutionTime, enableMetadataDisplay);
-    
+
     // Build result object keeping backward compatibility but removing rawResponse
     const result = {
       status: 'consensus_complete',

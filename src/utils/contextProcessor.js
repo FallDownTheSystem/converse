@@ -112,7 +112,7 @@ export async function processFileContent(filePath, options = {}) {
 
       const [, mimeType, base64Data] = dataUrlMatch;
       const extension = `.${mimeType.split('/')[1]}`;
-      
+
       return {
         path: filePath,
         originalPath: filePath,

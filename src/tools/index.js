@@ -79,9 +79,9 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
   if (!enableDisplay) {
     return '';
   }
-  
+
   const parts = [];
-  
+
   if (executionTime !== null) {
     // Format time appropriately based on duration
     let timeDisplay;
@@ -99,23 +99,23 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
     }
     parts.push(`⏱️ ${timeDisplay}`);
   }
-  
+
   if (metadata.successful_models !== undefined) {
     parts.push(`✅ ${metadata.successful_models}/${metadata.total_models} models`);
   }
-  
+
   if (metadata.continuation_id) {
     parts.push(`🔗 ${metadata.continuation_id}`);
   }
-  
+
   if (metadata.provider) {
     parts.push(`🤖 ${metadata.provider}`);
   }
-  
+
   if (metadata.model) {
     parts.push(`📱 ${metadata.model}`);
   }
-  
+
   return parts.length > 0 ? `[${parts.join(' | ')}]` : '';
 }
 
@@ -128,7 +128,7 @@ export function formatFailureDetails(failureDetails = []) {
   if (!failureDetails || failureDetails.length === 0) {
     return '';
   }
-  
+
   const failureList = failureDetails.map(detail => `• ${detail}`).join('\n');
   return `\nModel failures:\n${failureList}`;
 }
@@ -159,7 +159,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
       if (content.metadata_display) {
         textContent = `${content.metadata_display}\n\n${textContent}`;
       }
-      
+
       const mcpResponse = {
         content: [
           {

@@ -152,7 +152,7 @@ export function createMockOpenAIProvider(overrides = {}) {
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       // Track the call
       baseProvider.tracker.recordCall('invoke', { messages, options });
-      
+
       const modelConfig = OPENAI_MODELS[options.model] || OPENAI_MODELS['gpt-4'];
 
       // Simulate OpenAI-specific validations

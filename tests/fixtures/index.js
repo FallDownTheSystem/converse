@@ -1,7 +1,7 @@
 /**
  * Central export for test fixtures
  * @module tests/fixtures
- * 
+ *
  * This module provides comprehensive test fixtures for all test suites
  * including provider responses, tool inputs/outputs, error scenarios,
  * and edge cases.
@@ -35,22 +35,22 @@ export const FIXTURE_PATHS = {
   sampleText: './files/sample.txt',
   largeText: './files/large-text.txt',
   unicodeText: './files/unicode-text.txt',
-  
+
   // JSON files
   sampleJson: './files/sample.json',
   nestedJson: './files/nested.json',
   largeJson: './files/large.json',
-  
+
   // Code files
   javascriptFile: './files/sample.js',
   pythonFile: './files/sample.py',
   typeScriptFile: './files/sample.ts',
-  
+
   // Special files
   emptyFile: './files/empty.txt',
   binaryFile: './files/binary.bin',
   specialCharsFile: './files/special-chars.txt',
-  
+
   // Response data
   responses: './data/sample-responses.json',
   providerResponses: './data/provider-responses.json',
@@ -102,36 +102,36 @@ export function createMockResponse(provider, model, content, options = {}) {
   if (!template) {
     throw new Error(`No response template found for ${provider}/${model}`);
   }
-  
+
   // Deep clone the template
   const response = JSON.parse(JSON.stringify(template));
-  
+
   // Update content based on provider format
   switch (provider) {
-    case 'openai':
-    case 'xai':
-    case 'openrouter':
-    case 'deepseek':
-    case 'mistral':
-      response.choices[0].message.content = content;
-      if (options.usage) {
-        response.usage = { ...response.usage, ...options.usage };
-      }
-      break;
-    case 'google':
-      response.candidates[0].content.parts[0].text = content;
-      if (options.usage) {
-        response.usageMetadata = { ...response.usageMetadata, ...options.usage };
-      }
-      break;
-    case 'anthropic':
-      response.content[0].text = content;
-      if (options.usage) {
-        response.usage = { ...response.usage, ...options.usage };
-      }
-      break;
+  case 'openai':
+  case 'xai':
+  case 'openrouter':
+  case 'deepseek':
+  case 'mistral':
+    response.choices[0].message.content = content;
+    if (options.usage) {
+      response.usage = { ...response.usage, ...options.usage };
+    }
+    break;
+  case 'google':
+    response.candidates[0].content.parts[0].text = content;
+    if (options.usage) {
+      response.usageMetadata = { ...response.usageMetadata, ...options.usage };
+    }
+    break;
+  case 'anthropic':
+    response.content[0].text = content;
+    if (options.usage) {
+      response.usage = { ...response.usage, ...options.usage };
+    }
+    break;
   }
-  
+
   return response;
 }
 
@@ -146,30 +146,30 @@ export function createStreamingResponse(provider, chunks) {
   if (!streamingData) {
     throw new Error(`No streaming template found for ${provider}`);
   }
-  
+
   return chunks.map((chunk, index) => {
     const chunkTemplate = JSON.parse(JSON.stringify(streamingData.chunk));
-    
+
     switch (provider) {
-      case 'openai':
-      case 'xai':
-      case 'openrouter':
-        chunkTemplate.choices[0].delta.content = chunk;
-        chunkTemplate.choices[0].index = 0;
-        if (index === chunks.length - 1) {
-          chunkTemplate.choices[0].finish_reason = 'stop';
-        }
-        break;
-      case 'anthropic':
-        if (index === 0) {
-          return { type: 'message_start', message: { id: 'msg_test', model: 'claude-3-5-sonnet-20241022' } };
-        } else if (index === chunks.length - 1) {
-          return { type: 'message_delta', delta: { stop_reason: 'end_turn' } };
-        }
-        chunkTemplate.delta.text = chunk;
-        break;
+    case 'openai':
+    case 'xai':
+    case 'openrouter':
+      chunkTemplate.choices[0].delta.content = chunk;
+      chunkTemplate.choices[0].index = 0;
+      if (index === chunks.length - 1) {
+        chunkTemplate.choices[0].finish_reason = 'stop';
+      }
+      break;
+    case 'anthropic':
+      if (index === 0) {
+        return { type: 'message_start', message: { id: 'msg_test', model: 'claude-3-5-sonnet-20241022' } };
+      } else if (index === chunks.length - 1) {
+        return { type: 'message_delta', delta: { stop_reason: 'end_turn' } };
+      }
+      chunkTemplate.delta.text = chunk;
+      break;
     }
-    
+
     return chunkTemplate;
   });
 }
@@ -232,9 +232,9 @@ export function createTestMatrix(options = {}) {
     },
     scenarios = ['success', 'error', 'streaming']
   } = options;
-  
+
   const matrix = [];
-  
+
   for (const provider of providers) {
     const providerModels = models[provider] || [];
     for (const model of providerModels) {
@@ -248,7 +248,7 @@ export function createTestMatrix(options = {}) {
       }
     }
   }
-  
+
   return matrix;
 }
 
