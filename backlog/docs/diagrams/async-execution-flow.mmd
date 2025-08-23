@@ -1,0 +1,73 @@
+flowchart TD
+    %% Client Request Flow
+    Client[Client MCP Request] --> Router{Router}
+    Router -->|async=false| SyncPath[Sync Execution Path]
+    Router -->|async=true| AsyncPath[Async Execution Path]
+    
+    %% Sync Path (Existing)
+    SyncPath --> ChatTool[Chat Tool]
+    SyncPath --> ConsensusTool[Consensus Tool]
+    ChatTool --> Provider[Select Provider]
+    ConsensusTool --> MultiProvider[Multiple Providers]
+    Provider --> SyncResponse[Direct Response]
+    MultiProvider --> SyncResponse
+    SyncResponse --> Client
+    
+    %% Async Path (New)
+    AsyncPath --> CreateJob[Create Job in AsyncJobStore]
+    CreateJob --> ReturnJobID[Return continuation_id immediately]
+    ReturnJobID --> Client
+    CreateJob --> JobRunner[Submit to JobRunner]
+    
+    %% Background Execution
+    JobRunner --> BackgroundExec[Background Execution]
+    BackgroundExec --> StreamNorm[ProviderStreamNormalizer]
+    StreamNorm --> OpenAIStream[OpenAI Streaming]
+    StreamNorm --> GoogleStream[Google GenAI Streaming] 
+    StreamNorm --> XAIStream[XAI Streaming]
+    
+    %% Progress Updates (Internal Only)
+    OpenAIStream --> ProgressEvent[Progress Events]
+    GoogleStream --> ProgressEvent
+    XAIStream --> ProgressEvent
+    ProgressEvent --> UpdateJobStore[Update AsyncJobStore]
+    ProgressEvent --> WriteJournal[Write to FileCache Journal]
+    ProgressEvent --> EventBus[Emit to EventBus - Internal Coordination]
+    
+    %% Completion Flow
+    BackgroundExec --> JobComplete{Job Complete?}
+    JobComplete -->|Success| WriteSnapshot[Write Final Snapshot]
+    JobComplete -->|Error| WriteError[Write Error State]
+    JobComplete -->|Partial Success| WritePartial[Write Partial Results]
+    
+    WriteSnapshot --> JobCompletionEvent[Job Completion Event]
+    WriteError --> JobCompletionEvent
+    WritePartial --> JobCompletionEvent
+    JobCompletionEvent --> CleanupJob[Schedule Job Cleanup]
+    
+    %% Status Check Flow (Client Polling)
+    Client -->|Polls via MCP| StatusCheck[check_status Tool]
+    StatusCheck --> CheckMemory{Job in Memory?}
+    CheckMemory -->|Yes| ReturnMemory[Return from AsyncJobStore]
+    CheckMemory -->|No| CheckDisk[Check FileCache]
+    CheckDisk --> ReturnDisk[Return from Snapshot]
+    ReturnMemory --> StatusResponse[Status Response]
+    ReturnDisk --> StatusResponse
+    StatusResponse --> Client
+    
+    %% Cleanup Flow
+    CleanupScheduler[Cleanup Scheduler] --> EvictMemory[Evict Expired Jobs from Memory]
+    CleanupScheduler --> CleanDisk[Clean Old Files from Disk]
+    EvictMemory --> AsyncJobStore
+    CleanDisk --> FileCache
+    
+    %% Styling
+    classDef existing fill:#e1f5fe,stroke:#01579b
+    classDef new fill:#f3e5f5,stroke:#4a148c
+    classDef client fill:#e8f5e8,stroke:#2e7d32
+    classDef storage fill:#fff3e0,stroke:#ef6c00
+    
+    class Client,StatusResponse,SyncResponse client
+    class ChatTool,ConsensusTool,Provider,MultiProvider existing
+    class AsyncJobStore,JobRunner,EventBus,ProviderStreamNormalizer,FileCache new
+    class WriteSnapshot,WriteJournal,WriteError storage

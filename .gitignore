@@ -130,7 +130,6 @@ logs/
 # Backup files
 *.backup
 *.bak
-backlog
 .claude
 pnpm-lock.yaml
 pnpm-workspace.yaml

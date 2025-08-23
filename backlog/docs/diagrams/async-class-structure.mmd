@@ -1,0 +1,155 @@
+classDiagram
+    %% Existing Infrastructure
+    class MCPServer {
+        +setRequestHandler()
+        +listen()
+    }
+    
+    class HTTPTransport {
+        +handleRequest()
+        +manageSession()
+    }
+    
+    class Router {
+        +routeToolCall()
+        +validateArgs()
+        +createResponse()
+    }
+    
+    class ContinuationStore {
+        +set(id, state)
+        +get(id)
+        +cleanup()
+    }
+    
+    class ChatTool {
+        +invoke(messages, options)
+        -selectProvider()
+        -processContext()
+    }
+    
+    class ConsensusTool {
+        +invoke(messages, options)
+        -executeParallel()
+        -crossFeedback()
+    }
+    
+    class OpenAIProvider {
+        +invoke(messages, options)
+        +validateConfig()
+        +getSupportedModels()
+    }
+    
+    class GoogleProvider {
+        +invoke(messages, options)
+        +validateConfig()
+        +getSupportedModels()
+    }
+    
+    class XAIProvider {
+        +invoke(messages, options)
+        +validateConfig()
+        +getSupportedModels()
+    }
+    
+    %% NEW: Async Execution Components
+    class AsyncJobStore {
+        -cache: LRUCache
+        +create(spec): JobState
+        +get(jobId): JobState
+        +update(jobId, patch)
+        +complete(jobId, snapshot)
+        +fail(jobId, error)
+        +evictExpired()
+    }
+    
+    class FileCache {
+        +writeJournalEvent(jobId, event)
+        +writeSnapshot(jobId, snapshot)
+        +readSnapshot(jobId): Snapshot
+        +cleanup(ttl)
+        -ensureDirectory()
+    }
+    
+    class JobRunner {
+        -concurrencyLimit: PLimit
+        +submit(spec, runFn): string
+        -executeBackground()
+        -handleTimeout()
+        -emitEvents()
+    }
+    
+    class EventBus {
+        +emit(event, data)
+        +on(event, callback)
+        +off(event, callback)
+        +filterBySession(sessionId)
+    }
+    
+    class ProviderStreamNormalizer {
+        +normalizeOpenAI(stream): AsyncGenerator
+        +normalizeGoogle(stream): AsyncGenerator
+        +normalizeXAI(stream): AsyncGenerator
+        -standardizeEvent()
+    }
+    
+    class CheckStatusTool {
+        +invoke(continuation_id?, since_seq?)
+        -getFromMemory()
+        -getFromDisk()
+        -filterEvents()
+    }
+    
+    class JobState {
+        +jobId: string
+        +status: JobStatus
+        +providers: Map
+        +overall: OverallProgress
+        +events: JobEvent[]
+        +createdAt: Date
+    }
+    
+    class JobEvent {
+        +seq: number
+        +timestamp: Date
+        +type: string
+        +jobId: string
+        +provider?: string
+        +data: any
+    }
+    
+    %% Relationships
+    MCPServer --> HTTPTransport
+    HTTPTransport --> Router
+    Router --> ChatTool
+    Router --> ConsensusTool
+    Router --> CheckStatusTool
+    
+    ChatTool --> OpenAIProvider
+    ChatTool --> GoogleProvider  
+    ChatTool --> XAIProvider
+    ConsensusTool --> OpenAIProvider
+    ConsensusTool --> GoogleProvider
+    ConsensusTool --> XAIProvider
+    
+    %% NEW: Async Relationships
+    ChatTool --> JobRunner : async=true
+    ConsensusTool --> JobRunner : async=true
+    JobRunner --> AsyncJobStore
+    JobRunner --> EventBus
+    JobRunner --> FileCache
+    JobRunner --> ProviderStreamNormalizer
+    
+    CheckStatusTool --> AsyncJobStore
+    CheckStatusTool --> FileCache
+    
+    %% EventBus is for internal coordination only - no client communication
+    AsyncJobStore --> JobState
+    JobState --> JobEvent
+    
+    ProviderStreamNormalizer --> OpenAIProvider : streaming
+    ProviderStreamNormalizer --> GoogleProvider : streaming
+    ProviderStreamNormalizer --> XAIProvider : streaming
+    
+    AsyncJobStore --> "uses" LRUCache
+    FileCache --> "uses" FileSystem
