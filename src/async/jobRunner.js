@@ -11,6 +11,7 @@ import pLimit from 'p-limit';
 import { EventEmitter } from 'events';
 import { debugLog, debugError } from '../utils/console.js';
 import { JOB_STATUS } from './asyncJobStore.js';
+import { getEventBus } from './eventBus.js';
 
 /**
  * Custom error class for job runner operations
@@ -31,6 +32,7 @@ export class JobRunner extends EventEmitter {
    * Create a new JobRunner
    * @param {object} dependencies - Required dependencies
    * @param {object} dependencies.asyncJobStore - AsyncJobStore instance
+   * @param {object} dependencies.eventBus - EventBus instance (optional, uses global if not provided)
    * @param {object} options - Configuration options
    * @param {number} options.concurrency - Maximum concurrent jobs (default: 10)
    * @param {number} options.defaultTimeout - Default job timeout in ms (default: 30 minutes)
@@ -48,6 +50,7 @@ export class JobRunner extends EventEmitter {
 
     this.asyncJobStore = dependencies.asyncJobStore;
     this.fileCache = dependencies.fileCache; // Optional for caching support
+    this.eventBus = dependencies.eventBus || getEventBus(); // Use provided EventBus or global instance
 
     // Configuration
     this.concurrency = options.concurrency || 10;
@@ -116,7 +119,13 @@ export class JobRunner extends EventEmitter {
       const abortController = new globalThis.AbortController();
       this.abortControllers.set(jobId, abortController);
 
-      // Emit job created event
+      // Emit job created event through EventBus
+      this.eventBus.emitJobCreated(jobId, jobSpec.sessionId, {
+        tool: jobSpec.tool,
+        options: jobSpec.options,
+      });
+
+      // Also emit through local EventEmitter for backward compatibility
       this.emit('job.created', {
         jobId,
         sessionId: jobSpec.sessionId,
@@ -190,7 +199,12 @@ export class JobRunner extends EventEmitter {
       this.stats.cancelled++;
       this.stats.activeCount = Math.max(0, this.stats.activeCount - 1);
 
-      // Emit cancellation event
+      // Emit cancellation event through EventBus
+      this.eventBus.emitJobCancelled(jobId, jobState.sessionId, {
+        reason: 'User cancellation',
+      });
+
+      // Also emit through local EventEmitter for backward compatibility
       this.emit('job.cancelled', {
         jobId,
         timestamp: Date.now(),
@@ -256,7 +270,12 @@ export class JobRunner extends EventEmitter {
         sessionId: jobState.sessionId,
       });
 
-      // Emit job started event
+      // Emit job started event through EventBus
+      this.eventBus.emitJobStarted(jobId, jobState.sessionId, {
+        tool: jobState.tool,
+      });
+
+      // Also emit through local EventEmitter for backward compatibility
       this.emit('job.started', {
         jobId,
         sessionId: jobState.sessionId,
@@ -302,7 +321,10 @@ export class JobRunner extends EventEmitter {
         // Complete the job
         await this.asyncJobStore.complete(jobId, result);
 
-        // Emit completion event
+        // Emit completion event through EventBus
+        this.eventBus.emitJobCompleted(jobId, jobState.sessionId, result);
+
+        // Also emit through local EventEmitter for backward compatibility
         this.emit('job.completed', {
           jobId,
           sessionId: jobState.sessionId,
@@ -324,6 +346,12 @@ export class JobRunner extends EventEmitter {
             status: JOB_STATUS.CANCELLED,
           });
 
+          // Emit cancellation event through EventBus
+          this.eventBus.emitJobCancelled(jobId, jobState.sessionId, {
+            reason: 'Job aborted during execution',
+          });
+
+          // Also emit through local EventEmitter for backward compatibility
           this.emit('job.cancelled', {
             jobId,
             timestamp: Date.now(),
@@ -337,6 +365,10 @@ export class JobRunner extends EventEmitter {
         // Handle execution error
         await this.asyncJobStore.fail(jobId, executionError);
 
+        // Emit failure event through EventBus
+        this.eventBus.emitJobFailed(jobId, jobState.sessionId, executionError);
+
+        // Also emit through local EventEmitter for backward compatibility
         this.emit('job.failed', {
           jobId,
           sessionId: jobState.sessionId,
@@ -356,6 +388,11 @@ export class JobRunner extends EventEmitter {
       if (jobState) {
         try {
           await this.asyncJobStore.fail(jobId, error);
+          
+          // Emit failure event through EventBus
+          this.eventBus.emitJobFailed(jobId, jobState.sessionId, error);
+
+          // Also emit through local EventEmitter for backward compatibility
           this.emit('job.failed', {
             jobId,
             sessionId: jobState.sessionId,

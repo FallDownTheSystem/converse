@@ -9,6 +9,7 @@
 import { LRUCache } from 'lru-cache';
 import { nanoid } from 'nanoid';
 import { debugLog, debugError } from '../utils/console.js';
+import { getEventBus, EVENT_TYPES } from './eventBus.js';
 
 /**
  * Job statuses
@@ -132,6 +133,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     });
 
     this.maxEventsPerJob = 100; // Ring buffer size for events
+    this.eventBus = getEventBus(); // Get global EventBus instance
+    
+    // Set up EventBus listeners to capture events for storage
+    this._setupEventBusListeners();
   }
 
   /**
@@ -453,6 +458,130 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     }
 
     return cleanedCount;
+  }
+
+  /**
+   * Set up EventBus listeners to capture job lifecycle events
+   * @private
+   */
+  _setupEventBusListeners() {
+    // Listen for all job lifecycle events and store them in job ring buffers
+    const eventTypes = [
+      EVENT_TYPES.JOB_CREATED,
+      EVENT_TYPES.JOB_STARTED,
+      EVENT_TYPES.JOB_UPDATED,
+      EVENT_TYPES.JOB_COMPLETED,
+      EVENT_TYPES.JOB_FAILED,
+      EVENT_TYPES.JOB_CANCELLED,
+    ];
+
+    eventTypes.forEach(eventType => {
+      this.eventBus.on(eventType, (eventData) => {
+        this._storeEventInJob(eventData);
+      });
+    });
+
+    debugLog('AsyncJobStore: Set up EventBus listeners for job lifecycle events');
+  }
+
+  /**
+   * Store EventBus event in job's ring buffer
+   * @param {object} eventData - Event data from EventBus
+   * @private
+   */
+  _storeEventInJob(eventData) {
+    try {
+      const job = this.jobs.get(eventData.jobId);
+      if (!job) {
+        // Job might have been cleaned up, skip event storage
+        return;
+      }
+
+      // Convert EventBus event format to job event format
+      const jobEvent = {
+        seq: ++job.seq,
+        timestamp: eventData.timestamp,
+        type: eventData.eventType,
+        data: eventData.data || {},
+        source: 'eventbus',
+      };
+
+      // Add to job's event ring buffer
+      job.events.push(jobEvent);
+
+      // Maintain ring buffer size
+      if (job.events.length > this.maxEventsPerJob) {
+        job.events.shift();
+      }
+
+      // Update job's last activity
+      job.updatedAt = Date.now();
+
+    } catch (error) {
+      debugError('AsyncJobStore: Failed to store EventBus event in job:', error);
+    }
+  }
+
+  /**
+   * Get events from job with optional filtering
+   * @param {string} jobId - Job identifier
+   * @param {object} options - Filtering options
+   * @param {string} options.eventType - Filter by event type
+   * @param {number} options.limit - Maximum events to return
+   * @param {number} options.afterSeq - Return events after this sequence number
+   * @returns {Promise<Array>} Array of events
+   */
+  async getJobEvents(jobId, options = {}) {
+    try {
+      const job = this.jobs.get(jobId);
+      if (!job) {
+        return [];
+      }
+
+      let events = job.events;
+
+      // Apply filters
+      if (options.eventType) {
+        events = events.filter(event => event.type === options.eventType);
+      }
+
+      if (options.afterSeq !== undefined) {
+        events = events.filter(event => event.seq > options.afterSeq);
+      }
+
+      // Apply limit
+      if (options.limit) {
+        events = events.slice(-options.limit);
+      }
+
+      // Return deep copy to prevent mutations
+      return this._deepClone(events);
+
+    } catch (error) {
+      debugError(`AsyncJobStore: Failed to get events for job ${jobId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get latest event for a job
+   * @param {string} jobId - Job identifier
+   * @returns {Promise<object|null>} Latest event or null
+   */
+  async getLatestJobEvent(jobId) {
+    try {
+      const job = this.jobs.get(jobId);
+      if (!job || job.events.length === 0) {
+        return null;
+      }
+
+      const latestEvent = job.events[job.events.length - 1];
+      return this._deepClone(latestEvent);
+
+    } catch (error) {
+      debugError(`AsyncJobStore: Failed to get latest event for job ${jobId}:`, error);
+      return null;
+    }
   }
 
   /**
