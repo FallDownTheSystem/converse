@@ -2,8 +2,8 @@
  * File Cache System - Persistent Job Storage
  *
  * Provides file-based caching for persisting async job progress and results to disk
- * using Node.js native fs/promises API. Uses NDJSON journal files for streaming 
- * progress events and JSON snapshots for final results. Provides durability across 
+ * using Node.js native fs/promises API. Uses NDJSON journal files for streaming
+ * progress events and JSON snapshots for final results. Provides durability across
  * server restarts with 3-day retention and automatic cleanup.
  */
 
@@ -76,10 +76,10 @@ export class FileCache extends FileCacheInterface {
     this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000; // 10 minutes
     this.maxAge = options.maxAge || 3 * 24 * 60 * 60 * 1000; // 3 days
     this.cleanupTimer = null;
-    
+
     // Start cleanup timer
     this.startCleanupTimer();
-    
+
     debugLog('FileCache', `Initialized with baseDir: ${this.baseDir}`);
   }
 
@@ -91,7 +91,7 @@ export class FileCache extends FileCacheInterface {
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
     }
-    
+
     this.cleanupTimer = setInterval(async () => {
       try {
         const cleaned = await this.cleanup();
@@ -127,7 +127,7 @@ export class FileCache extends FileCacheInterface {
 
   /**
    * Get journal file path
-   * @param {string} jobId - Job identifier  
+   * @param {string} jobId - Job identifier
    * @returns {string} Journal file path
    * @private
    */
@@ -189,27 +189,27 @@ export class FileCache extends FileCacheInterface {
     try {
       const jobDir = this.getJobDir(jobId);
       const journalPath = this.getJournalPath(jobId);
-      
+
       // Ensure directory exists
       await this.ensureDir(jobDir);
-      
+
       // Add timestamp and sequence if not present
       const eventWithMeta = {
         ts: Date.now(),
         jobId,
         ...event
       };
-      
+
       // Append NDJSON line
       const ndjsonLine = JSON.stringify(eventWithMeta) + '\n';
       await fs.appendFile(journalPath, ndjsonLine, 'utf8');
-      
+
       debugLog('FileCache', `Journal event written for job ${jobId}:`, event.type || 'unknown');
     } catch (error) {
       if (error instanceof FileCacheError) {
         throw error;
       }
-      
+
       debugError('FileCache', `Failed to write journal event for job ${jobId}:`, error);
       throw new FileCacheError(
         `Failed to write journal event for job ${jobId}`,
@@ -245,27 +245,27 @@ export class FileCache extends FileCacheInterface {
     try {
       const jobDir = this.getJobDir(jobId);
       const snapshotPath = this.getSnapshotPath(jobId);
-      
+
       // Ensure directory exists
       await this.ensureDir(jobDir);
-      
+
       // Add metadata if not present
       const snapshot = {
         jobId,
         completedAt: Date.now(),
         ...result
       };
-      
+
       // Write pretty-printed JSON
       const jsonContent = JSON.stringify(snapshot, null, 2);
       await fs.writeFile(snapshotPath, jsonContent, 'utf8');
-      
+
       debugLog('FileCache', `Snapshot written for job ${jobId}`);
     } catch (error) {
       if (error instanceof FileCacheError) {
         throw error;
       }
-      
+
       debugError('FileCache', `Failed to write snapshot for job ${jobId}:`, error);
       throw new FileCacheError(
         `Failed to write snapshot for job ${jobId}`,
@@ -291,8 +291,8 @@ export class FileCache extends FileCacheInterface {
 
     try {
       // Try current date first
-      let snapshotPath = this.getSnapshotPath(jobId);
-      
+      const snapshotPath = this.getSnapshotPath(jobId);
+
       try {
         const content = await fs.readFile(snapshotPath, 'utf8');
         const snapshot = JSON.parse(content);
@@ -305,7 +305,7 @@ export class FileCache extends FileCacheInterface {
           debugLog('FileCache', `Snapshot read for job ${jobId} from recent directories`);
           return result;
         }
-        
+
         // If still not found, return null (not an error)
         debugLog('FileCache', `Snapshot not found for job ${jobId}`);
         return null;
@@ -314,7 +314,7 @@ export class FileCache extends FileCacheInterface {
       if (error instanceof FileCacheError) {
         throw error;
       }
-      
+
       debugError('FileCache', `Failed to read snapshot for job ${jobId}:`, error);
       throw new FileCacheError(
         `Failed to read snapshot for job ${jobId}`,
@@ -338,7 +338,7 @@ export class FileCache extends FileCacheInterface {
         .filter(entry => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
         .sort((a, b) => b.name.localeCompare(a.name)) // Most recent first
         .slice(0, 10); // Only check last 10 days
-      
+
       for (const dateDir of dateDirs) {
         const snapshotPath = path.join(this.baseDir, dateDir.name, jobId, 'result.json');
         try {
@@ -348,7 +348,7 @@ export class FileCache extends FileCacheInterface {
           // Continue searching in other directories
         }
       }
-      
+
       return null;
     } catch {
       // If base directory doesn't exist or other error, return null
@@ -365,7 +365,7 @@ export class FileCache extends FileCacheInterface {
     try {
       const now = Date.now();
       let cleanedCount = 0;
-      
+
       // Check if base directory exists
       try {
         await fs.access(this.baseDir);
@@ -374,20 +374,20 @@ export class FileCache extends FileCacheInterface {
         debugLog('FileCache', 'Base directory does not exist, skipping cleanup');
         return 0;
       }
-      
+
       // Get all date directories
       const entries = await fs.readdir(this.baseDir, { withFileTypes: true });
-      const dateDirs = entries.filter(entry => 
+      const dateDirs = entries.filter(entry =>
         entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name)
       );
-      
+
       for (const dateDir of dateDirs) {
         const dirPath = path.join(this.baseDir, dateDir.name);
-        
+
         try {
           const stats = await fs.stat(dirPath);
           const age = now - stats.mtime.getTime();
-          
+
           if (age > maxAgeMs) {
             await fs.rm(dirPath, { recursive: true, force: true });
             cleanedCount++;
@@ -398,7 +398,7 @@ export class FileCache extends FileCacheInterface {
           // Continue with other directories
         }
       }
-      
+
       return cleanedCount;
     } catch (error) {
       debugError('FileCache', 'Cleanup failed:', error);
