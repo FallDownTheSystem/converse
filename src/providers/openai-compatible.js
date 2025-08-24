@@ -295,12 +295,22 @@ export function createOpenAICompatibleProvider(providerConfig) {
         requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
       }
 
+      // Add usage reporting for streaming mode
+      if (stream) {
+        requestPayload.stream_options = { include_usage: true };
+      }
+
       // Note: Most OpenAI-compatible APIs don't support reasoning_effort or use_websearch
       // These are silently ignored unless the provider has custom handling
 
       // Apply custom request transformation if provided
       if (transformRequest) {
         requestPayload = await transformRequest(requestPayload, { model: resolvedModel, modelConfig });
+      }
+
+      // Handle streaming requests
+      if (stream && requestPayload.stream !== false) {
+        return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig);
       }
 
       try {
@@ -366,6 +376,165 @@ export function createOpenAICompatibleProvider(providerConfig) {
         }
 
         handleApiError(error, providerName, resolvedModel);
+      }
+    },
+
+    /**
+     * Create streaming generator for OpenAI-compatible responses
+     * @private
+     * @param {OpenAI} openai - OpenAI client instance
+     * @param {Object} requestPayload - Request payload
+     * @param {string} resolvedModel - Resolved model name
+     * @param {Object} modelConfig - Model configuration
+     * @returns {AsyncGenerator} - Streaming generator yielding events
+     */
+    async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig) {
+      debugLog(`[${providerName}] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
+
+      const startTime = Date.now();
+      let totalContent = '';
+      let lastUsage = null;
+      let finishReason = null;
+      let finalModel = resolvedModel;
+
+      try {
+        // Yield start event
+        yield {
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          model: resolvedModel,
+          provider: providerName.toLowerCase()
+        };
+
+        // Create streaming request
+        const stream = await openai.chat.completions.create(requestPayload);
+
+        // Process stream chunks
+        for await (const chunk of stream) {
+          try {
+            const choice = chunk.choices?.[0];
+            if (choice) {
+              const content = choice.delta?.content || '';
+
+              // Handle regular content
+              if (content) {
+                totalContent += content;
+                yield {
+                  type: 'delta',
+                  content,
+                  timestamp: new Date().toISOString()
+                };
+              }
+
+              // Handle reasoning/thinking content if supported
+              if (choice.delta?.reasoning && modelConfig.supportsReasoning) {
+                yield {
+                  type: 'thinking',
+                  content: choice.delta.reasoning,
+                  timestamp: new Date().toISOString()
+                };
+              }
+
+              if (choice.finish_reason) {
+                finishReason = choice.finish_reason;
+              }
+            }
+
+            // Handle usage information (typically in final chunk)
+            if (chunk.usage) {
+              lastUsage = chunk.usage;
+            }
+
+            // Update model if provided
+            if (chunk.model) {
+              finalModel = chunk.model;
+            }
+          } catch (chunkError) {
+            debugError(`[${providerName}] Error processing stream chunk:`, chunkError);
+            yield {
+              type: 'error',
+              error: {
+                message: `Chunk processing error: ${chunkError.message}`,
+                code: 'CHUNK_PROCESSING_ERROR',
+                recoverable: true
+              },
+              timestamp: new Date().toISOString()
+            };
+          }
+        }
+
+        const responseTime = Date.now() - startTime;
+        debugLog(`[${providerName}] Streaming completed in ${responseTime}ms`);
+
+        // Yield usage information if available
+        if (lastUsage) {
+          yield {
+            type: 'usage',
+            usage: {
+              input_tokens: lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
+              output_tokens: lastUsage.completion_tokens || lastUsage.output_tokens || 0,
+              total_tokens: lastUsage.total_tokens || 0
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+
+        // Apply custom response transformation to final result if provided
+        let finalResult = {
+          content: totalContent,
+          stop_reason: normalizeStopReason(finishReason),
+          metadata: {
+            model: finalModel,
+            usage: {
+              input_tokens: lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
+              output_tokens: lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
+              total_tokens: lastUsage?.total_tokens || 0
+            },
+            response_time_ms: responseTime,
+            finish_reason: finishReason || 'stop',
+            provider: providerName.toLowerCase()
+          }
+        };
+
+        if (transformResponse) {
+          const mockRawResponse = {
+            choices: [{ finish_reason: finishReason }],
+            usage: lastUsage,
+            model: finalModel
+          };
+          finalResult = await transformResponse(finalResult, mockRawResponse);
+        }
+
+        // Yield end event with final metadata
+        yield {
+          type: 'end',
+          content: totalContent,
+          stop_reason: finalResult.stop_reason,
+          metadata: finalResult.metadata,
+          timestamp: new Date().toISOString()
+        };
+
+      } catch (error) {
+        debugError(`[${providerName}] Streaming error:`, error);
+
+        // Handle provider-specific errors using existing error handler
+        try {
+          handleApiError(error, providerName, resolvedModel);
+        } catch (handledError) {
+          yield {
+            type: 'error',
+            error: {
+              message: handledError.message,
+              code: handledError.code || 'STREAMING_ERROR',
+              recoverable: [ErrorCodes.RATE_LIMIT_EXCEEDED, ErrorCodes.TIMEOUT_ERROR, ErrorCodes.NETWORK_ERROR].includes(handledError.code),
+              originalError: error
+            },
+            timestamp: new Date().toISOString()
+          };
+
+          // Re-throw to maintain existing error handling behavior
+          throw handledError;
+        }
       }
     },
 

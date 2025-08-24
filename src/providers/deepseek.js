@@ -13,7 +13,7 @@ const SUPPORTED_MODELS = {
   'deepseek-chat': {
     modelName: 'deepseek-chat',
     friendlyName: 'DeepSeek Chat (V3-0324)',
-    contextWindow: 64000, // API supports 64K context
+    contextWindow: 128000, // API supports 128K context
     maxOutputTokens: 8000, // Maximum 8K output tokens
     defaultMaxTokens: 4000, // Default 4K tokens
     supportsStreaming: true,
@@ -31,7 +31,7 @@ const SUPPORTED_MODELS = {
   'deepseek-reasoner': {
     modelName: 'deepseek-reasoner',
     friendlyName: 'DeepSeek Reasoner (R1-0528)',
-    contextWindow: 64000, // API supports 64K context
+    contextWindow: 128000, // API supports 128K context
     maxOutputTokens: 64000, // Maximum 64K output tokens (including CoT)
     defaultMaxTokens: 32000, // Default 32K tokens
     supportsStreaming: true,
