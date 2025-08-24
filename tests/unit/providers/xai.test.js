@@ -3,8 +3,23 @@
  * Tests the unified interface implementation without making real API calls
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { xaiProvider } from '../../../src/providers/xai.js';
+
+// Mock the OpenAI SDK
+vi.mock('openai', () => {
+  const MockOpenAI = vi.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: vi.fn()
+      }
+    }
+  }));
+
+  return {
+    default: MockOpenAI
+  };
+});
 
 describe('XAI Provider', () => {
   describe('validateConfig', () => {
@@ -289,6 +304,285 @@ describe('XAI Provider', () => {
 
       // The implementation should respect the custom base URL
       expect(configWithCustomUrl.providers.xaiBaseUrl).toBe('https://custom.example.com/v1');
+    });
+  });
+
+  describe('streaming functionality', () => {
+    let validConfig;
+
+    beforeEach(() => {
+      validConfig = {
+        apiKeys: {
+          xai: 'xai-1234567890abcdef1234567890abcdef1234567890abcdef'
+        }
+      };
+      vi.clearAllMocks();
+    });
+
+    it('should return AsyncGenerator when stream=true', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+      const OpenAI = (await import('openai')).default;
+
+      // Mock streaming response
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Hello' }, finish_reason: null }],
+            model: 'grok-4-0709'
+          };
+          yield {
+            choices: [{ delta: { content: ' world!' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 }
+          };
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } }
+      }));
+
+      const result = await xaiProvider.invoke(messages, {
+        config: validConfig,
+        stream: true
+      });
+
+      expect(result[Symbol.asyncIterator]).toBeDefined();
+      expect(typeof result[Symbol.asyncIterator]).toBe('function');
+
+      // Collect all events
+      const events = [];
+      for await (const event of result) {
+        events.push(event);
+      }
+
+      expect(events.length).toBeGreaterThan(0);
+      expect(events[0]).toMatchObject({
+        type: 'start',
+        model: 'grok-4-0709',
+        provider: 'xai'
+      });
+    });
+
+    it('should handle streaming with live search', async () => {
+      const messages = [{ role: 'user', content: 'What is the latest news?' }];
+      const OpenAI = (await import('openai')).default;
+
+      // Mock streaming response with search
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Based on' }, finish_reason: null }]
+          };
+          yield {
+            choices: [{ delta: { content: ' recent news...' }, finish_reason: 'stop' }],
+            usage: {
+              prompt_tokens: 15,
+              completion_tokens: 25,
+              total_tokens: 40,
+              num_sources_used: 5
+            },
+            citations: [
+              { title: 'News Article', url: 'https://example.com/news1' }
+            ]
+          };
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } }
+      }));
+
+      const result = await xaiProvider.invoke(messages, {
+        config: validConfig,
+        model: 'grok-4-0709',
+        stream: true,
+        use_websearch: true
+      });
+
+      // Collect all events
+      const events = [];
+      for await (const event of result) {
+        events.push(event);
+      }
+
+      // Check for search-specific features
+      const usageEvent = events.find(e => e.type === 'usage');
+      expect(usageEvent.usage.search_sources_used).toBe(5);
+      expect(usageEvent.usage.search_cost_estimate).toBe(0.125); // 5 * $0.025
+
+      const endEvent = events.find(e => e.type === 'end');
+      expect(endEvent.metadata.search_sources_used).toBe(5);
+      expect(endEvent.metadata.citations).toBeDefined();
+    });
+
+    it('should handle streaming errors gracefully', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+      const OpenAI = (await import('openai')).default;
+
+      // Mock error during streaming
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Hello' }, finish_reason: null }]
+          };
+          throw new Error('Stream connection lost');
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } }
+      }));
+
+      const result = await xaiProvider.invoke(messages, {
+        config: validConfig,
+        stream: true
+      });
+
+      // Collect all events until error
+      const events = [];
+      try {
+        for await (const event of result) {
+          events.push(event);
+        }
+      } catch (error) {
+        expect(error.name).toBe('XAIProviderError');
+      }
+
+      expect(events[0].type).toBe('start');
+      expect(events[1].type).toBe('delta');
+      expect(events[2].type).toBe('error');
+    });
+
+    it('should work with unknown models using streaming', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+      const OpenAI = (await import('openai')).default;
+
+      // Mock streaming response for unknown model
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Hello' }, finish_reason: null }],
+            model: 'unknown-model'
+          };
+          yield {
+            choices: [{ delta: { content: ' from unknown model!' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 10, completion_tokens: 15, total_tokens: 25 }
+          };
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } }
+      }));
+
+      const result = await xaiProvider.invoke(messages, {
+        config: validConfig,
+        model: 'unknown-model',
+        stream: true
+      });
+
+      expect(result[Symbol.asyncIterator]).toBeDefined();
+
+      // Collect events
+      const events = [];
+      for await (const event of result) {
+        events.push(event);
+      }
+
+      expect(events.length).toBeGreaterThan(0);
+      expect(events[0]).toMatchObject({
+        type: 'start',
+        model: 'unknown-model',
+        provider: 'xai'
+      });
+
+      // Verify the call was made with streaming
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stream: true
+        })
+      );
+    });
+
+    it('should include usage reporting for streaming mode', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+      const OpenAI = (await import('openai')).default;
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Hi there!' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 }
+          };
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } }
+      }));
+
+      const result = await xaiProvider.invoke(messages, {
+        config: validConfig,
+        stream: true
+      });
+
+      // Consume the generator to trigger the API call
+      const events = [];
+      for await (const event of result) {
+        events.push(event);
+      }
+
+      // Verify stream_options was included
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stream_options: { include_usage: true }
+        })
+      );
+    });
+
+    it('should handle all Grok models with streaming', async () => {
+      const messages = [{ role: 'user', content: 'Test message' }];
+      const models = ['grok-4-0709', 'grok-3', 'grok-3-fast'];
+      const OpenAI = (await import('openai')).default;
+
+      for (const model of models) {
+        const mockStream = {
+          async *[Symbol.asyncIterator]() {
+            yield {
+              choices: [{ delta: { content: 'Response' }, finish_reason: 'stop' }],
+              usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
+              model
+            };
+          }
+        };
+
+        const mockCreate = vi.fn().mockResolvedValue(mockStream);
+        OpenAI.mockImplementation(() => ({
+          chat: { completions: { create: mockCreate } }
+        }));
+
+        const result = await xaiProvider.invoke(messages, {
+          config: validConfig,
+          model,
+          stream: true
+        });
+
+        expect(result[Symbol.asyncIterator]).toBeDefined();
+
+        // Collect events
+        const events = [];
+        for await (const event of result) {
+          events.push(event);
+        }
+
+        const startEvent = events.find(e => e.type === 'start');
+        expect(startEvent.model).toBe(model);
+      }
     });
   });
 });

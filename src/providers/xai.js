@@ -165,7 +165,7 @@ export const xaiProvider = {
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
    * @param {Object} options - Configuration options
-   * @returns {Object} - { content, stop_reason, rawResponse }
+   * @returns {Object|AsyncGenerator} - { content, stop_reason, rawResponse } or AsyncGenerator when stream=true
    */
   async invoke(messages, options = {}) {
     const {
@@ -230,6 +230,22 @@ export const xaiProvider = {
       requestPayload.search_parameters = {
         mode: 'auto' // Let the model decide when to use web search
       };
+    }
+
+    // Add usage reporting for streaming mode
+    if (stream) {
+      requestPayload.stream_options = { include_usage: true };
+    }
+
+    // If streaming is requested and model doesn't support it, fall back to non-streaming
+    if (stream && modelConfig.supportsStreaming === false) {
+      debugLog(`[XAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      requestPayload.stream = false;
+    }
+
+    // Handle streaming requests
+    if (stream && requestPayload.stream !== false) {
+      return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch);
     }
 
     // Note: XAI/Grok models don't currently support reasoning_effort parameter
@@ -303,6 +319,200 @@ export const xaiProvider = {
         'API_ERROR',
         error
       );
+    }
+  },
+
+  /**
+   * Create streaming generator for XAI responses
+   * @private
+   * @param {OpenAI} openai - OpenAI client instance configured for XAI
+   * @param {Object} requestPayload - Request payload
+   * @param {string} resolvedModel - Resolved model name
+   * @param {Object} modelConfig - Model configuration
+   * @param {boolean} use_websearch - Whether web search is enabled
+   * @returns {AsyncGenerator} - Streaming generator yielding events
+   */
+  async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch) {
+    const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with live search)' : '';
+
+    debugLog(`[XAI] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages${searchInfo}`);
+
+    const startTime = Date.now();
+    let totalContent = '';
+    let lastUsage = null;
+    let finishReason = null;
+    let finalModel = resolvedModel;
+    let citations = null;
+    let searchSourcesUsed = 0;
+
+    try {
+      // Yield start event
+      yield {
+        type: 'start',
+        timestamp: new Date().toISOString(),
+        model: resolvedModel,
+        provider: 'xai'
+      };
+
+      // Create stream using OpenAI SDK with XAI base URL
+      const stream = await openai.chat.completions.create(requestPayload);
+
+      // Process stream chunks
+      for await (const chunk of stream) {
+        try {
+          // Handle Chat Completions API streaming format (XAI uses OpenAI-compatible format)
+          const choice = chunk.choices?.[0];
+          if (choice) {
+            const content = choice.delta?.content || '';
+            if (content) {
+              totalContent += content;
+              yield {
+                type: 'delta',
+                content,
+                timestamp: new Date().toISOString()
+              };
+            }
+
+            if (choice.finish_reason) {
+              finishReason = choice.finish_reason;
+            }
+          }
+
+          // Handle usage information (typically in final chunk)
+          if (chunk.usage) {
+            lastUsage = chunk.usage;
+            // Track search sources used for live search cost monitoring
+            if (chunk.usage.num_sources_used) {
+              searchSourcesUsed = chunk.usage.num_sources_used;
+            }
+          }
+
+          // Handle citations for live search (XAI-specific feature)
+          if (chunk.citations) {
+            citations = chunk.citations;
+          }
+
+          // Update model if provided
+          if (chunk.model) {
+            finalModel = chunk.model;
+          }
+        } catch (chunkError) {
+          debugError('[XAI] Error processing stream chunk:', chunkError);
+          yield {
+            type: 'error',
+            error: {
+              message: `Chunk processing error: ${chunkError.message}`,
+              code: 'CHUNK_PROCESSING_ERROR',
+              recoverable: true
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+
+      const responseTime = Date.now() - startTime;
+      debugLog(`[XAI] Streaming completed in ${responseTime}ms${searchSourcesUsed > 0 ? ` (used ${searchSourcesUsed} search sources)` : ''}`);
+
+      // Yield usage information if available
+      if (lastUsage) {
+        const usageEvent = {
+          type: 'usage',
+          usage: {
+            input_tokens: lastUsage.prompt_tokens || 0,
+            output_tokens: lastUsage.completion_tokens || 0,
+            total_tokens: lastUsage.total_tokens || 0
+          },
+          timestamp: new Date().toISOString()
+        };
+
+        // Add search-specific usage information
+        if (searchSourcesUsed > 0) {
+          usageEvent.usage.search_sources_used = searchSourcesUsed;
+          usageEvent.usage.search_cost_estimate = searchSourcesUsed * 0.025; // $0.025 per source
+        }
+
+        yield usageEvent;
+      }
+
+      // Determine web search usage
+      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+
+      // Build final metadata
+      const metadata = {
+        model: finalModel,
+        usage: {
+          input_tokens: lastUsage?.prompt_tokens || 0,
+          output_tokens: lastUsage?.completion_tokens || 0,
+          total_tokens: lastUsage?.total_tokens || 0
+        },
+        response_time_ms: responseTime,
+        finish_reason: finishReason || 'stop',
+        provider: 'xai',
+        web_search_used: webSearchUsed
+      };
+
+      // Add search-specific metadata
+      if (searchSourcesUsed > 0) {
+        metadata.search_sources_used = searchSourcesUsed;
+        metadata.search_cost_estimate = searchSourcesUsed * 0.025;
+      }
+
+      if (citations) {
+        metadata.citations = citations;
+      }
+
+      // Yield end event with final metadata
+      yield {
+        type: 'end',
+        content: totalContent,
+        stop_reason: finishReason || 'stop',
+        metadata,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      debugError('[XAI] Streaming error:', error);
+
+      // Handle specific XAI/OpenAI compatible errors in streaming context
+      let errorCode = 'STREAMING_ERROR';
+      let errorMessage = `XAI streaming error: ${error.message || 'Unknown error'}`;
+      let recoverable = false;
+
+      if (error.code === 'insufficient_quota') {
+        errorCode = 'QUOTA_EXCEEDED';
+        errorMessage = 'XAI API quota exceeded';
+      } else if (error.code === 'invalid_api_key') {
+        errorCode = 'INVALID_API_KEY';
+        errorMessage = 'Invalid XAI API key';
+      } else if (error.code === 'model_not_found') {
+        errorCode = 'MODEL_NOT_FOUND';
+        errorMessage = `Model ${resolvedModel} not found`;
+      } else if (error.code === 'context_length_exceeded') {
+        errorCode = 'CONTEXT_LENGTH_EXCEEDED';
+        errorMessage = 'Context length exceeded for model';
+      } else if (error.type === 'invalid_request_error') {
+        errorCode = 'INVALID_REQUEST';
+        errorMessage = `Invalid request: ${error.message}`;
+      } else if (error.type === 'rate_limit_error') {
+        errorCode = 'RATE_LIMIT_EXCEEDED';
+        errorMessage = 'XAI rate limit exceeded';
+        recoverable = true;
+      }
+
+      // Yield final error event
+      yield {
+        type: 'error',
+        error: {
+          message: errorMessage,
+          code: errorCode,
+          recoverable,
+          originalError: error.message
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Re-throw to maintain error propagation
+      throw new XAIProviderError(errorMessage, errorCode, error);
     }
   },
 

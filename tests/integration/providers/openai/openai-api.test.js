@@ -172,7 +172,7 @@ describe('OpenAI API Integration Tests', () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test direct provider streaming (bypasses HTTP MCP for now)
         const { openaiProvider } = await import('../../../../src/providers/openai.js');
-        
+
         const messages = [{ role: 'user', content: 'Count to 3 using digits like 1, 2, 3. Put each number on its own line.' }];
         const streamResult = await openaiProvider.invoke(messages, {
           config,
@@ -193,7 +193,7 @@ describe('OpenAI API Integration Tests', () => {
 
         // Verify streaming events
         expect(events.length).toBeGreaterThan(0);
-        
+
         const startEvent = events.find(e => e.type === 'start');
         const deltaEvents = events.filter(e => e.type === 'delta');
         const endEvent = events.find(e => e.type === 'end');
@@ -223,7 +223,7 @@ describe('OpenAI API Integration Tests', () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test reasoning model streaming
         const { openaiProvider } = await import('../../../../src/providers/openai.js');
-        
+
         const messages = [{ role: 'user', content: 'What is 13 * 17? Show your calculation.' }];
         const streamResult = await openaiProvider.invoke(messages, {
           config,
@@ -247,7 +247,7 @@ describe('OpenAI API Integration Tests', () => {
 
         // Verify streaming worked
         expect(events.length).toBeGreaterThan(0);
-        
+
         const endEvent = events.find(e => e.type === 'end');
         expect(endEvent).toBeDefined();
 
@@ -266,7 +266,7 @@ describe('OpenAI API Integration Tests', () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test web search in streaming (only works with newer models)
         const { openaiProvider } = await import('../../../../src/providers/openai.js');
-        
+
         const messages = [{ role: 'user', content: 'What is the current stock price of AAPL?' }];
         const streamResult = await openaiProvider.invoke(messages, {
           config,
@@ -287,7 +287,7 @@ describe('OpenAI API Integration Tests', () => {
 
         // Verify streaming worked with web search
         expect(events.length).toBeGreaterThan(0);
-        
+
         const startEvent = events.find(e => e.type === 'start');
         const endEvent = events.find(e => e.type === 'end');
 

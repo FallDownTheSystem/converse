@@ -140,7 +140,7 @@ describe('Google API Integration Tests', () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test direct provider streaming (bypasses HTTP MCP for now)
         const { googleProvider } = await import('../../../../src/providers/google.js');
-        
+
         const messages = [{ role: 'user', content: 'Count to 5, one number per sentence.' }];
         const streamResult = await googleProvider.invoke(messages, {
           config,
@@ -161,7 +161,7 @@ describe('Google API Integration Tests', () => {
 
         // Verify streaming events
         expect(events.length).toBeGreaterThan(0);
-        
+
         const startEvent = events.find(e => e.type === 'start');
         const deltaEvents = events.filter(e => e.type === 'delta');
         const completionEvent = events.find(e => e.type === 'completion');
@@ -193,7 +193,7 @@ describe('Google API Integration Tests', () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test thinking mode streaming
         const { googleProvider } = await import('../../../../src/providers/google.js');
-        
+
         const messages = [{ role: 'user', content: 'Solve: What is 17 * 23? Show your reasoning step by step.' }];
         const streamResult = await googleProvider.invoke(messages, {
           config,
@@ -217,7 +217,7 @@ describe('Google API Integration Tests', () => {
 
         // Verify streaming worked
         expect(events.length).toBeGreaterThan(0);
-        
+
         const completionEvent = events.find(e => e.type === 'completion');
         expect(completionEvent).toBeDefined();
         expect(completionEvent.metadata.thinking_mode_enabled).toBe(true);
@@ -233,12 +233,12 @@ describe('Google API Integration Tests', () => {
 
     testWithApiKeys({
       requiredProviders: ['GOOGLE'],
-      requireAll: true  
+      requireAll: true
     })('should support streaming with web search grounding', async () => {
       await withHTTPTestServer(async (client, manager) => {
         // Test web search grounding in streaming
         const { googleProvider } = await import('../../../../src/providers/google.js');
-        
+
         const messages = [{ role: 'user', content: 'What is the current weather in Tokyo?' }];
         const streamResult = await googleProvider.invoke(messages, {
           config,
@@ -259,16 +259,16 @@ describe('Google API Integration Tests', () => {
 
         // Verify streaming worked with grounding
         expect(events.length).toBeGreaterThan(0);
-        
+
         const startEvent = events.find(e => e.type === 'start');
         const completionEvent = events.find(e => e.type === 'completion');
 
         expect(startEvent).toBeDefined();
         expect(startEvent.web_search).toBe(true);
-        
+
         expect(completionEvent).toBeDefined();
         expect(completionEvent.metadata.web_search_used).toBe(true);
-        
+
         // Should have grounding metadata if search was used
         if (completionEvent.metadata.grounding_metadata) {
           expect(completionEvent.metadata.grounding_metadata).toBeDefined();
