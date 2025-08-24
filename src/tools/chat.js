@@ -24,7 +24,7 @@ const logger = createLogger('chat');
  */
 export async function chatTool(args, dependencies) {
   try {
-    const { config, providers, continuationStore, contextProcessor } = dependencies;
+    const { config, providers, continuationStore, contextProcessor, jobRunner, providerStreamNormalizer } = dependencies;
 
     // Validate required arguments
     if (!args.prompt || typeof args.prompt !== 'string') {
@@ -41,8 +41,57 @@ export async function chatTool(args, dependencies) {
       use_websearch = false,
       images = [],
       reasoning_effort = 'medium',
-      verbosity = 'medium'
+      verbosity = 'medium',
+      async = false
     } = args;
+
+    // Handle async execution mode
+    if (async) {
+      // Validate async dependencies are available
+      if (!jobRunner || !providerStreamNormalizer) {
+        return createToolError('Async execution not available - missing async dependencies');
+      }
+
+      // Generate continuation ID for background execution result
+      const bgContinuationId = continuation_id || generateContinuationId();
+
+      try {
+        // Submit background job
+        const jobId = await jobRunner.submit(
+          {
+            sessionId: bgContinuationId,
+            tool: 'chat',
+            options: args
+          },
+          async (context) => {
+            // Execute chat in background using stream normalizer
+            return await executeChatWithStreaming(
+              args,
+              {
+                ...dependencies,
+                continuationId: bgContinuationId
+              },
+              context
+            );
+          }
+        );
+
+        // Return immediate response with continuation_id
+        return createToolResponse({
+          content: 'Chat request submitted for background processing',
+          continuation: {
+            id: bgContinuationId,
+            job_id: jobId,
+            status: 'processing'
+          },
+          async_execution: true
+        });
+
+      } catch (error) {
+        logger.error('Failed to submit async chat job', { error });
+        return createToolError(`Async execution failed: ${error.message}`);
+      }
+    }
 
     let conversationHistory = [];
     let continuationId = continuation_id;
@@ -382,6 +431,286 @@ function mapModelToProvider(model, providers) {
   return 'openai';
 }
 
+/**
+ * Execute chat with streaming normalization for async execution
+ * @param {object} args - Original chat arguments
+ * @param {object} dependencies - Dependencies with continuationId
+ * @param {object} context - Job execution context
+ * @returns {Promise<object>} Complete chat result
+ */
+async function executeChatWithStreaming(args, dependencies, context) {
+  const {
+    config,
+    providers,
+    continuationStore,
+    contextProcessor,
+    providerStreamNormalizer,
+    continuationId
+  } = dependencies;
+
+  const {
+    prompt,
+    model = 'auto',
+    files = [],
+    temperature = 0.5,
+    use_websearch = false,
+    images = [],
+    reasoning_effort = 'medium',
+    verbosity = 'medium'
+  } = args;
+
+  let conversationHistory = [];
+
+  // Load existing conversation if continuation_id provided
+  if (continuationId) {
+    try {
+      const existingState = await continuationStore.get(continuationId);
+      if (existingState) {
+        conversationHistory = existingState.messages || [];
+      }
+    } catch (error) {
+      logger.error('Error loading conversation', { error });
+      // Continue with fresh conversation on error
+    }
+  }
+
+  // Validate file paths before processing
+  if (files.length > 0 || images.length > 0) {
+    const validation = await validateAllPaths({ files, images }, { clientCwd: config.server?.client_cwd });
+    if (!validation.valid) {
+      logger.error('File validation failed', { errors: validation.errors });
+      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    }
+  }
+
+  // Process context (files, images, web search)
+  let contextMessage = null;
+  if (files.length > 0 || images.length > 0 || use_websearch) {
+    try {
+      const contextRequest = {
+        files: Array.isArray(files) ? files : [],
+        images: Array.isArray(images) ? images : [],
+        webSearch: use_websearch ? prompt : null
+      };
+
+      const contextResult = await contextProcessor.processUnifiedContext(contextRequest, {
+        enforceSecurityCheck: false,
+        skipSecurityCheck: true,
+        clientCwd: config.server?.client_cwd
+      });
+
+      // Create context message from files and images
+      const allProcessedFiles = [...contextResult.files, ...contextResult.images];
+      if (allProcessedFiles.length > 0) {
+        contextMessage = createFileContext(allProcessedFiles, {
+          includeMetadata: true,
+          includeErrors: true
+        });
+      }
+    } catch (error) {
+      logger.error('Error processing context', { error });
+      // Continue without context if processing fails
+    }
+  }
+
+  // Build message array for provider
+  const messages = [];
+
+  // Add system prompt only if not already in conversation history
+  if (conversationHistory.length === 0 || conversationHistory[0].role !== 'system') {
+    messages.push({
+      role: 'system',
+      content: CHAT_PROMPT
+    });
+  }
+
+  // Add conversation history
+  messages.push(...conversationHistory);
+
+  // Add user prompt with context
+  const userMessage = {
+    role: 'user',
+    content: prompt
+  };
+
+  // If we have context (files/images), create complex content array
+  if (contextMessage && contextMessage.content) {
+    userMessage.content = [
+      ...contextMessage.content,
+      { type: 'text', text: prompt }
+    ];
+  }
+
+  messages.push(userMessage);
+
+  // Select provider
+  let selectedProvider;
+  let providerName;
+
+  if (model === 'auto') {
+    // Auto-select first available provider
+    const availableProviders = Object.keys(providers).filter(name => {
+      const provider = providers[name];
+      return provider && provider.isAvailable && provider.isAvailable(config);
+    });
+
+    if (availableProviders.length === 0) {
+      throw new Error('No providers available. Please configure at least one API key.');
+    }
+
+    providerName = availableProviders[0];
+    selectedProvider = providers[providerName];
+  } else {
+    // Use specified provider/model
+    providerName = mapModelToProvider(model, providers);
+    selectedProvider = providers[providerName];
+
+    if (!selectedProvider) {
+      throw new Error(`Provider not found for model: ${model}`);
+    }
+
+    if (!selectedProvider.isAvailable(config)) {
+      throw new Error(`Provider ${providerName} is not available. Check API key configuration.`);
+    }
+  }
+
+  // Resolve model name and prepare provider options
+  const resolvedModel = resolveAutoModel(model, providerName);
+  const providerOptions = {
+    model: resolvedModel,
+    temperature,
+    reasoning_effort,
+    verbosity,
+    use_websearch,
+    config
+  };
+
+  // Check if provider supports streaming
+  let response;
+  const startTime = Date.now();
+
+  if (selectedProvider.stream && typeof selectedProvider.stream === 'function') {
+    // Use streaming with normalization
+    debugLog(`Chat: Using streaming for provider ${providerName}`);
+
+    const stream = selectedProvider.stream(messages, providerOptions);
+    const normalizedStream = providerStreamNormalizer.normalize(providerName, stream, {
+      model: resolvedModel,
+      requestId: context.jobId
+    });
+
+    // Process normalized stream and build final response
+    let accumulatedContent = '';
+    let finalUsage = null;
+    let finalMetadata = {};
+
+    for await (const event of normalizedStream) {
+      // Check for cancellation
+      if (context.signal.aborted) {
+        throw new Error('Chat execution was cancelled');
+      }
+
+      switch (event.type) {
+      case 'start':
+        // Update job with streaming started status
+        await context.updateJob({
+          status: 'running',
+          progress: { phase: 'streaming_started', provider: providerName, model: resolvedModel }
+        });
+        break;
+
+      case 'delta':
+        accumulatedContent += event.data.textDelta;
+        // Update job with progress
+        await context.updateJob({
+          progress: {
+            phase: 'streaming',
+            provider: providerName,
+            model: resolvedModel,
+            content_length: accumulatedContent.length
+          }
+        });
+        break;
+
+      case 'usage':
+        finalUsage = event.data.usage;
+        break;
+
+      case 'end':
+        accumulatedContent = event.data.content || accumulatedContent;
+        finalUsage = event.data.usage || finalUsage;
+        finalMetadata = event.data.metadata || finalMetadata;
+        break;
+
+      case 'error':
+        throw new Error(`Streaming error: ${event.data.error.message}`);
+      }
+    }
+
+    response = {
+      content: accumulatedContent,
+      metadata: {
+        ...finalMetadata,
+        usage: finalUsage,
+        streaming: true
+      }
+    };
+
+  } else {
+    // Fall back to regular invoke
+    debugLog(`Chat: Using regular invoke for provider ${providerName}`);
+    response = await selectedProvider.invoke(messages, providerOptions);
+  }
+
+  const executionTime = (Date.now() - startTime) / 1000;
+
+  // Validate response
+  if (!response || !response.content) {
+    throw new Error('Provider returned invalid response');
+  }
+
+  // Add assistant response to conversation history
+  const assistantMessage = {
+    role: 'assistant',
+    content: response.content
+  };
+
+  const updatedMessages = [...messages, assistantMessage];
+
+  // Save conversation state
+  try {
+    const conversationState = {
+      messages: updatedMessages,
+      provider: providerName,
+      model,
+      lastUpdated: Date.now()
+    };
+
+    await continuationStore.set(continuationId, conversationState);
+  } catch (error) {
+    logger.error('Error saving conversation', { error });
+    // Continue even if save fails
+  }
+
+  // Return complete result for job completion
+  return {
+    content: response.content,
+    continuation: {
+      id: continuationId,
+      provider: providerName,
+      model,
+      messageCount: updatedMessages.filter(msg => msg.role !== 'system').length
+    },
+    metadata: {
+      provider: providerName,
+      model: resolvedModel,
+      execution_time: executionTime,
+      async_execution: true,
+      ...response.metadata
+    }
+  };
+}
+
 // Tool metadata
 chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - For development assistance, brainstorming, and code analysis. Supports files, images, and conversation continuation. Use model: "auto" for automatic model selection.';
 chatTool.inputSchema = {
@@ -431,6 +760,11 @@ chatTool.inputSchema = {
     use_websearch: {
       type: 'boolean',
       description: 'Enable web search for current information. Example: true for recent developments or up to date documentation. Default: false',
+      default: false
+    },
+    async: {
+      type: 'boolean',
+      description: 'Execute chat in background. When true, returns continuation_id immediately and processes request asynchronously. Default: false',
       default: false
     },
   },

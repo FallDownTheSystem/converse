@@ -13,6 +13,9 @@ import { getProviders } from './providers/index.js';
 import { helpPromptHandler, helpPromptMetadata } from './prompts/helpPrompt.js';
 import { helpResourceHandler, helpResourceMetadata, listResources } from './resources/helpResource.js';
 import { processUnifiedContext } from './utils/contextProcessor.js';
+import { getAsyncJobStore } from './async/asyncJobStore.js';
+import { getJobRunner } from './async/jobRunner.js';
+import providerStreamNormalizer from './async/providerStreamNormalizer.js';
 import { createLogger, startTimer } from './utils/logger.js';
 import { debugError } from './utils/console.js';
 import {
@@ -95,6 +98,12 @@ async function createDependencies(config) {
     const tools = getTools();
     const providers = getProviders();
 
+    // Initialize async infrastructure
+    const asyncJobStore = getAsyncJobStore();
+    const jobRunner = getJobRunner({
+      asyncJobStore,
+    });
+
     // Validate that we have the necessary dependencies
     if (!continuationStore) {
       throw new RouterError(
@@ -117,11 +126,28 @@ async function createDependencies(config) {
       );
     }
 
+    if (!asyncJobStore) {
+      throw new RouterError(
+        'Failed to initialize async job store',
+        'DEPENDENCY_ERROR'
+      );
+    }
+
+    if (!jobRunner) {
+      throw new RouterError(
+        'Failed to initialize job runner',
+        'DEPENDENCY_ERROR'
+      );
+    }
+
     return {
       config,
       continuationStore,
       providers,
       contextProcessor: { processUnifiedContext },
+      asyncJobStore,
+      jobRunner,
+      providerStreamNormalizer,
       router: {
         createErrorResponse,
         validateToolArguments,

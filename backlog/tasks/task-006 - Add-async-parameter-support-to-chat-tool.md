@@ -1,10 +1,11 @@
 ---
 id: task-006
 title: Add async parameter support to chat tool
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@ai'
 created_date: '2025-08-23 15:14'
-updated_date: '2025-08-23 18:32'
+updated_date: '2025-08-24 15:20'
 labels:
   - async
   - tools
@@ -167,6 +168,10 @@ for await (const event of providerStream) {
 - AsyncJobStore (from task 1) for job state management
 - EventBus (from task 4) for internal event coordination
 
+
+## Implementation Notes
+
+Successfully implemented async parameter support for chat tool. Added async boolean parameter (default: false) with full backwards compatibility. When async=true, returns continuation_id immediately and executes chat in background using JobRunner. Integrated ProviderStreamNormalizer for unified stream processing. Added comprehensive test coverage verifying both sync and async modes work correctly.
 ## Implementation Plan Reference
 
 Refer to **Async Execution System Architecture Plan** (`backlog/docs/doc-001 - Async-Execution-System-Architecture-Plan.md`) for:
