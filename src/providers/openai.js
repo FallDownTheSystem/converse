@@ -588,8 +588,8 @@ export const openaiProvider = {
         try {
           if (shouldUseResponsesAPI) {
             // Handle Responses API streaming format
-            if (chunk.type === 'response.delta') {
-              const content = chunk.delta?.output_text || '';
+            if (chunk.type === 'response.output_text.delta') {
+              const content = chunk.delta || '';
               if (content) {
                 totalContent += content;
                 yield {
@@ -598,7 +598,7 @@ export const openaiProvider = {
                   timestamp: new Date().toISOString()
                 };
               }
-            } else if (chunk.type === 'response.done') {
+            } else if (chunk.type === 'response.completed') {
               finishReason = chunk.response?.status || 'stop';
               finalModel = chunk.response?.model || resolvedModel;
               if (chunk.response?.usage) {

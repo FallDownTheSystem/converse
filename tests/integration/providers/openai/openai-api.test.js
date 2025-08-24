@@ -163,4 +163,140 @@ describe('OpenAI API Integration Tests', () => {
       });
     }, 40000);
   });
+
+  describe('Streaming Functionality', () => {
+    testWithApiKeys({
+      requiredProviders: ['OPENAI'],
+      requireAll: true
+    })('should support streaming with GPT-4o-mini', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test direct provider streaming (bypasses HTTP MCP for now)
+        const { openaiProvider } = await import('../../../../src/providers/openai.js');
+        
+        const messages = [{ role: 'user', content: 'Count to 3 using digits like 1, 2, 3. Put each number on its own line.' }];
+        const streamResult = await openaiProvider.invoke(messages, {
+          config,
+          model: 'gpt-4o-mini',
+          stream: true,
+          temperature: 0
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events
+        const events = [];
+        for await (const event of streamResult) {
+          events.push(event);
+          logger.info(`[openai-streaming-test] Event: ${event.type}`, event.content ? `"${event.content.substring(0, 50)}..."` : '');
+        }
+
+        // Verify streaming events
+        expect(events.length).toBeGreaterThan(0);
+        
+        const startEvent = events.find(e => e.type === 'start');
+        const deltaEvents = events.filter(e => e.type === 'delta');
+        const endEvent = events.find(e => e.type === 'end');
+
+        expect(startEvent).toBeDefined();
+        expect(deltaEvents.length).toBeGreaterThan(0);
+        expect(endEvent).toBeDefined();
+
+        // Verify metadata
+        expect(startEvent.provider).toBe('openai');
+        expect(endEvent.metadata.provider).toBe('openai');
+        expect(endEvent.metadata.usage.total_tokens).toBeGreaterThan(0);
+
+        // Verify content was streamed
+        const fullContent = deltaEvents.map(e => e.content).join('');
+        expect(fullContent).toContain('1');
+        expect(fullContent.length).toBeGreaterThan(5);
+
+        logger.info('[openai-streaming-test] Streaming test completed successfully');
+      });
+    }, 60000);
+
+    testWithApiKeys({
+      requiredProviders: ['OPENAI'],
+      requireAll: true
+    })('should support streaming with reasoning models (o4-mini)', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test reasoning model streaming
+        const { openaiProvider } = await import('../../../../src/providers/openai.js');
+        
+        const messages = [{ role: 'user', content: 'What is 13 * 17? Show your calculation.' }];
+        const streamResult = await openaiProvider.invoke(messages, {
+          config,
+          model: 'o4-mini',
+          stream: true,
+          reasoning_effort: 'medium',
+          temperature: 0
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events
+        const events = [];
+        for await (const event of streamResult) {
+          events.push(event);
+          if (event.type === 'delta' && event.content) {
+            logger.info(`[openai-reasoning-test] Delta: "${event.content.substring(0, 100)}..."`);
+          }
+        }
+
+        // Verify streaming worked
+        expect(events.length).toBeGreaterThan(0);
+        
+        const endEvent = events.find(e => e.type === 'end');
+        expect(endEvent).toBeDefined();
+
+        // Verify the math was solved
+        const fullContent = events.filter(e => e.type === 'delta').map(e => e.content).join('');
+        expect(fullContent).toContain('221'); // 13 * 17 = 221
+
+        logger.info('[openai-reasoning-test] Reasoning model streaming test completed');
+      });
+    }, 90000);
+
+    testWithApiKeys({
+      requiredProviders: ['OPENAI'],
+      requireAll: true
+    })('should support streaming with web search (GPT-5)', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test web search in streaming (only works with newer models)
+        const { openaiProvider } = await import('../../../../src/providers/openai.js');
+        
+        const messages = [{ role: 'user', content: 'What is the current stock price of AAPL?' }];
+        const streamResult = await openaiProvider.invoke(messages, {
+          config,
+          model: 'gpt-5',
+          stream: true,
+          use_websearch: true,
+          temperature: 0
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events
+        const events = [];
+        for await (const event of streamResult) {
+          events.push(event);
+        }
+
+        // Verify streaming worked with web search
+        expect(events.length).toBeGreaterThan(0);
+        
+        const startEvent = events.find(e => e.type === 'start');
+        const endEvent = events.find(e => e.type === 'end');
+
+        expect(startEvent).toBeDefined();
+        expect(endEvent).toBeDefined();
+        expect(endEvent.metadata.web_search_used).toBe(true);
+
+        logger.info('[openai-websearch-test] Web search streaming test completed');
+      });
+    }, 120000); // Longer timeout for web search
+  });
 });
