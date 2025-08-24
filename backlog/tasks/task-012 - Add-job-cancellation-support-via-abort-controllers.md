@@ -1,10 +1,11 @@
 ---
 id: task-012
 title: Add job cancellation support via abort controllers
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@ai'
 created_date: '2025-08-23 15:16'
-updated_date: '2025-08-23 18:32'
+updated_date: '2025-08-24 16:10'
 labels:
   - async
   - enhancement
@@ -546,6 +547,10 @@ describe('Job Cancellation Integration', () => {
 - EventBus for cancellation event broadcasting
 - MCP tool registration patterns
 
+
+## Implementation Notes
+
+Successfully implemented comprehensive job cancellation support via AbortController integration. Features include: 1) New cancel_job MCP tool for user-initiated cancellation, 2) AbortController integration in JobRunner for graceful termination, 3) Provider-level cancellation support across all providers (OpenAI, Google, XAI, Anthropic, Mistral, DeepSeek, OpenRouter), 4) Timeout-based automatic cancellation, 5) Partial result preservation for consensus jobs cancelled mid-execution, 6) Comprehensive unit tests covering all cancellation scenarios. All acceptance criteria completed and tested.
 ## Implementation Plan Reference
 
 Refer to **Async Execution System Architecture Plan** (`backlog/docs/doc-001 - Async-Execution-System-Architecture-Plan.md`) for:

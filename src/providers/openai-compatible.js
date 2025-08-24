@@ -224,6 +224,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
         reasoning_effort = 'medium',
         // eslint-disable-next-line no-unused-vars
         use_websearch = false,
+        signal,
         config,
         ...otherOptions
       } = options;
@@ -310,16 +311,25 @@ export function createOpenAICompatibleProvider(providerConfig) {
 
       // Handle streaming requests
       if (stream && requestPayload.stream !== false) {
-        return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig);
+        return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, signal);
       }
 
       try {
         debugLog(`[${providerName}] Calling ${resolvedModel} with ${openaiMessages.length} messages`);
 
+        // Check if already aborted before making request
+        if (signal?.aborted) {
+          throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+        }
+
         const startTime = Date.now();
 
-        // Make the API call
-        const response = await openai.chat.completions.create(requestPayload);
+        // Make the API call with abort signal support
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        const response = await openai.chat.completions.create(requestWithSignal);
 
         const responseTime = Date.now() - startTime;
         debugLog(`[${providerName}] Response received in ${responseTime}ms`);
@@ -388,7 +398,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
      * @param {Object} modelConfig - Model configuration
      * @returns {AsyncGenerator} - Streaming generator yielding events
      */
-    async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig) {
+    async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, signal) {
       debugLog(`[${providerName}] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
 
       const startTime = Date.now();
@@ -398,6 +408,11 @@ export function createOpenAICompatibleProvider(providerConfig) {
       let finalModel = resolvedModel;
 
       try {
+        // Check if already aborted before starting
+        if (signal?.aborted) {
+          throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+        }
+
         // Yield start event
         yield {
           type: 'start',
@@ -406,12 +421,21 @@ export function createOpenAICompatibleProvider(providerConfig) {
           provider: providerName.toLowerCase()
         };
 
-        // Create streaming request
-        const stream = await openai.chat.completions.create(requestPayload);
+        // Create streaming request with abort signal support
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        const stream = await openai.chat.completions.create(requestWithSignal);
 
         // Process stream chunks
         for await (const chunk of stream) {
           try {
+            // Check for cancellation during stream processing
+            if (signal?.aborted) {
+              debugLog(`[${providerName}] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+              break;
+            }
             const choice = chunk.choices?.[0];
             if (choice) {
               const content = choice.delta?.content || '';

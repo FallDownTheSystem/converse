@@ -582,6 +582,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     reasoning_effort,
     verbosity,
     use_websearch,
+    signal: context?.signal, // Pass AbortSignal for cancellation support
     config
   };
 

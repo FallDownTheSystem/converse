@@ -175,6 +175,7 @@ export const xaiProvider = {
       stream = false,
       reasoning_effort = 'medium',
       use_websearch = false,
+      signal,
       config,
       ...otherOptions
     } = options;
@@ -245,7 +246,7 @@ export const xaiProvider = {
 
     // Handle streaming requests
     if (stream && requestPayload.stream !== false) {
-      return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch);
+      return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch, signal);
     }
 
     // Note: XAI/Grok models don't currently support reasoning_effort parameter
@@ -254,10 +255,19 @@ export const xaiProvider = {
     try {
       debugLog(`[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with live search)' : ''}`);
 
+      // Check if already aborted before making request
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       const startTime = Date.now();
 
-      // Make the API call
-      const response = await openai.chat.completions.create(requestPayload);
+      // Make the API call with abort signal support
+      const requestWithSignal = { ...requestPayload };
+      if (signal) {
+        requestWithSignal.signal = signal;
+      }
+      const response = await openai.chat.completions.create(requestWithSignal);
 
       const responseTime = Date.now() - startTime;
       debugLog(`[XAI] Response received in ${responseTime}ms`);
@@ -332,7 +342,7 @@ export const xaiProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
-  async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch) {
+  async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch, signal) {
     const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with live search)' : '';
 
     debugLog(`[XAI] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages${searchInfo}`);
@@ -346,6 +356,11 @@ export const xaiProvider = {
     let searchSourcesUsed = 0;
 
     try {
+      // Check if already aborted before starting
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       // Yield start event
       yield {
         type: 'start',
@@ -354,12 +369,21 @@ export const xaiProvider = {
         provider: 'xai'
       };
 
-      // Create stream using OpenAI SDK with XAI base URL
-      const stream = await openai.chat.completions.create(requestPayload);
+      // Create stream using OpenAI SDK with XAI base URL and abort signal support
+      const requestWithSignal = { ...requestPayload };
+      if (signal) {
+        requestWithSignal.signal = signal;
+      }
+      const stream = await openai.chat.completions.create(requestWithSignal);
 
       // Process stream chunks
       for await (const chunk of stream) {
         try {
+          // Check for cancellation during stream processing
+          if (signal?.aborted) {
+            debugLog(`[XAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            break;
+          }
           // Handle Chat Completions API streaming format (XAI uses OpenAI-compatible format)
           const choice = chunk.choices?.[0];
           if (choice) {

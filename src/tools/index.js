@@ -9,6 +9,7 @@
 import { chatTool } from './chat.js';
 import { consensusTool } from './consensus.js';
 import { checkStatusTool } from './checkStatus.js';
+import { cancelJobTool } from './cancelJob.js';
 
 /**
  * Tool registry map
@@ -19,6 +20,7 @@ const tools = {
   chat: chatTool,
   consensus: consensusTool,
   check_status: checkStatusTool,
+  cancel_job: cancelJobTool,
 };
 
 /**

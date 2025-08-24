@@ -342,19 +342,28 @@ export class JobRunner extends EventEmitter {
 
         // Check if this was due to cancellation
         if (signal.aborted) {
+          // If the execution function returned a result before cancellation, preserve it
+          let partialResult = null;
+          if (executionError && executionError.partialResult) {
+            partialResult = executionError.partialResult;
+          }
+
           await this.asyncJobStore.update(jobId, {
             status: JOB_STATUS.CANCELLED,
+            result: partialResult, // Preserve any partial results
           });
 
           // Emit cancellation event through EventBus
           this.eventBus.emitJobCancelled(jobId, jobState.sessionId, {
             reason: 'Job aborted during execution',
+            partial_result: partialResult,
           });
 
           // Also emit through local EventEmitter for backward compatibility
           this.emit('job.cancelled', {
             jobId,
             timestamp: Date.now(),
+            partial_result: partialResult,
           });
 
           this.stats.cancelled++;

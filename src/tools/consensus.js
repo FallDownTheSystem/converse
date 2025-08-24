@@ -839,6 +839,7 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
         temperature,
         reasoning_effort,
         use_websearch,
+        signal: context?.signal, // Pass AbortSignal for cancellation support
         config,
         model: resolvedModelName
       }

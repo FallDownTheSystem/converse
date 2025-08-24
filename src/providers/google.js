@@ -337,6 +337,7 @@ export const googleProvider = {
       stream = false,
       reasoning_effort = 'medium',
       use_websearch = false,
+      signal,
       config,
       ..._otherOptions
     } = options;
@@ -432,17 +433,26 @@ export const googleProvider = {
       if (modelConfig.supportsStreaming === false) {
         debugLog(`[Google] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
       } else {
-        return this._createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch);
+        return this._createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch, signal);
       }
     }
 
     try {
       debugLog(`[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
 
+      // Check if already aborted before making request
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       const startTime = Date.now();
 
-      // Make the API call with retry logic
+      // Make the API call with retry logic and abort signal support
       const response = await retryWithBackoff(async () => {
+        if (signal?.aborted) {
+          throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+        }
+        
         return await genAI.models.generateContent({
           model: resolvedModel,
           contents: geminiContents,
@@ -524,7 +534,7 @@ export const googleProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding chunks
    */
-  async *_createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch) {
+  async *_createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch, signal) {
     debugLog(`[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
 
     const startTime = Date.now();
@@ -534,6 +544,11 @@ export const googleProvider = {
     let groundingMetadata = null;
 
     try {
+      // Check if already aborted before starting
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       // Yield start event
       yield {
         type: 'start',
@@ -544,8 +559,14 @@ export const googleProvider = {
         web_search: use_websearch && modelConfig.supportsWebSearch
       };
 
-      // Create streaming request with retry logic
+      // Create streaming request with retry logic and abort signal support
       const streamResult = await retryWithBackoff(async () => {
+        if (signal?.aborted) {
+          throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+        }
+        
+        // Google GenAI client doesn't directly support AbortSignal in the same way
+        // but we can check for cancellation before and during processing
         return await genAI.models.generateContentStream({
           model: resolvedModel,
           contents: geminiContents,
@@ -556,6 +577,11 @@ export const googleProvider = {
       // Process streaming chunks
       for await (const chunk of streamResult) {
         try {
+          // Check for cancellation during stream processing
+          if (signal?.aborted) {
+            debugLog(`[Google] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            break;
+          }
           const content = chunk.text || '';
 
           if (content) {

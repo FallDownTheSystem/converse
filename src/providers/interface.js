@@ -37,6 +37,7 @@
  * @property {boolean} [stream] - Whether to stream the response
  * @property {string} [reasoning_effort] - Reasoning depth for thinking models
  * @property {boolean} [use_websearch] - Enable web search if supported
+ * @property {AbortSignal} [signal] - AbortSignal for cancelling requests
  * @property {Object} config - Provider configuration
  * @property {Object} config.apiKeys - API keys for providers
  * @property {Object} [config.providers] - Provider-specific settings

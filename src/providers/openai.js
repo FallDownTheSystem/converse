@@ -334,6 +334,7 @@ export const openaiProvider = {
       reasoning_effort = 'medium',
       verbosity = 'medium',
       use_websearch = false,
+      signal,
       config,
       ...otherOptions
     } = options;
@@ -443,7 +444,7 @@ export const openaiProvider = {
 
     // Handle streaming requests
     if (stream && requestPayload.stream !== false) {
-      return this._createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch);
+      return this._createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch, signal);
     }
 
     try {
@@ -453,12 +454,27 @@ export const openaiProvider = {
 
       const startTime = Date.now();
 
+      // Check if already aborted before making request
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       // Make the API call based on API type
       let response;
       if (shouldUseResponsesAPI) {
-        response = await openai.responses.create(requestPayload);
+        // Add signal to the request payload for Responses API
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        response = await openai.responses.create(requestWithSignal);
       } else {
-        response = await openai.chat.completions.create(requestPayload);
+        // Add signal to the request payload for Chat Completions API
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        response = await openai.chat.completions.create(requestWithSignal);
       }
 
       const responseTime = Date.now() - startTime;
@@ -553,7 +569,7 @@ export const openaiProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
-  async *_createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch) {
+  async *_createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch, signal) {
     const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
     const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
 
@@ -566,6 +582,11 @@ export const openaiProvider = {
     let finalModel = resolvedModel;
 
     try {
+      // Check if already aborted before starting
+      if (signal?.aborted) {
+        throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
+      }
+
       // Yield start event
       yield {
         type: 'start',
@@ -578,14 +599,29 @@ export const openaiProvider = {
       // Create stream based on API type
       let stream;
       if (shouldUseResponsesAPI) {
-        stream = await openai.responses.create(requestPayload);
+        // Add signal to the request payload for Responses API
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        stream = await openai.responses.create(requestWithSignal);
       } else {
-        stream = await openai.chat.completions.create(requestPayload);
+        // Add signal to the request payload for Chat Completions API
+        const requestWithSignal = { ...requestPayload };
+        if (signal) {
+          requestWithSignal.signal = signal;
+        }
+        stream = await openai.chat.completions.create(requestWithSignal);
       }
 
       // Process stream chunks
       for await (const chunk of stream) {
         try {
+          // Check for cancellation during stream processing
+          if (signal?.aborted) {
+            debugLog(`[OpenAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            break;
+          }
           if (shouldUseResponsesAPI) {
             // Handle Responses API streaming format
             if (chunk.type === 'response.output_text.delta') {
