@@ -319,7 +319,7 @@ describe('OpenRouter API Integration Tests', () => {
           // If streaming starts, collect events and look for error events
           const events = [];
           let errorEventFound = false;
-          
+
           try {
             for await (const event of streamResult) {
               events.push(event);
@@ -336,7 +336,7 @@ describe('OpenRouter API Integration Tests', () => {
 
           // Either an error event should be found or an exception thrown
           expect(errorEventFound || events.length === 0).toBeTruthy();
-          
+
         } catch (error) {
           // Direct error from invoke call is expected for invalid models
           expect(error.message).toMatch(/model.*not found|invalid|nonexistent/i);
@@ -371,18 +371,18 @@ describe('OpenRouter API Integration Tests', () => {
 
         // Verify OpenRouter-specific metadata
         expect(endEvent.metadata.provider).toBe('openrouter');
-        
+
         // Check for cost information (may be present)
         if (endEvent.metadata.prompt_cost !== undefined) {
           expect(typeof endEvent.metadata.prompt_cost).toBe('number');
           logger.info(`[openrouter-metadata-test] Prompt cost: $${endEvent.metadata.prompt_cost}`);
         }
-        
+
         if (endEvent.metadata.completion_cost !== undefined) {
           expect(typeof endEvent.metadata.completion_cost).toBe('number');
           logger.info(`[openrouter-metadata-test] Completion cost: $${endEvent.metadata.completion_cost}`);
         }
-        
+
         if (endEvent.metadata.total_cost !== undefined) {
           expect(typeof endEvent.metadata.total_cost).toBe('number');
           logger.info(`[openrouter-metadata-test] Total cost: $${endEvent.metadata.total_cost}`);
@@ -424,7 +424,7 @@ describe('OpenRouter API Integration Tests', () => {
         // Either usage event or usage in end event should be present
         const usageData = usageEvent?.usage || endEvent?.metadata?.usage;
         expect(usageData).toBeDefined();
-        
+
         expect(usageData.input_tokens).toBeGreaterThan(0);
         expect(usageData.output_tokens).toBeGreaterThan(0);
         expect(usageData.total_tokens).toBeGreaterThan(0);
@@ -440,10 +440,10 @@ describe('OpenRouter API Integration Tests', () => {
         const { openrouterProvider } = await import('../../../../src/providers/openrouter.js');
 
         const testModels = ['kimi-k2', 'qwen3-coder'];
-        
+
         for (const model of testModels) {
           logger.info(`[openrouter-multi-test] Testing streaming with ${model}`);
-          
+
           const messages = [{ role: 'user', content: `What is 3 + 4? Use model ${model} to answer.` }];
           const streamResult = await openrouterProvider.invoke(messages, {
             config,
@@ -473,7 +473,7 @@ describe('OpenRouter API Integration Tests', () => {
           // Verify content contains expected answer
           const fullContent = deltaEvents.map(e => e.content).join('');
           expect(fullContent).toMatch(/7|seven/i);
-          
+
           logger.info(`[openrouter-multi-test] ${model} streaming test completed successfully`);
         }
 

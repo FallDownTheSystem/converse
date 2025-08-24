@@ -270,7 +270,7 @@ describe('Anthropic API Integration Tests', () => {
         const { anthropicProvider } = await import('../../../../src/providers/anthropic.js');
 
         const messages = [{ role: 'user', content: 'Hello' }];
-        
+
         // Use invalid model to trigger error
         const streamResult = anthropicProvider.invoke(messages, {
           config,
@@ -280,7 +280,7 @@ describe('Anthropic API Integration Tests', () => {
         });
 
         expect(streamResult).toBeDefined();
-        
+
         try {
           const events = [];
           for await (const event of await streamResult) {
@@ -291,14 +291,14 @@ describe('Anthropic API Integration Tests', () => {
               break;
             }
           }
-          
+
           // Should have received at least one event
           expect(events.length).toBeGreaterThanOrEqual(1);
           const errorEvent = events.find(e => e.type === 'error');
           if (errorEvent) {
             expect(errorEvent.error.message).toBeDefined();
           }
-          
+
         } catch (error) {
           // Error should be an error object with a message
           expect(error.message).toBeDefined();

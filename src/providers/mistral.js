@@ -408,7 +408,7 @@ export const mistralProvider = {
         try {
           // Mistral wraps the response in a "data" field
           const chunkData = chunk.data || chunk;
-          
+
           // Extract content from the chunk
           const choice = chunkData.choices?.[0];
           if (choice) {

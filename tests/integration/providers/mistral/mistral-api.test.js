@@ -168,8 +168,8 @@ describe('Mistral API Integration Tests', () => {
           events.push(event);
           eventCount++;
           logger.info(`[mistral-streaming-test] Event: ${event.type}`, event.content ? `"${event.content.substring(0, 50)}..."` : '');
-          
-          // Safety mechanism to prevent infinite loops  
+
+          // Safety mechanism to prevent infinite loops
           if (eventCount > 200 || event.type === 'end') {
             break;
           }
@@ -187,7 +187,7 @@ describe('Mistral API Integration Tests', () => {
         expect(startEvent.provider).toBe('mistral');
 
         expect(deltaEvents.length).toBeGreaterThan(0);
-        
+
         expect(endEvent).toBeDefined();
         expect(endEvent.metadata.provider).toBe('mistral');
         expect(endEvent.metadata.model).toBe('magistral-small-2506');
@@ -195,7 +195,7 @@ describe('Mistral API Integration Tests', () => {
         // Verify full content contains expected numbers
         const fullContent = endEvent.content;
         expect(fullContent).toContain('1');
-        expect(fullContent).toContain('2');  
+        expect(fullContent).toContain('2');
         expect(fullContent).toContain('3');
         expect(fullContent.length).toBeGreaterThan(5);
 
@@ -232,7 +232,7 @@ describe('Mistral API Integration Tests', () => {
           if (event.type === 'delta' && event.content) {
             logger.info(`[mistral-small-streaming-test] Delta: "${event.content.substring(0, 100)}..."`);
           }
-          
+
           // Safety mechanism to prevent infinite loops
           if (eventCount > 200 || event.type === 'end') {
             break;
@@ -278,14 +278,14 @@ describe('Mistral API Integration Tests', () => {
         for await (const event of streamResult) {
           events.push(event);
           eventCount++;
-          
+
           // Safety mechanism to prevent infinite loops
           if (eventCount > 300 || event.type === 'end') {
             break;
           }
         }
 
-        // Verify streaming worked  
+        // Verify streaming worked
         expect(events.length).toBeGreaterThan(0);
 
         const startEvent = events.find(e => e.type === 'start');

@@ -161,7 +161,7 @@ describe('Anthropic Feature-Specific Tests', () => {
           { role: 'system', content: 'You are a helpful mathematics tutor. Always show your work step by step.' },
           { role: 'user', content: 'Calculate 23 * 47 and explain each step.' }
         ];
-        
+
         const streamResult = await anthropicProvider.invoke(messages, {
           config,
           model: 'claude-sonnet-4-20250514',
@@ -177,9 +177,9 @@ describe('Anthropic Feature-Specific Tests', () => {
         const events = [];
         for await (const event of streamResult) {
           events.push(event);
-          logger.info(`[anthropic-advanced-streaming] Event: ${event.type}`, 
-            event.content ? `"${event.content.substring(0, 50)}..."` : 
-            event.usage ? `Tokens: ${JSON.stringify(event.usage)}` : '');
+          logger.info(`[anthropic-advanced-streaming] Event: ${event.type}`,
+            event.content ? `"${event.content.substring(0, 50)}..."` :
+              event.usage ? `Tokens: ${JSON.stringify(event.usage)}` : '');
         }
 
         // Verify comprehensive event structure
@@ -229,7 +229,7 @@ describe('Anthropic Feature-Specific Tests', () => {
 
         for (const { model, hasThinking, timeout } of testModels) {
           logger.info(`[anthropic-model-streaming] Testing streaming with ${model}`);
-          
+
           const messages = [{ role: 'user', content: 'Say "Hello from streaming!"' }];
           const options = {
             config,
@@ -250,10 +250,10 @@ describe('Anthropic Feature-Specific Tests', () => {
           // Collect events
           const events = [];
           const startTime = Date.now();
-          
+
           for await (const event of streamResult) {
             events.push(event);
-            
+
             // Break early to avoid long waits in tests
             if (event.type === 'end' || (Date.now() - startTime) > timeout) {
               break;
@@ -262,15 +262,15 @@ describe('Anthropic Feature-Specific Tests', () => {
 
           // Verify basic streaming worked
           expect(events.length).toBeGreaterThan(0);
-          
+
           const startEvent = events.find(e => e.type === 'start');
           const deltaEvents = events.filter(e => e.type === 'delta');
-          
+
           expect(startEvent).toBeDefined();
           expect(startEvent.provider).toBe('anthropic');
           expect(startEvent.model).toBe(model);
           expect(startEvent.thinking_mode).toBe(hasThinking);
-          
+
           // Should have some content
           if (deltaEvents.length > 0) {
             const content = deltaEvents.map(e => e.content).join('');
