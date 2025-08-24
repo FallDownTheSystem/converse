@@ -9,13 +9,21 @@ import { ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
 
 // Create mock before any imports
 const mockCreate = vi.fn();
+const mockStream = vi.fn();
 
 // Mock the Anthropic SDK
 vi.mock('@anthropic-ai/sdk', () => {
   const MockAnthropic = function(config) {
     this.apiKey = config.apiKey;
     this.messages = {
-      create: mockCreate
+      create: vi.fn((options) => {
+        // Route to appropriate mock based on stream parameter
+        if (options.stream) {
+          return mockStream(options);
+        }
+        return mockCreate(options);
+      }),
+      stream: mockStream
     };
   };
 
@@ -34,6 +42,7 @@ describe('Anthropic Provider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreate.mockClear();
+    mockStream.mockClear();
 
     mockConfig = {
       apiKeys: {
@@ -573,6 +582,394 @@ describe('Anthropic Provider', () => {
         code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
         message: expect.stringContaining('Context length exceeded for model')
       });
+    });
+  });
+
+  describe('Streaming Functionality', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockCreate.mockClear();
+      mockStream.mockClear();
+    });
+
+    it('should return AsyncGenerator when stream=true', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+
+      // Create a simple async generator for the mock
+      async function* mockStreamGenerator() {
+        yield {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+        };
+        yield {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'Hello' }
+        };
+        yield {
+          type: 'message_stop'
+        };
+      }
+
+      mockStream.mockResolvedValue(mockStreamGenerator());
+
+      const result = await anthropicProvider.invoke(messages, {
+        stream: true,
+        config: mockConfig
+      });
+
+      expect(result).toBeInstanceOf(Object);
+      expect(result[Symbol.asyncIterator]).toBeInstanceOf(Function);
+    });
+
+    it('should handle streaming events correctly', async () => {
+      const messages = [{ role: 'user', content: 'Test streaming' }];
+
+      // Mock the streaming response
+      const mockStreamEvents = [
+        {
+          type: 'message_start',
+          message: {
+            usage: { input_tokens: 10, output_tokens: 1 }
+          }
+        },
+        {
+          type: 'content_block_start',
+          content_block: { type: 'text' }
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'Hello' }
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: ' world' }
+        },
+        {
+          type: 'content_block_stop',
+          index: 0
+        },
+        {
+          type: 'message_delta',
+          delta: { stop_reason: 'end_turn' },
+          usage: { input_tokens: 10, output_tokens: 15, total_tokens: 25 }
+        },
+        {
+          type: 'message_stop'
+        }
+      ];
+
+      // Create async generator for mock stream
+      async function* mockStreamGenerator() {
+        for (const event of mockStreamEvents) {
+          yield event;
+        }
+      }
+
+      mockCreate.mockResolvedValue(mockStreamGenerator());
+
+      const streamResult = anthropicProvider.invoke(messages, {
+        stream: true,
+        config: mockConfig
+      });
+
+      const events = [];
+      for await (const event of streamResult) {
+        events.push(event);
+      }
+
+      // Verify the streaming payload was configured correctly
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.stream).toBe(true);
+
+      // Verify we get the expected events
+      expect(events).toHaveLength(5);
+
+      // Check start event
+      expect(events[0]).toMatchObject({
+        type: 'start',
+        model: 'claude-3-5-sonnet-20241022',
+        provider: 'anthropic',
+        thinking_mode: false
+      });
+
+      // Check delta events
+      expect(events[1]).toMatchObject({
+        type: 'delta',
+        content: 'Hello'
+      });
+
+      expect(events[2]).toMatchObject({
+        type: 'delta',
+        content: ' world'
+      });
+
+      // Check usage event
+      expect(events[3]).toMatchObject({
+        type: 'usage',
+        usage: {
+          input_tokens: 10,
+          output_tokens: 15,
+          total_tokens: 25,
+          thinking_tokens: 0,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 0
+        }
+      });
+
+      // Check end event
+      expect(events[4]).toMatchObject({
+        type: 'end',
+        content: 'Hello world',
+        stop_reason: 'stop',
+        metadata: {
+          model: 'claude-3-5-sonnet-20241022',
+          provider: 'anthropic',
+          reasoning_effort: null
+        }
+      });
+    });
+
+    it('should handle thinking deltas in streaming', async () => {
+      const messages = [{ role: 'user', content: 'Complex problem' }];
+
+      const mockStreamEvents = [
+        {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+        },
+        {
+          type: 'content_block_start',
+          content_block: { type: 'thinking' }
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'thinking_delta', thinking: 'Let me think...' }
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'thinking_delta', thinking: ' about this problem.' }
+        },
+        {
+          type: 'content_block_stop',
+          index: 0
+        },
+        {
+          type: 'content_block_start',
+          content_block: { type: 'text' }
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'The answer is 42.' }
+        },
+        {
+          type: 'message_delta',
+          delta: { stop_reason: 'end_turn' },
+          usage: { input_tokens: 10, output_tokens: 20, thinking_input_tokens: 50 }
+        },
+        {
+          type: 'message_stop'
+        }
+      ];
+
+      async function* mockStreamGenerator() {
+        for (const event of mockStreamEvents) {
+          yield event;
+        }
+      }
+
+      mockCreate.mockResolvedValue(mockStreamGenerator());
+
+      const streamResult = anthropicProvider.invoke(messages, {
+        stream: true,
+        model: 'claude-opus-4-1-20250805',
+        reasoning_effort: 'medium',
+        config: mockConfig
+      });
+
+      const events = [];
+      for await (const event of streamResult) {
+        events.push(event);
+      }
+
+      // Should have start, text delta, usage, and end events (thinking deltas are logged, not yielded)
+      expect(events).toHaveLength(4);
+
+      // Check start event has thinking mode enabled
+      expect(events[0]).toMatchObject({
+        type: 'start',
+        thinking_mode: true
+      });
+
+      // Check text delta
+      expect(events[1]).toMatchObject({
+        type: 'delta',
+        content: 'The answer is 42.'
+      });
+
+      // Check usage includes thinking tokens
+      expect(events[2]).toMatchObject({
+        type: 'usage',
+        usage: {
+          thinking_tokens: 50
+        }
+      });
+
+      // Check end event includes thinking content in metadata
+      expect(events[3]).toMatchObject({
+        type: 'end',
+        metadata: {
+          reasoning_effort: 'medium',
+          thinking_content: 'Let me think... about this problem.'
+        }
+      });
+    });
+
+    it('should fall back to non-streaming for unsupported models', async () => {
+      // Mock a model that doesn't support streaming
+      const originalModels = anthropicProvider.getSupportedModels();
+      const testModel = { ...originalModels['claude-3-5-haiku-20241022'], supportsStreaming: false };
+      vi.spyOn(anthropicProvider, 'getModelConfig').mockReturnValue(testModel);
+
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Non-streaming response' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 5, output_tokens: 10 }
+      });
+
+      const result = await anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        stream: true,
+        model: 'claude-3-5-haiku-20241022',
+        config: mockConfig
+      });
+
+      // Should return regular response object, not AsyncGenerator
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('stop_reason');
+      expect(result).toHaveProperty('metadata');
+
+      // Should have called create with stream: false
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.stream).toBe(false);
+    });
+
+    it('should handle streaming errors gracefully', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+
+      async function* mockErrorStreamGenerator() {
+        yield {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+        };
+        throw new Error('Network error');
+      }
+
+      mockCreate.mockResolvedValue(mockErrorStreamGenerator());
+
+      const streamResult = anthropicProvider.invoke(messages, {
+        stream: true,
+        config: mockConfig
+      });
+
+      const events = [];
+      try {
+        for await (const event of streamResult) {
+          events.push(event);
+        }
+      } catch (error) {
+        // Should get an error after start event
+        expect(events).toHaveLength(2); // start event and error event
+        expect(events[0].type).toBe('start');
+        expect(events[1].type).toBe('error');
+        expect(events[1].error.message).toContain('Network error');
+        expect(error.message).toContain('Network error');
+      }
+    });
+
+    it('should handle event processing errors', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+
+      async function* mockStreamGenerator() {
+        yield {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+        };
+        // Yield an invalid event that will cause processing error
+        yield {
+          type: 'content_block_delta',
+          delta: null // This should cause an error
+        };
+      }
+
+      mockCreate.mockResolvedValue(mockStreamGenerator());
+
+      const streamResult = anthropicProvider.invoke(messages, {
+        stream: true,
+        config: mockConfig
+      });
+
+      const events = [];
+      for await (const event of streamResult) {
+        events.push(event);
+        if (event.type === 'error') break;
+      }
+
+      // Should get start event and error event
+      expect(events).toHaveLength(2);
+      expect(events[0].type).toBe('start');
+      expect(events[1].type).toBe('error');
+      expect(events[1].error.code).toBe('EVENT_PROCESSING_ERROR');
+      expect(events[1].error.recoverable).toBe(true);
+    });
+
+    it('should handle ping events by ignoring them', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+
+      const mockStreamEvents = [
+        {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+        },
+        {
+          type: 'ping' // Should be ignored
+        },
+        {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'Hello' }
+        },
+        {
+          type: 'message_delta',
+          delta: { stop_reason: 'end_turn' },
+          usage: { input_tokens: 10, output_tokens: 5 }
+        },
+        {
+          type: 'ping' // Should be ignored
+        },
+        {
+          type: 'message_stop'
+        }
+      ];
+
+      async function* mockStreamGenerator() {
+        for (const event of mockStreamEvents) {
+          yield event;
+        }
+      }
+
+      mockCreate.mockResolvedValue(mockStreamGenerator());
+
+      const streamResult = anthropicProvider.invoke(messages, {
+        stream: true,
+        config: mockConfig
+      });
+
+      const events = [];
+      for await (const event of streamResult) {
+        events.push(event);
+      }
+
+      // Should get start, delta, usage, end (ping events ignored)
+      expect(events).toHaveLength(4);
+      expect(events.map(e => e.type)).toEqual(['start', 'delta', 'usage', 'end']);
     });
   });
 

@@ -324,7 +324,7 @@ export const anthropicProvider = {
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
    * @param {Object} options - Configuration options
-   * @returns {Object} - { content, stop_reason, rawResponse }
+   * @returns {Object|AsyncGenerator} - { content, stop_reason, rawResponse } or AsyncGenerator when stream=true
    */
   async invoke(messages, options = {}) {
     const {
@@ -335,6 +335,8 @@ export const anthropicProvider = {
       reasoning_effort = 'medium',
       // eslint-disable-next-line no-unused-vars
       use_websearch = false, // Not supported by Anthropic, ignored
+      // eslint-disable-next-line no-unused-vars
+      verbosity = 'medium', // OpenAI-specific parameter, ignored by Anthropic
       config,
       ...otherOptions
     } = options;
@@ -427,6 +429,17 @@ export const anthropicProvider = {
       } else {
         requestPayload.temperature = Math.max(0, Math.min(1, temperature));
       }
+    }
+
+    // If streaming is requested and model doesn't support it, fall back to non-streaming
+    if (stream && modelConfig.supportsStreaming === false) {
+      debugLog(`[Anthropic] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      requestPayload.stream = false;
+    }
+
+    // Handle streaming requests
+    if (stream && requestPayload.stream !== false) {
+      return this._createStreamingGenerator(anthropic, requestPayload, resolvedModel, modelConfig, reasoning_effort);
     }
 
     try {
@@ -531,6 +544,223 @@ export const anthropicProvider = {
         ErrorCodes.API_ERROR,
         error
       );
+    }
+  },
+
+  /**
+   * Create streaming generator for Anthropic responses
+   * @private
+   * @param {Anthropic} anthropic - Anthropic client instance
+   * @param {Object} requestPayload - Request payload
+   * @param {string} resolvedModel - Resolved model name
+   * @param {Object} modelConfig - Model configuration
+   * @param {string} reasoning_effort - Reasoning effort level
+   * @returns {AsyncGenerator} - Async generator yielding streaming events
+   */
+  async *_createStreamingGenerator(anthropic, requestPayload, resolvedModel, modelConfig, reasoning_effort) {
+    debugLog(`[Anthropic] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
+
+    const startTime = Date.now();
+    let totalContent = '';
+    let thinkingContent = '';
+    let lastUsage = null;
+    let finishReason = null;
+
+    try {
+      // Yield start event
+      yield {
+        type: 'start',
+        timestamp: new Date().toISOString(),
+        model: resolvedModel,
+        provider: 'anthropic',
+        thinking_mode: modelConfig.supportsThinking && !!reasoning_effort
+      };
+
+      // Enable streaming in request payload
+      const streamingPayload = { ...requestPayload, stream: true };
+
+      // Create the streaming request
+      const stream = await anthropic.messages.create(streamingPayload);
+
+      // Process stream events
+      for await (const event of stream) {
+        try {
+          switch (event.type) {
+          case 'message_start':
+            // Initial message with metadata
+            if (event.message?.usage) {
+              lastUsage = event.message.usage;
+            }
+            break;
+
+          case 'content_block_start':
+            // Content block started (text, thinking, etc.)
+            debugLog(`[Anthropic] Content block started: ${event.content_block?.type}`);
+            break;
+
+          case 'content_block_delta':
+            // Process content deltas
+            if (event.delta?.type === 'text_delta') {
+              const content = event.delta.text || '';
+              if (content) {
+                totalContent += content;
+                yield {
+                  type: 'delta',
+                  content,
+                  timestamp: new Date().toISOString()
+                };
+              }
+            } else if (event.delta?.type === 'thinking_delta') {
+              // Handle thinking content separately
+              const thinking = event.delta.thinking || '';
+              if (thinking) {
+                thinkingContent += thinking;
+                // Optionally yield thinking deltas for debugging
+                debugLog(`[Anthropic] Thinking delta: ${thinking.substring(0, 100)}...`);
+              }
+            }
+            break;
+
+          case 'content_block_stop':
+            // Content block completed
+            debugLog(`[Anthropic] Content block stopped at index ${event.index}`);
+            break;
+
+          case 'message_delta':
+            // Message-level updates (usage, stop_reason)
+            if (event.delta?.stop_reason) {
+              finishReason = event.delta.stop_reason;
+            }
+            if (event.usage) {
+              lastUsage = event.usage;
+            }
+            break;
+
+          case 'message_stop':
+            // Final event - streaming completed
+            debugLog('[Anthropic] Streaming completed');
+            break;
+
+          case 'ping':
+            // Keep-alive events - ignore
+            break;
+
+          case 'error':
+            // Handle error events from the stream
+            throw new AnthropicProviderError(
+              `Streaming error: ${event.error?.message || 'Unknown streaming error'}`,
+              ErrorCodes.API_ERROR,
+              event.error
+            );
+
+          default:
+            debugLog(`[Anthropic] Unknown streaming event type: ${event.type}`);
+            break;
+          }
+        } catch (eventError) {
+          debugError('[Anthropic] Error processing stream event:', eventError);
+          yield {
+            type: 'error',
+            error: {
+              message: `Event processing error: ${eventError.message}`,
+              code: 'EVENT_PROCESSING_ERROR',
+              recoverable: true
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+
+      const responseTime = Date.now() - startTime;
+      debugLog(`[Anthropic] Streaming completed in ${responseTime}ms`);
+
+      // Yield usage information if available
+      if (lastUsage) {
+        yield {
+          type: 'usage',
+          usage: {
+            input_tokens: lastUsage.input_tokens || 0,
+            output_tokens: lastUsage.output_tokens || 0,
+            total_tokens: (lastUsage.input_tokens || 0) + (lastUsage.output_tokens || 0),
+            thinking_tokens: lastUsage.thinking_input_tokens || 0,
+            cache_creation_input_tokens: lastUsage.cache_creation_input_tokens || 0,
+            cache_read_input_tokens: lastUsage.cache_read_input_tokens || 0
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      // Yield end event with final metadata
+      yield {
+        type: 'end',
+        content: totalContent,
+        stop_reason: STOP_REASON_MAP[finishReason] || StopReasons.OTHER,
+        metadata: {
+          model: resolvedModel,
+          usage: {
+            input_tokens: lastUsage?.input_tokens || 0,
+            output_tokens: lastUsage?.output_tokens || 0,
+            total_tokens: (lastUsage?.input_tokens || 0) + (lastUsage?.output_tokens || 0),
+            thinking_tokens: lastUsage?.thinking_input_tokens || 0,
+            cache_creation_input_tokens: lastUsage?.cache_creation_input_tokens || 0,
+            cache_read_input_tokens: lastUsage?.cache_read_input_tokens || 0
+          },
+          response_time_ms: responseTime,
+          finish_reason: finishReason,
+          provider: 'anthropic',
+          reasoning_effort: modelConfig.supportsThinking ? reasoning_effort : null,
+          thinking_content: thinkingContent || null
+        },
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      debugError('[Anthropic] Streaming error:', error);
+
+      // Handle specific Anthropic errors in streaming context
+      let errorCode = 'STREAMING_ERROR';
+      let errorMessage = `Anthropic streaming error: ${error.message || 'Unknown error'}`;
+      let recoverable = false;
+
+      if (error instanceof AnthropicProviderError) {
+        // Re-throw our own errors
+        errorCode = error.code;
+        errorMessage = error.message;
+      } else if (error.status === 401) {
+        errorCode = 'INVALID_API_KEY';
+        errorMessage = 'Invalid Anthropic API key';
+      } else if (error.status === 429) {
+        errorCode = 'RATE_LIMIT_EXCEEDED';
+        errorMessage = 'Anthropic rate limit exceeded';
+        recoverable = true;
+      } else if (error.status === 403) {
+        errorCode = 'QUOTA_EXCEEDED';
+        errorMessage = 'Anthropic API quota exceeded or forbidden';
+      } else if (error.error?.type === 'invalid_request_error') {
+        errorCode = 'INVALID_REQUEST';
+        errorMessage = `Invalid request: ${error.error.message}`;
+      } else if (error.error?.type === 'not_found_error') {
+        errorCode = 'MODEL_NOT_FOUND';
+        errorMessage = `Model ${resolvedModel} not found`;
+      } else if (error.message?.includes('context length') || error.message?.includes('context_length') ||
+                 (error.message?.includes('token') && error.message?.includes('limit'))) {
+        errorCode = 'CONTEXT_LENGTH_EXCEEDED';
+        errorMessage = `Context length exceeded for model: ${error.message}`;
+      }
+
+      yield {
+        type: 'error',
+        error: {
+          message: errorMessage,
+          code: errorCode,
+          recoverable,
+          originalError: error
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Re-throw the error to maintain existing error handling behavior
+      throw new AnthropicProviderError(errorMessage, errorCode, error);
     }
   },
 

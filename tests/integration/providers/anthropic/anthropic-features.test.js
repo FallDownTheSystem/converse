@@ -149,4 +149,137 @@ describe('Anthropic Feature-Specific Tests', () => {
       });
     }, 180000);
   });
+
+  describe('Streaming with Advanced Features', () => {
+    it.skipIf(!hasAnthropic())('should stream with thinking and cache usage tokens', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test streaming with comprehensive token tracking
+        const { anthropicProvider } = await import('../../../../src/providers/anthropic.js');
+
+        // Use a system message to trigger caching
+        const messages = [
+          { role: 'system', content: 'You are a helpful mathematics tutor. Always show your work step by step.' },
+          { role: 'user', content: 'Calculate 23 * 47 and explain each step.' }
+        ];
+        
+        const streamResult = await anthropicProvider.invoke(messages, {
+          config,
+          model: 'claude-sonnet-4-20250514',
+          stream: true,
+          reasoning_effort: 'high',
+          temperature: 0
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events
+        const events = [];
+        for await (const event of streamResult) {
+          events.push(event);
+          logger.info(`[anthropic-advanced-streaming] Event: ${event.type}`, 
+            event.content ? `"${event.content.substring(0, 50)}..."` : 
+            event.usage ? `Tokens: ${JSON.stringify(event.usage)}` : '');
+        }
+
+        // Verify comprehensive event structure
+        expect(events.length).toBeGreaterThan(0);
+
+        const startEvent = events.find(e => e.type === 'start');
+        const deltaEvents = events.filter(e => e.type === 'delta');
+        const usageEvent = events.find(e => e.type === 'usage');
+        const endEvent = events.find(e => e.type === 'end');
+
+        expect(startEvent).toBeDefined();
+        expect(deltaEvents.length).toBeGreaterThan(0);
+        expect(endEvent).toBeDefined();
+
+        // Verify thinking mode is enabled
+        expect(startEvent.thinking_mode).toBe(true);
+        expect(endEvent.metadata.reasoning_effort).toBe('high');
+
+        // Verify comprehensive token usage
+        if (usageEvent) {
+          expect(usageEvent.usage.input_tokens).toBeGreaterThan(0);
+          expect(usageEvent.usage.output_tokens).toBeGreaterThan(0);
+          expect(usageEvent.usage.total_tokens).toBeGreaterThan(0);
+          expect(usageEvent.usage.thinking_tokens).toBeGreaterThanOrEqual(0);
+          // Cache tokens may or may not be present depending on system
+          expect(typeof usageEvent.usage.cache_creation_input_tokens).toBe('number');
+          expect(typeof usageEvent.usage.cache_read_input_tokens).toBe('number');
+        }
+
+        // Verify calculation result
+        const fullContent = deltaEvents.map(e => e.content).join('');
+        expect(fullContent).toMatch(/108[01]/); // 23 * 47 = 1081
+
+        logger.info('[anthropic-advanced-streaming] Advanced streaming test completed successfully');
+      });
+    }, 180000); // Extra long timeout for thinking models with high effort
+
+    it.skipIf(!hasAnthropic())('should handle streaming with different model capabilities', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test streaming with different model types
+        const { anthropicProvider } = await import('../../../../src/providers/anthropic.js');
+
+        const testModels = [
+          { model: 'claude-3-5-haiku-20241022', hasThinking: false, timeout: 60000 },
+          { model: 'claude-3-5-sonnet-20241022', hasThinking: false, timeout: 60000 }
+        ];
+
+        for (const { model, hasThinking, timeout } of testModels) {
+          logger.info(`[anthropic-model-streaming] Testing streaming with ${model}`);
+          
+          const messages = [{ role: 'user', content: 'Say "Hello from streaming!"' }];
+          const options = {
+            config,
+            model,
+            stream: true,
+            temperature: 0
+          };
+
+          // Add thinking configuration only for models that support it
+          if (hasThinking) {
+            options.reasoning_effort = 'minimal';
+          }
+
+          const streamResult = await anthropicProvider.invoke(messages, options);
+          expect(streamResult).toBeDefined();
+          expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+          // Collect events
+          const events = [];
+          const startTime = Date.now();
+          
+          for await (const event of streamResult) {
+            events.push(event);
+            
+            // Break early to avoid long waits in tests
+            if (event.type === 'end' || (Date.now() - startTime) > timeout) {
+              break;
+            }
+          }
+
+          // Verify basic streaming worked
+          expect(events.length).toBeGreaterThan(0);
+          
+          const startEvent = events.find(e => e.type === 'start');
+          const deltaEvents = events.filter(e => e.type === 'delta');
+          
+          expect(startEvent).toBeDefined();
+          expect(startEvent.provider).toBe('anthropic');
+          expect(startEvent.model).toBe(model);
+          expect(startEvent.thinking_mode).toBe(hasThinking);
+          
+          // Should have some content
+          if (deltaEvents.length > 0) {
+            const content = deltaEvents.map(e => e.content).join('');
+            expect(content.length).toBeGreaterThan(0);
+          }
+
+          logger.info(`[anthropic-model-streaming] ✅ ${model} streaming test passed`);
+        }
+      });
+    }, 240000); // Long timeout to test multiple models
+  });
 });
