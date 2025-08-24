@@ -388,7 +388,7 @@ export class JobRunner extends EventEmitter {
       if (jobState) {
         try {
           await this.asyncJobStore.fail(jobId, error);
-          
+
           // Emit failure event through EventBus
           this.eventBus.emitJobFailed(jobId, jobState.sessionId, error);
 

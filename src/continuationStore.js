@@ -16,29 +16,29 @@ import { debugLog, debugError } from './utils/console.js';
 export class ContinuationStoreInterface {
   /**
    * Store conversation state
-   * @param {string} continuationId - Unique continuation identifier
-   * @param {object} state - Conversation state
+   * @param {string} _continuationId - Unique continuation identifier
+   * @param {object} _state - Conversation state
    * @returns {Promise<void>}
    */
-  async set(continuationId, state) {
+  async set(_continuationId, _state) {
     throw new Error('set() method must be implemented by storage backend');
   }
 
   /**
    * Retrieve conversation state
-   * @param {string} continuationId - Unique continuation identifier
+   * @param {string} _continuationId - Unique continuation identifier
    * @returns {Promise<object|null>} State or null if not found
    */
-  async get(continuationId) {
+  async get(_continuationId) {
     throw new Error('get() method must be implemented by storage backend');
   }
 
   /**
    * Delete conversation state
-   * @param {string} continuationId - Unique continuation identifier
+   * @param {string} _continuationId - Unique continuation identifier
    * @returns {Promise<boolean>} True if deleted, false if not found
    */
-  async delete(continuationId) {
+  async delete(_continuationId) {
     throw new Error('delete() method must be implemented by storage backend');
   }
 
@@ -62,10 +62,10 @@ export class ContinuationStoreInterface {
 
   /**
    * Clean up old data
-   * @param {number} maxAgeMs - Maximum age in milliseconds
+   * @param {number} _maxAgeMs - Maximum age in milliseconds
    * @returns {Promise<number>} Number of items cleaned up
    */
-  async cleanup(maxAgeMs) {
+  async cleanup(_maxAgeMs) {
     throw new Error('cleanup() method must be implemented by storage backend');
   }
 }

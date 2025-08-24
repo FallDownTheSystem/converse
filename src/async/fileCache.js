@@ -298,7 +298,7 @@ export class FileCache extends FileCacheInterface {
         const snapshot = JSON.parse(content);
         debugLog('FileCache', `Snapshot read for job ${jobId} from current date`);
         return snapshot;
-      } catch (currentDateError) {
+      } catch (_currentDateError) {
         // If not found in current date, search in recent directories
         const result = await this.searchSnapshotInRecentDirs(jobId);
         if (result) {

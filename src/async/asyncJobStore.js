@@ -134,7 +134,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
     this.maxEventsPerJob = 100; // Ring buffer size for events
     this.eventBus = getEventBus(); // Get global EventBus instance
-    
+
     // Set up EventBus listeners to capture events for storage
     this._setupEventBusListeners();
   }

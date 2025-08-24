@@ -648,8 +648,6 @@ describe('JobRunner', () => {
         tool: 'chat',
       };
 
-      let jobStateBeforeRunning;
-      let jobStateAfterRunning;
 
       const runFunction = vi.fn().mockImplementation(async (context) => {
         // Update job during execution
@@ -664,14 +662,14 @@ describe('JobRunner', () => {
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Check initial state
-      jobStateBeforeRunning = await asyncJobStore.get(jobId);
+      const jobStateBeforeRunning = await asyncJobStore.get(jobId);
 
       // Wait for completion
       await new Promise(resolve => {
         jobRunner.on('job.completed', () => resolve());
       });
 
-      jobStateAfterRunning = await asyncJobStore.get(jobId);
+      const jobStateAfterRunning = await asyncJobStore.get(jobId);
 
       expect(jobStateBeforeRunning.status).toBe(JOB_STATUS.QUEUED);
       expect(jobStateAfterRunning.status).toBe(JOB_STATUS.COMPLETED);

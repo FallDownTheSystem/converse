@@ -15,7 +15,7 @@ import { debugLog, debugError } from '../utils/console.js';
  */
 export const EVENT_TYPES = {
   JOB_CREATED: 'job.created',
-  JOB_UPDATED: 'job.updated', 
+  JOB_UPDATED: 'job.updated',
   JOB_COMPLETED: 'job.completed',
   JOB_FAILED: 'job.failed',
   JOB_CANCELLED: 'job.cancelled',
@@ -306,7 +306,7 @@ export class EventBus extends EventEmitter {
       }
 
       let removedCount = 0;
-      
+
       // Remove all wrapped listeners
       for (const metadata of listeners) {
         this.off(metadata.eventType, metadata.wrappedCallback);
@@ -342,7 +342,7 @@ export class EventBus extends EventEmitter {
       this._validateSessionId(sessionId);
 
       const events = this.eventHistory.get(jobId) || [];
-      
+
       // Filter by session and apply limit
       const filteredEvents = events
         .filter(event => event.sessionId === sessionId)
@@ -414,7 +414,7 @@ export class EventBus extends EventEmitter {
    * Core event emission method with validation and rate limiting
    * @param {string} eventType - Type of event to emit
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier  
+   * @param {string} sessionId - Session identifier
    * @param {object} data - Event data
    * @returns {boolean} True if event was emitted
    * @throws {EventBusError} If emission fails
@@ -564,13 +564,13 @@ export class EventBus extends EventEmitter {
 
     // Remove or mask sensitive fields
     const sensitiveFields = ['password', 'token', 'key', 'secret', 'auth', 'credential'];
-    
+
     const sanitizeObject = (obj) => {
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
 
       for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();
-        
+
         if (sensitiveFields.some(field => lowerKey.includes(field))) {
           obj[key] = '[REDACTED]';
         } else if (typeof value === 'object' && value !== null) {
@@ -654,13 +654,13 @@ export function setEventBus(eventBus) {
       'INVALID_EVENT_BUS'
     );
   }
-  
+
   if (globalEventBus) {
     globalEventBus.shutdown().catch(error => {
       debugError('EventBus: Error during shutdown of previous instance:', error);
     });
   }
-  
+
   globalEventBus = eventBus;
 }
 

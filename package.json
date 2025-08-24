@@ -51,7 +51,7 @@
     "lint:watch": "nodemon --exec \"npm run lint\" --watch src --watch tests",
     "format": "prettier --write src/ tests/ *.md *.json",
     "format:check": "prettier --check src/ tests/ *.md *.json",
-    "typecheck": "node --check src/**/*.js",
+    "typecheck": "node scripts/typecheck.js",
     "validate:simple": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "clean": "rimraf node_modules package-lock.json && npm install",
     "debug": "cross-env NODE_ENV=development LOG_LEVEL=trace node --inspect src/index.js",

@@ -67,14 +67,14 @@ describe('EventBus Unit Tests', () => {
   describe('Constructor and Initialization', () => {
     it('should create EventBus with default options', () => {
       const bus = new EventBus();
-      
+
       expect(bus).toBeInstanceOf(EventBus);
       expect(bus.maxListeners).toBe(100);
       expect(bus.maxEventHistory).toBe(100);
       expect(bus.maxPayloadSize).toBe(1024 * 1024);
       expect(bus.rateLimit).toBe(100);
       expect(bus.sessionTimeout).toBe(24 * 60 * 60 * 1000);
-      
+
       bus.shutdown();
     });
 
@@ -140,7 +140,7 @@ describe('EventBus Unit Tests', () => {
 
       it('should add event to history', () => {
         eventBus.emitJobCreated(testJobId, testSessionId, { tool: 'chat' });
-        
+
         const history = eventBus.getEventHistory(testJobId, testSessionId);
         expect(history).toHaveLength(1);
         expect(history[0].eventType).toBe(EVENT_TYPES.JOB_CREATED);
@@ -152,12 +152,12 @@ describe('EventBus Unit Tests', () => {
         const mockListener = vi.fn();
         eventBus.on(EVENT_TYPES.JOB_UPDATED, mockListener);
 
-        const updateData = { 
-          progress: 0.5, 
+        const updateData = {
+          progress: 0.5,
           status: 'running',
           providers: { openai: 'active' }
         };
-        
+
         const result = eventBus.emitJobUpdated(testJobId, testSessionId, updateData);
 
         expect(result).toBe(true);
@@ -221,7 +221,7 @@ describe('EventBus Unit Tests', () => {
 
         const error = new Error('Test error');
         error.code = 'TEST_ERROR';
-        
+
         const result = eventBus.emitJobFailed(testJobId, testSessionId, error);
 
         expect(result).toBe(true);
@@ -343,7 +343,7 @@ describe('EventBus Unit Tests', () => {
 
     it('should update session activity when adding listeners', () => {
       eventBus.addSessionListener(session1, EVENT_TYPES.JOB_CREATED, () => {});
-      
+
       expect(eventBus.sessionLastActivity.has(session1)).toBe(true);
       expect(eventBus.sessionListeners.has(session1)).toBe(true);
       expect(eventBus.stats.sessionsActive).toBe(1);
@@ -418,7 +418,7 @@ describe('EventBus Unit Tests', () => {
       eventBus.emitJobUpdated(testJobId, testSessionId, { progress: 0.5 });
 
       const history = eventBus.getEventHistory(testJobId, testSessionId);
-      
+
       expect(history).toHaveLength(3);
       expect(history[0].eventType).toBe(EVENT_TYPES.JOB_CREATED);
       expect(history[1].eventType).toBe(EVENT_TYPES.JOB_STARTED);
@@ -443,13 +443,13 @@ describe('EventBus Unit Tests', () => {
 
     it('should maintain ring buffer size limit', () => {
       const maxHistory = eventBus.maxEventHistory;
-      
+
       // Create a new EventBus with higher rate limit for this test
       const testBus = new EventBus({
         maxEventHistory: 10,
         rateLimit: 100, // Much higher rate limit
       });
-      
+
       // Create more events than the limit
       for (let i = 0; i < maxHistory + 5; i++) {
         testBus.emitJobUpdated(testJobId, testSessionId, { progress: i / 100 });
@@ -457,7 +457,7 @@ describe('EventBus Unit Tests', () => {
 
       const history = testBus.getEventHistory(testJobId, testSessionId);
       expect(history).toHaveLength(maxHistory);
-      
+
       testBus.shutdown();
     });
 
@@ -479,7 +479,7 @@ describe('EventBus Unit Tests', () => {
     it('should handle invalid parameters gracefully', () => {
       const history1 = eventBus.getEventHistory('', testSessionId);
       const history2 = eventBus.getEventHistory(testJobId, '');
-      
+
       expect(history1).toEqual([]);
       expect(history2).toEqual([]);
     });
@@ -491,7 +491,7 @@ describe('EventBus Unit Tests', () => {
 
     it('should allow events within rate limit', () => {
       const rateLimit = eventBus.rateLimit;
-      
+
       // Emit events up to the rate limit
       for (let i = 0; i < rateLimit; i++) {
         expect(() => {
@@ -502,7 +502,7 @@ describe('EventBus Unit Tests', () => {
 
     it('should reject events exceeding rate limit', () => {
       const rateLimit = eventBus.rateLimit;
-      
+
       // Fill up the rate limit
       for (let i = 0; i < rateLimit; i++) {
         eventBus.emitJobUpdated(testJobId, testSessionId, { progress: i });
@@ -516,7 +516,7 @@ describe('EventBus Unit Tests', () => {
 
     it('should reset rate limits after time window', async () => {
       const rateLimit = eventBus.rateLimit;
-      
+
       // Fill up the rate limit
       for (let i = 0; i < rateLimit; i++) {
         eventBus.emitJobUpdated(testJobId, testSessionId, { progress: i });
@@ -537,7 +537,7 @@ describe('EventBus Unit Tests', () => {
       const session1 = 'session_rate_1';
       const session2 = 'session_rate_2';
       const rateLimit = eventBus.rateLimit;
-      
+
       // Fill rate limit for session1
       for (let i = 0; i < rateLimit; i++) {
         eventBus.emitJobUpdated(testJobId, session1, { progress: i });
@@ -598,7 +598,7 @@ describe('EventBus Unit Tests', () => {
       eventBus.emitJobCreated(testJobId, testSessionId, nestedData);
 
       const eventPayload = mockListener.mock.calls[0][0];
-      
+
       // The sanitization works by replacing the entire object containing sensitive field names
       expect(eventPayload.data.config.credentials).toBe('[REDACTED]');
       expect(eventPayload.data.config.normal).toBe('value');
@@ -656,7 +656,7 @@ describe('EventBus Unit Tests', () => {
     describe('EventBusError Class', () => {
       it('should create EventBusError with message and code', () => {
         const error = new EventBusError('Test message', 'TEST_CODE');
-        
+
         expect(error).toBeInstanceOf(Error);
         expect(error).toBeInstanceOf(EventBusError);
         expect(error.name).toBe('EventBusError');
@@ -674,10 +674,10 @@ describe('EventBus Unit Tests', () => {
   describe('Memory Management and Cleanup', () => {
     it('should track session activity', () => {
       const testSession = 'session_activity';
-      
+
       eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
       expect(eventBus.sessionLastActivity.has(testSession)).toBe(true);
-      
+
       eventBus.emitJobCreated('job_test', testSession, {});
       const lastActivity = eventBus.sessionLastActivity.get(testSession);
       expect(lastActivity).toBeGreaterThan(0);
@@ -685,17 +685,17 @@ describe('EventBus Unit Tests', () => {
 
     it('should clean up expired sessions', () => {
       const testSession = 'session_cleanup';
-      
+
       // Add listener
       eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
       expect(eventBus.stats.sessionsActive).toBe(1);
-      
+
       // Simulate expired session by setting old timestamp
       eventBus.sessionLastActivity.set(testSession, Date.now() - eventBus.sessionTimeout - 1000);
-      
+
       // Trigger cleanup
       eventBus._cleanupExpiredSessions();
-      
+
       expect(eventBus.stats.sessionsActive).toBe(0);
       expect(eventBus.sessionListeners.has(testSession)).toBe(false);
     });
@@ -703,29 +703,29 @@ describe('EventBus Unit Tests', () => {
     it('should clean up old event history', () => {
       const testJob = 'job_cleanup';
       const testSession = 'session_cleanup';
-      
+
       eventBus.emitJobCreated(testJob, testSession, {});
       expect(eventBus.eventHistory.has(testJob)).toBe(true);
-      
+
       // Make event history old
       const events = eventBus.eventHistory.get(testJob);
       events[0].timestamp = Date.now() - eventBus.sessionTimeout - 1000;
-      
+
       // Trigger cleanup
       eventBus._cleanupExpiredSessions();
-      
+
       expect(eventBus.eventHistory.has(testJob)).toBe(false);
     });
 
     it('should not clean up active sessions', () => {
       const testSession = 'session_active';
-      
+
       eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
       eventBus.emitJobCreated('job_test', testSession, {});
-      
+
       // Trigger cleanup (should not remove active session)
       eventBus._cleanupExpiredSessions();
-      
+
       expect(eventBus.stats.sessionsActive).toBe(1);
       expect(eventBus.sessionListeners.has(testSession)).toBe(true);
     });
@@ -735,10 +735,10 @@ describe('EventBus Unit Tests', () => {
     it('should track event emission statistics', () => {
       const initialStats = eventBus.getStats();
       expect(initialStats.eventsEmitted).toBe(0);
-      
+
       eventBus.emitJobCreated('job_1', 'session_1', {});
       eventBus.emitJobUpdated('job_1', 'session_1', {});
-      
+
       const updatedStats = eventBus.getStats();
       expect(updatedStats.eventsEmitted).toBe(2);
     });
@@ -746,16 +746,16 @@ describe('EventBus Unit Tests', () => {
     it('should track listener statistics', () => {
       const initialStats = eventBus.getStats();
       expect(initialStats.listenersAdded).toBe(0);
-      
+
       eventBus.addSessionListener('session_1', EVENT_TYPES.JOB_CREATED, () => {});
       eventBus.addSessionListener('session_1', EVENT_TYPES.JOB_UPDATED, () => {});
-      
+
       const afterAddStats = eventBus.getStats();
       expect(afterAddStats.listenersAdded).toBe(2);
       expect(afterAddStats.totalSessions).toBe(1);
-      
+
       eventBus.removeAllSessionListeners('session_1');
-      
+
       const afterRemoveStats = eventBus.getStats();
       expect(afterRemoveStats.listenersRemoved).toBe(2);
       expect(afterRemoveStats.totalSessions).toBe(0);
@@ -763,7 +763,7 @@ describe('EventBus Unit Tests', () => {
 
     it('should include memory and system information in stats', () => {
       const stats = eventBus.getStats();
-      
+
       expect(stats).toHaveProperty('totalSessions');
       expect(stats).toHaveProperty('totalEventHistory');
       expect(stats).toHaveProperty('activeRateCounters');
@@ -777,21 +777,21 @@ describe('EventBus Unit Tests', () => {
   describe('Shutdown and Cleanup', () => {
     it('should shutdown cleanly', async () => {
       const testSession = 'session_shutdown';
-      
+
       // Create a test EventBus that will have a real timer we can track
       const testBus = new EventBus();
       const shutdownSpy = vi.spyOn(testBus, 'shutdown');
-      
+
       // Add some listeners and create events
       testBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
       testBus.emitJobCreated('job_shutdown', testSession, {});
-      
+
       // Verify data exists
       expect(testBus.sessionListeners.size).toBeGreaterThan(0);
       expect(testBus.eventHistory.size).toBeGreaterThan(0);
-      
+
       await testBus.shutdown();
-      
+
       // Verify cleanup
       expect(testBus.sessionListeners.size).toBe(0);
       expect(testBus.sessionLastActivity.size).toBe(0);
@@ -804,15 +804,15 @@ describe('EventBus Unit Tests', () => {
     it('should remove all event listeners on shutdown', async () => {
       const mockListener = vi.fn();
       eventBus.on(EVENT_TYPES.JOB_CREATED, mockListener);
-      
+
       await eventBus.shutdown();
-      
+
       // Create a new event bus to test isolation
       const newEventBus = new EventBus();
       newEventBus.emitJobCreated('job_test', 'session_test', {});
-      
+
       expect(mockListener).not.toHaveBeenCalled();
-      
+
       await newEventBus.shutdown();
     });
   });
@@ -825,7 +825,7 @@ describe('EventBus Unit Tests', () => {
     it('should create global instance on first access', () => {
       const globalBus = getEventBus();
       expect(globalBus).toBeInstanceOf(EventBus);
-      
+
       const secondAccess = getEventBus();
       expect(secondAccess).toBe(globalBus);
     });
@@ -838,11 +838,11 @@ describe('EventBus Unit Tests', () => {
     it('should allow setting custom EventBus instance', () => {
       const customBus = new EventBus({ maxListeners: 300 });
       setEventBus(customBus);
-      
+
       const retrievedBus = getEventBus();
       expect(retrievedBus).toBe(customBus);
       expect(retrievedBus.maxListeners).toBe(300);
-      
+
       customBus.shutdown();
     });
 
@@ -855,22 +855,22 @@ describe('EventBus Unit Tests', () => {
     it('should shutdown previous instance when setting new one', async () => {
       const firstBus = createEventBus();
       const shutdownSpy = vi.spyOn(firstBus, 'shutdown').mockImplementation(() => Promise.resolve());
-      
+
       setEventBus(firstBus);
       setEventBus(createEventBus());
-      
+
       // Give a moment for async shutdown to complete
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       expect(shutdownSpy).toHaveBeenCalled();
     });
 
     it('should create EventBus with createEventBus function', () => {
       const customBus = createEventBus({ maxListeners: 150 });
-      
+
       expect(customBus).toBeInstanceOf(EventBus);
       expect(customBus.maxListeners).toBe(150);
-      
+
       customBus.shutdown();
     });
   });
