@@ -13,6 +13,9 @@ vi.mock('openai', () => {
       completions: {
         create: vi.fn()
       }
+    },
+    responses: {
+      create: vi.fn()
     }
   }));
 
@@ -380,6 +383,354 @@ describe('OpenAI Provider', () => {
           name: 'OpenAIProviderError',
           code: 'RATE_LIMIT_EXCEEDED'
         }));
+    });
+  });
+
+  describe('streaming functionality', () => {
+    const validConfig = {
+      apiKeys: {
+        openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef'
+      }
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should return AsyncGenerator when stream=true', async () => {
+      const OpenAI = (await import('openai')).default;
+      
+      // Create mock stream for Chat Completions API
+      const mockStreamChunks = [
+        {
+          choices: [{ delta: { content: 'Hello' }, finish_reason: null }],
+          usage: null,
+          model: 'gpt-4o-mini'
+        },
+        {
+          choices: [{ delta: { content: ' world' }, finish_reason: null }],
+          usage: null,
+          model: 'gpt-4o-mini'
+        },
+        {
+          choices: [{ delta: { content: '!' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 },
+          model: 'gpt-4o-mini'
+        }
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of mockStreamChunks) {
+            yield chunk;
+          }
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
+      }));
+
+      // Temporarily modify model to not support Responses API to force Chat Completions API
+      const originalModels = openaiProvider.getSupportedModels();
+      const testModel = { ...originalModels['gpt-4o-mini'], supportsResponsesAPI: false };
+      originalModels['gpt-4o-mini'] = testModel;
+
+      try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const result = await openaiProvider.invoke(messages, {
+          config: validConfig,
+          model: 'gpt-4o-mini', // Now forces Chat Completions API
+          stream: true
+        });
+
+        // Verify it returns an AsyncGenerator
+        expect(result).toBeDefined();
+        expect(typeof result[Symbol.asyncIterator]).toBe('function');
+
+        // Collect all events from the stream
+        const events = [];
+        for await (const event of result) {
+          events.push(event);
+        }
+
+        // Verify event structure
+        expect(events).toHaveLength(6); // start, 3 deltas, usage, end
+        
+        expect(events[0]).toMatchObject({
+          type: 'start',
+          model: 'gpt-4o-mini',
+          provider: 'openai',
+          api_type: 'Chat Completions API'
+        });
+
+        expect(events[1]).toMatchObject({
+          type: 'delta',
+          content: 'Hello'
+        });
+
+        expect(events[2]).toMatchObject({
+          type: 'delta',
+          content: ' world'
+        });
+
+        expect(events[3]).toMatchObject({
+          type: 'delta',
+          content: '!'
+        });
+
+        expect(events[4]).toMatchObject({
+          type: 'usage',
+          usage: {
+            input_tokens: 10,
+            output_tokens: 3,
+            total_tokens: 13
+          }
+        });
+
+        expect(events[5]).toMatchObject({
+          type: 'end',
+          content: 'Hello world!',
+          stop_reason: 'stop',
+          metadata: {
+            model: 'gpt-4o-mini',
+            provider: 'openai',
+            api_type: 'Chat Completions API',
+            finish_reason: 'stop'
+          }
+        });
+      } finally {
+        // Restore original model config
+        originalModels['gpt-4o-mini'] = { ...originalModels['gpt-4o-mini'], supportsResponsesAPI: true };
+      }
+    });
+
+    it('should handle Responses API streaming format', async () => {
+      const OpenAI = (await import('openai')).default;
+      
+      // Create mock stream for Responses API
+      const mockStreamChunks = [
+        {
+          type: 'response.delta',
+          delta: { output_text: 'Response' }
+        },
+        {
+          type: 'response.delta',
+          delta: { output_text: ' text' }
+        },
+        {
+          type: 'response.done',
+          response: {
+            status: 'completed',
+            model: 'gpt-5',
+            usage: { input_tokens: 5, output_tokens: 2, total_tokens: 7 }
+          }
+        }
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of mockStreamChunks) {
+            yield chunk;
+          }
+        }
+      };
+
+      const mockCreate = vi.fn().mockResolvedValue(mockStream);
+
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
+      }));
+
+      const messages = [{ role: 'user', content: 'Test' }];
+      const result = await openaiProvider.invoke(messages, {
+        config: validConfig,
+        model: 'gpt-5', // GPT-5 uses Responses API by default
+        stream: true
+      });
+
+      // Collect all events from the stream
+      const events = [];
+      for await (const event of result) {
+        events.push(event);
+      }
+
+      // Verify event structure for Responses API
+      expect(events).toHaveLength(5); // start, 2 deltas, usage, end
+      
+      expect(events[0]).toMatchObject({
+        type: 'start',
+        model: 'gpt-5',
+        api_type: 'Responses API'
+      });
+
+      expect(events[1]).toMatchObject({
+        type: 'delta',
+        content: 'Response'
+      });
+
+      expect(events[2]).toMatchObject({
+        type: 'delta',
+        content: ' text'
+      });
+
+      expect(events[4]).toMatchObject({
+        type: 'end',
+        content: 'Response text',
+        stop_reason: 'completed',
+        metadata: {
+          model: 'gpt-5',
+          api_type: 'Responses API'
+        }
+      });
+    });
+
+    it('should handle streaming errors gracefully', async () => {
+      const OpenAI = (await import('openai')).default;
+      
+      const streamError = Object.assign(new Error('Stream error'), {
+        type: 'rate_limit_error',
+        code: 'rate_limit_exceeded'
+      });
+
+      const mockCreate = vi.fn().mockRejectedValue(streamError);
+
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
+      }));
+
+      const messages = [{ role: 'user', content: 'Test' }];
+      const result = await openaiProvider.invoke(messages, {
+        config: validConfig,
+        stream: true
+      });
+
+      // Expect the generator to yield an error event and then throw
+      const events = [];
+      try {
+        for await (const event of result) {
+          events.push(event);
+        }
+      } catch (error) {
+        // Verify the error is properly wrapped
+        expect(error.name).toBe('OpenAIProviderError');
+        expect(error.code).toBe('RATE_LIMIT_EXCEEDED');
+      }
+
+      // Should have start event and error event
+      expect(events).toHaveLength(2);
+      expect(events[0].type).toBe('start');
+      expect(events[1].type).toBe('error');
+      expect(events[1].error.code).toBe('RATE_LIMIT_EXCEEDED');
+      expect(events[1].error.recoverable).toBe(true);
+    });
+
+    it('should fall back to non-streaming for unsupported models', async () => {
+      const OpenAI = (await import('openai')).default;
+      const mockCreate = vi.fn().mockResolvedValue({
+        output_text: 'Non-streaming response',
+        status: 'completed',
+        usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 }
+      });
+
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockCreate } },
+        responses: { create: mockCreate }
+      }));
+
+      // Temporarily modify a model to not support streaming
+      const originalModels = openaiProvider.getSupportedModels();
+      const testModel = { ...originalModels['gpt-4o'], supportsStreaming: false };
+      originalModels['gpt-4o'] = testModel;
+
+      const messages = [{ role: 'user', content: 'Test' }];
+      const result = await openaiProvider.invoke(messages, {
+        config: validConfig,
+        model: 'gpt-4o',
+        stream: true
+      });
+
+      // Should return regular response object, not AsyncGenerator
+      expect(typeof result[Symbol.asyncIterator]).toBe('undefined');
+      expect(result).toMatchObject({
+        content: 'Non-streaming response',
+        stop_reason: 'completed'
+      });
+
+      // Verify stream was set to false in the request
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: false })
+      );
+
+      // Restore original model config
+      originalModels['gpt-4o'] = { ...originalModels['gpt-4o'], supportsStreaming: true };
+    });
+
+    it('should include usage reporting for Chat Completions API streaming', async () => {
+      const OpenAI = (await import('openai')).default;
+      
+      const mockStreamChunks = [
+        {
+          choices: [{ delta: { content: 'test' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 }
+        }
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of mockStreamChunks) {
+            yield chunk;
+          }
+        }
+      };
+
+      const mockChatCreate = vi.fn().mockResolvedValue(mockStream);
+      const mockResponsesCreate = vi.fn().mockResolvedValue(mockStream);
+
+      OpenAI.mockImplementation(() => ({
+        chat: { completions: { create: mockChatCreate } },
+        responses: { create: mockResponsesCreate }
+      }));
+
+      // Temporarily modify model to not support Responses API to force Chat Completions API
+      const originalModels = openaiProvider.getSupportedModels();
+      const testModel = { ...originalModels['gpt-4o'], supportsResponsesAPI: false };
+      originalModels['gpt-4o'] = testModel;
+
+      try {
+        const messages = [{ role: 'user', content: 'Test' }];
+        const result = await openaiProvider.invoke(messages, {
+          config: validConfig,
+          model: 'gpt-4o', // Now forces Chat Completions API
+          stream: true
+        });
+
+        // Consume events from the generator to trigger the API call
+        const iterator = result[Symbol.asyncIterator]();
+        const firstEvent = await iterator.next();
+        expect(firstEvent.value.type).toBe('start'); // Verify it's streaming
+        
+        // Consume one more event to trigger the actual API call (which happens after start event)
+        const secondEvent = await iterator.next();
+        
+        // Verify Chat Completions API was called with usage reporting
+        expect(mockChatCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            stream_options: { include_usage: true }
+          })
+        );
+        
+        // Verify Responses API was not called
+        expect(mockResponsesCreate).not.toHaveBeenCalled();
+      } finally {
+        // Restore original model config
+        originalModels['gpt-4o'] = { ...originalModels['gpt-4o'], supportsResponsesAPI: true };
+      }
     });
   });
 });

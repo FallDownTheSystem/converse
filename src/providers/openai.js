@@ -323,7 +323,7 @@ export const openaiProvider = {
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
    * @param {Object} options - Configuration options
-   * @returns {Object} - { content, stop_reason, rawResponse }
+   * @returns {Object|AsyncGenerator} - { content, stop_reason, rawResponse } or AsyncGenerator when stream=true
    */
   async invoke(messages, options = {}) {
     const {
@@ -430,6 +430,22 @@ export const openaiProvider = {
       }
     }
 
+    // Add usage reporting for streaming mode
+    if (stream && !shouldUseResponsesAPI) {
+      requestPayload.stream_options = { include_usage: true };
+    }
+
+    // If streaming is requested and model doesn't support it, fall back to non-streaming
+    if (stream && modelConfig.supportsStreaming === false) {
+      debugLog(`[OpenAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      requestPayload.stream = false;
+    }
+
+    // Handle streaming requests
+    if (stream && requestPayload.stream !== false) {
+      return this._createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch);
+    }
+
     try {
       const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
       const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
@@ -523,6 +539,196 @@ export const openaiProvider = {
         'API_ERROR',
         error
       );
+    }
+  },
+
+  /**
+   * Create streaming generator for OpenAI responses
+   * @private
+   * @param {OpenAI} openai - OpenAI client instance
+   * @param {Object} requestPayload - Request payload
+   * @param {boolean} shouldUseResponsesAPI - Whether to use Responses API
+   * @param {string} resolvedModel - Resolved model name
+   * @param {Object} modelConfig - Model configuration
+   * @param {boolean} use_websearch - Whether web search is enabled
+   * @returns {AsyncGenerator} - Streaming generator yielding events
+   */
+  async *_createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch) {
+    const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
+    const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
+    
+    debugLog(`[OpenAI] Starting streaming for ${resolvedModel} via ${apiType} with ${requestPayload.input?.length || requestPayload.messages?.length} messages${searchInfo}`);
+
+    const startTime = Date.now();
+    let totalContent = '';
+    let lastUsage = null;
+    let finishReason = null;
+    let finalModel = resolvedModel;
+
+    try {
+      // Yield start event
+      yield {
+        type: 'start',
+        timestamp: new Date().toISOString(),
+        model: resolvedModel,
+        provider: 'openai',
+        api_type: apiType
+      };
+
+      // Create stream based on API type
+      let stream;
+      if (shouldUseResponsesAPI) {
+        stream = await openai.responses.create(requestPayload);
+      } else {
+        stream = await openai.chat.completions.create(requestPayload);
+      }
+
+      // Process stream chunks
+      for await (const chunk of stream) {
+        try {
+          if (shouldUseResponsesAPI) {
+            // Handle Responses API streaming format
+            if (chunk.type === 'response.delta') {
+              const content = chunk.delta?.output_text || '';
+              if (content) {
+                totalContent += content;
+                yield {
+                  type: 'delta',
+                  content,
+                  timestamp: new Date().toISOString()
+                };
+              }
+            } else if (chunk.type === 'response.done') {
+              finishReason = chunk.response?.status || 'stop';
+              finalModel = chunk.response?.model || resolvedModel;
+              if (chunk.response?.usage) {
+                lastUsage = chunk.response.usage;
+              }
+            }
+          } else {
+            // Handle Chat Completions API streaming format
+            const choice = chunk.choices?.[0];
+            if (choice) {
+              const content = choice.delta?.content || '';
+              if (content) {
+                totalContent += content;
+                yield {
+                  type: 'delta',
+                  content,
+                  timestamp: new Date().toISOString()
+                };
+              }
+
+              if (choice.finish_reason) {
+                finishReason = choice.finish_reason;
+              }
+            }
+
+            // Handle usage information (typically in final chunk)
+            if (chunk.usage) {
+              lastUsage = chunk.usage;
+            }
+
+            // Update model if provided
+            if (chunk.model) {
+              finalModel = chunk.model;
+            }
+          }
+        } catch (chunkError) {
+          debugError('[OpenAI] Error processing stream chunk:', chunkError);
+          yield {
+            type: 'error',
+            error: {
+              message: `Chunk processing error: ${chunkError.message}`,
+              code: 'CHUNK_PROCESSING_ERROR',
+              recoverable: true
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+
+      const responseTime = Date.now() - startTime;
+      debugLog(`[OpenAI] Streaming completed in ${responseTime}ms`);
+
+      // Yield usage information if available
+      if (lastUsage) {
+        yield {
+          type: 'usage',
+          usage: {
+            input_tokens: lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
+            output_tokens: lastUsage.completion_tokens || lastUsage.output_tokens || 0,
+            total_tokens: lastUsage.total_tokens || 0
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      // Determine web search usage
+      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+      const webSearchType = webSearchUsed ? 'web_search_preview' : null;
+
+      // Yield end event with final metadata
+      yield {
+        type: 'end',
+        content: totalContent,
+        stop_reason: finishReason || 'stop',
+        metadata: {
+          model: finalModel,
+          usage: {
+            input_tokens: lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
+            output_tokens: lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
+            total_tokens: lastUsage?.total_tokens || 0
+          },
+          response_time_ms: responseTime,
+          finish_reason: finishReason || 'stop',
+          provider: 'openai',
+          api_type: apiType,
+          web_search_used: webSearchUsed,
+          web_search_type: webSearchType
+        },
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      debugError('[OpenAI] Streaming error:', error);
+
+      // Handle specific OpenAI errors in streaming context
+      let errorCode = 'STREAMING_ERROR';
+      let errorMessage = `OpenAI streaming error: ${error.message || 'Unknown error'}`;
+      let recoverable = false;
+
+      if (error.code === 'insufficient_quota') {
+        errorCode = 'QUOTA_EXCEEDED';
+        errorMessage = 'OpenAI API quota exceeded';
+      } else if (error.code === 'invalid_api_key') {
+        errorCode = 'INVALID_API_KEY';
+        errorMessage = 'Invalid OpenAI API key';
+      } else if (error.code === 'model_not_found') {
+        errorCode = 'MODEL_NOT_FOUND';
+        errorMessage = `Model ${resolvedModel} not found`;
+      } else if (error.code === 'context_length_exceeded') {
+        errorCode = 'CONTEXT_LENGTH_EXCEEDED';
+        errorMessage = 'Context length exceeded for model';
+      } else if (error.type === 'rate_limit_error') {
+        errorCode = 'RATE_LIMIT_EXCEEDED';
+        errorMessage = 'OpenAI rate limit exceeded';
+        recoverable = true;
+      }
+
+      yield {
+        type: 'error',
+        error: {
+          message: errorMessage,
+          code: errorCode,
+          recoverable,
+          originalError: error
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Re-throw the error to maintain existing error handling behavior
+      throw new OpenAIProviderError(errorMessage, errorCode, error);
     }
   },
 
