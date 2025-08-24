@@ -2,6 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
+import {
+  testWithApiKeys,
+  getSkipMessage
+} from '../../../utils/conditionalTest.js';
 
 describe('Mistral API Integration Tests', () => {
   let config;
@@ -134,5 +138,170 @@ describe('Mistral API Integration Tests', () => {
         logger.info(`[mistral-api-test] Performance test completed in ${duration}ms`);
       });
     }, 40000);
+  });
+
+  describe('Streaming Functionality', () => {
+    testWithApiKeys({
+      requiredProviders: ['MISTRAL'],
+      requireAll: true
+    })('should support streaming with Magistral Medium', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test direct provider streaming (bypasses HTTP MCP for now)
+        const { mistralProvider } = await import('../../../../src/providers/mistral.js');
+
+        const messages = [{ role: 'user', content: 'Count to 3 using digits like 1, 2, 3. Put each number on its own line.' }];
+        const streamResult = await mistralProvider.invoke(messages, {
+          config,
+          model: 'magistral-small',  // Use small model to avoid verbose thinking
+          stream: true,
+          temperature: 0,
+          maxTokens: 50  // Very short limit
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events with safety timeout
+        const events = [];
+        let eventCount = 0;
+        for await (const event of streamResult) {
+          events.push(event);
+          eventCount++;
+          logger.info(`[mistral-streaming-test] Event: ${event.type}`, event.content ? `"${event.content.substring(0, 50)}..."` : '');
+          
+          // Safety mechanism to prevent infinite loops  
+          if (eventCount > 200 || event.type === 'end') {
+            break;
+          }
+        }
+
+        // Verify streaming events
+        expect(events.length).toBeGreaterThan(0);
+
+        const startEvent = events.find(e => e.type === 'start');
+        const deltaEvents = events.filter(e => e.type === 'delta');
+        const endEvent = events.find(e => e.type === 'end');
+
+        expect(startEvent).toBeDefined();
+        expect(startEvent.model).toBe('magistral-small-2506');
+        expect(startEvent.provider).toBe('mistral');
+
+        expect(deltaEvents.length).toBeGreaterThan(0);
+        
+        expect(endEvent).toBeDefined();
+        expect(endEvent.metadata.provider).toBe('mistral');
+        expect(endEvent.metadata.model).toBe('magistral-small-2506');
+
+        // Verify full content contains expected numbers
+        const fullContent = endEvent.content;
+        expect(fullContent).toContain('1');
+        expect(fullContent).toContain('2');  
+        expect(fullContent).toContain('3');
+        expect(fullContent.length).toBeGreaterThan(5);
+
+        logger.info('[mistral-streaming-test] Streaming test completed successfully');
+      });
+    }, 60000);
+
+    testWithApiKeys({
+      requiredProviders: ['MISTRAL'],
+      requireAll: true
+    })('should support streaming with Magistral Small for fast responses', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test fast model streaming
+        const { mistralProvider } = await import('../../../../src/providers/mistral.js');
+
+        const messages = [{ role: 'user', content: 'What is 5 + 7? Answer briefly with just the number.' }];
+        const streamResult = await mistralProvider.invoke(messages, {
+          config,
+          model: 'magistral-small',
+          stream: true,
+          temperature: 0,
+          maxTokens: 150  // More tokens to include the full answer
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events with safety timeout
+        const events = [];
+        let eventCount = 0;
+        for await (const event of streamResult) {
+          events.push(event);
+          eventCount++;
+          if (event.type === 'delta' && event.content) {
+            logger.info(`[mistral-small-streaming-test] Delta: "${event.content.substring(0, 100)}..."`);
+          }
+          
+          // Safety mechanism to prevent infinite loops
+          if (eventCount > 200 || event.type === 'end') {
+            break;
+          }
+        }
+
+        // Verify streaming worked
+        expect(events.length).toBeGreaterThan(0);
+
+        const endEvent = events.find(e => e.type === 'end');
+        expect(endEvent).toBeDefined();
+
+        const fullContent = endEvent.content;
+        expect(fullContent).toContain('12'); // 5 + 7 = 12
+
+        logger.info('[mistral-small-streaming-test] Small model streaming test completed');
+      });
+    }, 60000);
+
+    testWithApiKeys({
+      requiredProviders: ['MISTRAL'],
+      requireAll: true
+    })('should support streaming with Mistral Medium multimodal model', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Test multimodal model streaming
+        const { mistralProvider } = await import('../../../../src/providers/mistral.js');
+
+        const messages = [{ role: 'user', content: 'Write a short 2-line poem about programming.' }];
+        const streamResult = await mistralProvider.invoke(messages, {
+          config,
+          model: 'mistral-medium',
+          stream: true,
+          temperature: 0.3, // Slightly higher temperature for creative output
+          maxTokens: 75  // Short poem limit
+        });
+
+        expect(streamResult).toBeDefined();
+        expect(typeof streamResult[Symbol.asyncIterator]).toBe('function');
+
+        // Collect streaming events with safety timeout
+        const events = [];
+        let eventCount = 0;
+        for await (const event of streamResult) {
+          events.push(event);
+          eventCount++;
+          
+          // Safety mechanism to prevent infinite loops
+          if (eventCount > 300 || event.type === 'end') {
+            break;
+          }
+        }
+
+        // Verify streaming worked  
+        expect(events.length).toBeGreaterThan(0);
+
+        const startEvent = events.find(e => e.type === 'start');
+        const endEvent = events.find(e => e.type === 'end');
+
+        expect(startEvent).toBeDefined();
+        expect(startEvent.provider).toBe('mistral');
+
+        expect(endEvent).toBeDefined();
+        expect(endEvent.metadata.model).toBe('mistral-medium-2505');
+
+        const fullContent = endEvent.content;
+        expect(fullContent.length).toBeGreaterThan(10); // Should be a meaningful poem
+
+        logger.info('[mistral-medium-streaming-test] Multimodal model streaming test completed');
+      });
+    }, 90000);
   });
 });

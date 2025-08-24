@@ -214,7 +214,7 @@ export const mistralProvider = {
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
    * @param {Object} options - Configuration options
-   * @returns {Object} - { content, stop_reason, rawResponse }
+   * @returns {Object|AsyncGenerator} - { content, stop_reason, rawResponse } or AsyncGenerator when stream=true
    */
   async invoke(messages, options = {}) {
     const {
@@ -282,13 +282,14 @@ export const mistralProvider = {
 
     // Add max tokens if specified
     if (maxTokens) {
-      requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 32768);
+      const tokenLimit = Math.min(maxTokens, modelConfig.maxOutputTokens || 32768);
+      requestPayload.max_tokens = tokenLimit;  // Standard parameter name
+      requestPayload.maxTokens = tokenLimit;   // Alternative parameter name
     }
 
-    // Note: Mistral doesn't currently support streaming in their SDK
-    // We acknowledge the stream parameter but don't use it
-    if (stream) {
-      debugLog('[Mistral] Streaming requested but not currently supported by SDK');
+    // Handle streaming requests
+    if (stream && modelConfig.supportsStreaming !== false) {
+      return this._createStreamingGenerator(mistral, requestPayload, resolvedModel, modelConfig);
     }
 
     try {
@@ -371,6 +372,158 @@ export const mistralProvider = {
         ErrorCodes.API_ERROR,
         error
       );
+    }
+  },
+
+  /**
+   * Create streaming generator for Mistral responses
+   * @param {Object} mistral - Mistral client instance
+   * @param {Object} requestPayload - Request payload for the API
+   * @param {string} resolvedModel - Resolved model name
+   * @param {Object} modelConfig - Model configuration
+   * @returns {AsyncGenerator} - Streaming generator yielding events
+   */
+  async *_createStreamingGenerator(mistral, requestPayload, resolvedModel, modelConfig) {
+    debugLog(`[Mistral] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
+
+    const startTime = Date.now();
+    let totalContent = '';
+    let finalUsage = null;
+    let finishReason = null;
+
+    try {
+      // Yield start event
+      yield {
+        type: 'start',
+        timestamp: new Date().toISOString(),
+        model: resolvedModel,
+        provider: 'mistral'
+      };
+
+      // Create stream using Mistral SDK's streaming API
+      const stream = await mistral.chat.stream(requestPayload);
+
+      // Process streaming chunks
+      for await (const chunk of stream) {
+        try {
+          // Mistral wraps the response in a "data" field
+          const chunkData = chunk.data || chunk;
+          
+          // Extract content from the chunk
+          const choice = chunkData.choices?.[0];
+          if (choice) {
+            const content = choice.delta?.content || '';
+            if (content) {
+              totalContent += content;
+              yield {
+                type: 'delta',
+                content,
+                timestamp: new Date().toISOString()
+              };
+            }
+
+            // Capture finish reason when available
+            if (choice.finish_reason || choice.finishReason) {
+              finishReason = choice.finish_reason || choice.finishReason;
+            }
+          }
+
+          // Handle usage information (typically in final chunk)
+          if (chunkData.usage) {
+            finalUsage = chunkData.usage;
+          }
+
+          // Break if we have a finish reason indicating completion
+          if (finishReason && finishReason !== null && finishReason !== 'null') {
+            break;
+          }
+        } catch (chunkError) {
+          debugError('[Mistral] Error processing stream chunk:', chunkError);
+          yield {
+            type: 'error',
+            error: {
+              message: `Chunk processing error: ${chunkError.message}`,
+              code: 'CHUNK_PROCESSING_ERROR',
+              recoverable: true
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+
+      const responseTime = Date.now() - startTime;
+      debugLog(`[Mistral] Streaming completed in ${responseTime}ms`);
+
+      // Yield usage information if available
+      if (finalUsage) {
+        yield {
+          type: 'usage',
+          usage: {
+            input_tokens: finalUsage.prompt_tokens || 0,
+            output_tokens: finalUsage.completion_tokens || 0,
+            total_tokens: finalUsage.total_tokens || 0
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      // Yield end event with final metadata
+      yield {
+        type: 'end',
+        content: totalContent,
+        stop_reason: STOP_REASON_MAP[finishReason] || StopReasons.OTHER,
+        metadata: {
+          model: resolvedModel,
+          usage: {
+            input_tokens: finalUsage?.prompt_tokens || 0,
+            output_tokens: finalUsage?.completion_tokens || 0,
+            total_tokens: finalUsage?.total_tokens || 0
+          },
+          response_time_ms: responseTime,
+          finish_reason: finishReason || 'stop',
+          provider: 'mistral'
+        },
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      debugError('[Mistral] Streaming error:', error);
+
+      // Handle specific Mistral errors in streaming context
+      let errorCode = ErrorCodes.API_ERROR;
+      let errorMessage = `Mistral streaming error: ${error.message || 'Unknown error'}`;
+      let recoverable = false;
+
+      if (error.status === 401 || error.message?.includes('Unauthorized')) {
+        errorCode = ErrorCodes.INVALID_API_KEY;
+        errorMessage = 'Invalid Mistral API key';
+      } else if (error.status === 429 || error.message?.includes('rate limit')) {
+        errorCode = ErrorCodes.RATE_LIMIT_EXCEEDED;
+        errorMessage = 'Mistral rate limit exceeded';
+        recoverable = true;
+      } else if (error.status === 403 || error.message?.includes('quota')) {
+        errorCode = ErrorCodes.QUOTA_EXCEEDED;
+        errorMessage = 'Mistral API quota exceeded';
+      } else if (error.status === 404 || error.message?.includes('model')) {
+        errorCode = ErrorCodes.MODEL_NOT_FOUND;
+        errorMessage = `Model ${resolvedModel} not found`;
+      } else if (error.message?.includes('Context length exceeded') || error.message?.includes('context')) {
+        errorCode = ErrorCodes.CONTEXT_LENGTH_EXCEEDED;
+        errorMessage = 'Context length exceeded for model';
+      }
+
+      yield {
+        type: 'error',
+        error: {
+          message: errorMessage,
+          code: errorCode,
+          recoverable
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      // Re-throw as MistralProviderError for consistency
+      throw new MistralProviderError(errorMessage, errorCode, error);
     }
   },
 
