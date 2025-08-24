@@ -556,7 +556,7 @@ export const openaiProvider = {
   async *_createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch) {
     const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
     const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
-    
+
     debugLog(`[OpenAI] Starting streaming for ${resolvedModel} via ${apiType} with ${requestPayload.input?.length || requestPayload.messages?.length} messages${searchInfo}`);
 
     const startTime = Date.now();

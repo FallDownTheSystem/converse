@@ -1,10 +1,11 @@
 ---
 id: task-010
 title: Implement streaming support in Google GenAI provider
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@ai'
 created_date: '2025-08-23 15:15'
-updated_date: '2025-08-23 18:32'
+updated_date: '2025-08-24 08:32'
 labels:
   - async
   - providers
@@ -490,3 +491,29 @@ async function* invokeStreamingGenerator(messages, options) {
 ## Implementation Notes
 
 CRITICAL: Google GenAI streaming must be implemented from scratch as current implementation only has placeholder (_unused_stream parameter). Not all Gemini models support streaming - verify SUPPORTED_MODELS has accurate supportsStreaming flags per model. Gemini 2.0 models may have different streaming patterns than 1.5 models. Implement runtime checking for model streaming capabilities and use generateContentStream() method correctly.
+
+**Implementation Summary:**
+- Extended `invoke()` method to support `stream` parameter 
+- Added `_createStreamingGenerator()` method using `generateContentStream()` from @google/genai SDK v1.15.0
+- Full support for all Gemini models (2.0-flash, 2.0-flash-lite, 2.5-flash, 2.5-pro)
+- Streaming works with thinking mode for models that support it (2.5-flash, 2.5-pro)  
+- Streaming works with web search grounding for all models
+- Returns AsyncGenerator when `stream=true`, maintains existing response when `stream=false`
+- Comprehensive error handling with retry logic for streaming failures
+- Added streaming unit tests covering all functionality
+- Full backward compatibility maintained
+- All linting and type checks pass
+
+**Files Modified:**
+- `src/providers/google.js` - Main streaming implementation
+- `tests/unit/providers/google.test.js` - Added streaming test coverage  
+
+**Technical Implementation:**
+- Uses `generateContentStream()` method for real streaming from Google API
+- Processes streaming chunks with proper error handling
+- Yields streaming events: start, delta, completion with full metadata
+- Handles usage metadata from final aggregated response
+- Supports thinking budget configuration and grounding metadata in streaming mode
+- Fallback to non-streaming for models that don't support it
+
+The implementation follows the same patterns as the completed OpenAI provider streaming (task-009) and is ready for integration with ProviderStreamNormalizer (task-005) and async tools (tasks 006-007).

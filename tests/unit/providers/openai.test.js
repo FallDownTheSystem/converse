@@ -399,7 +399,7 @@ describe('OpenAI Provider', () => {
 
     it('should return AsyncGenerator when stream=true', async () => {
       const OpenAI = (await import('openai')).default;
-      
+
       // Create mock stream for Chat Completions API
       const mockStreamChunks = [
         {
@@ -459,7 +459,7 @@ describe('OpenAI Provider', () => {
 
         // Verify event structure
         expect(events).toHaveLength(6); // start, 3 deltas, usage, end
-        
+
         expect(events[0]).toMatchObject({
           type: 'start',
           model: 'gpt-4o-mini',
@@ -510,7 +510,7 @@ describe('OpenAI Provider', () => {
 
     it('should handle Responses API streaming format', async () => {
       const OpenAI = (await import('openai')).default;
-      
+
       // Create mock stream for Responses API
       const mockStreamChunks = [
         {
@@ -561,7 +561,7 @@ describe('OpenAI Provider', () => {
 
       // Verify event structure for Responses API
       expect(events).toHaveLength(5); // start, 2 deltas, usage, end
-      
+
       expect(events[0]).toMatchObject({
         type: 'start',
         model: 'gpt-5',
@@ -591,7 +591,7 @@ describe('OpenAI Provider', () => {
 
     it('should handle streaming errors gracefully', async () => {
       const OpenAI = (await import('openai')).default;
-      
+
       const streamError = Object.assign(new Error('Stream error'), {
         type: 'rate_limit_error',
         code: 'rate_limit_exceeded'
@@ -673,7 +673,7 @@ describe('OpenAI Provider', () => {
 
     it('should include usage reporting for Chat Completions API streaming', async () => {
       const OpenAI = (await import('openai')).default;
-      
+
       const mockStreamChunks = [
         {
           choices: [{ delta: { content: 'test' }, finish_reason: 'stop' }],
@@ -714,17 +714,17 @@ describe('OpenAI Provider', () => {
         const iterator = result[Symbol.asyncIterator]();
         const firstEvent = await iterator.next();
         expect(firstEvent.value.type).toBe('start'); // Verify it's streaming
-        
+
         // Consume one more event to trigger the actual API call (which happens after start event)
         const secondEvent = await iterator.next();
-        
+
         // Verify Chat Completions API was called with usage reporting
         expect(mockChatCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             stream_options: { include_usage: true }
           })
         );
-        
+
         // Verify Responses API was not called
         expect(mockResponsesCreate).not.toHaveBeenCalled();
       } finally {

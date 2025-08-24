@@ -327,14 +327,14 @@ export const googleProvider = {
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
    * @param {Object} options - Configuration options
-   * @returns {Object} - { content, stop_reason, rawResponse }
+   * @returns {Object|AsyncGenerator} - { content, stop_reason, rawResponse } or AsyncGenerator when stream=true
    */
   async invoke(messages, options = {}) {
     const {
       model = 'gemini-2.5-flash',
       temperature = 0.7,
       maxTokens = null,
-      stream: _unused_stream = false, // Acknowledged but not used yet
+      stream = false,
       reasoning_effort = 'medium',
       use_websearch = false,
       config,
@@ -426,6 +426,16 @@ export const googleProvider = {
       generationConfig.tools = [{ googleSearch: {} }];
     }
 
+    // Handle streaming requests
+    if (stream) {
+      // Check if model supports streaming
+      if (modelConfig.supportsStreaming === false) {
+        debugLog(`[Google] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      } else {
+        return this._createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch);
+      }
+    }
+
     try {
       debugLog(`[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
 
@@ -498,6 +508,161 @@ export const googleProvider = {
       throw new GoogleProviderError(
         `Google API error: ${error.message || 'Unknown error'}`,
         'API_ERROR',
+        error
+      );
+    }
+  },
+
+  /**
+   * Create streaming generator for Google provider
+   * @param {Object} genAI - GoogleGenAI instance
+   * @param {string} resolvedModel - Resolved model name
+   * @param {Array} geminiContents - Converted messages for Gemini format
+   * @param {Object} generationConfig - Generation configuration
+   * @param {Object} modelConfig - Model configuration
+   * @param {string} reasoning_effort - Reasoning effort level
+   * @param {boolean} use_websearch - Whether web search is enabled
+   * @returns {AsyncGenerator} - Streaming generator yielding chunks
+   */
+  async *_createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch) {
+    debugLog(`[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
+
+    const startTime = Date.now();
+    let totalContent = '';
+    let finalUsage = null;
+    let finishReason = null;
+    let groundingMetadata = null;
+
+    try {
+      // Yield start event
+      yield {
+        type: 'start',
+        timestamp: new Date().toISOString(),
+        model: resolvedModel,
+        provider: 'google',
+        thinking_mode: modelConfig.supportsThinking && reasoning_effort,
+        web_search: use_websearch && modelConfig.supportsWebSearch
+      };
+
+      // Create streaming request with retry logic
+      const streamResult = await retryWithBackoff(async () => {
+        return await genAI.models.generateContentStream({
+          model: resolvedModel,
+          contents: geminiContents,
+          config: generationConfig
+        });
+      });
+
+      // Process streaming chunks
+      for await (const chunk of streamResult) {
+        try {
+          const content = chunk.text || '';
+
+          if (content) {
+            totalContent += content;
+
+            yield {
+              type: 'delta',
+              content,
+              timestamp: new Date().toISOString(),
+              model: resolvedModel,
+              provider: 'google'
+            };
+          }
+
+          // Check for finish reason in chunk
+          if (chunk.candidates?.[0]?.finishReason) {
+            finishReason = chunk.candidates[0].finishReason;
+          }
+
+        } catch (chunkError) {
+          debugError('[Google] Error processing streaming chunk:', chunkError);
+          yield {
+            type: 'error',
+            error: chunkError.message,
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+
+      // Get final aggregated response for metadata
+      try {
+        const finalResponse = await streamResult.response;
+
+        // Extract usage metadata from final response
+        finalUsage = {
+          input_tokens: finalResponse.usageMetadata?.promptTokenCount || 0,
+          output_tokens: finalResponse.usageMetadata?.candidatesTokenCount || 0,
+          total_tokens: finalResponse.usageMetadata?.totalTokenCount || 0
+        };
+
+        // Extract grounding metadata if web search was used
+        if (use_websearch && modelConfig.supportsWebSearch) {
+          groundingMetadata = finalResponse.groundingMetadata || null;
+        }
+
+        // Use finish reason from final response if not already set
+        if (!finishReason && finalResponse.candidates?.[0]?.finishReason) {
+          finishReason = finalResponse.candidates[0].finishReason;
+        }
+
+      } catch (finalResponseError) {
+        debugError('[Google] Error getting final response metadata:', finalResponseError);
+      }
+
+      const responseTime = Date.now() - startTime;
+
+      // Yield completion event with metadata
+      yield {
+        type: 'completion',
+        content: totalContent,
+        stop_reason: finishReason || 'STOP',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          model: resolvedModel,
+          usage: finalUsage || { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
+          response_time_ms: responseTime,
+          finish_reason: finishReason || 'STOP',
+          reasoning_effort: modelConfig.supportsThinking ? reasoning_effort : null,
+          provider: 'google',
+          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+          grounding_metadata: groundingMetadata,
+          thinking_mode_enabled: !!(modelConfig.supportsThinking && reasoning_effort)
+        }
+      };
+
+      debugLog(`[Google] Streaming completed in ${responseTime}ms, ${finalUsage?.total_tokens || 0} total tokens`);
+
+    } catch (error) {
+      debugError('[Google] Streaming error:', error);
+
+      // Yield error event
+      yield {
+        type: 'error',
+        error: error.message || 'Unknown streaming error',
+        timestamp: new Date().toISOString(),
+        provider: 'google'
+      };
+
+      // Re-throw with proper error handling
+      if (error.message?.includes('quota') || error.message?.includes('QUOTA_EXCEEDED')) {
+        throw new GoogleProviderError('Google API quota exceeded', 'QUOTA_EXCEEDED', error);
+      } else if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid api key')) {
+        throw new GoogleProviderError('Invalid Google API key', 'INVALID_API_KEY', error);
+      } else if (error.message?.includes('MODEL_NOT_FOUND')) {
+        throw new GoogleProviderError(`Model ${resolvedModel} not found`, 'MODEL_NOT_FOUND', error);
+      } else if (error.message?.includes('CONTEXT_LENGTH_EXCEEDED')) {
+        throw new GoogleProviderError('Context length exceeded for model', 'CONTEXT_LENGTH_EXCEEDED', error);
+      } else if (error.message?.includes('SAFETY')) {
+        throw new GoogleProviderError('Content blocked by safety filters', 'SAFETY_ERROR', error);
+      } else if (error.message?.includes('RATE_LIMIT_EXCEEDED')) {
+        throw new GoogleProviderError('Google rate limit exceeded', 'RATE_LIMIT_EXCEEDED', error);
+      }
+
+      // Generic error handling
+      throw new GoogleProviderError(
+        `Google streaming error: ${error.message || 'Unknown error'}`,
+        'STREAMING_ERROR',
         error
       );
     }
