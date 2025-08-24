@@ -462,19 +462,13 @@ export const openaiProvider = {
       // Make the API call based on API type
       let response;
       if (shouldUseResponsesAPI) {
-        // Add signal to the request payload for Responses API
-        const requestWithSignal = { ...requestPayload };
-        if (signal) {
-          requestWithSignal.signal = signal;
-        }
-        response = await openai.responses.create(requestWithSignal);
+        // The signal is used internally by the OpenAI SDK for cancellation
+        // Don't pass it as a parameter to the API
+        response = await openai.responses.create(requestPayload);
       } else {
-        // Add signal to the request payload for Chat Completions API
-        const requestWithSignal = { ...requestPayload };
-        if (signal) {
-          requestWithSignal.signal = signal;
-        }
-        response = await openai.chat.completions.create(requestWithSignal);
+        // The signal is used internally by the OpenAI SDK for cancellation
+        // Don't pass it as a parameter to the API
+        response = await openai.chat.completions.create(requestPayload);
       }
 
       const responseTime = Date.now() - startTime;
@@ -599,19 +593,13 @@ export const openaiProvider = {
       // Create stream based on API type
       let stream;
       if (shouldUseResponsesAPI) {
-        // Add signal to the request payload for Responses API
-        const requestWithSignal = { ...requestPayload };
-        if (signal) {
-          requestWithSignal.signal = signal;
-        }
-        stream = await openai.responses.create(requestWithSignal);
+        // The signal is used internally by the OpenAI SDK for cancellation
+        // Don't pass it as a parameter to the API
+        stream = await openai.responses.create(requestPayload);
       } else {
-        // Add signal to the request payload for Chat Completions API
-        const requestWithSignal = { ...requestPayload };
-        if (signal) {
-          requestWithSignal.signal = signal;
-        }
-        stream = await openai.chat.completions.create(requestWithSignal);
+        // The signal is used internally by the OpenAI SDK for cancellation
+        // Don't pass it as a parameter to the API
+        stream = await openai.chat.completions.create(requestPayload);
       }
 
       // Process stream chunks

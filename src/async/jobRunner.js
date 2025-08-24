@@ -89,10 +89,13 @@ export class JobRunner extends EventEmitter {
    */
   async submit(jobSpec, runFunction, options = {}) {
     try {
+      // Debug log the jobSpec
+      debugLog(`JobRunner: Received jobSpec:`, jobSpec);
+      
       // Validate parameters
-      if (!jobSpec || !jobSpec.sessionId || !jobSpec.tool) {
+      if (!jobSpec || !jobSpec.tool) {
         throw new JobRunnerError(
-          'Invalid job specification: sessionId and tool are required',
+          'Invalid job specification: tool is required',
           'INVALID_JOB_SPEC'
         );
       }
@@ -106,7 +109,6 @@ export class JobRunner extends EventEmitter {
 
       // Create job in store
       const jobId = await this.asyncJobStore.create(
-        jobSpec.sessionId,
         jobSpec.tool,
         {
           timeout: options.timeout || this.defaultTimeout,
@@ -266,8 +268,7 @@ export class JobRunner extends EventEmitter {
 
       this.activeJobs.set(jobId, {
         startedAt: Date.now(),
-        tool: jobState.tool,
-        sessionId: jobState.sessionId,
+        tool: jobState.tool
       });
 
       // Emit job started event through EventBus
@@ -278,7 +279,6 @@ export class JobRunner extends EventEmitter {
       // Also emit through local EventEmitter for backward compatibility
       this.emit('job.started', {
         jobId,
-        sessionId: jobState.sessionId,
         tool: jobState.tool,
         timestamp: Date.now(),
       });
@@ -296,7 +296,6 @@ export class JobRunner extends EventEmitter {
         // Create execution context for the run function
         const context = {
           jobId,
-          sessionId: jobState.sessionId,
           tool: jobState.tool,
           signal,
           updateJob: (updates) => this.asyncJobStore.update(jobId, updates),
@@ -327,7 +326,6 @@ export class JobRunner extends EventEmitter {
         // Also emit through local EventEmitter for backward compatibility
         this.emit('job.completed', {
           jobId,
-          sessionId: jobState.sessionId,
           tool: jobState.tool,
           result: result ? 'present' : 'null',
           timestamp: Date.now(),
@@ -380,7 +378,6 @@ export class JobRunner extends EventEmitter {
         // Also emit through local EventEmitter for backward compatibility
         this.emit('job.failed', {
           jobId,
-          sessionId: jobState.sessionId,
           tool: jobState.tool,
           error: executionError.message,
           timestamp: Date.now(),

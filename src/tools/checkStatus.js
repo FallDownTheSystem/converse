@@ -24,13 +24,7 @@ export async function checkStatusTool(args, dependencies) {
   const startTime = Date.now();
 
   try {
-    const { config, request } = dependencies;
-    
-    // Get session ID from request headers
-    const sessionId = request?.headers?.['mcp-session-id'];
-    if (!sessionId) {
-      return createToolError('Session ID is required for job status queries');
-    }
+    const { config } = dependencies;
 
     // Extract and validate arguments
     const {
@@ -58,7 +52,6 @@ export async function checkStatusTool(args, dependencies) {
     const fileCache = getFileCache();
 
     debugLog('checkStatus', 'Processing status query', {
-      sessionId,
       continuation_id,
       since_seq,
       include_events,
@@ -70,7 +63,6 @@ export async function checkStatusTool(args, dependencies) {
       // Query specific job by continuation_id
       const jobStatus = await querySpecificJob(
         continuation_id,
-        sessionId,
         asyncJobStore,
         fileCache,
         {
@@ -100,15 +92,13 @@ export async function checkStatusTool(args, dependencies) {
         metadata_display: metadataDisplay,
         metadata: {
           continuation_id,
-          execution_time: executionTime,
-          session_id: sessionId
+          execution_time: executionTime
         }
       });
 
     } else {
-      // List all active/recent jobs for session
-      const jobsList = await listSessionJobs(
-        sessionId,
+      // List all active/recent jobs
+      const jobsList = await listAllJobs(
         asyncJobStore,
         fileCache,
         {
@@ -135,7 +125,6 @@ export async function checkStatusTool(args, dependencies) {
         metadata_display: metadataDisplay,
         metadata: {
           execution_time: executionTime,
-          session_id: sessionId,
           total_jobs: jobsList.jobs.length
         }
       });
@@ -148,48 +137,29 @@ export async function checkStatusTool(args, dependencies) {
 }
 
 /**
- * Query specific job by continuation_id with session ownership verification
+ * Query specific job by continuation_id
  * @param {string} continuationId - Job continuation ID
- * @param {string} sessionId - Session ID for ownership verification
  * @param {object} asyncJobStore - Async job store instance
  * @param {object} fileCache - File cache instance
  * @param {object} options - Query options
- * @returns {object|null} Job status or null if not found/access denied
+ * @returns {object|null} Job status or null if not found
  */
-async function querySpecificJob(continuationId, sessionId, asyncJobStore, fileCache, options = {}) {
+async function querySpecificJob(continuationId, asyncJobStore, fileCache, options = {}) {
   try {
     // First try memory store (AsyncJobStore)
     const memoryJob = await asyncJobStore.get(continuationId);
     if (memoryJob) {
-      // Verify session ownership
-      if (memoryJob.sessionId !== sessionId) {
-        debugLog('checkStatus', 'Access denied: session mismatch', {
-          requestSession: sessionId,
-          jobSession: memoryJob.sessionId
-        });
-        return null;
-      }
-
       return formatJobStatus(memoryJob, options);
     }
 
     // Fallback to FileCache for completed jobs
     const fileJob = await fileCache.readSnapshot(continuationId);
     if (fileJob) {
-      // Verify session ownership
-      if (fileJob.sessionId !== sessionId) {
-        debugLog('checkStatus', 'Access denied: session mismatch in file cache', {
-          requestSession: sessionId,
-          jobSession: fileJob.sessionId
-        });
-        return null;
-      }
-
       return formatJobStatus(fileJob, options);
     }
 
     // Job not found
-    debugLog('checkStatus', 'Job not found', { continuationId, sessionId });
+    debugLog('checkStatus', 'Job not found', { continuationId });
     return null;
 
   } catch (error) {
@@ -199,14 +169,13 @@ async function querySpecificJob(continuationId, sessionId, asyncJobStore, fileCa
 }
 
 /**
- * List all active/recent jobs for session
- * @param {string} sessionId - Session ID
+ * List all active/recent jobs
  * @param {object} asyncJobStore - Async job store instance
  * @param {object} fileCache - File cache instance
  * @param {object} options - Query options
  * @returns {object} Jobs list with summary
  */
-async function listSessionJobs(sessionId, asyncJobStore, fileCache, options = {}) {
+async function listAllJobs(asyncJobStore, fileCache, options = {}) {
   try {
     const jobs = [];
     const summary = {
@@ -221,10 +190,10 @@ async function listSessionJobs(sessionId, asyncJobStore, fileCache, options = {}
     const storeStats = await asyncJobStore.getStats();
     debugLog('checkStatus', 'AsyncJobStore stats:', storeStats);
 
-    // Get jobs for this session from AsyncJobStore
-    const sessionJobs = await getAllJobsFromStore(asyncJobStore, sessionId, options);
+    // Get all jobs from AsyncJobStore
+    const allJobs = await getAllJobsFromStore(asyncJobStore, options);
 
-    for (const job of sessionJobs) {
+    for (const job of allJobs) {
       const formattedJob = formatJobStatus(job, options);
       jobs.push(formattedJob);
       
@@ -260,7 +229,6 @@ async function listSessionJobs(sessionId, asyncJobStore, fileCache, options = {}
       jobs,
       summary,
       query_options: {
-        session_id: sessionId,
         since_seq: options.since_seq,
         include_events: options.include_events,
         include_output: options.include_output,
@@ -276,21 +244,20 @@ async function listSessionJobs(sessionId, asyncJobStore, fileCache, options = {}
 }
 
 /**
- * Get all jobs from AsyncJobStore for a specific session
+ * Get all jobs from AsyncJobStore
  * @param {object} asyncJobStore - Async job store instance
- * @param {string} sessionId - Session ID to filter by
  * @param {object} options - Query options
- * @returns {Array} Array of jobs for the session
+ * @returns {Array} Array of all jobs
  */
-async function getAllJobsFromStore(asyncJobStore, sessionId, options = {}) {
+async function getAllJobsFromStore(asyncJobStore, options = {}) {
   try {
-    return await asyncJobStore.getJobsBySession(sessionId, {
+    return await asyncJobStore.getAllJobs({
       limit: options.max_results || 50,
       sortBy: 'updatedAt',
       sortOrder: 'desc'
     });
   } catch (error) {
-    debugError('checkStatus', 'Error getting jobs by session:', error);
+    debugError('checkStatus', 'Error getting all jobs:', error);
     return [];
   }
 }
@@ -333,6 +300,11 @@ function formatJobStatus(job, options = {}) {
   // Include output if requested and available
   if (options.include_output && job.overall?.result) {
     formatted.result = job.overall.result;
+    
+    // Also include metadata from the result if available
+    if (job.overall.result.metadata) {
+      formatted.metadata = job.overall.result.metadata;
+    }
   }
 
   // Include events if requested
@@ -352,14 +324,14 @@ function formatJobStatus(job, options = {}) {
 }
 
 // Tool metadata and input schema
-checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list all jobs for your session. Supports incremental polling and detailed progress information.';
+checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list all active jobs. Supports incremental polling and detailed progress information.';
 
 checkStatusTool.inputSchema = {
   type: 'object',
   properties: {
     continuation_id: {
       type: 'string',
-      description: 'Optional job continuation ID to query. If not provided, returns all active/recent jobs for your session.'
+      description: 'Optional job continuation ID to query. If not provided, returns all active/recent jobs.'
     },
     since_seq: {
       type: 'integer',
@@ -381,7 +353,7 @@ checkStatusTool.inputSchema = {
       minimum: 1,
       maximum: 100,
       default: 50,
-      description: 'Maximum number of jobs to return when listing session jobs (ignored when querying specific job).'
+      description: 'Maximum number of jobs to return when listing all jobs (ignored when querying specific job).'
     }
   },
   additionalProperties: false

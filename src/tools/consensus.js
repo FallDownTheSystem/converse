@@ -64,9 +64,12 @@ export async function consensusTool(args, dependencies) {
         // Submit background job
         const jobId = await jobRunner.submit(
           {
-            sessionId: bgContinuationId,
             tool: 'consensus',
-            options: args
+            sessionId: dependencies.sessionId || 'local-user',
+            options: {
+              ...args,
+              jobId: bgContinuationId // Use continuation ID as job ID
+            }
           },
           async (context) => {
             // Execute consensus in background using stream normalizer
@@ -81,9 +84,15 @@ export async function consensusTool(args, dependencies) {
           }
         );
 
-        // Return immediate response with continuation_id
+        // Return immediate response with continuation_id as JSON
         return createToolResponse({
-          content: 'Consensus request submitted for background processing',
+          content: JSON.stringify({
+            message: 'Consensus request submitted for background processing',
+            continuation_id: bgContinuationId,
+            job_id: jobId,
+            status: 'processing',
+            async_execution: true
+          }),
           continuation: {
             id: bgContinuationId,
             job_id: jobId,

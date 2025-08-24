@@ -1,10 +1,9 @@
 /**
- * EventBus System - Job Lifecycle Event Communication
+ * EventBus System - Job Lifecycle Event Communication (Simplified for Single-User)
  *
  * Provides event system for broadcasting job lifecycle events throughout the async execution system.
+ * Simplified version without session management for single-user local MCP server.
  * Uses Node.js EventEmitter pattern to decouple components and enable structured event handling.
- * Supports typed events for job creation, updates, completion, and errors with session-based filtering.
- * Communication backbone between JobRunner, AsyncJobStore, and other system components.
  */
 
 import { EventEmitter } from 'events';
@@ -34,8 +33,8 @@ export class EventBusError extends Error {
 }
 
 /**
- * EventBus class extending Node.js EventEmitter for job lifecycle events
- * Provides session-based filtering, memory management, and structured event handling
+ * Simplified EventBus class for single-user local MCP server
+ * No session management needed - just job lifecycle events
  */
 export class EventBus extends EventEmitter {
   /**
@@ -43,9 +42,6 @@ export class EventBus extends EventEmitter {
    * @param {object} options - Configuration options
    * @param {number} options.maxListeners - Maximum listeners per event type (default: 100)
    * @param {number} options.maxEventHistory - Maximum events to keep in history per job (default: 100)
-   * @param {number} options.maxPayloadSize - Maximum payload size in bytes (default: 1MB)
-   * @param {number} options.rateLimit - Max events per second per session (default: 100)
-   * @param {number} options.sessionTimeout - Session timeout in ms (default: 24 hours)
    */
   constructor(options = {}) {
     super();
@@ -53,46 +49,32 @@ export class EventBus extends EventEmitter {
     // Configuration
     this.maxListeners = options.maxListeners || 100;
     this.maxEventHistory = options.maxEventHistory || 100;
-    this.maxPayloadSize = options.maxPayloadSize || 1024 * 1024; // 1MB
-    this.rateLimit = options.rateLimit || 100; // events per second
-    this.sessionTimeout = options.sessionTimeout || 24 * 60 * 60 * 1000; // 24 hours
 
     // Set max listeners to prevent memory warnings
     this.setMaxListeners(this.maxListeners);
 
-    // Session-based listener tracking for cleanup
-    this.sessionListeners = new Map(); // sessionId -> Set of listener metadata
-    this.sessionLastActivity = new Map(); // sessionId -> timestamp
+    // Event history tracking
     this.eventHistory = new Map(); // jobId -> Array of events
-    this.rateLimitCounters = new Map(); // sessionId -> { count, resetTime }
 
     // Statistics tracking
     this.stats = {
       eventsEmitted: 0,
       listenersAdded: 0,
       listenersRemoved: 0,
-      sessionsActive: 0,
       memoryUsage: 0,
     };
 
-    // Start cleanup timer for expired sessions
-    this.cleanupTimer = setInterval(() => {
-      this._cleanupExpiredSessions();
-    }, 10 * 60 * 1000); // Every 10 minutes
-
-    debugLog('EventBus: Initialized with session-based filtering and memory management');
+    debugLog('EventBus: Initialized (simplified for single-user)');
   }
 
   /**
    * Emit a job created event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
    * @param {object} data - Event data
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobCreated(jobId, sessionId, data = {}) {
-    return this._emitJobEvent(EVENT_TYPES.JOB_CREATED, jobId, sessionId, {
+  emitJobCreated(jobId, data = {}) {
+    return this._emitJobEvent(EVENT_TYPES.JOB_CREATED, jobId, {
       tool: data.tool,
       options: data.options,
       timestamp: Date.now(),
@@ -103,13 +85,11 @@ export class EventBus extends EventEmitter {
   /**
    * Emit a job updated event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
    * @param {object} data - Update data
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobUpdated(jobId, sessionId, data = {}) {
-    return this._emitJobEvent(EVENT_TYPES.JOB_UPDATED, jobId, sessionId, {
+  emitJobUpdated(jobId, data = {}) {
+    return this._emitJobEvent(EVENT_TYPES.JOB_UPDATED, jobId, {
       progress: data.progress,
       status: data.status,
       providers: data.providers,
@@ -121,49 +101,47 @@ export class EventBus extends EventEmitter {
   /**
    * Emit a job completed event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
-   * @param {object} result - Job result
+   * @param {*} result - Job result
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobCompleted(jobId, sessionId, result) {
-    return this._emitJobEvent(EVENT_TYPES.JOB_COMPLETED, jobId, sessionId, {
-      result: result ? 'present' : 'null',
-      hasResult: Boolean(result),
+  emitJobCompleted(jobId, result) {
+    return this._emitJobEvent(EVENT_TYPES.JOB_COMPLETED, jobId, {
+      result,
       timestamp: Date.now(),
+      duration: this._calculateDuration(jobId)
     });
   }
 
   /**
    * Emit a job failed event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
-   * @param {Error|object} error - Error information
+   * @param {Error|string} error - Error information
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobFailed(jobId, sessionId, error) {
-    const errorInfo = error instanceof Error
-      ? { message: error.message, name: error.name, code: error.code }
-      : error;
+  emitJobFailed(jobId, error) {
+    const errorData = error instanceof Error ? {
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR',
+      stack: error.stack
+    } : { message: String(error) };
 
-    return this._emitJobEvent(EVENT_TYPES.JOB_FAILED, jobId, sessionId, {
-      error: errorInfo,
+    return this._emitJobEvent(EVENT_TYPES.JOB_FAILED, jobId, {
+      error: errorData,
       timestamp: Date.now(),
+      duration: this._calculateDuration(jobId)
     });
   }
 
   /**
    * Emit a job cancelled event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
-   * @param {object} data - Cancellation data
+   * @param {object} data - Event data
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobCancelled(jobId, sessionId, data = {}) {
-    return this._emitJobEvent(EVENT_TYPES.JOB_CANCELLED, jobId, sessionId, {
-      reason: data.reason || 'User cancellation',
+  emitJobCancelled(jobId, data = {}) {
+    return this._emitJobEvent(EVENT_TYPES.JOB_CANCELLED, jobId, {
+      reason: data.reason || 'User cancelled',
+      partial_result: data.partial_result,
       timestamp: Date.now(),
       ...data
     });
@@ -172,13 +150,11 @@ export class EventBus extends EventEmitter {
   /**
    * Emit a job started event
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
-   * @param {object} data - Start data
+   * @param {object} data - Event data
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    */
-  emitJobStarted(jobId, sessionId, data = {}) {
-    return this._emitJobEvent(EVENT_TYPES.JOB_STARTED, jobId, sessionId, {
+  emitJobStarted(jobId, data = {}) {
+    return this._emitJobEvent(EVENT_TYPES.JOB_STARTED, jobId, {
       tool: data.tool,
       timestamp: Date.now(),
       ...data
@@ -186,489 +162,205 @@ export class EventBus extends EventEmitter {
   }
 
   /**
-   * Add a session-scoped event listener
-   * @param {string} sessionId - Session identifier
+   * Register a listener for job events
    * @param {string} eventType - Event type to listen for
-   * @param {Function} callback - Callback function
-   * @returns {EventBus} This instance for chaining
-   * @throws {EventBusError} If adding listener fails
+   * @param {Function} listener - Callback function
+   * @returns {Function} Unsubscribe function
    */
-  addSessionListener(sessionId, eventType, callback) {
-    try {
-      this._validateSessionId(sessionId);
-      this._validateEventType(eventType);
-      this._validateCallback(callback);
-
-      // Create wrapped callback that filters by session
-      const wrappedCallback = (eventData) => {
-        if (eventData.sessionId === sessionId) {
-          callback(eventData);
-        }
-      };
-
-      // Store listener metadata for cleanup
-      if (!this.sessionListeners.has(sessionId)) {
-        this.sessionListeners.set(sessionId, new Set());
-        this.stats.sessionsActive++;
-      }
-
-      const listenerMetadata = {
-        eventType,
-        originalCallback: callback,
-        wrappedCallback,
-        addedAt: Date.now(),
-      };
-
-      this.sessionListeners.get(sessionId).add(listenerMetadata);
-      this.sessionLastActivity.set(sessionId, Date.now());
-
-      // Add the wrapped listener
-      this.on(eventType, wrappedCallback);
-
-      this.stats.listenersAdded++;
-      debugLog(`EventBus: Added session listener for ${sessionId} on ${eventType}`);
-
-      return this;
-
-    } catch (error) {
-      if (error instanceof EventBusError) {
-        throw error;
-      }
+  onJobEvent(eventType, listener) {
+    if (!Object.values(EVENT_TYPES).includes(eventType)) {
       throw new EventBusError(
-        `Failed to add session listener: ${error.message}`,
-        'ADD_LISTENER_FAILED'
+        `Invalid event type: ${eventType}`,
+        'INVALID_EVENT_TYPE'
       );
     }
-  }
 
-  /**
-   * Remove a specific session-scoped event listener
-   * @param {string} sessionId - Session identifier
-   * @param {string} eventType - Event type
-   * @param {Function} callback - Original callback function
-   * @returns {boolean} True if listener was removed
-   */
-  removeSessionListener(sessionId, eventType, callback) {
-    try {
-      this._validateSessionId(sessionId);
-      this._validateEventType(eventType);
-
-      const listeners = this.sessionListeners.get(sessionId);
-      if (!listeners) {
-        return false;
-      }
-
-      // Find matching listener metadata
-      let removedCount = 0;
-      for (const metadata of listeners) {
-        if (metadata.eventType === eventType && metadata.originalCallback === callback) {
-          // Remove the wrapped listener
-          this.off(eventType, metadata.wrappedCallback);
-          listeners.delete(metadata);
-          removedCount++;
-          this.stats.listenersRemoved++;
-        }
-      }
-
-      // Clean up session if no more listeners
-      if (listeners.size === 0) {
-        this.sessionListeners.delete(sessionId);
-        this.sessionLastActivity.delete(sessionId);
-        this.stats.sessionsActive--;
-      } else {
-        this.sessionLastActivity.set(sessionId, Date.now());
-      }
-
-      if (removedCount > 0) {
-        debugLog(`EventBus: Removed ${removedCount} session listener(s) for ${sessionId} on ${eventType}`);
-      }
-
-      return removedCount > 0;
-
-    } catch (error) {
-      debugError('EventBus: Failed to remove session listener:', error);
-      return false;
+    if (typeof listener !== 'function') {
+      throw new EventBusError(
+        'Listener must be a function',
+        'INVALID_LISTENER'
+      );
     }
+
+    this.on(eventType, listener);
+    this.stats.listenersAdded++;
+
+    // Return unsubscribe function
+    return () => {
+      this.off(eventType, listener);
+      this.stats.listenersRemoved++;
+    };
   }
 
   /**
-   * Remove all event listeners for a session
-   * @param {string} sessionId - Session identifier
-   * @returns {number} Number of listeners removed
-   */
-  removeAllSessionListeners(sessionId) {
-    try {
-      this._validateSessionId(sessionId);
-
-      const listeners = this.sessionListeners.get(sessionId);
-      if (!listeners) {
-        return 0;
-      }
-
-      let removedCount = 0;
-
-      // Remove all wrapped listeners
-      for (const metadata of listeners) {
-        this.off(metadata.eventType, metadata.wrappedCallback);
-        removedCount++;
-        this.stats.listenersRemoved++;
-      }
-
-      // Clean up session tracking
-      this.sessionListeners.delete(sessionId);
-      this.sessionLastActivity.delete(sessionId);
-      this.rateLimitCounters.delete(sessionId);
-      this.stats.sessionsActive--;
-
-      debugLog(`EventBus: Removed all ${removedCount} listeners for session ${sessionId}`);
-      return removedCount;
-
-    } catch (error) {
-      debugError(`EventBus: Failed to remove all session listeners for ${sessionId}:`, error);
-      return 0;
-    }
-  }
-
-  /**
-   * Get event history for a job (session-filtered)
+   * Get event history for a specific job
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier (for filtering)
-   * @param {number} limit - Maximum number of events to return
-   * @returns {Array} Array of events
+   * @returns {Array} Array of events for the job
    */
-  getEventHistory(jobId, sessionId, limit = 100) {
-    try {
-      this._validateJobId(jobId);
-      this._validateSessionId(sessionId);
-
-      const events = this.eventHistory.get(jobId) || [];
-
-      // Filter by session and apply limit
-      const filteredEvents = events
-        .filter(event => event.sessionId === sessionId)
-        .slice(-limit)
-        .sort((a, b) => a.timestamp - b.timestamp);
-
-      return filteredEvents;
-
-    } catch (error) {
-      debugError(`EventBus: Failed to get event history for job ${jobId}:`, error);
-      return [];
-    }
+  getJobHistory(jobId) {
+    return this.eventHistory.get(jobId) || [];
   }
 
   /**
-   * Get EventBus statistics
-   * @returns {object} Statistics object
+   * Clear event history for a specific job
+   * @param {string} jobId - Job identifier
+   */
+  clearJobHistory(jobId) {
+    this.eventHistory.delete(jobId);
+  }
+
+  /**
+   * Get current statistics
+   * @returns {object} Current EventBus statistics
    */
   getStats() {
     return {
       ...this.stats,
-      totalSessions: this.sessionListeners.size,
-      totalEventHistory: this.eventHistory.size,
-      activeRateCounters: this.rateLimitCounters.size,
-      maxListeners: this.maxListeners,
-      currentListenerCount: this.listenerCount,
-      memoryUsage: process.memoryUsage(),
+      totalListeners: this.listenerCount(),
+      eventHistorySize: this.eventHistory.size,
+      memoryUsage: this._calculateMemoryUsage()
     };
   }
 
   /**
-   * Shutdown the EventBus and clean up resources
-   * @returns {Promise<void>}
-   */
-  async shutdown() {
-    try {
-      // Clear cleanup timer
-      if (this.cleanupTimer) {
-        clearInterval(this.cleanupTimer);
-        this.cleanupTimer = null;
-      }
-
-      // Remove all listeners
-      this.removeAllListeners();
-
-      // Clear all tracking maps
-      this.sessionListeners.clear();
-      this.sessionLastActivity.clear();
-      this.eventHistory.clear();
-      this.rateLimitCounters.clear();
-
-      // Reset stats
-      this.stats.sessionsActive = 0;
-      this.stats.listenersAdded = 0;
-      this.stats.listenersRemoved = 0;
-
-      debugLog('EventBus: Shutdown complete');
-
-    } catch (error) {
-      debugError('EventBus: Error during shutdown:', error);
-      throw new EventBusError(
-        `EventBus shutdown failed: ${error.message}`,
-        'SHUTDOWN_ERROR'
-      );
-    }
-  }
-
-  /**
-   * Core event emission method with validation and rate limiting
-   * @param {string} eventType - Type of event to emit
+   * Internal method to emit job events with validation and history tracking
+   * @param {string} eventType - Event type constant
    * @param {string} jobId - Job identifier
-   * @param {string} sessionId - Session identifier
    * @param {object} data - Event data
    * @returns {boolean} True if event was emitted
-   * @throws {EventBusError} If emission fails
    * @private
    */
-  _emitJobEvent(eventType, jobId, sessionId, data) {
+  _emitJobEvent(eventType, jobId, data) {
     try {
-      // Validation
-      this._validateEventType(eventType);
-      this._validateJobId(jobId);
-      this._validateSessionId(sessionId);
-      this._validatePayload(data);
-
-      // Rate limiting check
-      if (!this._checkRateLimit(sessionId)) {
+      // Validate parameters
+      if (!jobId || typeof jobId !== 'string') {
         throw new EventBusError(
-          `Rate limit exceeded for session ${sessionId}`,
-          'RATE_LIMIT_EXCEEDED'
+          'Invalid job ID: must be a non-empty string',
+          'INVALID_JOB_ID'
         );
       }
 
-      // Create structured event payload
-      const eventPayload = {
-        eventType,
+      // Create event object
+      const event = {
+        type: eventType,
         jobId,
-        sessionId,
-        timestamp: Date.now(),
-        data: this._sanitizeData(data),
+        data,
+        timestamp: data.timestamp || Date.now()
       };
 
-      // Add to event history
-      this._addToEventHistory(jobId, eventPayload);
+      // Add to history
+      this._addToHistory(jobId, event);
 
-      // Emit the event
-      const emitted = this.emit(eventType, eventPayload);
-
-      // Update activity tracking
-      this.sessionLastActivity.set(sessionId, Date.now());
+      // Emit event
+      const hasListeners = this.emit(eventType, event);
+      
+      // Update statistics
       this.stats.eventsEmitted++;
 
-      debugLog(`EventBus: Emitted ${eventType} for job ${jobId} (session: ${sessionId})`);
-      return emitted;
+      debugLog(`EventBus: Emitted ${eventType} for job ${jobId}`);
+      return hasListeners;
 
     } catch (error) {
+      debugError(`EventBus: Failed to emit event ${eventType} for job ${jobId}:`, error);
       if (error instanceof EventBusError) {
         throw error;
       }
       throw new EventBusError(
-        `Failed to emit ${eventType} event: ${error.message}`,
-        'EMIT_FAILED'
+        `Failed to emit event: ${error.message}`,
+        'EMISSION_ERROR'
       );
     }
   }
 
   /**
-   * Add event to job history with ring buffer behavior
+   * Add event to job history with size limit
    * @param {string} jobId - Job identifier
-   * @param {object} eventPayload - Event payload
+   * @param {object} event - Event object
    * @private
    */
-  _addToEventHistory(jobId, eventPayload) {
+  _addToHistory(jobId, event) {
     if (!this.eventHistory.has(jobId)) {
       this.eventHistory.set(jobId, []);
     }
 
-    const events = this.eventHistory.get(jobId);
-    events.push(eventPayload);
+    const history = this.eventHistory.get(jobId);
+    history.push(event);
 
-    // Maintain ring buffer size
-    if (events.length > this.maxEventHistory) {
-      events.shift();
+    // Limit history size
+    if (history.length > this.maxEventHistory) {
+      history.shift();
     }
   }
 
   /**
-   * Check rate limiting for a session
-   * @param {string} sessionId - Session identifier
-   * @returns {boolean} True if within rate limits
+   * Calculate duration since job creation
+   * @param {string} jobId - Job identifier
+   * @returns {number|null} Duration in milliseconds or null
    * @private
    */
-  _checkRateLimit(sessionId) {
-    const now = Date.now();
-    const counter = this.rateLimitCounters.get(sessionId) || { count: 0, resetTime: now + 1000 };
-
-    // Reset counter if time window has passed
-    if (now > counter.resetTime) {
-      counter.count = 0;
-      counter.resetTime = now + 1000; // 1 second window
+  _calculateDuration(jobId) {
+    const history = this.eventHistory.get(jobId);
+    if (!history || history.length === 0) {
+      return null;
     }
 
-    // Check if within limits
-    if (counter.count >= this.rateLimit) {
-      return false;
+    const createEvent = history.find(e => e.type === EVENT_TYPES.JOB_CREATED);
+    if (!createEvent) {
+      return null;
     }
 
-    // Increment counter
-    counter.count++;
-    this.rateLimitCounters.set(sessionId, counter);
-    return true;
+    return Date.now() - createEvent.timestamp;
   }
 
   /**
-   * Clean up expired sessions and their listeners
+   * Calculate approximate memory usage
+   * @returns {number} Approximate memory usage in bytes
    * @private
    */
-  _cleanupExpiredSessions() {
-    const now = Date.now();
-    let cleanedSessions = 0;
-    let cleanedListeners = 0;
-
-    for (const [sessionId, lastActivity] of this.sessionLastActivity.entries()) {
-      if (now - lastActivity > this.sessionTimeout) {
-        const removed = this.removeAllSessionListeners(sessionId);
-        cleanedListeners += removed;
-        cleanedSessions++;
-      }
+  _calculateMemoryUsage() {
+    // Rough estimation of memory usage
+    let totalSize = 0;
+    
+    for (const [jobId, events] of this.eventHistory) {
+      totalSize += jobId.length * 2; // UTF-16 string size
+      totalSize += JSON.stringify(events).length;
     }
 
-    // Clean up old event history for inactive jobs
-    let cleanedHistory = 0;
-    for (const [jobId, events] of this.eventHistory.entries()) {
-      const lastEvent = events[events.length - 1];
-      if (lastEvent && (now - lastEvent.timestamp > this.sessionTimeout)) {
-        this.eventHistory.delete(jobId);
-        cleanedHistory++;
-      }
-    }
-
-    if (cleanedSessions > 0) {
-      debugLog(`EventBus: Cleaned up ${cleanedSessions} expired sessions, ${cleanedListeners} listeners, ${cleanedHistory} job histories`);
-    }
+    return totalSize;
   }
 
   /**
-   * Sanitize data payload to prevent sensitive information leakage
-   * @param {object} data - Data to sanitize
-   * @returns {object} Sanitized data
-   * @private
+   * Cleanup resources
    */
-  _sanitizeData(data) {
-    if (!data || typeof data !== 'object') {
-      return data;
-    }
-
-    // Create a deep copy to avoid mutations
-    const sanitized = JSON.parse(JSON.stringify(data));
-
-    // Remove or mask sensitive fields
-    const sensitiveFields = ['password', 'token', 'key', 'secret', 'auth', 'credential'];
-
-    const sanitizeObject = (obj) => {
-      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-
-      for (const [key, value] of Object.entries(obj)) {
-        const lowerKey = key.toLowerCase();
-
-        if (sensitiveFields.some(field => lowerKey.includes(field))) {
-          obj[key] = '[REDACTED]';
-        } else if (typeof value === 'object' && value !== null) {
-          sanitizeObject(value);
-        }
-      }
-      return obj;
-    };
-
-    sanitizeObject(sanitized);
-    return sanitized;
-  }
-
-  /**
-   * Validation helpers
-   * @private
-   */
-  _validateEventType(eventType) {
-    if (!eventType || typeof eventType !== 'string') {
-      throw new EventBusError('Event type must be a non-empty string', 'INVALID_EVENT_TYPE');
-    }
-    if (!Object.values(EVENT_TYPES).includes(eventType)) {
-      throw new EventBusError(`Unknown event type: ${eventType}`, 'UNKNOWN_EVENT_TYPE');
-    }
-  }
-
-  _validateJobId(jobId) {
-    if (!jobId || typeof jobId !== 'string') {
-      throw new EventBusError('Job ID must be a non-empty string', 'INVALID_JOB_ID');
-    }
-  }
-
-  _validateSessionId(sessionId) {
-    if (!sessionId || typeof sessionId !== 'string') {
-      throw new EventBusError('Session ID must be a non-empty string', 'INVALID_SESSION_ID');
-    }
-  }
-
-  _validateCallback(callback) {
-    if (typeof callback !== 'function') {
-      throw new EventBusError('Callback must be a function', 'INVALID_CALLBACK');
-    }
-  }
-
-  _validatePayload(data) {
-    if (data) {
-      const size = JSON.stringify(data).length;
-      if (size > this.maxPayloadSize) {
-        throw new EventBusError(
-          `Payload size ${size} exceeds maximum ${this.maxPayloadSize}`,
-          'PAYLOAD_TOO_LARGE'
-        );
-      }
-    }
+  destroy() {
+    this.removeAllListeners();
+    this.eventHistory.clear();
+    debugLog('EventBus: Destroyed and cleaned up resources');
   }
 }
 
-// Singleton instance for global usage
+// Singleton instance for global event bus
 let globalEventBus = null;
 
 /**
- * Get the global EventBus instance
- * @param {object} options - Configuration options for initialization
+ * Get global EventBus instance (singleton)
  * @returns {EventBus} Global EventBus instance
  */
-export function getEventBus(options = {}) {
+export function getEventBus() {
   if (!globalEventBus) {
-    globalEventBus = new EventBus(options);
+    globalEventBus = new EventBus();
   }
   return globalEventBus;
 }
 
 /**
- * Set a custom EventBus instance (for testing)
- * @param {EventBus|null} eventBus - EventBus instance or null to reset
+ * Reset global EventBus instance (mainly for testing)
  */
-export function setEventBus(eventBus) {
-  if (eventBus !== null && !(eventBus instanceof EventBus)) {
-    throw new EventBusError(
-      'EventBus must be an EventBus instance',
-      'INVALID_EVENT_BUS'
-    );
-  }
-
+export function resetEventBus() {
   if (globalEventBus) {
-    globalEventBus.shutdown().catch(error => {
-      debugError('EventBus: Error during shutdown of previous instance:', error);
-    });
+    globalEventBus.destroy();
+    globalEventBus = null;
   }
-
-  globalEventBus = eventBus;
 }
 
-/**
- * Create a new EventBus instance
- * @param {object} options - Configuration options
- * @returns {EventBus} New EventBus instance
- */
-export function createEventBus(options = {}) {
-  return new EventBus(options);
-}
+export default EventBus;

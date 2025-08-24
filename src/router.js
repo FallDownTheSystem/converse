@@ -90,9 +90,10 @@ function validateTool(toolName, tools) {
 /**
  * Enhanced dependency injection with error handling
  * @param {object} config - Configuration object
+ * @param {object} context - Additional context (e.g., session info)
  * @returns {object} Dependencies object for tool injection
  */
-async function createDependencies(config) {
+async function createDependencies(config, context = {}) {
   try {
     const continuationStore = getContinuationStore();
     const tools = getTools();
@@ -148,6 +149,7 @@ async function createDependencies(config) {
       asyncJobStore,
       jobRunner,
       providerStreamNormalizer,
+      sessionId: 'local-user', // Always use local-user for single-user server
       router: {
         createErrorResponse,
         validateToolArguments,

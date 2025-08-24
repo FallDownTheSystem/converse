@@ -319,6 +319,17 @@ export class HTTPMCPServerManager {
     this.clientTransport = null;
     this.client = null;
     this.mcpServer = null;
+
+    // Reset environment variables that were overridden
+    if (this.options.env.ASYNC_MEMORY_TTL_MS) {
+      delete process.env.ASYNC_MEMORY_TTL_MS;
+    }
+    if (this.options.env.ASYNC_DISK_TTL_MS) {
+      delete process.env.ASYNC_DISK_TTL_MS;
+    }
+    if (this.options.env.ASYNC_CACHE_DIR) {
+      delete process.env.ASYNC_CACHE_DIR;
+    }
   }
 
   /**

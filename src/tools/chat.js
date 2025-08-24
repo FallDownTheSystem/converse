@@ -59,9 +59,12 @@ export async function chatTool(args, dependencies) {
         // Submit background job
         const jobId = await jobRunner.submit(
           {
-            sessionId: bgContinuationId,
             tool: 'chat',
-            options: args
+            sessionId: dependencies.sessionId || 'local-user',
+            options: {
+              ...args,
+              jobId: bgContinuationId // Use continuation ID as job ID
+            }
           },
           async (context) => {
             // Execute chat in background using stream normalizer
@@ -76,9 +79,15 @@ export async function chatTool(args, dependencies) {
           }
         );
 
-        // Return immediate response with continuation_id
+        // Return immediate response with continuation_id as JSON
         return createToolResponse({
-          content: 'Chat request submitted for background processing',
+          content: JSON.stringify({
+            message: 'Chat request submitted for background processing',
+            continuation_id: bgContinuationId,
+            job_id: jobId,
+            status: 'processing',
+            async_execution: true
+          }),
           continuation: {
             id: bgContinuationId,
             job_id: jobId,
@@ -582,19 +591,26 @@ async function executeChatWithStreaming(args, dependencies, context) {
     reasoning_effort,
     verbosity,
     use_websearch,
-    signal: context?.signal, // Pass AbortSignal for cancellation support
     config
   };
 
-  // Check if provider supports streaming
+  // For streaming, add the stream flag and signal separately
+  const streamingOptions = {
+    ...providerOptions,
+    stream: true,
+    signal: context?.signal // Pass AbortSignal for cancellation support
+  };
+
+  // Check if provider supports streaming (by checking if invoke can return a stream)
   let response;
   const startTime = Date.now();
 
-  if (selectedProvider.stream && typeof selectedProvider.stream === 'function') {
+  // Always use streaming for async execution in background
+  if (context?.jobId) {
     // Use streaming with normalization
     debugLog(`Chat: Using streaming for provider ${providerName}`);
 
-    const stream = selectedProvider.stream(messages, providerOptions);
+    const stream = await selectedProvider.invoke(messages, streamingOptions);
     const normalizedStream = providerStreamNormalizer.normalize(providerName, stream, {
       model: resolvedModel,
       requestId: context.jobId

@@ -29,12 +29,11 @@ export const JOB_STATUS = {
 export class AsyncJobStoreInterface {
   /**
    * Create new job
-   * @param {string} _sessionId - Session identifier
    * @param {string} _tool - Tool name ('chat' | 'consensus')
    * @param {object} _options - Job options
    * @returns {Promise<string>} Job ID
    */
-  async create(_sessionId, _tool, _options = {}) {
+  async create(_tool, _options = {}) {
     throw new Error('create() method must be implemented by storage backend');
   }
 
@@ -88,13 +87,12 @@ export class AsyncJobStoreInterface {
   }
 
   /**
-   * Get jobs by session ID
-   * @param {string} _sessionId - Session identifier
+   * Get all jobs
    * @param {object} _options - Query options (limit, status, etc.)
-   * @returns {Promise<Array>} Array of jobs for the session
+   * @returns {Promise<Array>} Array of all jobs
    */
-  async getJobsBySession(_sessionId, _options = {}) {
-    throw new Error('getJobsBySession() method must be implemented by storage backend');
+  async getAllJobs(_options = {}) {
+    throw new Error('getAllJobs() method must be implemented by storage backend');
   }
 
   /**
@@ -134,10 +132,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
   constructor() {
     super();
 
-    // Configure LRU cache with 24-hour TTL and 10k job capacity
+    // Check environment variable for memory TTL
+    const envMemoryTTL = process.env.ASYNC_MEMORY_TTL_MS ? parseInt(process.env.ASYNC_MEMORY_TTL_MS, 10) : null;
+    const ttl = envMemoryTTL || 24 * 60 * 60 * 1000; // Default 24 hours
+
+    // Configure LRU cache with configurable TTL and 10k job capacity
     this.jobs = new LRUCache({
       max: 10000, // Maximum 10k jobs to prevent memory leaks
-      ttl: 24 * 60 * 60 * 1000, // 24 hours TTL
+      ttl: ttl, // Configurable TTL from environment
       updateAgeOnGet: true, // Update TTL on access
       updateAgeOnHas: false, // Don't update TTL just for existence checks
     });
@@ -145,28 +147,22 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     this.maxEventsPerJob = 100; // Ring buffer size for events
     this.eventBus = getEventBus(); // Get global EventBus instance
 
+    debugLog('AsyncJobStore', `Initialized with TTL: ${ttl}ms`);
+
     // Set up EventBus listeners to capture events for storage
     this._setupEventBusListeners();
   }
 
   /**
    * Create new job
-   * @param {string} sessionId - Session identifier
    * @param {string} tool - Tool name ('chat' | 'consensus')
    * @param {object} options - Job options
    * @returns {Promise<string>} Job ID
    * @throws {AsyncJobStoreError} If creation fails
    */
-  async create(sessionId, tool, options = {}) {
+  async create(tool, options = {}) {
     try {
       // Validate parameters
-      if (!sessionId || typeof sessionId !== 'string') {
-        throw new AsyncJobStoreError(
-          'Invalid session ID: must be a non-empty string',
-          'INVALID_SESSION_ID'
-        );
-      }
-
       if (!tool || !['chat', 'consensus'].includes(tool)) {
         throw new AsyncJobStoreError(
           'Invalid tool: must be "chat" or "consensus"',
@@ -174,14 +170,13 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         );
       }
 
-      // Generate job ID using same pattern as continuation store
-      const jobId = this._generateJobId();
+      // Use provided jobId from options or generate a new one
+      const jobId = options.jobId || this._generateJobId();
       const now = Date.now();
 
       // Create initial job state
       const jobState = {
         jobId,
-        sessionId,
         status: JOB_STATUS.QUEUED,
         tool,
         createdAt: now,
@@ -204,8 +199,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Log event
       this._addEvent(jobState, 'job_created', {
-        tool,
-        sessionId,
+        tool
       });
 
       debugLog(`AsyncJobStore: Created job ${jobId} for ${tool}`);
@@ -471,24 +465,16 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
   }
 
   /**
-   * Get jobs by session ID
-   * @param {string} sessionId - Session identifier
+   * Get all jobs
    * @param {object} options - Query options
    * @param {number} options.limit - Maximum number of jobs to return (default: 50)
    * @param {string} options.status - Filter by job status (optional)
    * @param {string} options.sortBy - Sort by field ('createdAt', 'updatedAt') (default: 'updatedAt')
    * @param {string} options.sortOrder - Sort order ('asc', 'desc') (default: 'desc')
-   * @returns {Promise<Array>} Array of jobs for the session
+   * @returns {Promise<Array>} Array of all jobs
    */
-  async getJobsBySession(sessionId, options = {}) {
+  async getAllJobs(options = {}) {
     try {
-      // Validate parameters
-      if (!sessionId || typeof sessionId !== 'string') {
-        throw new AsyncJobStoreError(
-          'Invalid session ID: must be a non-empty string',
-          'INVALID_SESSION_ID'
-        );
-      }
 
       const {
         limit = 50,
@@ -512,16 +498,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         );
       }
 
-      // Collect jobs for the session
-      const sessionJobs = [];
+      // Collect all jobs
+      const allJobs = [];
       
       for (const job of this.jobs.values()) {
-        if (job.sessionId === sessionId) {
-          // Apply status filter if specified
-          if (!status || job.status === status) {
-            // Return deep copy to prevent external mutations
-            sessionJobs.push(this._deepClone(job));
-          }
+        // Apply status filter if specified
+        if (!status || job.status === status) {
+          // Return deep copy to prevent external mutations
+          allJobs.push(this._deepClone(job));
         }
       }
 
@@ -529,14 +513,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       const sortField = sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
       const sortMultiplier = sortOrder === 'asc' ? 1 : -1;
       
-      sessionJobs.sort((a, b) => {
+      allJobs.sort((a, b) => {
         return (a[sortField] - b[sortField]) * sortMultiplier;
       });
 
       // Apply limit
-      const limitedJobs = sessionJobs.slice(0, limit);
+      const limitedJobs = allJobs.slice(0, limit);
 
-      debugLog(`AsyncJobStore: Found ${limitedJobs.length} jobs for session ${sessionId}`);
+      debugLog(`AsyncJobStore: Found ${limitedJobs.length} jobs`);
       return limitedJobs;
 
     } catch (error) {
@@ -544,8 +528,8 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         throw error;
       }
       throw new AsyncJobStoreError(
-        `Failed to get jobs by session: ${error.message}`,
-        'SESSION_QUERY_ERROR'
+        `Failed to get all jobs: ${error.message}`,
+        'QUERY_ERROR'
       );
     }
   }

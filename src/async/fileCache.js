@@ -72,15 +72,19 @@ export class FileCacheInterface {
 export class FileCache extends FileCacheInterface {
   constructor(options = {}) {
     super();
-    this.baseDir = options.baseDir || path.join(process.cwd(), 'cache', 'async');
+    this.baseDir = options.baseDir || process.env.ASYNC_CACHE_DIR || path.join(process.cwd(), 'cache', 'async');
     this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000; // 10 minutes
-    this.maxAge = options.maxAge || 3 * 24 * 60 * 60 * 1000; // 3 days
+    
+    // Check environment variable for disk TTL
+    const envDiskTTL = process.env.ASYNC_DISK_TTL_MS ? parseInt(process.env.ASYNC_DISK_TTL_MS, 10) : null;
+    this.maxAge = options.maxAge || envDiskTTL || 3 * 24 * 60 * 60 * 1000; // 3 days default
+    
     this.cleanupTimer = null;
 
     // Start cleanup timer
     this.startCleanupTimer();
 
-    debugLog('FileCache', `Initialized with baseDir: ${this.baseDir}`);
+    debugLog('FileCache', `Initialized with baseDir: ${this.baseDir}, maxAge: ${this.maxAge}ms`);
   }
 
   /**
@@ -278,7 +282,7 @@ export class FileCache extends FileCacheInterface {
   /**
    * Read snapshot from JSON file
    * @param {string} jobId - Job identifier
-   * @returns {Promise<object|null>} Job result or null if not found
+   * @returns {Promise<object|null>} Job result or null if not found or expired
    */
   async readSnapshot(jobId) {
     if (!jobId || typeof jobId !== 'string') {
@@ -296,12 +300,33 @@ export class FileCache extends FileCacheInterface {
       try {
         const content = await fs.readFile(snapshotPath, 'utf8');
         const snapshot = JSON.parse(content);
+        
+        // Check if snapshot has expired based on TTL
+        if (snapshot.updated_at || snapshot.ended_at) {
+          const lastUpdate = snapshot.updated_at || snapshot.ended_at;
+          const age = Date.now() - lastUpdate;
+          if (age > this.maxAge) {
+            debugLog('FileCache', `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`);
+            return null;
+          }
+        }
+        
         debugLog('FileCache', `Snapshot read for job ${jobId} from current date`);
         return snapshot;
       } catch (_currentDateError) {
         // If not found in current date, search in recent directories
         const result = await this.searchSnapshotInRecentDirs(jobId);
         if (result) {
+          // Check if found snapshot has expired
+          if (result.updated_at || result.ended_at) {
+            const lastUpdate = result.updated_at || result.ended_at;
+            const age = Date.now() - lastUpdate;
+            if (age > this.maxAge) {
+              debugLog('FileCache', `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`);
+              return null;
+            }
+          }
+          
           debugLog('FileCache', `Snapshot read for job ${jobId} from recent directories`);
           return result;
         }

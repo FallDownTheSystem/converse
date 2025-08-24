@@ -59,7 +59,8 @@ describe('Check Status Tool', () => {
   });
 
   describe('Input Validation', () => {
-    it('should require session ID', async () => {
+    // Session ID is no longer required - using 'local-user' for single-user local server
+    it.skip('should require session ID (deprecated - now using local-user)', async () => {
       const result = await checkStatusTool({}, { 
         config: mockConfig,
         request: { headers: {} }
@@ -103,7 +104,7 @@ describe('Check Status Tool', () => {
   describe('Specific Job Queries', () => {
     const mockJob = {
       jobId: 'job_test123',
-      sessionId: 'test-session-123',
+      sessionId: 'local-user',
       status: JOB_STATUS.RUNNING,
       tool: 'chat',
       createdAt: Date.now() - 60000,
@@ -168,17 +169,24 @@ describe('Check Status Tool', () => {
       expect(response.status).toBe(JOB_STATUS.COMPLETED);
     });
 
-    it('should enforce session ownership', async () => {
-      const otherSessionJob = { ...mockJob, sessionId: 'other-session' };
-      mockAsyncJobStore.get.mockResolvedValue(otherSessionJob);
+    it('should return job regardless of sessionId (single-user local server)', async () => {
+      // In single-user local server, all jobs use 'local-user' sessionId
+      const job = { ...mockJob, sessionId: 'local-user' };
+      mockAsyncJobStore.get.mockResolvedValue(job);
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
         { config: mockConfig, request: mockRequest }
       );
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Job not found or access denied');
+      // Should return the job since we don't enforce session ownership
+      expect(result.isError).toBe(false);
+      const text = result.content[0].text;
+      const jsonStart = text.indexOf('\n\n') + 2;
+      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
+      const response = JSON.parse(jsonContent);
+      expect(response.continuation_id).toBe('job_test123');
+      expect(response.status).toBe(JOB_STATUS.RUNNING);
     });
 
     it('should handle job not found', async () => {
@@ -199,7 +207,7 @@ describe('Check Status Tool', () => {
     const mockJobs = [
       {
         jobId: 'job_1',
-        sessionId: 'test-session-123',
+        sessionId: 'local-user',
         status: JOB_STATUS.RUNNING,
         tool: 'chat',
         createdAt: Date.now() - 120000,
@@ -211,7 +219,7 @@ describe('Check Status Tool', () => {
       },
       {
         jobId: 'job_2',
-        sessionId: 'test-session-123',
+        sessionId: 'local-user',
         status: JOB_STATUS.COMPLETED,
         tool: 'consensus',
         createdAt: Date.now() - 60000,
@@ -232,7 +240,7 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('test-session-123', {
+      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('local-user', {
         limit: 50,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
@@ -258,7 +266,7 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('test-session-123', {
+      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('local-user', {
         limit: 1,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
@@ -295,7 +303,7 @@ describe('Check Status Tool', () => {
   describe('Response Formatting', () => {
     const mockJob = {
       jobId: 'job_test123',
-      sessionId: 'test-session-123',
+      sessionId: 'local-user',
       status: JOB_STATUS.COMPLETED,
       tool: 'chat',
       createdAt: Date.now() - 120000,

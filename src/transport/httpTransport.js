@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createLogger } from '../utils/logger.js';
+import { registerTransportSession, clearTransportSession } from '../utils/sessionManager.js';
 
 const logger = createLogger('http-transport');
 
@@ -349,6 +350,8 @@ export class HTTPTransportServer {
       onsessioninitialized: (sessionId) => {
         this.transports.set(sessionId, transport);
         this.setupSessionTimeout(sessionId);
+        // Register transport with session manager
+        registerTransportSession(transport, sessionId);
         logger.debug('Transport session initialized', { data: { sessionId } });
       },
       enableDnsRebindingProtection: this.config.enableDnsRebindingProtection,
@@ -359,6 +362,7 @@ export class HTTPTransportServer {
     transport.onclose = () => {
       if (transport.sessionId) {
         this.cleanupSession(transport.sessionId);
+        clearTransportSession(transport);
         logger.debug('Transport session closed', {
           data: { sessionId: transport.sessionId }
         });
