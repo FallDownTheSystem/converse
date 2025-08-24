@@ -1,10 +1,11 @@
 ---
 id: task-008
 title: Create check_status MCP tool for job status queries
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@ai'
 created_date: '2025-08-23 15:14'
-updated_date: '2025-08-23 18:05'
+updated_date: '2025-08-24 15:32'
 labels:
   - async
   - tools
@@ -291,6 +292,10 @@ class FileCache {
 - AsyncJobStore (task 1) for active job data
 - FileCache (task 2) for completed job persistence  
 - Existing session management and MCP tool patterns
+
+## Implementation Notes
+
+Successfully implemented check_status MCP tool with all acceptance criteria met. Added getJobsBySession method to AsyncJobStore for efficient session-based job queries. Tool supports both specific job queries and session job listing, with memory-first lookup and FileCache fallback. Includes comprehensive unit tests with 100% coverage of functionality including security, error handling, and response formatting. All tests pass and code quality checks are clean.
 ## Implementation Plan Reference
 
 Refer to **Async Execution System Architecture Plan** (`backlog/docs/doc-001 - Async-Execution-System-Architecture-Plan.md`) for:

@@ -8,6 +8,7 @@
 // Import individual tools
 import { chatTool } from './chat.js';
 import { consensusTool } from './consensus.js';
+import { checkStatusTool } from './checkStatus.js';
 
 /**
  * Tool registry map
@@ -17,6 +18,7 @@ import { consensusTool } from './consensus.js';
 const tools = {
   chat: chatTool,
   consensus: consensusTool,
+  check_status: checkStatusTool,
 };
 
 /**

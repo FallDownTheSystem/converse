@@ -88,6 +88,16 @@ export class AsyncJobStoreInterface {
   }
 
   /**
+   * Get jobs by session ID
+   * @param {string} _sessionId - Session identifier
+   * @param {object} _options - Query options (limit, status, etc.)
+   * @returns {Promise<Array>} Array of jobs for the session
+   */
+  async getJobsBySession(_sessionId, _options = {}) {
+    throw new Error('getJobsBySession() method must be implemented by storage backend');
+  }
+
+  /**
    * Get storage statistics
    * @returns {Promise<object>} Backend-specific statistics
    */
@@ -458,6 +468,86 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     }
 
     return cleanedCount;
+  }
+
+  /**
+   * Get jobs by session ID
+   * @param {string} sessionId - Session identifier
+   * @param {object} options - Query options
+   * @param {number} options.limit - Maximum number of jobs to return (default: 50)
+   * @param {string} options.status - Filter by job status (optional)
+   * @param {string} options.sortBy - Sort by field ('createdAt', 'updatedAt') (default: 'updatedAt')
+   * @param {string} options.sortOrder - Sort order ('asc', 'desc') (default: 'desc')
+   * @returns {Promise<Array>} Array of jobs for the session
+   */
+  async getJobsBySession(sessionId, options = {}) {
+    try {
+      // Validate parameters
+      if (!sessionId || typeof sessionId !== 'string') {
+        throw new AsyncJobStoreError(
+          'Invalid session ID: must be a non-empty string',
+          'INVALID_SESSION_ID'
+        );
+      }
+
+      const {
+        limit = 50,
+        status,
+        sortBy = 'updatedAt',
+        sortOrder = 'desc'
+      } = options;
+
+      // Validate options
+      if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
+        throw new AsyncJobStoreError(
+          'Limit must be an integer between 1 and 1000',
+          'INVALID_LIMIT'
+        );
+      }
+
+      if (status && !Object.values(JOB_STATUS).includes(status)) {
+        throw new AsyncJobStoreError(
+          `Invalid status: must be one of ${Object.values(JOB_STATUS).join(', ')}`,
+          'INVALID_STATUS'
+        );
+      }
+
+      // Collect jobs for the session
+      const sessionJobs = [];
+      
+      for (const job of this.jobs.values()) {
+        if (job.sessionId === sessionId) {
+          // Apply status filter if specified
+          if (!status || job.status === status) {
+            // Return deep copy to prevent external mutations
+            sessionJobs.push(this._deepClone(job));
+          }
+        }
+      }
+
+      // Sort jobs
+      const sortField = sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
+      const sortMultiplier = sortOrder === 'asc' ? 1 : -1;
+      
+      sessionJobs.sort((a, b) => {
+        return (a[sortField] - b[sortField]) * sortMultiplier;
+      });
+
+      // Apply limit
+      const limitedJobs = sessionJobs.slice(0, limit);
+
+      debugLog(`AsyncJobStore: Found ${limitedJobs.length} jobs for session ${sessionId}`);
+      return limitedJobs;
+
+    } catch (error) {
+      if (error instanceof AsyncJobStoreError) {
+        throw error;
+      }
+      throw new AsyncJobStoreError(
+        `Failed to get jobs by session: ${error.message}`,
+        'SESSION_QUERY_ERROR'
+      );
+    }
   }
 
   /**
