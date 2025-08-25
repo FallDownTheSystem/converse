@@ -629,17 +629,22 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
       switch (event.type) {
       case 'start':
-        // Update job with streaming started status
+        // Update job with streaming started status and provider info
         await context.updateJob({
           status: 'running',
+          provider: providerName,
+          model: resolvedModel,
           progress: { phase: 'streaming_started', provider: providerName, model: resolvedModel }
         });
         break;
 
       case 'delta':
         accumulatedContent += event.data.textDelta;
-        // Update job with progress
+        // Update job with progress and streaming preview (first 200 chars)
         await context.updateJob({
+          streaming_preview: accumulatedContent.length > 200 
+            ? accumulatedContent.substring(0, 200) + '...'
+            : accumulatedContent,
           progress: {
             phase: 'streaming',
             provider: providerName,

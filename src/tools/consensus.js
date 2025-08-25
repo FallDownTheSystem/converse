@@ -478,11 +478,15 @@ Please provide your refined response:`;
       });
     }
 
+    // Create models list string for display
+    const modelsList = providerCalls.map(call => call.model).join(', ');
+    
     // Prepare metadata for display
     const displayMetadata = {
       continuation_id: continuationId,
       successful_models: finalSuccessCount,
       total_models: models.length,
+      models_list: modelsList,
       execution_time: consensusExecutionTime,
       cross_feedback: enable_cross_feedback,
       refined_responses: refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : 0,
@@ -861,8 +865,13 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
     );
   }
 
+  // Create models list string for display
+  const modelsList = providerCalls.map(call => call.model).join(', ');
+
   // Update job status for phase 1
   await context.updateJob({
+    models_list: modelsList,
+    consensus_progress: `0/${providerCalls.length} initial`,
     progress: {
       phase: 'initial_consensus',
       total_providers: providerCalls.length,
@@ -1065,6 +1074,9 @@ Please provide your refined response:`;
  * @returns {Promise<Array>} Results from all providers
  */
 async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase, context, streamNormalizer) {
+  let completedCount = 0;
+  const totalCount = providerCalls.length;
+  
   const results = await Promise.allSettled(
     providerCalls.map(async (call, index) => {
       try {
@@ -1110,6 +1122,12 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
             switch (event.type) {
             case 'delta':
               accumulatedContent += event.data.textDelta;
+              // Update streaming preview for this provider
+              await context.updateJob({
+                [`provider_${index}_preview`]: accumulatedContent.length > 150 
+                  ? accumulatedContent.substring(0, 150) + '...'
+                  : accumulatedContent
+              });
               break;
             case 'usage':
               finalUsage = event.data.usage;
@@ -1139,10 +1157,18 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
         }
 
         // Update provider status to 'finished'
+        completedCount++;
+        const progressText = phase === 'initial' 
+          ? `${completedCount}/${totalCount} initial`
+          : phase === 'refinement' 
+            ? `${completedCount}/${totalCount} refined`
+            : `${completedCount}/${totalCount} responded`;
+        
         await context.updateJob({
+          consensus_progress: progressText,
           progress: {
             [`provider_${index}_status`]: 'finished',
-            completed_providers: index + 1
+            completed_providers: completedCount
           }
         });
 

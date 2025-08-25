@@ -86,20 +86,23 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
 
   const parts = [];
 
-  if (executionTime !== null) {
+  // Use elapsed_seconds from job if available, otherwise use executionTime
+  const timeToShow = metadata.elapsed_seconds !== undefined ? metadata.elapsed_seconds : executionTime;
+  
+  if (timeToShow !== null) {
     // Format time appropriately based on duration
     let timeDisplay;
-    if (executionTime >= 60) {
+    if (timeToShow >= 60) {
       // Show minutes and seconds for long requests
-      const minutes = Math.floor(executionTime / 60);
-      const seconds = Math.round(executionTime % 60);
+      const minutes = Math.floor(timeToShow / 60);
+      const seconds = Math.round(timeToShow % 60);
       timeDisplay = `${minutes}m${seconds}s`;
-    } else if (executionTime >= 1) {
+    } else if (timeToShow >= 1) {
       // Show seconds with 1 decimal place for requests over 1 second
-      timeDisplay = `${executionTime.toFixed(1)}s`;
+      timeDisplay = `${timeToShow.toFixed(1)}s`;
     } else {
       // Show seconds with 2 decimal places for sub-second requests
-      timeDisplay = `${executionTime.toFixed(2)}s`;
+      timeDisplay = `${timeToShow.toFixed(2)}s`;
     }
     parts.push(`⏱️ ${timeDisplay}`);
   }
@@ -112,11 +115,14 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
     parts.push(`🔗 ${metadata.continuation_id}`);
   }
 
-  if (metadata.provider) {
+  if (metadata.models_list) {
+    // For consensus tool with multiple models
+    parts.push(`🤖 ${metadata.models_list}`);
+  } else if (metadata.provider) {
     parts.push(`🤖 ${metadata.provider}`);
   }
 
-  if (metadata.model) {
+  if (metadata.model && !metadata.models_list) {
     parts.push(`📱 ${metadata.model}`);
   }
 

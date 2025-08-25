@@ -116,7 +116,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId1,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -166,7 +167,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId2,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -231,7 +233,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -315,7 +318,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -389,7 +393,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -452,7 +457,8 @@ module.exports = { fibonacci };`
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -545,7 +551,8 @@ module.exports = { fibonacci };`
                 name: 'check_status',
                 arguments: {
                   continuation_id: jobId,
-                  include_output: true
+                  include_output: true,
+                  output_format: 'json'
                 }
               });
 
@@ -636,7 +643,8 @@ module.exports = { fibonacci };`
               continuation_id: jobId,
               since_seq: lastSeq,
               include_events: true,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 

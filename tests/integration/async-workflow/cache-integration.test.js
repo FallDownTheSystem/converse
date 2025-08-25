@@ -101,7 +101,8 @@ describe('Cache System Integration Tests', () => {
               name: 'check_status',
               arguments: {
                 continuation_id: jobId,
-                include_output: true
+                include_output: true,
+                output_format: 'json'
               }
             });
 
@@ -130,6 +131,7 @@ describe('Cache System Integration Tests', () => {
           // Check status again - should still be retrievable
           const finalStatus = await client.callTool({
             name: 'check_status',
+              output_format: 'json',
             arguments: {
               continuation_id: jobId,
               include_output: true
@@ -204,7 +206,8 @@ describe('Cache System Integration Tests', () => {
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -254,7 +257,8 @@ describe('Cache System Integration Tests', () => {
           name: 'check_status',
           arguments: {
             continuation_id: jobId,
-            include_output: true
+            include_output: true,
+            output_format: 'json'
           }
         });
 
@@ -316,7 +320,8 @@ describe('Cache System Integration Tests', () => {
               name: 'check_status',
               arguments: {
                 continuation_id: jobId,
-                include_output: true
+                include_output: true,
+                output_format: 'json'
               }
             });
 
@@ -403,7 +408,8 @@ describe('Cache System Integration Tests', () => {
             name: 'check_status',
             arguments: {
               continuation_id: jobId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -432,7 +438,8 @@ describe('Cache System Integration Tests', () => {
           name: 'check_status',
           arguments: {
             continuation_id: jobId,
-            include_output: true
+            include_output: true,
+            output_format: 'json'
           }
         });
 
@@ -456,7 +463,8 @@ describe('Cache System Integration Tests', () => {
           name: 'check_status',
           arguments: {
             continuation_id: jobId,
-            include_output: true
+            include_output: true,
+            output_format: 'json'
           }
         });
 
@@ -523,7 +531,8 @@ describe('Cache System Integration Tests', () => {
                 name: 'check_status',
                 arguments: {
                   continuation_id: jobId,
-                  include_output: false
+                  include_output: false,
+                  output_format: 'json'
                 }
               })
             )
@@ -600,7 +609,8 @@ describe('Cache System Integration Tests', () => {
               name: 'check_status',
               arguments: {
                 continuation_id: jobId,
-                include_output: true
+                include_output: true,
+                output_format: 'json'
               }
             })
           );

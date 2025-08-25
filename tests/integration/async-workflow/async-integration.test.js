@@ -105,7 +105,8 @@ describe('Async Workflow Integration Tests', () => {
             name: 'check_status',
             arguments: {
               continuation_id: continuationId,
-              include_output: true
+              include_output: true,
+              output_format: 'json'
             }
           });
 
@@ -184,7 +185,8 @@ describe('Async Workflow Integration Tests', () => {
         const statusResult = await client.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: fakeJobId
+            continuation_id: fakeJobId,
+            output_format: 'json'
           }
         });
 
@@ -243,7 +245,8 @@ describe('Async Workflow Integration Tests', () => {
               name: 'check_status',
               arguments: {
                 continuation_id: continuationId,
-                include_output: true
+                include_output: true,
+                output_format: 'json'
               }
             });
 
@@ -321,7 +324,8 @@ describe('Async Workflow Integration Tests', () => {
         const statusResult = await client.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: jobId
+            continuation_id: jobId,
+            output_format: 'json'
           }
         });
 
@@ -372,7 +376,8 @@ describe('Async Workflow Integration Tests', () => {
                 continuation_id: jobId,
                 since_seq: lastSeq,
                 include_events: true,
-                include_output: true
+                include_output: true,
+                output_format: 'json'
               }
             });
 
@@ -468,7 +473,8 @@ describe('Async Workflow Integration Tests', () => {
                 name: 'check_status',
                 arguments: {
                   continuation_id: jobId,
-                  include_output: true
+                  include_output: true,
+                  output_format: 'json'
                 }
               });
 

@@ -32,7 +32,8 @@ export async function checkStatusTool(args, dependencies) {
       since_seq,
       include_events = false,
       include_output = true,
-      max_results = 50
+      max_results = 50,
+      output_format = 'human' // 'human' or 'json' - default to human-readable
     } = args;
 
     // Validate arguments
@@ -81,20 +82,32 @@ export async function checkStatusTool(args, dependencies) {
         {
           continuation_id,
           job_status: jobStatus.status,
-          provider: jobStatus.provider || 'multiple'
+          provider: jobStatus.provider,
+          elapsed_seconds: jobStatus.elapsed_seconds
         },
         'check_status',
         executionTime
       );
 
-      return createToolResponse({
-        content: JSON.stringify(jobStatus, null, 2),
-        metadata_display: metadataDisplay,
+      // Format content based on output_format parameter
+      const content = output_format === 'json' 
+        ? JSON.stringify(jobStatus, null, 2)
+        : formatHumanReadableStatus(jobStatus);
+      
+      // Only include metadata_display for human format
+      const response = {
+        content,
         metadata: {
           continuation_id,
           execution_time: executionTime
         }
-      });
+      };
+      
+      if (output_format !== 'json') {
+        response.metadata_display = metadataDisplay;
+      }
+      
+      return createToolResponse(response);
 
     } else {
       // List all active/recent jobs
@@ -120,14 +133,25 @@ export async function checkStatusTool(args, dependencies) {
         executionTime
       );
 
-      return createToolResponse({
-        content: JSON.stringify(jobsList, null, 2),
-        metadata_display: metadataDisplay,
+      // Format content based on output_format parameter
+      const content = output_format === 'json'
+        ? JSON.stringify(jobsList, null, 2)
+        : formatJobListHumanReadable(jobsList);
+      
+      // Only include metadata_display for human format
+      const response = {
+        content,
         metadata: {
           execution_time: executionTime,
           total_jobs: jobsList.jobs.length
         }
-      });
+      };
+      
+      if (output_format !== 'json') {
+        response.metadata_display = metadataDisplay;
+      }
+      
+      return createToolResponse(response);
     }
 
   } catch (error) {
@@ -263,12 +287,162 @@ async function getAllJobsFromStore(asyncJobStore, options = {}) {
 }
 
 /**
+ * Format job list as human-readable text
+ * @param {object} jobsList - Jobs list object with summary
+ * @returns {string} Human-readable jobs list
+ */
+function formatJobListHumanReadable(jobsList) {
+  const parts = [];
+  
+  // Summary line
+  parts.push(`📊 Jobs Summary: ${jobsList.summary.active_jobs} active, ${jobsList.summary.completed_jobs} completed, ${jobsList.summary.failed_jobs} failed`);
+  
+  if (jobsList.jobs.length === 0) {
+    parts.push('No jobs found.');
+    return parts.join('\n');
+  }
+  
+  parts.push('─'.repeat(80));
+  
+  // List each job
+  jobsList.jobs.forEach(job => {
+    const timeStr = job.elapsed_seconds >= 60 
+      ? `${Math.floor(job.elapsed_seconds / 60)}m${Math.round(job.elapsed_seconds % 60)}s`
+      : `${job.elapsed_seconds.toFixed(1)}s`;
+    
+    const statusEmoji = {
+      'queued': '⏳',
+      'running': '🔄',
+      'completed': '✅',
+      'failed': '❌',
+      'cancelled': '⛔',
+      'completed_with_errors': '⚠️'
+    }[job.status] || '❓';
+    
+    const provider = job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
+    
+    // Format: emoji STATUS | TOOL | id | time | progress/provider
+    const progressStr = job.tool === 'consensus' && job.consensus_progress 
+      ? job.consensus_progress 
+      : `${Math.round(job.progress * 100)}%`;
+    
+    parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${timeStr} | ${progressStr} | ${provider}`);
+  });
+  
+  return parts.join('\n');
+}
+
+/**
+ * Format job status as human-readable text
+ * @param {object} jobStatus - Formatted job status object
+ * @returns {string} Human-readable status text
+ */
+function formatHumanReadableStatus(jobStatus) {
+  const parts = [];
+  
+  // Format elapsed time
+  let timeStr;
+  if (jobStatus.elapsed_seconds >= 60) {
+    const minutes = Math.floor(jobStatus.elapsed_seconds / 60);
+    const seconds = Math.round(jobStatus.elapsed_seconds % 60);
+    timeStr = `${minutes}m${seconds}s`;
+  } else {
+    timeStr = `${jobStatus.elapsed_seconds.toFixed(1)}s`;
+  }
+  
+  // Build status line based on status
+  const statusEmoji = {
+    'queued': '⏳',
+    'running': '🔄',
+    'completed': '✅',
+    'failed': '❌',
+    'cancelled': '⛔',
+    'completed_with_errors': '⚠️'
+  }[jobStatus.status] || '❓';
+  
+  // Build base status line with tool and continuation ID
+  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id} | ${timeStr} elapsed`;
+  
+  // Add progress for consensus tool only (show x/y format)
+  if (jobStatus.tool === 'consensus' && jobStatus.consensus_progress) {
+    statusLine += ` | ${jobStatus.consensus_progress}`;
+  } else if (jobStatus.tool === 'consensus' && jobStatus.providers) {
+    // Calculate progress from provider states
+    const providerEntries = Object.entries(jobStatus.providers);
+    const completed = providerEntries.filter(([_, state]) => 
+      state.status === 'completed' || state.status === 'refined'
+    ).length;
+    const total = providerEntries.length;
+    statusLine += ` | ${completed}/${total} responded`;
+  }
+  
+  // Add provider/model info
+  if (jobStatus.tool === 'chat' && jobStatus.provider && jobStatus.model) {
+    parts.push(`${statusLine} | ${jobStatus.provider}/${jobStatus.model}`);
+  } else if (jobStatus.tool === 'chat' && jobStatus.provider) {
+    parts.push(`${statusLine} | ${jobStatus.provider}`);
+  } else if (jobStatus.tool === 'consensus' && jobStatus.models_list) {
+    // Show list of models for consensus
+    parts.push(`${statusLine} | ${jobStatus.models_list}`);
+  } else {
+    parts.push(statusLine);
+  }
+  
+  // Add streaming preview if available and still running
+  if (jobStatus.status === 'running' && jobStatus.streaming_preview) {
+    parts.push(`Streaming: "${jobStatus.streaming_preview}"`);
+  }
+  
+  // Add provider previews for consensus
+  if (jobStatus.status === 'running' && jobStatus.provider_previews) {
+    const previewCount = Object.keys(jobStatus.provider_previews).length;
+    if (previewCount > 0) {
+      parts.push(`${previewCount} provider(s) streaming responses...`);
+      // Optionally show first provider's preview
+      const firstPreview = Object.values(jobStatus.provider_previews)[0];
+      if (firstPreview) {
+        const truncated = firstPreview.length > 80 ? firstPreview.substring(0, 80) + '...' : firstPreview;
+        parts.push(`Preview: "${truncated}"`);
+      }
+    }
+  }
+  
+  // Add result preview if completed
+  if (jobStatus.status === 'completed' && jobStatus.result?.content) {
+    const preview = jobStatus.result.content.substring(0, 100);
+    const suffix = jobStatus.result.content.length > 100 ? '...' : '';
+    parts.push(`Response: "${preview}${suffix}"`);
+  }
+  
+  // Add error info if failed
+  if (jobStatus.status === 'failed' && jobStatus.error) {
+    parts.push(`Error: ${jobStatus.error.message || jobStatus.error}`);
+  }
+  
+  // Add provider details for consensus
+  if (jobStatus.providers && Object.keys(jobStatus.providers).length > 0) {
+    const providerStatuses = Object.entries(jobStatus.providers)
+      .map(([id, state]) => `${id}: ${state.status}`)
+      .join(', ');
+    parts.push(`Providers: ${providerStatuses}`);
+  }
+  
+  return parts.join('\n');
+}
+
+/**
  * Format job status for client response
  * @param {object} job - Raw job object
  * @param {object} options - Formatting options
  * @returns {object} Formatted job status
  */
 function formatJobStatus(job, options = {}) {
+  // Calculate elapsed time
+  const now = Date.now();
+  const startTime = job.createdAt || now;
+  const elapsedMs = now - startTime;
+  const elapsedSeconds = elapsedMs / 1000;
+  
   const formatted = {
     continuation_id: job.jobId,
     status: job.status,
@@ -277,8 +451,27 @@ function formatJobStatus(job, options = {}) {
     updated_at: job.updatedAt,
     progress: job.overall?.progress || 0,
     started_at: job.overall?.startedAt || null,
-    ended_at: job.overall?.endedAt || null
+    ended_at: job.overall?.endedAt || null,
+    elapsed_seconds: elapsedSeconds,
+    provider: job.provider || null,
+    model: job.model || null,
+    models_list: job.models_list || null,
+    consensus_progress: job.consensus_progress || null,
+    streaming_preview: job.streaming_preview || null
   };
+  
+  // For consensus, gather provider previews
+  if (job.tool === 'consensus') {
+    const providerPreviews = {};
+    for (let i = 0; i < 10; i++) { // Check up to 10 providers
+      if (job[`provider_${i}_preview`]) {
+        providerPreviews[`provider_${i}`] = job[`provider_${i}_preview`];
+      }
+    }
+    if (Object.keys(providerPreviews).length > 0) {
+      formatted.provider_previews = providerPreviews;
+    }
+  }
 
   // Add error information if failed
   if (job.status === JOB_STATUS.FAILED && job.overall?.error) {
@@ -354,6 +547,12 @@ checkStatusTool.inputSchema = {
       maximum: 100,
       default: 50,
       description: 'Maximum number of jobs to return when listing all jobs (ignored when querying specific job).'
+    },
+    output_format: {
+      type: 'string',
+      enum: ['human', 'json'],
+      default: 'human',
+      description: 'Output format for the status response. "human" for readable format, "json" for raw JSON.'
     }
   },
   additionalProperties: false
