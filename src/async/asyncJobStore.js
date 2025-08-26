@@ -758,6 +758,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
 // Singleton instance - can be replaced for different backends
 let asyncJobStore = null;
+let cleanupIntervalId = null;
 
 /**
  * Get the async job store instance
@@ -768,7 +769,7 @@ export function getAsyncJobStore() {
     asyncJobStore = new LRUAsyncJobStore();
 
     // Set up periodic cleanup (runs every 10 minutes, same as continuation store)
-    setInterval(async () => {
+    cleanupIntervalId = setInterval(async () => {
       try {
         const cleaned = await asyncJobStore.cleanup();
         if (cleaned > 0) {
@@ -778,6 +779,11 @@ export function getAsyncJobStore() {
         debugError('AsyncJobStore cleanup failed:', error);
       }
     }, 10 * 60 * 1000);
+
+    // Unref the interval so it doesn't keep the process alive
+    if (cleanupIntervalId && typeof cleanupIntervalId.unref === 'function') {
+      cleanupIntervalId.unref();
+    }
   }
   return asyncJobStore;
 }
@@ -794,6 +800,16 @@ export function setAsyncJobStore(store) {
     );
   }
   asyncJobStore = store;
+}
+
+/**
+ * Stop the cleanup interval timer
+ */
+export function stopAsyncJobStoreCleanup() {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
 }
 
 /**

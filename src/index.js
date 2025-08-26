@@ -192,6 +192,20 @@ async function gracefulShutdown(signal) {
   logger.info(`Received ${signal}, shutting down gracefully`);
   debugError('Shutting down Converse MCP Server...');
 
+  // Stop all cleanup intervals
+  try {
+    const { stopContinuationStoreCleanup } = await import('./continuationStore.js');
+    const { stopAsyncJobStoreCleanup } = await import('./async/asyncJobStore.js');
+    const { stopFileCacheCleanup } = await import('./async/fileCache.js');
+
+    stopContinuationStoreCleanup();
+    stopAsyncJobStoreCleanup();
+    stopFileCacheCleanup();
+    logger.info('Cleanup timers stopped successfully');
+  } catch (error) {
+    logger.error('Error stopping cleanup timers', { error });
+  }
+
   if (process.httpTransport) {
     try {
       await process.httpTransport.stop();
@@ -206,6 +220,27 @@ async function gracefulShutdown(signal) {
 
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// Additional cleanup on process exit
+process.on('beforeExit', async (code) => {
+  logger.info('Process beforeExit event', { data: { code } });
+  // Cleanup intervals if not already done
+  try {
+    const { stopContinuationStoreCleanup } = await import('./continuationStore.js');
+    const { stopAsyncJobStoreCleanup } = await import('./async/asyncJobStore.js');
+    const { stopFileCacheCleanup } = await import('./async/fileCache.js');
+
+    stopContinuationStoreCleanup();
+    stopAsyncJobStoreCleanup();
+    stopFileCacheCleanup();
+  } catch (error) {
+    // Silently ignore - cleanup may have already been done
+  }
+});
+
+process.on('exit', (code) => {
+  logger.info('Process exit event', { data: { code } });
+});
 
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception', { error });

@@ -106,6 +106,11 @@ export class FileCache extends FileCacheInterface {
         debugError('FileCache', 'Cleanup timer error:', error);
       }
     }, this.cleanupInterval);
+
+    // Unref the interval so it doesn't keep the process alive
+    if (this.cleanupTimer && typeof this.cleanupTimer.unref === 'function') {
+      this.cleanupTimer.unref();
+    }
   }
 
   /**
@@ -545,6 +550,15 @@ export function setFileCache(instance) {
     fileCacheInstance.stopCleanupTimer();
   }
   fileCacheInstance = instance;
+}
+
+/**
+ * Stop the file cache cleanup timer
+ */
+export function stopFileCacheCleanup() {
+  if (fileCacheInstance) {
+    fileCacheInstance.stopCleanupTimer();
+  }
 }
 
 // Export for testing

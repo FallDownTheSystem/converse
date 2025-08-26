@@ -437,6 +437,11 @@ export class HTTPTransportServer {
       // The timeout mechanism handles cleanup automatically,
       // but we can add additional checks here if needed
     }, this.config.sessionCleanupInterval);
+
+    // Unref the interval so it doesn't keep the process alive
+    if (this.cleanupInterval && typeof this.cleanupInterval.unref === 'function') {
+      this.cleanupInterval.unref();
+    }
   }
 
   /**

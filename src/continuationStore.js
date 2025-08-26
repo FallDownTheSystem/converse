@@ -263,6 +263,7 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
 
 // Singleton instance - can be replaced for different backends
 let continuationStore = null;
+let cleanupIntervalId = null;
 
 /**
  * Get the continuation store instance
@@ -273,7 +274,7 @@ export function getContinuationStore() {
     continuationStore = new MemoryContinuationStore();
 
     // Set up periodic cleanup (runs every hour)
-    setInterval(async () => {
+    cleanupIntervalId = setInterval(async () => {
       try {
         const cleaned = await continuationStore.cleanup();
         if (cleaned > 0) {
@@ -283,6 +284,11 @@ export function getContinuationStore() {
         debugError('ContinuationStore cleanup failed:', error);
       }
     }, 60 * 60 * 1000);
+
+    // Unref the interval so it doesn't keep the process alive
+    if (cleanupIntervalId && typeof cleanupIntervalId.unref === 'function') {
+      cleanupIntervalId.unref();
+    }
   }
   return continuationStore;
 }
@@ -299,6 +305,16 @@ export function setContinuationStore(store) {
     );
   }
   continuationStore = store;
+}
+
+/**
+ * Stop the cleanup interval timer
+ */
+export function stopContinuationStoreCleanup() {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
 }
 
 /**
