@@ -113,7 +113,7 @@ export async function consensusTool(args, dependencies) {
           hour12: false
         }).replace(',', '');
 
-        const statusLine = `⏳ SUBMITTED | CONSENSUS | ${bgContinuationId} | 1/1 | Started: ${startTime} | 0s elapsed | "${title || 'Processing...'}" | ${modelsList}`;
+        const statusLine = `⏳ SUBMITTED | CONSENSUS | ${bgContinuationId} | 1/1 | Started: ${startTime} | "${title || 'Processing...'}" | ${modelsList}`;
 
         // Return formatted response with status line and continuation_id
         return createToolResponse({

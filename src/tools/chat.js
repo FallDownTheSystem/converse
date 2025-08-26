@@ -111,7 +111,7 @@ export async function chatTool(args, dependencies) {
           hour12: false
         }).replace(',', '');
 
-        const statusLine = `⏳ SUBMITTED | CHAT | ${conversationContinuationId} | 1/1 | Started: ${startTime} | 0s elapsed | "${title || 'Processing...'}" | ${providerName}/${resolvedModel}`;
+        const statusLine = `⏳ SUBMITTED | CHAT | ${conversationContinuationId} | 1/1 | Started: ${startTime} | "${title || 'Processing...'}" | ${providerName}/${resolvedModel}`;
 
         // Return formatted response with status line and continuation_id
         return createToolResponse({

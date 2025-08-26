@@ -218,14 +218,14 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
   if (jobStatus.status === 'completed' && jobStatus.result) {
     // Add continuation_id if present (for multi-step conversations)
     if (jobStatus.result.continuation?.id) {
-      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation.id}`);
+      parts.push(`continuation_id: ${jobStatus.result.continuation.id}`);
     } else if (jobStatus.result.continuation_id) {
-      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
+      parts.push(`continuation_id: ${jobStatus.result.continuation_id}`);
     }
 
     // For completed jobs, just show the full content (no summary needed)
     if (jobStatus.result.content) {
-      parts.push(`\n${jobStatus.result.content}`);
+      parts.push(`${jobStatus.result.content}`);
     }
   }
 
