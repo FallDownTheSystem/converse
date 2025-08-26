@@ -55,6 +55,10 @@ export async function chatTool(args, dependencies) {
       // Generate or use existing continuation ID for the conversation
       const conversationContinuationId = continuation_id || generateContinuationId();
 
+      // Get provider and model info for the job
+      const providerName = mapModelToProvider(args.model || 'auto', providers);
+      const resolvedModel = providers[providerName]?.resolveModel?.(args.model) || args.model || 'auto';
+
       try {
         // Submit background job using continuation_id as the job identifier
         const jobId = await jobRunner.submit(
@@ -64,7 +68,9 @@ export async function chatTool(args, dependencies) {
             options: {
               ...args,
               jobId: conversationContinuationId, // Use continuation_id as job ID
-              continuation_id: conversationContinuationId // Pass the conversation continuation ID
+              continuation_id: conversationContinuationId, // Pass the conversation continuation ID
+              provider: providerName, // Add provider info for status display
+              model: resolvedModel // Add resolved model info for status display
             }
           },
           async (context) => {
@@ -80,9 +86,6 @@ export async function chatTool(args, dependencies) {
           }
         );
 
-        // Get provider info for the status line
-        const providerName = mapModelToProvider(args.model || 'auto', providers);
-        const resolvedModel = providers[providerName]?.resolveModel?.(args.model) || args.model || 'auto';
         const startTime = new Date().toLocaleString();
         
         // Return immediate response as human-readable status line

@@ -60,6 +60,9 @@ export async function consensusTool(args, dependencies) {
       // Generate continuation ID for background execution result
       const bgContinuationId = continuation_id || generateContinuationId();
 
+      // Create models list for status display
+      const modelsList = args.models.join(', ');
+
       try {
         // Submit background job
         const jobId = await jobRunner.submit(
@@ -68,7 +71,8 @@ export async function consensusTool(args, dependencies) {
             sessionId: bgContinuationId, // Use continuation_id as sessionId for consistency
             options: {
               ...args,
-              jobId: bgContinuationId // Use continuation ID as job ID
+              jobId: bgContinuationId, // Use continuation ID as job ID
+              models_list: modelsList // Add models list for status display
             }
           },
           async (context) => {
@@ -84,8 +88,6 @@ export async function consensusTool(args, dependencies) {
           }
         );
 
-        // Format models list for display
-        const modelsList = models.join(', ');
         const startTime = new Date().toLocaleString();
         
         // Return immediate response as human-readable status line
