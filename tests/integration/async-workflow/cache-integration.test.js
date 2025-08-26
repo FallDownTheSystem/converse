@@ -84,11 +84,10 @@ describe('Cache System Integration Tests', () => {
             }
           });
 
-          // Parse response, handling potential metadata display
+          // Parse response to get job ID for status checking
           const asyncText = asyncResult.content[0].text;
-          const asyncJsonStart = asyncText.indexOf('{');
-          const asyncContent = asyncJsonStart >= 0 ? JSON.parse(asyncText.substring(asyncJsonStart)) : JSON.parse(asyncText);
-          const jobId = asyncContent.continuation_id;
+          const asyncContent = parseAsyncResponse(asyncText);
+          const jobId = asyncContent.job_id;  // Use job_id for status checking, not continuation_id
 
           // Wait for job completion
           let completed = false;
@@ -101,9 +100,7 @@ describe('Cache System Integration Tests', () => {
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId,
-                include_output: true,
-                output_format: 'json'
+                continuation_id: jobId
               }
             });
 
@@ -118,6 +115,9 @@ describe('Cache System Integration Tests', () => {
               expect(status.cache_location).toBeUndefined(); // Not exposed in response
               expect(status.result).toBeDefined();
               expect(status.result.content.toLowerCase()).toContain('paris');
+            } else if (status.status === 'failed') {
+              completed = true; // Exit loop on failure
+              throw new Error(`Job failed: ${status.error}`);
             }
 
             attempts++;
@@ -131,17 +131,14 @@ describe('Cache System Integration Tests', () => {
           // Check status again - should still be retrievable
           const finalStatus = await client.callTool({
             name: 'check_status',
-              output_format: 'json',
             arguments: {
-              continuation_id: jobId,
-              include_output: true
+              continuation_id: jobId
             }
           });
 
-          // Parse response, handling potential metadata display
+          // Parse response using centralized helper
           const finalText = finalStatus.content[0].text;
-          const finalJsonStart = finalText.indexOf('{');
-          const finalContent = finalJsonStart >= 0 ? JSON.parse(finalText.substring(finalJsonStart)) : JSON.parse(finalText);
+          const finalContent = parseStatusResponse(finalText);
           expect(finalContent.status).toBe('completed');
           expect(finalContent.result).toBeDefined();
           
@@ -188,11 +185,10 @@ describe('Cache System Integration Tests', () => {
           }
         });
 
-        // Parse response, handling potential metadata display
+        // Parse response to get job ID
         const asyncText = asyncResult.content[0].text;
-        const asyncJsonStart = asyncText.indexOf('{');
-        const asyncContent = asyncJsonStart >= 0 ? JSON.parse(asyncText.substring(asyncJsonStart)) : JSON.parse(asyncText);
-        jobId = asyncContent.continuation_id;
+        const asyncContent = parseAsyncResponse(asyncText);
+        jobId = asyncContent.job_id;  // Use job_id for status checking
 
         // Wait for completion
         let completed = false;
@@ -300,11 +296,10 @@ describe('Cache System Integration Tests', () => {
             }
           });
 
-          // Parse response, handling potential metadata display
+          // Parse response to get job ID
           const asyncText = asyncResult.content[0].text;
-          const asyncJsonStart = asyncText.indexOf('{');
-          const asyncContent = asyncJsonStart >= 0 ? JSON.parse(asyncText.substring(asyncJsonStart)) : JSON.parse(asyncText);
-          const jobId = asyncContent.continuation_id;
+          const asyncContent = parseAsyncResponse(asyncText);
+          const jobId = asyncContent.job_id;  // Use job_id for status checking
 
           // Wait for completion
           let completed = false;
@@ -318,9 +313,7 @@ describe('Cache System Integration Tests', () => {
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId,
-                include_output: true,
-                output_format: 'json'
+                continuation_id: jobId
               }
             });
 
@@ -389,11 +382,10 @@ describe('Cache System Integration Tests', () => {
           }
         });
 
-        // Parse response, handling potential metadata display
+        // Parse response to get job ID
         const asyncText = asyncResult.content[0].text;
-        const asyncJsonStart = asyncText.indexOf('{');
-        const asyncContent = asyncJsonStart >= 0 ? JSON.parse(asyncText.substring(asyncJsonStart)) : JSON.parse(asyncText);
-        const jobId = asyncContent.continuation_id;
+        const asyncContent = parseAsyncResponse(asyncText);
+        const jobId = asyncContent.job_id;  // Use job_id for status checking
 
         // Wait for completion
         let completed = false;

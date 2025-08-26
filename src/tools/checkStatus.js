@@ -31,7 +31,6 @@ export async function checkStatusTool(args, dependencies) {
       continuation_id,
       since_seq,
       include_events = false,
-      include_output = true,
       max_results = 50
     } = args;
 
@@ -55,7 +54,6 @@ export async function checkStatusTool(args, dependencies) {
       continuation_id,
       since_seq,
       include_events,
-      include_output,
       max_results
     });
 
@@ -68,7 +66,7 @@ export async function checkStatusTool(args, dependencies) {
         {
           since_seq,
           include_events,
-          include_output
+          include_output: true  // Always include output
         }
       );
 
@@ -95,7 +93,7 @@ export async function checkStatusTool(args, dependencies) {
         {
           since_seq,
           include_events,
-          include_output,
+          include_output: true,  // Always include output
           max_results
         }
       );
@@ -213,7 +211,7 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
       query_options: {
         since_seq: options.since_seq,
         include_events: options.include_events,
-        include_output: options.include_output,
+        include_output: true,  // Always include output
         max_results: options.max_results
       },
       timestamp: Date.now()
@@ -368,11 +366,20 @@ function formatHumanReadableStatus(jobStatus) {
     }
   }
   
-  // Add result preview if completed
-  if (jobStatus.status === 'completed' && jobStatus.result?.content) {
-    const preview = jobStatus.result.content.substring(0, 100);
-    const suffix = jobStatus.result.content.length > 100 ? '...' : '';
-    parts.push(`Response: "${preview}${suffix}"`);
+  // Add full result if completed
+  if (jobStatus.status === 'completed' && jobStatus.result) {
+    // Add continuation_id if present (for multi-step conversations)
+    // Chat tool returns continuation.id, not continuation_id
+    if (jobStatus.result.continuation?.id) {
+      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation.id}`);
+    } else if (jobStatus.result.continuation_id) {
+      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
+    }
+    
+    // Show full content
+    if (jobStatus.result.content) {
+      parts.push(`\n${jobStatus.result.content}`);
+    }
   }
   
   // Add error info if failed
@@ -451,8 +458,8 @@ function formatJobStatus(job, options = {}) {
     }
   }
 
-  // Include output if requested and available
-  if (options.include_output && job.overall?.result) {
+  // Include output (always included)
+  if (job.overall?.result) {
     formatted.result = job.overall.result;
     
     // Also include metadata from the result if available
@@ -496,11 +503,6 @@ checkStatusTool.inputSchema = {
       type: 'boolean',
       default: false,
       description: 'Include job lifecycle events in the response (useful for debugging and detailed monitoring).'
-    },
-    include_output: {
-      type: 'boolean', 
-      default: true,
-      description: 'Include partial/final output in the response. Set to false for faster status-only queries.'
     },
     max_results: {
       type: 'integer',

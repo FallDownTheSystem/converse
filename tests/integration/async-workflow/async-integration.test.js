@@ -14,7 +14,7 @@ import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
 import { testWithApiKeys, hasAnyApiKey } from '../../utils/conditionalTest.js';
-import { parseStatusResponse, parseAsyncResponse } from '../../utils/responseParser.js';
+import { parseStatusResponse, parseAsyncResponse, parseJsonResponse } from '../../utils/responseParser.js';
 import { nanoid } from 'nanoid';
 import 'dotenv/config';
 
@@ -61,16 +61,17 @@ describe('Async Workflow Integration Tests', () => {
         expect(asyncResult).toBeDefined();
         expect(asyncResult.content).toBeTruthy();
         
-        // The response should contain the message and continuation info
+        // The response should contain the message and job/continuation info
         expect(asyncResult.content[0].text).toContain('Chat request submitted for background processing');
         expect(asyncResult.continuation).toBeDefined();
-        expect(asyncResult.continuation.id).toBeDefined();
-        expect(asyncResult.continuation.id).toContain('conv_');
+        expect(asyncResult.continuation.job_id).toBeDefined();
+        expect(asyncResult.continuation.job_id).toContain('job_');
+        expect(asyncResult.continuation.continuation_id).toBeDefined(); 
+        expect(asyncResult.continuation.continuation_id).toContain('conv_');
         expect(asyncResult.continuation.status).toBe('processing');
-        // async_execution flag may not be preserved at top level
-        // The important thing is we get a continuation ID and status
 
-        logger.info('[async-integration] Received continuation_id:', asyncResult.continuation.id);
+        logger.info('[async-integration] Received job_id:', asyncResult.continuation.job_id);
+        logger.info('[async-integration] Received continuation_id:', asyncResult.continuation.continuation_id);
       });
     }, 20000);
 
@@ -87,10 +88,10 @@ describe('Async Workflow Integration Tests', () => {
           }
         });
 
-        // Use the continuation ID for status checks
-        const continuationId = asyncResult.continuation.id;
+        // Use the job ID for status checks
+        const jobId = asyncResult.continuation.job_id;
         
-        logger.info('[async-integration] Job submitted:', continuationId);
+        logger.info('[async-integration] Job submitted:', jobId);
 
         // Step 2: Poll for status
         let attempts = 0;
@@ -105,9 +106,7 @@ describe('Async Workflow Integration Tests', () => {
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId,
-              include_output: true,
-              output_format: 'json'
+              continuation_id: jobId
             }
           });
 
@@ -296,9 +295,9 @@ describe('Async Workflow Integration Tests', () => {
           }
         });
 
-        // Get the continuation ID from the response
+        // Get the job ID from the response for cancellation
         expect(asyncResult.continuation).toBeDefined();
-        const jobId = asyncResult.continuation.id;
+        const jobId = asyncResult.continuation.job_id;
 
         // Wait briefly then cancel
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -311,10 +310,19 @@ describe('Async Workflow Integration Tests', () => {
           }
         });
 
-        // Parse cancel response, handling potential metadata display
+        // Parse cancel response 
         const cancelText = cancelResult.content[0].text;
-        const jsonStart = cancelText.indexOf('{');
-        const cancelContent = jsonStart >= 0 ? JSON.parse(cancelText.substring(jsonStart)) : JSON.parse(cancelText);
+        console.log('[DEBUG] Cancel response:', cancelText);
+        
+        // cancel_job returns JSON, but may have validation errors
+        let cancelContent;
+        try {
+          cancelContent = parseJsonResponse(cancelText);
+        } catch (error) {
+          console.log('[DEBUG] Failed to parse cancel response as JSON, raw text:', cancelText.substring(0, 200));
+          throw error;
+        }
+        
         expect(cancelContent.status).toBe('cancelled');
         expect(cancelContent.continuation_id).toBe(jobId);
 
@@ -322,12 +330,11 @@ describe('Async Workflow Integration Tests', () => {
         const statusResult = await client.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: jobId,
-            output_format: 'json'
+            continuation_id: jobId
           }
         });
 
-        // Parse status response, handling potential metadata display
+        // Parse status response using centralized helper
         const statusText = statusResult.content[0].text;
         const statusContent = parseStatusResponse(statusText);
         expect(statusContent.status).toBe('cancelled');
@@ -445,7 +452,7 @@ describe('Async Workflow Integration Tests', () => {
             })
           ]);
 
-          const jobIds = jobs.map(j => j.continuation ? j.continuation.id : null).filter(id => id !== null);
+          const jobIds = jobs.map(j => j.continuation ? j.continuation.job_id : null).filter(id => id !== null);
           
           expect(jobIds).toHaveLength(3);
           expect(new Set(jobIds).size).toBe(3); // All IDs should be unique
@@ -464,9 +471,7 @@ describe('Async Workflow Integration Tests', () => {
               const statusResult = await client.callTool({
                 name: 'check_status',
                 arguments: {
-                  continuation_id: jobId,
-                  include_output: true,
-                  output_format: 'json'
+                  continuation_id: jobId
                 }
               });
 

@@ -40,13 +40,26 @@ export function parseStatusResponse(text) {
     model = providerModel[1] || null;
   }
   
-  // Check for completion response
+  // Check for completion response - new format shows full content after status line and continuation_id
   let result = null;
-  const responseLine = lines.find(l => l.startsWith('Response: "'));
-  if (responseLine) {
-    const content = responseLine.match(/Response: "([^"]+)"/)?.[1];
-    if (content) {
-      result = { content };
+  if (status === 'completed') {
+    // Find content after status line and optional continuation_id line
+    const statusLineIndex = lines.findIndex(line => line.includes('COMPLETED'));
+    if (statusLineIndex >= 0) {
+      // Skip status line and any continuation_id line
+      let contentStartIndex = statusLineIndex + 1;
+      while (contentStartIndex < lines.length && 
+             (lines[contentStartIndex].trim() === '' || 
+              lines[contentStartIndex].trim().startsWith('continuation_id:'))) {
+        contentStartIndex++;
+      }
+      
+      if (contentStartIndex < lines.length) {
+        const content = lines.slice(contentStartIndex).join('\n').trim();
+        if (content) {
+          result = { content };
+        }
+      }
     }
   }
   
