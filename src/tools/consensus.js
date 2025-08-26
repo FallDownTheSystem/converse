@@ -84,18 +84,17 @@ export async function consensusTool(args, dependencies) {
           }
         );
 
-        // Return immediate response with continuation_id as JSON
+        // Format models list for display
+        const modelsList = models.join(', ');
+        const startTime = new Date().toLocaleString();
+        
+        // Return immediate response as human-readable status line
+        const statusLine = `⏳ PROCESSING | CONSENSUS | ${bgContinuationId} | 1/1 | Started: ${startTime} | ${modelsList}`;
+        
         return createToolResponse({
-          content: JSON.stringify({
-            message: 'Consensus request submitted for background processing',
-            continuation_id: bgContinuationId,
-            job_id: jobId,
-            status: 'processing',
-            async_execution: true
-          }),
+          content: statusLine,
           continuation: {
-            id: bgContinuationId,
-            job_id: jobId,
+            id: bgContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
           },
           async_execution: true

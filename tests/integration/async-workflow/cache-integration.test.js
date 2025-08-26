@@ -84,10 +84,8 @@ describe('Cache System Integration Tests', () => {
             }
           });
 
-          // Parse response to get job ID for status checking
-          const asyncText = asyncResult.content[0].text;
-          const asyncContent = parseAsyncResponse(asyncText);
-          const jobId = asyncContent.job_id;  // Use job_id for status checking, not continuation_id
+          // Get continuation_id from the async response
+          const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
 
           // Wait for job completion
           let completed = false;
@@ -100,7 +98,7 @@ describe('Cache System Integration Tests', () => {
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId
+                continuation_id: continuationId
               }
             });
 
@@ -132,7 +130,7 @@ describe('Cache System Integration Tests', () => {
           const finalStatus = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
@@ -167,7 +165,7 @@ describe('Cache System Integration Tests', () => {
         }
       });
 
-      let jobId;
+      let continuationId;
       const sessionId = `test-session-${nanoid()}`;
 
       try {
@@ -185,10 +183,8 @@ describe('Cache System Integration Tests', () => {
           }
         });
 
-        // Parse response to get job ID
-        const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        jobId = asyncContent.job_id;  // Use job_id for status checking
+        // Get continuation_id from the async response
+        continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
 
         // Wait for completion
         let completed = false;
@@ -201,7 +197,7 @@ describe('Cache System Integration Tests', () => {
           const statusResult = await client1.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId,
+              continuation_id: continuationId,
               include_output: true,
               output_format: 'json'
             }
@@ -251,7 +247,7 @@ describe('Cache System Integration Tests', () => {
         const recoveredResult = await client2.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: jobId,
+            continuation_id: continuationId,
             include_output: true,
             output_format: 'json'
           }
@@ -297,9 +293,7 @@ describe('Cache System Integration Tests', () => {
           });
 
           // Parse response to get job ID
-          const asyncText = asyncResult.content[0].text;
-          const asyncContent = parseAsyncResponse(asyncText);
-          const jobId = asyncContent.job_id;  // Use job_id for status checking
+          const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
 
           // Wait for completion
           let completed = false;
@@ -313,7 +307,7 @@ describe('Cache System Integration Tests', () => {
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId
+                continuation_id: continuationId
               }
             });
 
@@ -383,9 +377,7 @@ describe('Cache System Integration Tests', () => {
         });
 
         // Parse response to get job ID
-        const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        const jobId = asyncContent.job_id;  // Use job_id for status checking
+        const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
 
         // Wait for completion
         let completed = false;
@@ -397,7 +389,7 @@ describe('Cache System Integration Tests', () => {
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId,
+              continuation_id: continuationId,
               include_output: true,
               output_format: 'json'
             }
@@ -426,7 +418,7 @@ describe('Cache System Integration Tests', () => {
         const afterMemoryExpiry = await client.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: jobId,
+            continuation_id: continuationId,
             include_output: true,
             output_format: 'json'
           }
@@ -451,7 +443,7 @@ describe('Cache System Integration Tests', () => {
         const afterDiskExpiry = await client.callTool({
           name: 'check_status',
           arguments: {
-            continuation_id: jobId,
+            continuation_id: continuationId,
             include_output: true,
             output_format: 'json'
           }
@@ -506,7 +498,7 @@ describe('Cache System Integration Tests', () => {
           );
 
           const jobs = await Promise.all(jobPromises);
-          const jobIds = jobs.map(j => {
+          const continuationIds = jobs.map(j => {
             const text = j.content[0].text;
             const jsonStart = text.indexOf('{');
             const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
@@ -514,12 +506,12 @@ describe('Cache System Integration Tests', () => {
           });
 
           // Concurrently check status multiple times
-          const statusChecks = jobIds.flatMap(jobId => 
+          const statusChecks = continuationIds.flatMap(continuationId => 
             Array(3).fill(null).map(() => 
               client.callTool({
                 name: 'check_status',
                 arguments: {
-                  continuation_id: jobId,
+                  continuation_id: continuationId,
                   include_output: false,
                   output_format: 'json'
                 }
@@ -581,7 +573,7 @@ describe('Cache System Integration Tests', () => {
           expect(jobs).toHaveLength(jobCount);
           expect(submitTime).toBeLessThan(5000); // Should submit all jobs quickly
 
-          const jobIds = jobs.map(j => {
+          const continuationIds = jobs.map(j => {
             const text = j.content[0].text;
             const jsonStart = text.indexOf('{');
             const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
@@ -593,11 +585,11 @@ describe('Cache System Integration Tests', () => {
 
           // Measure retrieval performance
           const startRetrieve = Date.now();
-          const retrievalPromises = jobIds.map(jobId =>
+          const retrievalPromises = continuationIds.map(continuationId =>
             client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId,
+                continuation_id: continuationId,
                 include_output: true,
                 output_format: 'json'
               }

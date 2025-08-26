@@ -28,7 +28,8 @@ export async function checkStatusTool(args, dependencies) {
 
     // Extract and validate arguments
     const {
-      continuation_id
+      continuation_id,
+      full_history = false
     } = args;
 
     // Validate arguments
@@ -40,7 +41,8 @@ export async function checkStatusTool(args, dependencies) {
     const fileCache = getFileCache();
 
     debugLog('checkStatus', 'Processing status query', {
-      continuation_id
+      continuation_id,
+      full_history
     });
 
     if (continuation_id) {
@@ -50,7 +52,8 @@ export async function checkStatusTool(args, dependencies) {
         asyncJobStore,
         fileCache,
         {
-          include_output: true  // Always include output
+          include_output: true,  // Always include output
+          full_history
         }
       );
 
@@ -59,13 +62,16 @@ export async function checkStatusTool(args, dependencies) {
       }
 
       // Format content as human-readable status
-      const content = formatHumanReadableStatus(jobStatus);
+      const content = full_history 
+        ? formatConversationHistory(jobStatus, continuation_id)
+        : formatHumanReadableStatus(jobStatus, { sequence: '1/1' });
       
       return createToolResponse({
         content,
         metadata: {
           continuation_id,
-          execution_time: (Date.now() - startTime) / 1000
+          execution_time: (Date.now() - startTime) / 1000,
+          full_history
         }
       });
 
@@ -260,11 +266,14 @@ function formatJobListHumanReadable(jobsList) {
     // Format start time as readable date/time
     const startTime = job.created_at ? new Date(job.created_at).toLocaleString() : 'unknown';
     
-    // Format: emoji STATUS | TOOL | id | started | time | [progress for consensus only] | provider
+    // Format: emoji STATUS | TOOL | id | sequence | started | time | [progress for consensus only] | provider
+    // For job listing, each job shows as 1/1 since they're independent jobs
+    const sequenceStr = '1/1';
+    
     if (job.tool === 'consensus' && job.consensus_progress) {
-      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${startTime} | ${timeStr} | ${job.consensus_progress} | ${provider}`);
+      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr} | ${job.consensus_progress} | ${provider}`);
     } else {
-      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${startTime} | ${timeStr} | ${provider}`);
+      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr} | ${provider}`);
     }
   });
   
@@ -272,11 +281,35 @@ function formatJobListHumanReadable(jobsList) {
 }
 
 /**
+ * Format conversation history for a continuation ID
+ * @param {object} jobStatus - Formatted job status object  
+ * @param {string} continuationId - The continuation ID
+ * @returns {string} Human-readable conversation history
+ */
+function formatConversationHistory(jobStatus, continuationId) {
+  const parts = [];
+  
+  parts.push(`📊 Conversation History for ${continuationId}:`);
+  parts.push('─'.repeat(80));
+  parts.push('');
+  
+  // For now, show the single job with sequence 1/1
+  // TODO: Implement proper conversation tracking when multi-job conversations are supported
+  const statusLine = formatHumanReadableStatus(jobStatus, { sequence: '1/1', skipContent: false });
+  parts.push(statusLine);
+  
+  return parts.join('\n');
+}
+
+/**
  * Format job status as human-readable text
  * @param {object} jobStatus - Formatted job status object
+ * @param {object} options - Formatting options
+ * @param {string} options.sequence - Sequence indicator (e.g., '1/5')
+ * @param {boolean} options.skipContent - Skip showing full content
  * @returns {string} Human-readable status text
  */
-function formatHumanReadableStatus(jobStatus) {
+function formatHumanReadableStatus(jobStatus, options = {}) {
   const parts = [];
   
   // Format elapsed time
@@ -302,8 +335,11 @@ function formatHumanReadableStatus(jobStatus) {
   // Format start time as readable date/time
   const startTime = jobStatus.created_at ? new Date(jobStatus.created_at).toLocaleString() : 'unknown';
   
+  // Add sequence info if provided
+  const sequenceStr = options.sequence ? ` | ${options.sequence}` : '';
+  
   // Build complete status line with all info
-  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
+  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id}${sequenceStr} | Started: ${startTime} | ${timeStr} elapsed`;
   
   // Add progress for consensus tool only (show x/y format)
   if (jobStatus.tool === 'consensus') {
@@ -468,6 +504,11 @@ checkStatusTool.inputSchema = {
     continuation_id: {
       type: 'string',
       description: 'Optional job continuation ID to query. If not provided, returns the 10 most recent jobs.'
+    },
+    full_history: {
+      type: 'boolean',
+      default: false,
+      description: 'When used with continuation_id, returns the full conversation history for that continuation ID. Shows all jobs in the conversation sequence with x/y indicators.'
     }
   },
   additionalProperties: false

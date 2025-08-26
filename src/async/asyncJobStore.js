@@ -170,8 +170,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         );
       }
 
-      // Use provided jobId from options or generate a new one
-      const jobId = options.jobId || this._generateJobId();
+      // Use provided jobId from options (required)
+      const jobId = options.jobId;
+      if (!jobId) {
+        throw new AsyncJobStoreError(
+          'jobId is required in options',
+          'MISSING_JOB_ID'
+        );
+      }
       const now = Date.now();
 
       // Create initial job state

@@ -118,13 +118,14 @@ module.exports = { fibonacci };`
         console.log('[DEBUG] Step 1 raw response:', step1Text);
         
         let step1Content;
-        let jobId1;
+        let continuationId1;
         try {
-          step1Content = parseAsyncResponse(step1Text);
+          // Response is now human-readable status line, use continuation object
+          step1Content = { continuation_id: step1Result.continuation.id };
           // Use job_id for status checking (NOT continuation_id)
-          jobId1 = step1Content.job_id;
+          continuationId1 = step1Content.job_id;
           console.log('[DEBUG] Parsed step 1 content:', step1Content);
-          console.log('[DEBUG] Job ID for status checking:', jobId1);
+          console.log('[DEBUG] Job ID for status checking:', continuationId1);
           console.log('[DEBUG] Conversation continuation ID:', step1Content.continuation_id);
         } catch (parseError) {
           console.error('[DEBUG] Failed to parse step 1 response:', parseError);
@@ -135,11 +136,11 @@ module.exports = { fibonacci };`
         // Wait for first job to complete
         let job1Complete = false;
         // Use the conversation continuation ID from the original async response
-        const continuationId = step1Content.continuation_id;
+        const continuationId1 = step1Content.continuation_id;
         let attempts = 0;
 
         console.log('[DEBUG] Starting to poll for job completion at', Date.now() - testStartTime, 'ms...');
-        console.log(`[DEBUG] Looking for jobId1: ${jobId1}`);
+        console.log(`[DEBUG] Looking for continuationId1: ${continuationId1}`);
         currentStep = "POLLING_STEP1";
         
         const pollStartTime = Date.now();
@@ -150,13 +151,13 @@ module.exports = { fibonacci };`
           
           await new Promise(resolve => setTimeout(resolve, 1000));
 
-          console.log(`[DEBUG] Calling check_status for jobId1: ${jobId1} at`, Date.now() - testStartTime, 'ms');
+          console.log(`[DEBUG] Calling check_status for continuationId1: ${continuationId1} at`, Date.now() - testStartTime, 'ms');
           const statusCallStart = Date.now();
           
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId1
+              continuation_id: continuationId1
               // check_status always returns full output in human-readable format
             }
           });
@@ -227,13 +228,14 @@ module.exports = { fibonacci };`
         console.log('[DEBUG] Step 2 raw response:', step2Text);
         
         let step2Content;
-        let jobId2;
+        let continuationId2;
         try {
-          step2Content = parseAsyncResponse(step2Text);
+          // Response is now human-readable status line, use continuation object
+          step2Content = { continuation_id: step2Result.continuation.id };
           // Use job_id for status checking (NOT continuation_id)
-          jobId2 = step2Content.job_id;
+          continuationId2 = step2Content.job_id;
           console.log('[DEBUG] Parsed step 2 content:', step2Content);
-          console.log('[DEBUG] Job ID 2 for status checking:', jobId2);
+          console.log('[DEBUG] Job ID 2 for status checking:', continuationId2);
         } catch (parseError) {
           console.error('[DEBUG] Failed to parse step 2 response:', parseError);
           console.error('[DEBUG] Response was:', step2Text);
@@ -255,13 +257,13 @@ module.exports = { fibonacci };`
           
           await new Promise(resolve => setTimeout(resolve, 1000));
 
-          console.log(`[DEBUG] Calling check_status for step 2 jobId2: ${jobId2} at`, Date.now() - testStartTime, 'ms');
+          console.log(`[DEBUG] Calling check_status for step 2 continuationId2: ${continuationId2} at`, Date.now() - testStartTime, 'ms');
           const step2StatusStart = Date.now();
           
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId2
+              continuation_id: continuationId2
               // check_status always returns full output in human-readable format
             }
           });
@@ -354,9 +356,8 @@ module.exports = { fibonacci };`
 
         // Parse response, handling potential metadata display
         const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        // Use job_id for status checking (NOT continuation_id)
-        const jobId = asyncContent.job_id;
+        // Use continuation_id for status checking
+        const fileTestContinuationId = asyncResult.continuation.id;
 
         // Wait for completion - file processing may take longer
         let completed = false;
@@ -369,7 +370,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
@@ -458,9 +459,8 @@ module.exports = { fibonacci };`
 
         // Parse response, handling potential metadata display
         const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        // Use job_id for status checking (NOT continuation_id)
-        const jobId = asyncContent.job_id;
+        // Use continuation_id for status checking
+        const asyncContinuationId = asyncResult.continuation.id;
 
         // Poll for async result
         let completed = false;
@@ -473,7 +473,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
@@ -542,9 +542,8 @@ module.exports = { fibonacci };`
 
         // Parse response, handling potential metadata display
         const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        // Use job_id for status checking (NOT continuation_id)
-        const jobId = asyncContent.job_id;
+        // Use continuation_id for status checking
+        const errorTestContinuationId = asyncResult.continuation.id;
 
         // Poll for status - should eventually fail
         let failed = false;
@@ -557,7 +556,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
@@ -601,9 +600,8 @@ module.exports = { fibonacci };`
 
         // Parse response, handling potential metadata display
         const asyncText = asyncResult.content[0].text;
-        const asyncContent = parseAsyncResponse(asyncText);
-        // Use job_id for status checking (NOT continuation_id)
-        const jobId = asyncContent.job_id;
+        // Use continuation_id for status checking
+        const timeoutTestContinuationId = asyncResult.continuation.id;
 
         // Set a reasonable timeout for checking
         const timeout = 45000; // 45 seconds
@@ -618,7 +616,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
@@ -687,9 +685,9 @@ module.exports = { fibonacci };`
         const jobs = await Promise.all(jobPromises);
         const submitTime = Date.now() - startTime;
 
-        const jobIds = jobs.map(j => {
-          const jText = j.content[0].text;
-          const jParsed = parseAsyncResponse(jText);
+        const continuationIds = jobs.map(j => {
+          // Response is now human-readable status line, use continuation object
+          const jParsed = { continuation_id: j.continuation.id };
           // Use job_id for status checking (NOT continuation_id)
           return jParsed.job_id;
         });
@@ -702,7 +700,7 @@ module.exports = { fibonacci };`
         const pollStartTime = Date.now();
 
         // Poll all jobs until complete
-        const pollPromises = jobIds.map(async (jobId, index) => {
+        const pollPromises = continuationIds.map(async (continuationId, index) => {
           let completed = false;
           let attempts = 0;
           const maxAttempts = 60;
@@ -714,7 +712,7 @@ module.exports = { fibonacci };`
               const statusResult = await client.callTool({
                 name: 'check_status',
                 arguments: {
-                  continuation_id: jobId
+                  continuation_id: continuationId
                 }
               });
 
@@ -784,10 +782,10 @@ module.exports = { fibonacci };`
         });
 
         // Parse response, handling potential metadata display
-        const consensusText = consensusResult.content[0].text;
-        const consensusContent = parseAsyncResponse(consensusText);
-        // Use job_id for status checking (NOT continuation_id)
-        const jobId = consensusContent.job_id;
+        // Response is now human-readable status line, use continuation object
+        const consensusContent = { continuation_id: consensusResult.continuation.id };
+        // Use continuation_id for status checking
+        const consensusContinuationId = consensusContent.continuation_id;
 
         // Wait for consensus completion
         let completed = false;
@@ -800,7 +798,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: jobId
+              continuation_id: continuationId
             }
           });
 
