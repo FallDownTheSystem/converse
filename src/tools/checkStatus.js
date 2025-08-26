@@ -251,7 +251,7 @@ checkStatusTool.inputSchema = {
     full_history: {
       type: 'boolean',
       default: false,
-      description: 'When used with continuation_id, returns the full conversation history for that continuation ID.'
+      description: 'When used with continuation_id, returns the full conversation history for that continuation ID. Only use when there are multiple turns and you need the full conversation.'
     }
   },
   additionalProperties: false
