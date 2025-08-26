@@ -22,7 +22,8 @@ const EVENT_TYPES = {
   DELTA: 'delta',
   USAGE: 'usage',
   END: 'end',
-  ERROR: 'error'
+  ERROR: 'error',
+  REASONING_SUMMARY: 'reasoning_summary'
 };
 
 /**
@@ -105,6 +106,12 @@ class ProviderStreamNormalizer {
         if (event.type === 'usage') {
           accumulatedUsage = event.usage;
           yield this.createUsageEvent(event.usage, provider, model);
+          continue;
+        }
+
+        // Handle reasoning summary events (OpenAI reasoning models)
+        if (event.type === 'reasoning_summary') {
+          yield this.createReasoningSummaryEvent(event.content, provider, model);
           continue;
         }
 
@@ -614,6 +621,23 @@ class ProviderStreamNormalizer {
           // Preserve provider-specific usage fields
           ...usage
         }
+      }
+    };
+  }
+
+  /**
+   * Create standardized reasoning summary event
+   */
+  createReasoningSummaryEvent(content, provider, model) {
+    return {
+      type: EVENT_TYPES.REASONING_SUMMARY,
+      provider,
+      model,
+      timestamp: Date.now(),
+      data: {
+        content: content || '',
+        role: 'assistant',
+        isReasoningSummary: true
       }
     };
   }

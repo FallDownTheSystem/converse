@@ -165,10 +165,12 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
 
   // Show reasoning summary for running jobs from OpenAI reasoning models
   if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.reasoning_summary) {
+    debugLog(`[FormatStatus] *** SHOWING REASONING SUMMARY: "${jobStatus.reasoning_summary.substring(0, 100)}..."`);
     parts.push(`Thinking: ${jobStatus.reasoning_summary}`);
   } else if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.elapsed_seconds > 5) {
     // Fallback thinking status for jobs without reasoning summaries
     const thinkingTime = Math.floor(jobStatus.elapsed_seconds);
+    debugLog(`[FormatStatus] *** FALLBACK THINKING (no reasoning_summary available)`);
     parts.push(`Thinking: Model is processing your request (${thinkingTime}s elapsed)`);
   }
 

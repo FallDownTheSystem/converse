@@ -690,6 +690,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
         });
         break;
 
+      case 'reasoning_summary':
+        // Update job with reasoning summary
+        debugLog(`[Chat] *** UPDATING JOB WITH REASONING: "${event.data.content?.substring(0, 100)}..."`);
+        await context.updateJob({
+          reasoning_summary: event.data.content
+        });
+        break;
+
       case 'usage':
         finalUsage = event.data.usage;
         break;

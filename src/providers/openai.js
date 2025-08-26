@@ -520,6 +520,10 @@ export const openaiProvider = {
         // Store reasoning summary in metadata
         if (reasoningSummary) {
           usage.reasoning_summary = reasoningSummary;
+          debugLog(`[OpenAI] Found reasoning summary: ${reasoningSummary.substring(0, 100)}...`);
+        } else {
+          debugLog(`[OpenAI] No reasoning summary found in response`);
+          debugLog(`[OpenAI] Response structure:`, JSON.stringify(response, null, 2).substring(0, 500));
         }
       } else {
         // Handle Chat Completions API response format
@@ -607,6 +611,7 @@ export const openaiProvider = {
 
     const startTime = Date.now();
     let totalContent = '';
+    let totalReasoningSummary = '';
     let lastUsage = null;
     let finishReason = null;
     let finalModel = resolvedModel;
@@ -647,6 +652,7 @@ export const openaiProvider = {
             break;
           }
           if (shouldUseResponsesAPI) {
+            
             // Handle Responses API streaming format
             if (chunk.type === 'response.output_text.delta') {
               const content = chunk.delta || '';
@@ -655,6 +661,48 @@ export const openaiProvider = {
                 yield {
                   type: 'delta',
                   content,
+                  timestamp: new Date().toISOString()
+                };
+              }
+            } else if (chunk.type === 'response.reasoning_summary_part.added') {
+              // Event 1: reasoning summary part added (usually empty initially)
+              debugLog(`[OpenAI] *** REASONING PART ADDED`);
+            } else if (chunk.type === 'response.reasoning_summary_part.done') {
+              // Event 2: reasoning summary part completed with full text
+              const summaryText = chunk.part?.text || '';
+              if (summaryText) {
+                totalReasoningSummary = summaryText;
+                debugLog(`[OpenAI] *** REASONING PART DONE: "${summaryText.substring(0, 100)}..."`);
+                
+                yield {
+                  type: 'reasoning_summary',
+                  content: totalReasoningSummary,
+                  timestamp: new Date().toISOString()
+                };
+              }
+            } else if (chunk.type === 'response.reasoning_summary_text.delta') {
+              // Event 3: reasoning summary text delta (streaming pieces)
+              const summaryDelta = chunk.delta || '';
+              if (summaryDelta) {
+                totalReasoningSummary += summaryDelta;
+                debugLog(`[OpenAI] *** REASONING TEXT DELTA: "${summaryDelta}"`);
+                
+                yield {
+                  type: 'reasoning_summary',
+                  content: totalReasoningSummary,
+                  timestamp: new Date().toISOString()
+                };
+              }
+            } else if (chunk.type === 'response.reasoning_summary_text.done') {
+              // Event 4: reasoning summary text completed with full text
+              const fullSummary = chunk.text || totalReasoningSummary;
+              if (fullSummary) {
+                totalReasoningSummary = fullSummary;
+                debugLog(`[OpenAI] *** REASONING TEXT DONE: "${fullSummary.substring(0, 100)}..."`);
+                
+                yield {
+                  type: 'reasoning_summary',
+                  content: fullSummary,
                   timestamp: new Date().toISOString()
                 };
               }
@@ -745,7 +793,8 @@ export const openaiProvider = {
           provider: 'openai',
           api_type: apiType,
           web_search_used: webSearchUsed,
-          web_search_type: webSearchType
+          web_search_type: webSearchType,
+          reasoning_summary: totalReasoningSummary || null
         },
         timestamp: new Date().toISOString()
       };
