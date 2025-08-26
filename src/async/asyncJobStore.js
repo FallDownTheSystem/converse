@@ -792,11 +792,11 @@ export function isValidJobId(jobId) {
     return false;
   }
 
-  // Check for job_ prefix and nanoid format (10 characters, URL-safe)
-  // nanoid uses URL-safe alphabet: A-Za-z0-9_-
-  const nanoidPattern = /^job_[A-Za-z0-9_-]{10}$/;
+  // Accept both old job_ format and new continuation ID formats
+  const jobPattern = /^job_[A-Za-z0-9_-]{10}$/; // Old format
+  const continuationPattern = /^(conv|cons)_[A-Za-z0-9_-]{10,}$/; // New format
 
-  return nanoidPattern.test(jobId);
+  return jobPattern.test(jobId) || continuationPattern.test(jobId);
 }
 
 /**

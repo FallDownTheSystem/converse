@@ -156,9 +156,9 @@ describe('Async Support Tests', () => {
 
       const result = await chatTool(args, mockDependencies);
 
-      expect(result.content[0].text).toContain('Chat request submitted for background processing');
+      expect(result.content[0].text).toContain('⏳ PROCESSING | CHAT');
       expect(result.continuation.id).toBeTruthy();
-      expect(result.continuation.job_id).toBe('test-job-id-123');
+      // job_id is no longer returned in continuation object
       expect(result.continuation.status).toBe('processing');
       // async_execution is not part of the final response structure
       expect(mockJobRunner.submit).toHaveBeenCalledOnce();
@@ -177,7 +177,7 @@ describe('Async Support Tests', () => {
       expect(result.continuation.id).toBe(existingContinuationId);
       expect(mockJobRunner.submit).toHaveBeenCalledWith(
         expect.objectContaining({
-          sessionId: existingContinuationId,
+          sessionId: 'local-user', // Uses standard session ID
           tool: 'chat',
           options: expect.objectContaining({
             ...args,
@@ -257,9 +257,9 @@ describe('Async Support Tests', () => {
 
       const result = await consensusTool(args, mockDependencies);
 
-      expect(result.content[0].text).toContain('Consensus request submitted for background processing');
+      expect(result.content[0].text).toContain('⏳ PROCESSING | CONSENSUS');
       expect(result.continuation.id).toBeTruthy();
-      expect(result.continuation.job_id).toBe('test-job-id-123');
+      // job_id is no longer returned in continuation object
       expect(result.continuation.status).toBe('processing');
       // async_execution is not part of the final response structure
       expect(mockJobRunner.submit).toHaveBeenCalledOnce();
@@ -279,7 +279,7 @@ describe('Async Support Tests', () => {
       expect(result.continuation.id).toBe(existingContinuationId);
       expect(mockJobRunner.submit).toHaveBeenCalledWith(
         expect.objectContaining({
-          sessionId: existingContinuationId,
+          sessionId: existingContinuationId, // Consensus uses continuation_id as sessionId
           tool: 'consensus',
           options: expect.objectContaining({
             ...args,

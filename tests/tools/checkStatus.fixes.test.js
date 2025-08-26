@@ -323,7 +323,7 @@ describe('Check Status Tool - Fixes', () => {
       expect(content).toContain('openai/gpt-5');
     });
     
-    it('should format completed job with response preview', async () => {
+    it('should format completed job with full response content', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 25000;
       
@@ -370,10 +370,8 @@ describe('Check Status Tool - Fixes', () => {
       // No percentage for chat tool
       expect(content).not.toContain('100% complete');
       
-      // Should show truncated response preview
-      expect(content).toContain('Response: "');
-      expect(content).toContain('...');
-      expect(content).not.toContain(longResponse); // Full response shouldn't be shown
+      // Should show full response content  
+      expect(content).toContain(longResponse); // Full response should be shown
     });
     
     it('should format failed job with error message', async () => {

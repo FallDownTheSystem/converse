@@ -81,7 +81,7 @@ export async function chatTool(args, dependencies) {
         );
 
         // Get provider info for the status line
-        const providerName = getSelectedProviderName(args.model, config, providers);
+        const providerName = mapModelToProvider(args.model || 'auto', providers);
         const resolvedModel = providers[providerName]?.resolveModel?.(args.model) || args.model || 'auto';
         const startTime = new Date().toLocaleString();
         

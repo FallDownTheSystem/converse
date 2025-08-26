@@ -398,7 +398,7 @@ function formatHumanReadableStatus(jobStatus, options = {}) {
       parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
     }
     
-    // Show full content
+    // Show full response content
     if (jobStatus.result.content) {
       parts.push(`\n${jobStatus.result.content}`);
     }
@@ -508,7 +508,7 @@ checkStatusTool.inputSchema = {
     full_history: {
       type: 'boolean',
       default: false,
-      description: 'When used with continuation_id, returns the full conversation history for that continuation ID. Shows all jobs in the conversation sequence with x/y indicators.'
+      description: 'When used with continuation_id, returns the full conversation history for that continuation ID.'
     }
   },
   additionalProperties: false

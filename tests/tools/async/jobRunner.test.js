@@ -66,13 +66,16 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_test12345'
+        }
       };
 
       const runFunction = vi.fn().mockResolvedValue({ result: 'success' });
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
-      expect(jobId).toMatch(/^job_[A-Za-z0-9_-]{10}$/);
+      expect(jobId).toBe('job_test12345');
       expect(jobRunner.stats.submitted).toBe(1);
       expect(jobRunner.stats.activeCount).toBe(1);
     });
@@ -98,6 +101,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_test56789'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, vi.fn().mockResolvedValue({}));
@@ -126,6 +132,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_execute123'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -154,6 +163,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_error123'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -181,6 +193,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_lifecycle'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -222,7 +237,11 @@ describe('JobRunner', () => {
       // Submit more jobs than concurrency limit
       const promises = [];
       for (let i = 0; i < 5; i++) {
-        promises.push(jobRunner.submit(jobSpec, runFunction));
+        const jobSpecWithId = {
+          ...jobSpec,
+          options: { jobId: 'job_concur' + i }
+        };
+        promises.push(jobRunner.submit(jobSpecWithId, runFunction));
       }
 
       const jobIds = await Promise.all(promises);
@@ -254,9 +273,9 @@ describe('JobRunner', () => {
       };
 
       // Submit 3 jobs
-      await jobRunner.submit(jobSpec, runFunction);
-      await jobRunner.submit(jobSpec, runFunction);
-      await jobRunner.submit(jobSpec, runFunction);
+      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track1' } }, runFunction);
+      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track2' } }, runFunction);
+      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track3' } }, runFunction);
 
       expect(jobRunner.stats.activeCount).toBe(3);
 
@@ -290,11 +309,11 @@ describe('JobRunner', () => {
       };
 
       // Submit blocking jobs to fill concurrency limit
-      await jobRunner.submit(jobSpec, blockingFunction);
-      await jobRunner.submit(jobSpec, blockingFunction);
+      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_blocking1' } }, blockingFunction);
+      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_blocking2' } }, blockingFunction);
 
       // Submit job to cancel (should be queued)
-      const jobIdToCancel = await jobRunner.submit(jobSpec, cancelledFunction);
+      const jobIdToCancel = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_tocancel' } }, cancelledFunction);
 
       // Cancel the queued job
       const cancelled = await jobRunner.cancel(jobIdToCancel);
@@ -336,6 +355,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_runcancel'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -368,6 +390,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_emit_cancel'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -385,6 +410,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_notcancel'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -425,6 +453,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_timeout'
+        }
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction, {
@@ -462,6 +493,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_deftimeout'
+        }
       };
 
       const jobId = await runner.submit(jobSpec, runFunction);
@@ -481,13 +515,13 @@ describe('JobRunner', () => {
 
       const jobSpec = {
         sessionId: 'session_123',
-        tool: 'chat',
+        tool: 'chat'
       };
 
       // Submit various jobs sequentially to avoid timing issues
-      const job1 = await jobRunner.submit(jobSpec, successFunction);
-      const job2 = await jobRunner.submit(jobSpec, successFunction);
-      const job3 = await jobRunner.submit(jobSpec, failureFunction);
+      const job1 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats1' } }, successFunction);
+      const job2 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats2' } }, successFunction);
+      const job3 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats3' } }, failureFunction);
 
       expect(jobRunner.stats.submitted).toBe(3);
 
@@ -548,6 +582,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_shutdown1'
+        }
       };
 
       await jobRunner.submit(jobSpec, runFunction);
@@ -585,6 +622,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_shutdown2'
+        }
       };
 
       await jobRunner.submit(jobSpec, runFunction);
@@ -623,6 +663,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_initial'
+        }
       };
 
       const runFunction = vi.fn().mockImplementation(async () => {
@@ -645,8 +688,10 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_update'
+        }
       };
-
 
       const runFunction = vi.fn().mockImplementation(async (context) => {
         // Update job during execution
@@ -707,6 +752,9 @@ describe('JobRunner', () => {
       const jobSpec = {
         sessionId: 'session_123',
         tool: 'chat',
+        options: {
+          jobId: 'job_syserror'
+        }
       };
 
       const runFunction = vi.fn().mockImplementation(() => {

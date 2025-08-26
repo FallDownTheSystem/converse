@@ -72,7 +72,7 @@ describe('AsyncJobStore Unit Tests', () => {
       // Invalid IDs
       expect(isValidJobId('job_')).toBe(false);
       expect(isValidJobId('job_123')).toBe(false);
-      expect(isValidJobId('conv_1234567890')).toBe(false);
+      expect(isValidJobId('conv_1234567890')).toBe(true); // Now valid - continuation ID format
       expect(isValidJobId('job_12345678901')).toBe(false);
       expect(isValidJobId('')).toBe(false);
       expect(isValidJobId(null)).toBe(false);
@@ -84,11 +84,15 @@ describe('AsyncJobStore Unit Tests', () => {
     it('should create job successfully with valid parameters', async () => {
       const sessionId = 'test-session-123';
       const tool = 'chat';
+      const testJobId = 'test_job_123';
 
-      const jobId = await jobStore.create(sessionId, tool);
+      const jobId = await jobStore.create(tool, { 
+        jobId: testJobId,
+        sessionId 
+      });
 
       expect(typeof jobId).toBe('string');
-      expect(isValidJobId(jobId)).toBe(true);
+      expect(jobId).toBe(testJobId);
 
       const job = await jobStore.get(jobId);
       expect(job).not.toBeNull();
@@ -106,37 +110,39 @@ describe('AsyncJobStore Unit Tests', () => {
     it('should create job with custom options', async () => {
       const sessionId = 'test-session-456';
       const tool = 'consensus';
+      const testJobId = 'test_consensus_123';
       const options = {
+        jobId: testJobId,
+        sessionId,
         customField: 'custom-value',
         models: ['gpt-4', 'claude-3'],
       };
 
-      const jobId = await jobStore.create(sessionId, tool, options);
+      const jobId = await jobStore.create(tool, options);
       const job = await jobStore.get(jobId);
 
       expect(job.customField).toBe('custom-value');
       expect(job.models).toEqual(['gpt-4', 'claude-3']);
     });
 
-    it('should reject invalid session IDs', async () => {
-      await expect(jobStore.create('', 'chat')).rejects.toThrow(AsyncJobStoreError);
-      await expect(jobStore.create(null, 'chat')).rejects.toThrow(AsyncJobStoreError);
-      await expect(jobStore.create(123, 'chat')).rejects.toThrow(AsyncJobStoreError);
+    it('should reject missing jobId', async () => {
+      await expect(jobStore.create('chat', {})).rejects.toThrow(AsyncJobStoreError);
+      await expect(jobStore.create('chat', { sessionId: 'test' })).rejects.toThrow(AsyncJobStoreError);
     });
 
     it('should reject invalid tools', async () => {
-      const sessionId = 'test-session';
+      const options = { jobId: 'test_job', sessionId: 'test-session' };
 
-      await expect(jobStore.create(sessionId, '')).rejects.toThrow(AsyncJobStoreError);
-      await expect(jobStore.create(sessionId, 'invalid-tool')).rejects.toThrow(AsyncJobStoreError);
-      await expect(jobStore.create(sessionId, null)).rejects.toThrow(AsyncJobStoreError);
+      await expect(jobStore.create('', options)).rejects.toThrow(AsyncJobStoreError);
+      await expect(jobStore.create('invalid-tool', options)).rejects.toThrow(AsyncJobStoreError);
+      await expect(jobStore.create(null, options)).rejects.toThrow(AsyncJobStoreError);
     });
 
     it('should accept valid tools', async () => {
       const sessionId = 'test-session';
 
-      const chatJobId = await jobStore.create(sessionId, 'chat');
-      const consensusJobId = await jobStore.create(sessionId, 'consensus');
+      const chatJobId = await jobStore.create('chat', { jobId: 'conv_ABC1234567', sessionId });
+      const consensusJobId = await jobStore.create('consensus', { jobId: 'cons_XYZ9876543', sessionId });
 
       expect(isValidJobId(chatJobId)).toBe(true);
       expect(isValidJobId(consensusJobId)).toBe(true);
@@ -153,7 +159,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJobId;
 
     beforeEach(async () => {
-      testJobId = await jobStore.create('test-session', 'chat');
+      testJobId = await jobStore.create('chat', { jobId: 'test_retrieve_job', sessionId: 'test-session' });
     });
 
     it('should retrieve existing job', async () => {
@@ -207,7 +213,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJobId;
 
     beforeEach(async () => {
-      testJobId = await jobStore.create('test-session', 'consensus');
+      testJobId = await jobStore.create('consensus', { jobId: 'test_update_job', sessionId: 'test-session' });
     });
 
     it('should update job status', async () => {
@@ -313,7 +319,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJobId;
 
     beforeEach(async () => {
-      testJobId = await jobStore.create('test-session', 'chat');
+      testJobId = await jobStore.create('chat', { jobId: 'test_chat_job', sessionId: 'test-session' });
     });
 
     it('should complete job successfully', async () => {
@@ -360,7 +366,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJobId;
 
     beforeEach(async () => {
-      testJobId = await jobStore.create('test-session', 'consensus');
+      testJobId = await jobStore.create('consensus', { jobId: 'test_consensus_job', sessionId: 'test-session' });
     });
 
     it('should fail job with Error object', async () => {
@@ -411,7 +417,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJobId;
 
     beforeEach(async () => {
-      testJobId = await jobStore.create('test-session', 'chat');
+      testJobId = await jobStore.create('chat', { jobId: 'test_chat_job', sessionId: 'test-session' });
     });
 
     it('should return true for existing job', async () => {
@@ -428,9 +434,9 @@ describe('AsyncJobStore Unit Tests', () => {
   describe('Storage Statistics', () => {
     beforeEach(async () => {
       // Create some test jobs
-      await jobStore.create('session-1', 'chat');
-      await jobStore.create('session-2', 'consensus');
-      const jobId = await jobStore.create('session-3', 'chat');
+      await jobStore.create('chat', { jobId: 'session_1_job', sessionId: 'session-1' });
+      await jobStore.create('consensus', { jobId: 'session_2_job', sessionId: 'session-2' });
+      const jobId = await jobStore.create('chat', { jobId: 'session_3_job', sessionId: 'session-3' });
       await jobStore.complete(jobId, { result: 'test' });
     });
 
@@ -456,7 +462,7 @@ describe('AsyncJobStore Unit Tests', () => {
       jobIds = [];
       // Create multiple jobs
       for (let i = 0; i < 5; i++) {
-        const jobId = await jobStore.create(`session-${i}`, 'chat');
+        const jobId = await jobStore.create('chat', { jobId: `test_job_${i}`, sessionId: `session-${i}` });
         jobIds.push(jobId);
       }
     });
@@ -505,7 +511,7 @@ describe('AsyncJobStore Unit Tests', () => {
 
   describe('Event Ring Buffer', () => {
     it('should maintain ring buffer size for events', async () => {
-      const jobId = await jobStore.create('test-session', 'chat');
+      const jobId = await jobStore.create('chat', { jobId: 'test_chat_job', sessionId: 'test-session' });
 
       // Generate many events
       for (let i = 0; i < 150; i++) {
@@ -518,7 +524,7 @@ describe('AsyncJobStore Unit Tests', () => {
     });
 
     it('should maintain event chronological order', async () => {
-      const jobId = await jobStore.create('test-session', 'chat');
+      const jobId = await jobStore.create('chat', { jobId: 'test_chat_job', sessionId: 'test-session' });
 
       for (let i = 0; i < 10; i++) {
         await jobStore.update(jobId, { progress: i / 10 });
@@ -537,7 +543,7 @@ describe('AsyncJobStore Unit Tests', () => {
     let testJob;
 
     beforeEach(async () => {
-      const jobId = await jobStore.create('test-session', 'consensus');
+      const jobId = await jobStore.create('consensus', { jobId: 'test_consensus_job', sessionId: 'test-session' });
       testJob = await jobStore.get(jobId);
     });
 
@@ -608,11 +614,11 @@ describe('AsyncJobStore Unit Tests', () => {
       // The specific error cases are already tested in individual method tests
       // This ensures the error type is consistent
       try {
-        await jobStore.create('', 'chat');
+        await jobStore.create('', { jobId: 'test_job', sessionId: 'test-session' });
       } catch (error) {
         expect(error).toBeInstanceOf(AsyncJobStoreError);
         expect(error.name).toBe('AsyncJobStoreError');
-        expect(error.code).toBe('INVALID_SESSION_ID');
+        expect(error.code).toBe('INVALID_TOOL'); // Empty string is invalid tool
       }
     });
   });
