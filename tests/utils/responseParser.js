@@ -33,8 +33,8 @@ export function parseStatusResponse(text) {
     if (parts[i] && parts[i].includes('elapsed')) {
       const timeMatch = parts[i].match(/([\d.]+)([ms])/);
       if (timeMatch) {
-        elapsedSeconds = timeMatch[2] === 'm' 
-          ? parseFloat(timeMatch[1]) * 60 
+        elapsedSeconds = timeMatch[2] === 'm'
+          ? parseFloat(timeMatch[1]) * 60
           : parseFloat(timeMatch[1]);
       }
       elapsedIndex = i;
@@ -46,14 +46,14 @@ export function parseStatusResponse(text) {
   let title = null;
   let provider = null;
   let model = null;
-  
+
   if (elapsedIndex >= 0 && elapsedIndex < parts.length - 1) {
     const nextPart = parts[elapsedIndex + 1];
-    
+
     // Check if next part is a quoted title
     if (nextPart && nextPart.startsWith('"') && nextPart.endsWith('"')) {
       title = nextPart.slice(1, -1);
-      
+
       // Provider/model should be the next part after title
       if (elapsedIndex + 2 < parts.length) {
         const providerPart = parts[elapsedIndex + 2];
@@ -106,7 +106,7 @@ export function parseStatusResponse(text) {
   let accumulated_content = null;
   const streamingLine = lines.find(l => l.startsWith('Streaming: "'));
   const summaryLine = lines.find(l => l.startsWith('Summary: ') && !l.startsWith('Summary: ${'));
-  
+
   if (streamingLine) {
     streamingPreview = streamingLine.match(/Streaming: "([^"]+)"/)?.[1] || null;
     accumulated_content = streamingPreview; // For running jobs, this is the preview
@@ -114,7 +114,7 @@ export function parseStatusResponse(text) {
     // Extract summary text (could be streaming summary or final summary)
     accumulated_content = summaryLine.substring('Summary: '.length).trim();
   }
-  
+
   // Extract final summary for completed jobs
   let final_summary = null;
   if (status === 'completed' && summaryLine) {

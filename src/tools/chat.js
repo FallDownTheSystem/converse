@@ -60,6 +60,17 @@ export async function chatTool(args, dependencies) {
       const providerName = mapModelToProvider(args.model || 'auto', providers);
       const resolvedModel = providers[providerName]?.resolveModel?.(args.model) || args.model || 'auto';
 
+      // Generate title early for initial response
+      const summarizationService = new SummarizationService(providers, config);
+      let title = null;
+      try {
+        title = await summarizationService.generateTitle(prompt);
+        debugLog(`Chat: Generated title for initial response - "${title}"`);
+      } catch (error) {
+        debugError('Chat: Failed to generate title for initial response', error);
+        title = prompt.substring(0, 50);
+      }
+
       try {
         // Submit background job using continuation_id as the job identifier
         const jobId = await jobRunner.submit(
@@ -71,7 +82,8 @@ export async function chatTool(args, dependencies) {
               jobId: conversationContinuationId, // Use continuation_id as job ID
               continuation_id: conversationContinuationId, // Pass the conversation continuation ID
               provider: providerName, // Add provider info for status display
-              model: resolvedModel // Add resolved model info for status display
+              model: resolvedModel, // Add resolved model info for status display
+              title // Pass the generated title
             }
           },
           async (context) => {
@@ -80,16 +92,30 @@ export async function chatTool(args, dependencies) {
               args,
               {
                 ...dependencies,
-                continuationId: conversationContinuationId
+                continuationId: conversationContinuationId,
+                title // Pass title to execution context
               },
               context
             );
           }
         );
 
-        // Return immediate response with standard message and continuation_id
+        // Format initial response like check_status output
+        const startTime = new Date().toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).replace(',', '');
+
+        const statusLine = `⏳ SUBMITTED | CHAT | ${conversationContinuationId} | 1/1 | Started: ${startTime} | 0s elapsed | "${title || 'Processing...'}" | ${providerName}/${resolvedModel}`;
+
+        // Return formatted response with status line and continuation_id
         return createToolResponse({
-          content: `Chat request submitted for background processing. Job ID: ${conversationContinuationId}\ncontinuation_id: ${conversationContinuationId}`,
+          content: `${statusLine}\ncontinuation_id: ${conversationContinuationId}`,
           continuation: {
             id: conversationContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
@@ -290,7 +316,7 @@ export async function chatTool(args, dependencies) {
     const statusLine = config.environment?.nodeEnv !== 'test'
       ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n`
       : '';
-    
+
     // Always include continuation_id line for clarity
     const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
 
@@ -447,7 +473,8 @@ async function executeChatWithStreaming(args, dependencies, context) {
     continuationStore,
     contextProcessor,
     providerStreamNormalizer,
-    continuationId
+    continuationId,
+    title: passedTitle // Title passed from initial submission
   } = dependencies;
 
   const {
@@ -464,14 +491,18 @@ async function executeChatWithStreaming(args, dependencies, context) {
   // Initialize SummarizationService
   const summarizationService = new SummarizationService(providers, config);
 
-  // Generate title from user prompt (non-blocking)
-  let title = null;
-  try {
-    title = await summarizationService.generateTitle(prompt);
-    debugLog(`Chat: Generated title - "${title}"`);
-  } catch (error) {
-    debugError('Chat: Failed to generate title', error);
-    // Continue without title if generation fails
+  // Use passed title or generate if not provided
+  let title = passedTitle;
+  if (!title) {
+    try {
+      title = await summarizationService.generateTitle(prompt);
+      debugLog(`Chat: Generated title - "${title}"`);
+    } catch (error) {
+      debugError('Chat: Failed to generate title', error);
+      // Continue without title if generation fails
+    }
+  } else {
+    debugLog(`Chat: Using passed title - "${title}"`);
   }
 
   let conversationHistory = [];

@@ -64,6 +64,17 @@ export async function consensusTool(args, dependencies) {
       // Create models list for status display
       const modelsList = args.models.join(', ');
 
+      // Generate title early for initial response
+      const summarizationService = new SummarizationService(providers, config);
+      let title = null;
+      try {
+        title = await summarizationService.generateTitle(prompt);
+        debugLog(`Consensus: Generated title for initial response - "${title}"`);
+      } catch (error) {
+        debugError('Consensus: Failed to generate title for initial response', error);
+        title = prompt.substring(0, 50);
+      }
+
       try {
         // Submit background job
         const jobId = await jobRunner.submit(
@@ -73,7 +84,8 @@ export async function consensusTool(args, dependencies) {
             options: {
               ...args,
               jobId: bgContinuationId, // Use continuation ID as job ID
-              models_list: modelsList // Add models list for status display
+              models_list: modelsList, // Add models list for status display
+              title // Pass the generated title
             }
           },
           async (context) => {
@@ -82,16 +94,30 @@ export async function consensusTool(args, dependencies) {
               args,
               {
                 ...dependencies,
-                continuationId: bgContinuationId
+                continuationId: bgContinuationId,
+                title // Pass title to execution context
               },
               context
             );
           }
         );
 
-        // Return immediate response with standard message and continuation_id
+        // Format initial response like check_status output
+        const startTime = new Date().toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).replace(',', '');
+
+        const statusLine = `⏳ SUBMITTED | CONSENSUS | ${bgContinuationId} | 1/1 | Started: ${startTime} | 0s elapsed | "${title || 'Processing...'}" | ${modelsList}`;
+
+        // Return formatted response with status line and continuation_id
         return createToolResponse({
-          content: `Consensus request submitted for background processing. Job ID: ${bgContinuationId}\ncontinuation_id: ${bgContinuationId}`,
+          content: `${statusLine}\ncontinuation_id: ${bgContinuationId}`,
           continuation: {
             id: bgContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
@@ -486,7 +512,7 @@ Please provide your refined response:`;
     const statusLine = config.environment?.nodeEnv !== 'test'
       ? `✅ COMPLETED | CONSENSUS | ${continuationId} | ${consensusExecutionTime.toFixed(1)}s elapsed | ${finalCount}/${totalCount} succeeded | ${modelsList}\n`
       : '';
-    
+
     // Always include continuation_id line for clarity
     const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
 
@@ -666,7 +692,8 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
     continuationStore,
     contextProcessor,
     providerStreamNormalizer,
-    continuationId
+    continuationId,
+    title: passedTitle // Title passed from initial submission
   } = dependencies;
 
   const {
@@ -862,15 +889,19 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
   // Initialize SummarizationService
   const summarizationService = new SummarizationService(providers, config);
 
-  // Generate title from user prompt (non-blocking)
-  let title = null;
-  try {
-    title = await summarizationService.generateTitle(prompt);
-    debugLog(`Consensus: Generated title - "${title}"`);
-  } catch (error) {
-    debugError('Consensus: Error generating title', error);
-    // Continue without title if generation fails
-    title = prompt.substring(0, 50);
+  // Use passed title or generate if not provided
+  let title = passedTitle;
+  if (!title) {
+    try {
+      title = await summarizationService.generateTitle(prompt);
+      debugLog(`Consensus: Generated title - "${title}"`);
+    } catch (error) {
+      debugError('Consensus: Error generating title', error);
+      // Continue without title if generation fails
+      title = prompt.substring(0, 50);
+    }
+  } else {
+    debugLog(`Consensus: Using passed title - "${title}"`);
   }
 
   // Update job status for phase 1 with title

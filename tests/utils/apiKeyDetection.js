@@ -86,12 +86,12 @@ function hasApiKey(provider) {
 
   // Check primary key first
   const hasPrimaryKey = isValidApiKey(config.envVar, config.prefix, config.minLength);
-  
+
   // If primary key not found and alternate key is defined, check it
   if (!hasPrimaryKey && config.alternateEnvVar) {
     return isValidApiKey(config.alternateEnvVar, config.prefix, config.minLength);
   }
-  
+
   return hasPrimaryKey;
 }
 

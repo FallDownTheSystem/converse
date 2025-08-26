@@ -18,9 +18,9 @@ describe('Async Chat with Summarization Enabled', () => {
     // Enable summarization for these tests
     process.env.ENABLE_RESPONSE_SUMMARIZATION = 'true';
     process.env.SUMMARIZATION_MODEL = 'gpt-5-nano';
-    
+
     config = await loadConfig();
-    
+
     // Verify summarization is enabled
     expect(config.summarization?.enabled).toBe(true);
     logger.info(`Summarization enabled with model: ${config.summarization.model}`);
@@ -43,7 +43,7 @@ describe('Async Chat with Summarization Enabled', () => {
 
       expect(asyncResult.isError).toBeFalsy();
       expect(asyncResult.continuation?.id).toBeTruthy();
-      
+
       const continuationId = asyncResult.continuation.id;
       logger.info(`Started async job: ${continuationId}`);
 
@@ -53,7 +53,7 @@ describe('Async Chat with Summarization Enabled', () => {
       let titleSeen = false;
       let accumulatedContentSeen = false;
       let finalSummarySeen = false;
-      
+
       const startTime = Date.now();
       const maxWaitTime = 30000; // 30 seconds
 
@@ -68,11 +68,11 @@ describe('Async Chat with Summarization Enabled', () => {
         });
 
         expect(statusResult.isError).toBeFalsy();
-        
+
         // Parse the status response
         const statusText = statusResult.content[0].text;
         const status = parseStatusResponse(statusText);
-        
+
         // Track summarization features as they appear
         if (status.title && !titleSeen) {
           titleSeen = true;
@@ -80,13 +80,13 @@ describe('Async Chat with Summarization Enabled', () => {
           expect(status.title.length).toBeGreaterThan(5);
           expect(status.title.length).toBeLessThanOrEqual(60);
         }
-        
+
         if (status.accumulated_content && !accumulatedContentSeen) {
           accumulatedContentSeen = true;
           logger.info(`✅ Accumulated content: ${status.accumulated_content.length} chars`);
           expect(status.accumulated_content.length).toBeGreaterThan(0);
         }
-        
+
         if (status.status === 'completed') {
           completed = true;
           finalStatus = status;
@@ -102,11 +102,11 @@ describe('Async Chat with Summarization Enabled', () => {
       expect(titleSeen).toBe(true);
       expect(accumulatedContentSeen).toBe(true);
       // Final summary is generated internally but not shown in completed responses
-      
+
       // Verify the actual response exists
       expect(finalStatus?.result?.content).toBeTruthy();
       expect(finalStatus.result.content.toLowerCase()).toContain('recursion');
-      
+
       logger.info('All summarization features verified successfully');
     });
   }, 60000);
@@ -117,7 +117,7 @@ describe('Async Chat with Summarization Enabled', () => {
   })('should use minimal reasoning for fast summarization', async () => {
     await withHTTPTestServer(async (client, manager) => {
       const startTime = Date.now();
-      
+
       // Quick request to test speed
       const asyncResult = await client.callTool({
         name: 'chat',
@@ -129,7 +129,7 @@ describe('Async Chat with Summarization Enabled', () => {
       });
 
       const continuationId = asyncResult.continuation.id;
-      
+
       // Track timing
       let titleGenerationTime = null;
       let completionTime = null;
@@ -145,20 +145,20 @@ describe('Async Chat with Summarization Enabled', () => {
 
         const statusText = statusResult.content[0].text;
         const status = parseStatusResponse(statusText);
-        
+
         // Track when title appears
         if (status.title && !titleGenerationTime) {
           titleGenerationTime = Date.now() - startTime;
           logger.info(`Title generated in ${titleGenerationTime}ms`);
           expect(titleGenerationTime).toBeLessThan(5000); // Should be fast
         }
-        
+
         if (status.status === 'completed') {
           completed = true;
           completionTime = Date.now() - startTime;
           logger.info(`Total completion in ${completionTime}ms`);
           expect(completionTime).toBeLessThan(15000); // Should complete quickly
-          
+
           // Final summary is generated internally but not shown in completed responses
         }
       }
@@ -197,15 +197,15 @@ describe('Async Chat with Summarization Enabled', () => {
         });
 
         const status = parseStatusResponse(statusResult.content[0].text);
-        
+
         if (status.title) {
           logger.info(`Gemini title: "${status.title}"`);
         }
-        
+
         if (status.status === 'completed') {
           completed = true;
           finalStatus = status;
-          
+
           // Final summary is generated internally but not shown in completed responses
         }
       }

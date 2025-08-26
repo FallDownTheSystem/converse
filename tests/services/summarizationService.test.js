@@ -220,7 +220,7 @@ describe('SummarizationService', () => {
         }
       };
       const customService = new SummarizationService(mockProviders, customModelConfig);
-      
+
       mockProviders.openai.invoke.mockResolvedValue({
         content: 'Custom Model Title'
       });

@@ -164,7 +164,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
 
         // Extract the last 500 characters as the current focus area
         const contentLength = jobStatus.accumulated_content.length;
-        const currentFocus = contentLength > 500 
+        const currentFocus = contentLength > 500
           ? jobStatus.accumulated_content.substring(contentLength - 500)
           : jobStatus.accumulated_content;
 
@@ -175,7 +175,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
         );
 
         if (streamingSummary) {
-          parts.push(`Summary: ${streamingSummary}`);
+          parts.push(`Status: ${streamingSummary}`);
         } else {
           // Fallback: show truncated accumulated content as streaming preview
           const preview = jobStatus.accumulated_content.length > 200

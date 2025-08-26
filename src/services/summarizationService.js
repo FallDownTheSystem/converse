@@ -36,7 +36,7 @@ export class SummarizationService {
     this.enabled = config.summarization?.enabled ?? false;
     // Store configured model preference
     this.configuredModel = config.summarization?.model || null;
-    
+
     debugLog(`SummarizationService initialized - enabled: ${this.enabled}, model: ${this.configuredModel || 'auto-select'}`);
   }
 
@@ -126,11 +126,11 @@ export class SummarizationService {
       const messages = [
         {
           role: 'system',
-          content: 'You are summarizing an in-progress AI response. Generate a brief summary (2-3 sentences max) that: 1) Captures the overall topic/gist of the response so far, and 2) Describes what the AI is currently discussing (based on the last portion). Make each status check unique by focusing on the current section. Be concise and informative.'
+          content: 'Generate a single continuous status description of what the AI is doing from the perspective of the AI. Start with the main task/topic, then use transition phrases like "Currently exploring", "Currently investigating", "Now examining", "Now writing about", "Now discussing" to describe the current focus. Return ONLY the status text in one flowing sentence, no labels or formatting. Example: "Writing a technical review of database architecture with focus on scalability and performance. Currently exploring connection pooling strategies and their impact on resource utilization."'
         },
         {
           role: 'user',
-          content: `Full content so far:\n${content}\n\n---\nLast section (current focus):\n${currentFocus}\n\nProvide a dynamic summary that shows both the overall topic and what\'s being discussed right now.`
+          content: `Full content so far:\n${content}\n\n---\nLast section (current focus):\n${currentFocus}\n\nProvide a single status description from the perspective of the AI as if you were generating it, that flows naturally from the overall task to the current focus.`
         }
       ];
 
@@ -145,7 +145,8 @@ export class SummarizationService {
       });
 
       if (response && response.content) {
-        const summary = response.content.trim();
+        // Remove any newlines and extra spaces from the summary
+        const summary = response.content.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
         debugLog('Summarization: Generated streaming summary');
         return summary;
       }

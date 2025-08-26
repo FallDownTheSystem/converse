@@ -87,17 +87,17 @@ module.exports = { fibonacci };`
 
     testWithAnyKey('should handle async conversation with continuations', async () => {
       const testStartTime = Date.now();
-      let currentStep = "STARTING";
-      
+      let currentStep = 'STARTING';
+
       try {
         await withHTTPTestServer(async (client, manager) => {
           console.log('[DEBUG TEST START] should handle async conversation with continuations at', new Date().toISOString());
-          currentStep = "HTTP_SERVER_READY";
+          currentStep = 'HTTP_SERVER_READY';
 
           // Step 1: Initial async message
           console.log('[DEBUG] Submitting step 1 async chat request at', Date.now() - testStartTime, 'ms...');
-          currentStep = "SUBMITTING_STEP1";
-          
+          currentStep = 'SUBMITTING_STEP1';
+
           const step1StartTime = Date.now();
           const step1Result = await client.callTool({
             name: 'chat',
@@ -108,218 +108,218 @@ module.exports = { fibonacci };`
               temperature: 0
             }
           });
-          
+
           const step1SubmitTime = Date.now() - step1StartTime;
           console.log('[DEBUG] Step 1 submitted in', step1SubmitTime, 'ms');
-          currentStep = "STEP1_SUBMITTED";
+          currentStep = 'STEP1_SUBMITTED';
 
-        // Parse async response
-        const step1Text = step1Result.content[0].text;
-        console.log('[DEBUG] Step 1 raw response:', step1Text);
-        
-        let step1Content;
-        let continuationId1;
-        try {
-          // Response is now human-readable status line, use continuation object
-          step1Content = { continuation_id: step1Result.continuation.id };
-          // Use continuation_id for status checking
-          continuationId1 = step1Content.continuation_id;
-          console.log('[DEBUG] Parsed step 1 content:', step1Content);
-          console.log('[DEBUG] Job ID for status checking:', continuationId1);
-          console.log('[DEBUG] Conversation continuation ID:', step1Content.continuation_id);
-        } catch (parseError) {
-          console.error('[DEBUG] Failed to parse step 1 response:', parseError);
-          console.error('[DEBUG] Response was:', step1Text);
-          throw parseError;
-        }
+          // Parse async response
+          const step1Text = step1Result.content[0].text;
+          console.log('[DEBUG] Step 1 raw response:', step1Text);
 
-        // Wait for first job to complete
-        let job1Complete = false;
-        let attempts = 0;
-
-        console.log('[DEBUG] Starting to poll for job completion at', Date.now() - testStartTime, 'ms...');
-        console.log(`[DEBUG] Looking for continuationId1: ${continuationId1}`);
-        currentStep = "POLLING_STEP1";
-        
-        const pollStartTime = Date.now();
-        while (!job1Complete && attempts < 30) {
-          const pollAttemptStart = Date.now();
-          console.log(`[DEBUG] Poll attempt ${attempts + 1}/30 at`, Date.now() - testStartTime, 'ms...');
-          currentStep = `POLLING_STEP1_ATTEMPT_${attempts + 1}`;
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          console.log(`[DEBUG] Calling check_status for continuationId1: ${continuationId1} at`, Date.now() - testStartTime, 'ms');
-          const statusCallStart = Date.now();
-          
-          const statusResult = await client.callTool({
-            name: 'check_status',
-            arguments: {
-              continuation_id: continuationId1
-              // check_status always returns full output in human-readable format
-            }
-          });
-          
-          const statusCallTime = Date.now() - statusCallStart;
-          console.log('[DEBUG] Status call completed in', statusCallTime, 'ms');
-
-          // Parse response
-          const statusText = statusResult.content[0].text;
-          console.log(`[DEBUG] Status response (first 200 chars):`, statusText.substring(0, 200));
-          
-          let status;
+          let step1Content;
+          let continuationId1;
           try {
-            status = parseStatusResponse(statusText);
-            console.log('[DEBUG] Parsed status:', status.status, 'at', Date.now() - testStartTime, 'ms');
+          // Response is now human-readable status line, use continuation object
+            step1Content = { continuation_id: step1Result.continuation.id };
+            // Use continuation_id for status checking
+            continuationId1 = step1Content.continuation_id;
+            console.log('[DEBUG] Parsed step 1 content:', step1Content);
+            console.log('[DEBUG] Job ID for status checking:', continuationId1);
+            console.log('[DEBUG] Conversation continuation ID:', step1Content.continuation_id);
           } catch (parseError) {
-            console.error('[DEBUG] Failed to parse status response:', parseError);
-            console.error('[DEBUG] Response was:', statusText);
-            currentStep = `PARSE_ERROR_STEP1_${attempts + 1}`;
+            console.error('[DEBUG] Failed to parse step 1 response:', parseError);
+            console.error('[DEBUG] Response was:', step1Text);
             throw parseError;
           }
 
-          if (status.status === 'completed') {
-            job1Complete = true;
-            console.log('[DEBUG] Job 1 completed at', Date.now() - testStartTime, 'ms! Will use original continuation ID for step 2.');
-            currentStep = "STEP1_COMPLETED";
-            // No need to parse continuation_id from status - we use the original one
-          } else if (status.status === 'failed') {
-            console.error('[DEBUG] Job failed with error:', status.error);
-            currentStep = "STEP1_FAILED";
-            throw new Error(`Job failed: ${status.error}`);
-          } else {
-            console.log(`[DEBUG] Job still ${status.status}, continuing to poll...`);
-          }
-          attempts++;
-          
-          const pollAttemptTime = Date.now() - pollAttemptStart;
-          console.log(`[DEBUG] Poll attempt ${attempts} took ${pollAttemptTime}ms`);
-        }
+          // Wait for first job to complete
+          let job1Complete = false;
+          let attempts = 0;
 
-        expect(job1Complete).toBe(true);
-        console.log('[DEBUG] Using continuation ID for step 2:', continuationId1);
-        console.log('[DEBUG] *** STARTING STEP 2 at', Date.now() - testStartTime, 'ms ***');
-        currentStep = "STARTING_STEP2";
+          console.log('[DEBUG] Starting to poll for job completion at', Date.now() - testStartTime, 'ms...');
+          console.log(`[DEBUG] Looking for continuationId1: ${continuationId1}`);
+          currentStep = 'POLLING_STEP1';
 
-        // Step 2: Follow-up async message using continuation
-        console.log('[DEBUG] Calling chat tool for step 2 at', Date.now() - testStartTime, 'ms...');
-        currentStep = "SUBMITTING_STEP2";
-        
-        const step2StartTime = Date.now();
-        const step2Result = await client.callTool({
-          name: 'chat',
-          arguments: {
-            prompt: 'What number did I ask you to remember?',
-            continuation_id: continuationId1,
-            async: true,
-            model: 'auto',
-            temperature: 0
-          }
-        });
+          const pollStartTime = Date.now();
+          while (!job1Complete && attempts < 30) {
+            const pollAttemptStart = Date.now();
+            console.log(`[DEBUG] Poll attempt ${attempts + 1}/30 at`, Date.now() - testStartTime, 'ms...');
+            currentStep = `POLLING_STEP1_ATTEMPT_${attempts + 1}`;
 
-        const step2SubmitTime = Date.now() - step2StartTime;
-        console.log('[DEBUG] Step 2 tool call completed in', step2SubmitTime, 'ms at', Date.now() - testStartTime, 'ms');
-        currentStep = "STEP2_SUBMITTED";
-        
-        // Parse response
-        const step2Text = step2Result.content[0].text;
-        console.log('[DEBUG] Step 2 raw response:', step2Text);
-        
-        let step2Content;
-        let continuationId2;
-        try {
-          // Response is now human-readable status line, use continuation object
-          step2Content = { continuation_id: step2Result.continuation.id };
-          // Use continuation_id for status checking
-          continuationId2 = step2Content.continuation_id;
-          console.log('[DEBUG] Parsed step 2 content:', step2Content);
-          console.log('[DEBUG] Job ID 2 for status checking:', continuationId2);
-        } catch (parseError) {
-          console.error('[DEBUG] Failed to parse step 2 response:', parseError);
-          console.error('[DEBUG] Response was:', step2Text);
-          throw parseError;
-        }
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Wait for second job to complete
-        console.log('[DEBUG] Starting to poll for step 2 job completion at', Date.now() - testStartTime, 'ms...');
-        currentStep = "POLLING_STEP2";
-        let job2Complete = false;
-        let finalResult = null;
-        attempts = 0;
+            console.log(`[DEBUG] Calling check_status for continuationId1: ${continuationId1} at`, Date.now() - testStartTime, 'ms');
+            const statusCallStart = Date.now();
 
-        const step2PollStart = Date.now();
-        while (!job2Complete && attempts < 30) {
-          const step2PollAttemptStart = Date.now();
-          console.log(`[DEBUG] Step 2 poll attempt ${attempts + 1}/30 at`, Date.now() - testStartTime, 'ms...');
-          currentStep = `POLLING_STEP2_ATTEMPT_${attempts + 1}`;
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          console.log(`[DEBUG] Calling check_status for step 2 continuationId2: ${continuationId2} at`, Date.now() - testStartTime, 'ms');
-          const step2StatusStart = Date.now();
-          
-          const statusResult = await client.callTool({
-            name: 'check_status',
-            arguments: {
-              continuation_id: continuationId2
+            const statusResult = await client.callTool({
+              name: 'check_status',
+              arguments: {
+                continuation_id: continuationId1
               // check_status always returns full output in human-readable format
+              }
+            });
+
+            const statusCallTime = Date.now() - statusCallStart;
+            console.log('[DEBUG] Status call completed in', statusCallTime, 'ms');
+
+            // Parse response
+            const statusText = statusResult.content[0].text;
+            console.log('[DEBUG] Status response (first 200 chars):', statusText.substring(0, 200));
+
+            let status;
+            try {
+              status = parseStatusResponse(statusText);
+              console.log('[DEBUG] Parsed status:', status.status, 'at', Date.now() - testStartTime, 'ms');
+            } catch (parseError) {
+              console.error('[DEBUG] Failed to parse status response:', parseError);
+              console.error('[DEBUG] Response was:', statusText);
+              currentStep = `PARSE_ERROR_STEP1_${attempts + 1}`;
+              throw parseError;
+            }
+
+            if (status.status === 'completed') {
+              job1Complete = true;
+              console.log('[DEBUG] Job 1 completed at', Date.now() - testStartTime, 'ms! Will use original continuation ID for step 2.');
+              currentStep = 'STEP1_COMPLETED';
+            // No need to parse continuation_id from status - we use the original one
+            } else if (status.status === 'failed') {
+              console.error('[DEBUG] Job failed with error:', status.error);
+              currentStep = 'STEP1_FAILED';
+              throw new Error(`Job failed: ${status.error}`);
+            } else {
+              console.log(`[DEBUG] Job still ${status.status}, continuing to poll...`);
+            }
+            attempts++;
+
+            const pollAttemptTime = Date.now() - pollAttemptStart;
+            console.log(`[DEBUG] Poll attempt ${attempts} took ${pollAttemptTime}ms`);
+          }
+
+          expect(job1Complete).toBe(true);
+          console.log('[DEBUG] Using continuation ID for step 2:', continuationId1);
+          console.log('[DEBUG] *** STARTING STEP 2 at', Date.now() - testStartTime, 'ms ***');
+          currentStep = 'STARTING_STEP2';
+
+          // Step 2: Follow-up async message using continuation
+          console.log('[DEBUG] Calling chat tool for step 2 at', Date.now() - testStartTime, 'ms...');
+          currentStep = 'SUBMITTING_STEP2';
+
+          const step2StartTime = Date.now();
+          const step2Result = await client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: 'What number did I ask you to remember?',
+              continuation_id: continuationId1,
+              async: true,
+              model: 'auto',
+              temperature: 0
             }
           });
 
-          const step2StatusTime = Date.now() - step2StatusStart;
-          console.log('[DEBUG] Step 2 status call completed in', step2StatusTime, 'ms');
+          const step2SubmitTime = Date.now() - step2StartTime;
+          console.log('[DEBUG] Step 2 tool call completed in', step2SubmitTime, 'ms at', Date.now() - testStartTime, 'ms');
+          currentStep = 'STEP2_SUBMITTED';
 
-          // Parse response, handling potential metadata display
-          const statusText = statusResult.content[0].text;
-          console.log('[DEBUG] Step 2 status response (first 200 chars):', statusText.substring(0, 200));
-          const status = parseStatusResponse(statusText);
-          console.log('[DEBUG] Step 2 parsed status:', status.status, 'at', Date.now() - testStartTime, 'ms');
+          // Parse response
+          const step2Text = step2Result.content[0].text;
+          console.log('[DEBUG] Step 2 raw response:', step2Text);
 
-          if (status.status === 'completed') {
-            job2Complete = true;
-            console.log('[DEBUG] Step 2 job completed at', Date.now() - testStartTime, 'ms!');
-            currentStep = "STEP2_COMPLETED";
-            
-            // Parse the full content from the response
-            const lines = statusText.split('\n');
-            // Find the content after status line and continuation_id
-            const contentStartIndex = lines.findIndex(line => 
-              !line.startsWith('🔄') && 
-              !line.startsWith('✅') && 
+          let step2Content;
+          let continuationId2;
+          try {
+          // Response is now human-readable status line, use continuation object
+            step2Content = { continuation_id: step2Result.continuation.id };
+            // Use continuation_id for status checking
+            continuationId2 = step2Content.continuation_id;
+            console.log('[DEBUG] Parsed step 2 content:', step2Content);
+            console.log('[DEBUG] Job ID 2 for status checking:', continuationId2);
+          } catch (parseError) {
+            console.error('[DEBUG] Failed to parse step 2 response:', parseError);
+            console.error('[DEBUG] Response was:', step2Text);
+            throw parseError;
+          }
+
+          // Wait for second job to complete
+          console.log('[DEBUG] Starting to poll for step 2 job completion at', Date.now() - testStartTime, 'ms...');
+          currentStep = 'POLLING_STEP2';
+          let job2Complete = false;
+          let finalResult = null;
+          attempts = 0;
+
+          const step2PollStart = Date.now();
+          while (!job2Complete && attempts < 30) {
+            const step2PollAttemptStart = Date.now();
+            console.log(`[DEBUG] Step 2 poll attempt ${attempts + 1}/30 at`, Date.now() - testStartTime, 'ms...');
+            currentStep = `POLLING_STEP2_ATTEMPT_${attempts + 1}`;
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            console.log(`[DEBUG] Calling check_status for step 2 continuationId2: ${continuationId2} at`, Date.now() - testStartTime, 'ms');
+            const step2StatusStart = Date.now();
+
+            const statusResult = await client.callTool({
+              name: 'check_status',
+              arguments: {
+                continuation_id: continuationId2
+              // check_status always returns full output in human-readable format
+              }
+            });
+
+            const step2StatusTime = Date.now() - step2StatusStart;
+            console.log('[DEBUG] Step 2 status call completed in', step2StatusTime, 'ms');
+
+            // Parse response, handling potential metadata display
+            const statusText = statusResult.content[0].text;
+            console.log('[DEBUG] Step 2 status response (first 200 chars):', statusText.substring(0, 200));
+            const status = parseStatusResponse(statusText);
+            console.log('[DEBUG] Step 2 parsed status:', status.status, 'at', Date.now() - testStartTime, 'ms');
+
+            if (status.status === 'completed') {
+              job2Complete = true;
+              console.log('[DEBUG] Step 2 job completed at', Date.now() - testStartTime, 'ms!');
+              currentStep = 'STEP2_COMPLETED';
+
+              // Parse the full content from the response
+              const lines = statusText.split('\n');
+              // Find the content after status line and continuation_id
+              const contentStartIndex = lines.findIndex(line =>
+                !line.startsWith('🔄') &&
+              !line.startsWith('✅') &&
               !line.startsWith('continuation_id:') &&
               line.trim() !== ''
-            );
-            if (contentStartIndex >= 0) {
-              const content = lines.slice(contentStartIndex).join('\n');
-              finalResult = { message: content };
-              console.log('[DEBUG] Step 2 final result:', content.substring(0, 100));
+              );
+              if (contentStartIndex >= 0) {
+                const content = lines.slice(contentStartIndex).join('\n');
+                finalResult = { message: content };
+                console.log('[DEBUG] Step 2 final result:', content.substring(0, 100));
+              }
+            } else if (status.status === 'failed') {
+              console.error('[DEBUG] Step 2 job failed:', status.error);
+              currentStep = 'STEP2_FAILED';
+              throw new Error(`Step 2 job failed: ${status.error}`);
+            } else {
+              console.log(`[DEBUG] Step 2 job still ${status.status}, continuing to poll...`);
             }
-          } else if (status.status === 'failed') {
-            console.error('[DEBUG] Step 2 job failed:', status.error);
-            currentStep = "STEP2_FAILED";
-            throw new Error(`Step 2 job failed: ${status.error}`);
-          } else {
-            console.log(`[DEBUG] Step 2 job still ${status.status}, continuing to poll...`);
+
+            attempts++;
+            const step2PollAttemptTime = Date.now() - step2PollAttemptStart;
+            console.log(`[DEBUG] Step 2 poll attempt ${attempts} took ${step2PollAttemptTime}ms`);
           }
-          
-          attempts++;
-          const step2PollAttemptTime = Date.now() - step2PollAttemptStart;
-          console.log(`[DEBUG] Step 2 poll attempt ${attempts} took ${step2PollAttemptTime}ms`);
-        }
 
-        if (!job2Complete) {
-          console.error('[DEBUG] Step 2 did not complete within 30 attempts');
-          console.error('[DEBUG] Current step:', currentStep);
-          console.error('[DEBUG] Total test time:', Date.now() - testStartTime, 'ms');
-          throw new Error(`Step 2 did not complete. Current step: ${currentStep}`);
-        }
+          if (!job2Complete) {
+            console.error('[DEBUG] Step 2 did not complete within 30 attempts');
+            console.error('[DEBUG] Current step:', currentStep);
+            console.error('[DEBUG] Total test time:', Date.now() - testStartTime, 'ms');
+            throw new Error(`Step 2 did not complete. Current step: ${currentStep}`);
+          }
 
-        expect(job2Complete).toBe(true);
-        expect(finalResult).toBeDefined();
-        expect(finalResult.message).toContain('42');
+          expect(job2Complete).toBe(true);
+          expect(finalResult).toBeDefined();
+          expect(finalResult.message).toContain('42');
 
-        console.log('[DEBUG] *** TEST COMPLETED SUCCESSFULLY at', Date.now() - testStartTime, 'ms ***');
-        logger.info('[async-scenarios] Multi-step conversation completed');
+          console.log('[DEBUG] *** TEST COMPLETED SUCCESSFULLY at', Date.now() - testStartTime, 'ms ***');
+          logger.info('[async-scenarios] Multi-step conversation completed');
         });
       } catch (error) {
         console.error('[DEBUG] *** TEST FAILED at', Date.now() - testStartTime, 'ms ***');
@@ -382,13 +382,13 @@ module.exports = { fibonacci };`
           } else if (status.status === 'failed') {
             throw new Error(`File processing job failed: ${status.error}`);
           }
-          
+
           attempts++;
         }
 
         expect(completed).toBe(true);
         expect(result).toBeDefined();
-        
+
         // The result should contain the content from the completion
         const resultContent = result.content || result.message || '';
         expect(resultContent.toLowerCase()).toContain('fibonacci');
@@ -423,7 +423,7 @@ module.exports = { fibonacci };`
         const syncText = syncResult.content[0].text;
         let syncContent;
         let continuationId;
-        
+
         try {
           // Try parsing as JSON first
           syncContent = parseJsonResponse(syncText);
@@ -445,11 +445,11 @@ module.exports = { fibonacci };`
           model: 'auto',
           temperature: 0
         };
-        
+
         if (continuationId) {
           asyncArgs.continuation_id = continuationId;
         }
-        
+
         const asyncResult = await client.callTool({
           name: 'chat',
           arguments: asyncArgs
@@ -488,7 +488,7 @@ module.exports = { fibonacci };`
 
         expect(completed).toBe(true);
         expect(asyncFinalResult).toBeDefined();
-        
+
         // The result content should contain "100"
         const asyncResultContent = asyncFinalResult.content || asyncFinalResult.message || '';
         expect(asyncResultContent).toContain('100');
@@ -509,7 +509,7 @@ module.exports = { fibonacci };`
           // Parse response, handling potential metadata display
           const sync2Text = sync2Result.content[0].text;
           let sync2Content;
-          
+
           try {
             sync2Content = parseJsonResponse(sync2Text);
             expect(sync2Content.message).toContain('10');
@@ -815,14 +815,14 @@ module.exports = { fibonacci };`
         }
 
         expect(completed).toBe(true);
-        
+
         if (finalResult) {
-          // Check if we have the consensus result content 
+          // Check if we have the consensus result content
           const resultContent = finalResult.content || finalResult.message || '';
           expect(resultContent).toBeDefined();
           expect(typeof resultContent).toBe('string');
           expect(resultContent.length).toBeGreaterThan(0);
-          
+
           // The result should mention one of the programming languages
           expect(resultContent.toLowerCase()).toMatch(/python|javascript|java/);
         } else {
@@ -830,7 +830,7 @@ module.exports = { fibonacci };`
           // in human-readable format, but completing successfully is still a pass
           console.log('[DEBUG] Consensus completed but finalResult is null - this is acceptable for human-readable format');
         }
-        
+
         // Note: In human-readable format, detailed response structure may not be available
         // but progress events are also not exposed in human-readable format
         // The test passes if the consensus completed successfully with meaningful content
