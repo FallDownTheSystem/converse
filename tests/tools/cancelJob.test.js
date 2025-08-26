@@ -33,21 +33,21 @@ describe('Cancel Job Tool', () => {
   describe('Input Validation', () => {
     it('should return error for missing continuation_id', async () => {
       const result = await cancelJobTool({}, dependencies);
-      
+
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Invalid continuation_id');
     });
 
     it('should return error for invalid continuation_id type', async () => {
       const result = await cancelJobTool({ continuation_id: 123 }, dependencies);
-      
+
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Invalid continuation_id');
     });
 
     it('should return error for empty continuation_id', async () => {
       const result = await cancelJobTool({ continuation_id: '' }, dependencies);
-      
+
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Invalid continuation_id');
     });
@@ -56,24 +56,24 @@ describe('Cancel Job Tool', () => {
   describe('Dependency Validation', () => {
     it('should return error when JobRunner is missing', async () => {
       const depsWithoutJobRunner = { asyncJobStore: mockAsyncJobStore };
-      
+
       const result = await cancelJobTool(
         { continuation_id: 'test-job-123' },
         depsWithoutJobRunner
       );
-      
+
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('JobRunner not configured');
     });
 
     it('should return error when AsyncJobStore is missing', async () => {
       const depsWithoutStore = { jobRunner: mockJobRunner };
-      
+
       const result = await cancelJobTool(
         { continuation_id: 'test-job-123' },
         depsWithoutStore
       );
-      
+
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('AsyncJobStore not configured');
     });
@@ -156,9 +156,9 @@ describe('Cancel Job Tool', () => {
   describe('Successful Cancellation', () => {
     it('should cancel queued job successfully', async () => {
       const jobState = { status: 'queued' };
-      const updatedJobState = { 
-        status: 'cancelled', 
-        result: null 
+      const updatedJobState = {
+        status: 'cancelled',
+        result: null
       };
 
       mockAsyncJobStore.get
@@ -176,15 +176,15 @@ describe('Cancel Job Tool', () => {
       expect(result.content[0].text).toContain('successfully cancelled');
       expect(result.content[0].text).toContain('"previous_status": "queued"');
       expect(result.content[0].text).toContain('"has_partial_results": false');
-      
+
       expect(mockJobRunner.cancel).toHaveBeenCalledWith('queued-job');
     });
 
     it('should cancel running job successfully', async () => {
       const jobState = { status: 'running' };
-      const updatedJobState = { 
-        status: 'cancelled', 
-        result: null 
+      const updatedJobState = {
+        status: 'cancelled',
+        result: null
       };
 
       mockAsyncJobStore.get
@@ -214,9 +214,9 @@ describe('Cancel Job Tool', () => {
         ],
         consensus_status: 'partial'
       };
-      const updatedJobState = { 
-        status: 'cancelled', 
-        result: partialResult 
+      const updatedJobState = {
+        status: 'cancelled',
+        result: partialResult
       };
 
       mockAsyncJobStore.get
@@ -239,9 +239,9 @@ describe('Cancel Job Tool', () => {
 
     it('should handle null partial results', async () => {
       const jobState = { status: 'running' };
-      const updatedJobState = { 
-        status: 'cancelled', 
-        result: null 
+      const updatedJobState = {
+        status: 'cancelled',
+        result: null
       };
 
       mockAsyncJobStore.get
@@ -279,7 +279,7 @@ describe('Cancel Job Tool', () => {
       expect(result.content[0].text).toContain('"status": "cancellation_failed"');
       expect(result.content[0].text).toContain('could not be cancelled');
       expect(result.content[0].text).toContain('"current_status": "completed"');
-      
+
       expect(mockJobRunner.cancel).toHaveBeenCalledWith('failed-cancel-job');
     });
 

@@ -139,7 +139,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     // Configure LRU cache with configurable TTL and 10k job capacity
     this.jobs = new LRUCache({
       max: 10000, // Maximum 10k jobs to prevent memory leaks
-      ttl: ttl, // Configurable TTL from environment
+      ttl, // Configurable TTL from environment
       updateAgeOnGet: true, // Update TTL on access
       updateAgeOnHas: false, // Don't update TTL just for existence checks
     });
@@ -198,6 +198,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         providers: new Map(), // Per-provider state tracking
         events: [], // Ring buffer for events
         seq: 0, // Sequence counter for events
+        // Summarization fields
+        accumulated_content: null, // Full streaming content
+        title: null, // Generated request title
+        final_summary: null, // Completed job summary
         ...options, // Allow additional options
       };
 
@@ -313,8 +317,21 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         });
       }
 
+      // Handle summarization fields explicitly
+      if (updates.accumulated_content !== undefined) {
+        job.accumulated_content = updates.accumulated_content;
+      }
+
+      if (updates.title !== undefined) {
+        job.title = updates.title;
+      }
+
+      if (updates.final_summary !== undefined) {
+        job.final_summary = updates.final_summary;
+      }
+
       // Apply any other updates as direct properties on the job
-      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq'];
+      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq', 'accumulated_content', 'title', 'final_summary'];
       Object.entries(updates).forEach(([key, value]) => {
         if (!reservedFields.includes(key)) {
           job[key] = value;
@@ -515,7 +532,6 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Collect all jobs
       const allJobs = [];
-      
       for (const job of this.jobs.values()) {
         // Apply status filter if specified
         if (!status || job.status === status) {
@@ -527,7 +543,6 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       // Sort jobs
       const sortField = sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
       const sortMultiplier = sortOrder === 'asc' ? 1 : -1;
-      
       allJobs.sort((a, b) => {
         return (a[sortField] - b[sortField]) * sortMultiplier;
       });

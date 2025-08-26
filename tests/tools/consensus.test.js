@@ -505,7 +505,7 @@ describe('Consensus Tool Unit Tests', () => {
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
-      
+
       // Parse JSON response (handles both pure JSON and status line prefix)
       let consensusResult;
       try {
@@ -538,7 +538,7 @@ describe('Consensus Tool Unit Tests', () => {
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
-      
+
       // Parse JSON response (handles both pure JSON and status line prefix)
       let consensusResult;
       try {

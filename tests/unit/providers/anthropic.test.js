@@ -828,10 +828,10 @@ describe('Anthropic Provider', () => {
       // Temporarily modify the model config to disable streaming
       const originalModels = anthropicProvider.getSupportedModels();
       const originalModel = originalModels['claude-3-5-haiku-20241022'];
-      
+
       // Patch the provider's internal SUPPORTED_MODELS by modifying the prototype
       const modifiedModel = { ...originalModel, supportsStreaming: false };
-      
+
       // Use Object.defineProperty to temporarily replace the model
       const originalDescriptor = Object.getOwnPropertyDescriptor(originalModels, 'claude-3-5-haiku-20241022');
       Object.defineProperty(originalModels, 'claude-3-5-haiku-20241022', {

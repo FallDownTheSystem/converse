@@ -1,6 +1,6 @@
 /**
  * Session Context Management
- * 
+ *
  * Uses AsyncLocalStorage to maintain session context across async operations.
  * This allows tools to access the current session ID without explicit passing.
  */

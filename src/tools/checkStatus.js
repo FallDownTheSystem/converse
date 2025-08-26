@@ -11,11 +11,11 @@ import { getAsyncJobStore, JOB_STATUS } from '../async/asyncJobStore.js';
 import { getFileCache } from '../async/fileCache.js';
 import { debugLog, debugError } from '../utils/console.js';
 import { createLogger } from '../utils/logger.js';
-import { 
-  formatJobStatus, 
-  formatHumanReadableStatus, 
+import {
+  formatJobStatus,
+  formatHumanReadableStatus,
   formatJobListHumanReadable,
-  formatConversationHistory 
+  formatConversationHistory
 } from '../utils/formatStatus.js';
 
 const logger = createLogger('check-status');
@@ -68,10 +68,10 @@ export async function checkStatusTool(args, dependencies) {
       }
 
       // Format content as human-readable status (now async)
-      const content = full_history 
+      const content = full_history
         ? await formatConversationHistory(jobStatus, continuation_id, { config, providers })
         : await formatHumanReadableStatus(jobStatus, { sequence: '1/1' }, { config, providers });
-      
+
       return createToolResponse({
         content,
         metadata: {
@@ -94,7 +94,7 @@ export async function checkStatusTool(args, dependencies) {
 
       // Format content as human-readable jobs list (now async)
       const content = await formatJobListHumanReadable(jobsList, { config, providers });
-      
+
       return createToolResponse({
         content,
         metadata: {
@@ -170,23 +170,23 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
     for (const job of allJobs) {
       const formattedJob = formatJobStatus(job, options);
       jobs.push(formattedJob);
-      
+
       // Update summary
       summary.total_jobs++;
       switch (job.status) {
-        case JOB_STATUS.RUNNING:
-        case JOB_STATUS.QUEUED:
-          summary.active_jobs++;
-          break;
-        case JOB_STATUS.COMPLETED:
-          summary.completed_jobs++;
-          break;
-        case JOB_STATUS.FAILED:
-          summary.failed_jobs++;
-          break;
-        case JOB_STATUS.CANCELLED:
-          summary.cancelled_jobs++;
-          break;
+      case JOB_STATUS.RUNNING:
+      case JOB_STATUS.QUEUED:
+        summary.active_jobs++;
+        break;
+      case JOB_STATUS.COMPLETED:
+        summary.completed_jobs++;
+        break;
+      case JOB_STATUS.FAILED:
+        summary.failed_jobs++;
+        break;
+      case JOB_STATUS.CANCELLED:
+        summary.cancelled_jobs++;
+        break;
       }
     }
 

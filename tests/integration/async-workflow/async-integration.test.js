@@ -1,6 +1,6 @@
 /**
  * Async Workflow Integration Tests
- * 
+ *
  * Tests the complete async execution workflow including:
  * - Async job submission with immediate continuation_id response
  * - Status polling and progress updates
@@ -25,7 +25,7 @@ describe('Async Workflow Integration Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-      
+
       // Check for available API keys
       hasAnyApiKey = !!(
         (config?.apiKeys?.openai && config.apiKeys.openai.startsWith('sk-')) ||
@@ -60,7 +60,7 @@ describe('Async Workflow Integration Tests', () => {
         // Should receive immediate response with continuation_id
         expect(asyncResult).toBeDefined();
         expect(asyncResult.content).toBeTruthy();
-        
+
         // The response should contain the message and job/continuation info
         expect(asyncResult.content[0].text).toContain('Chat request submitted for background processing');
         expect(asyncResult.continuation).toBeDefined();
@@ -87,7 +87,7 @@ describe('Async Workflow Integration Tests', () => {
 
         // Use the job ID for status checks
         const jobId = asyncResult.continuation.id;
-        
+
         logger.info('[async-integration] Job submitted:', jobId);
 
         // Step 2: Poll for status
@@ -99,7 +99,7 @@ describe('Async Workflow Integration Tests', () => {
 
         while (!completed && attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, pollInterval));
-          
+
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
@@ -116,8 +116,8 @@ describe('Async Workflow Integration Tests', () => {
             completed = true;
             finalResult = statusContent;
           } else if (statusContent.status === 'failed') {
-            const errorMsg = statusContent.error 
-              ? (typeof statusContent.error === 'object' 
+            const errorMsg = statusContent.error
+              ? (typeof statusContent.error === 'object'
                 ? (statusContent.error.message || JSON.stringify(statusContent.error))
                 : statusContent.error)
               : 'Unknown error';
@@ -131,10 +131,10 @@ describe('Async Workflow Integration Tests', () => {
         expect(completed).toBe(true);
         expect(finalResult).toBeDefined();
         expect(finalResult.status).toBe('completed');
-        
+
         // Log the actual result structure for debugging
         logger.info('[async-integration] Final result structure:', JSON.stringify(finalResult, null, 2));
-        
+
         // Check for completion result in human-readable format
         expect(finalResult.result).toBeDefined();
         expect(finalResult.result.content).toBeDefined();
@@ -170,7 +170,7 @@ describe('Async Workflow Integration Tests', () => {
           expect(error).toBeDefined();
         }
 
-        
+
         logger.info('[async-integration] Invalid request handled correctly');
       });
     }, 10000);
@@ -178,7 +178,7 @@ describe('Async Workflow Integration Tests', () => {
     it('should handle check_status for non-existent jobs', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const fakeJobId = `chat_${nanoid()}_${Date.now()}`;
-        
+
         const statusResult = await client.callTool({
           name: 'check_status',
           arguments: {
@@ -203,82 +203,82 @@ describe('Async Workflow Integration Tests', () => {
   });
 
   describe('Async Consensus Tool', () => {
-    const testWithAnyKey = testWithApiKeys({ 
+    const testWithAnyKey = testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     });
-    
+
     testWithAnyKey('should handle async consensus with multiple models', async () => {
-        await withHTTPTestServer(async (client, manager) => {
-          // Submit async consensus request
-          const consensusResult = await client.callTool({
-            name: 'consensus',
+      await withHTTPTestServer(async (client, manager) => {
+        // Submit async consensus request
+        const consensusResult = await client.callTool({
+          name: 'consensus',
+          arguments: {
+            prompt: 'Is 10 > 5? Answer yes or no only.',
+            models: ['auto'],
+            async: true,
+            temperature: 0,
+            enable_cross_feedback: false  // Disable for faster test
+          }
+        });
+
+        expect(consensusResult.content[0].text).toContain('Consensus request submitted for background processing');
+        expect(consensusResult.continuation).toBeDefined();
+        expect(consensusResult.continuation.id).toContain('conv_');
+        expect(consensusResult.continuation.status).toBe('processing');
+        const continuationId = consensusResult.continuation.id;
+
+        // Poll for consensus results
+        let completed = false;
+        let attempts = 0;
+        const maxAttempts = 40;
+        let finalResult = null;
+
+        while (!completed && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const statusResult = await client.callTool({
+            name: 'check_status',
             arguments: {
-              prompt: 'Is 10 > 5? Answer yes or no only.',
-              models: ['auto'],
-              async: true,
-              temperature: 0,
-              enable_cross_feedback: false  // Disable for faster test
+              continuation_id: continuationId,
+              include_output: true,
+              output_format: 'json'
             }
           });
 
-          expect(consensusResult.content[0].text).toContain('Consensus request submitted for background processing');
-          expect(consensusResult.continuation).toBeDefined();
-          expect(consensusResult.continuation.id).toContain('conv_');
-          expect(consensusResult.continuation.status).toBe('processing');
-          const continuationId = consensusResult.continuation.id;
+          // Parse status response, handling potential metadata display
+          const statusText = statusResult.content[0].text;
+          const status = parseStatusResponse(statusText);
 
-          // Poll for consensus results
-          let completed = false;
-          let attempts = 0;
-          const maxAttempts = 40;
-          let finalResult = null;
-
-          while (!completed && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const statusResult = await client.callTool({
-              name: 'check_status',
-              arguments: {
-                continuation_id: continuationId,
-                include_output: true,
-                output_format: 'json'
-              }
-            });
-
-            // Parse status response, handling potential metadata display
-            const statusText = statusResult.content[0].text;
-            const status = parseStatusResponse(statusText);
-            
-            if (status.status === 'completed') {
-              completed = true;
-              finalResult = status;
-            } else if (status.status === 'failed') {
-              throw new Error(`Consensus failed: ${status.error}`);
-            }
-
-            attempts++;
+          if (status.status === 'completed') {
+            completed = true;
+            finalResult = status;
+          } else if (status.status === 'failed') {
+            throw new Error(`Consensus failed: ${status.error}`);
           }
 
-          expect(completed).toBe(true);
-          // For consensus, check that we got a result 
-          expect(finalResult).toBeDefined();
-          expect(finalResult.status).toBe('completed');
-          
-          // In human-readable format, the result might be truncated or not available
-          // The test passes if the consensus completed successfully
-          logger.info('[async-integration] Consensus completed with status:', finalResult.status);
-          
-          // If result is available, check it contains the expected answer
-          if (finalResult.result && finalResult.result.content) {
-            const answer = finalResult.result.content.toLowerCase();
-            // The models should recognize that 10 > 5
-            expect(answer).toMatch(/yes|true|10.*greater|10.*larger|10.*bigger|10.*>.*5|correct/);
-          }
+          attempts++;
+        }
 
-          logger.info('[async-integration] Async consensus completed successfully');
-        });
-      }, 60000);
+        expect(completed).toBe(true);
+        // For consensus, check that we got a result
+        expect(finalResult).toBeDefined();
+        expect(finalResult.status).toBe('completed');
+
+        // In human-readable format, the result might be truncated or not available
+        // The test passes if the consensus completed successfully
+        logger.info('[async-integration] Consensus completed with status:', finalResult.status);
+
+        // If result is available, check it contains the expected answer
+        if (finalResult.result && finalResult.result.content) {
+          const answer = finalResult.result.content.toLowerCase();
+          // The models should recognize that 10 > 5
+          expect(answer).toMatch(/yes|true|10.*greater|10.*larger|10.*bigger|10.*>.*5|correct/);
+        }
+
+        logger.info('[async-integration] Async consensus completed successfully');
+      });
+    }, 60000);
   });
 
   describe('Job Cancellation', () => {
@@ -309,10 +309,10 @@ describe('Async Workflow Integration Tests', () => {
           }
         });
 
-        // Parse cancel response 
+        // Parse cancel response
         const cancelText = cancelResult.content[0].text;
         console.log('[DEBUG] Cancel response:', cancelText);
-        
+
         // cancel_job returns JSON, but may have validation errors
         let cancelContent;
         try {
@@ -321,7 +321,7 @@ describe('Async Workflow Integration Tests', () => {
           console.log('[DEBUG] Failed to parse cancel response as JSON, raw text:', cancelText.substring(0, 200));
           throw error;
         }
-        
+
         expect(cancelContent.status).toBe('cancelled');
         expect(cancelContent.continuation_id).toBe(jobId);
 
@@ -344,35 +344,126 @@ describe('Async Workflow Integration Tests', () => {
   });
 
   describe('Progress Tracking', () => {
-    const testWithAnyKey = testWithApiKeys({ 
+    const testWithAnyKey = testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     });
-    
+
     testWithAnyKey('should track progress updates during execution', async () => {
-        await withHTTPTestServer(async (client, manager) => {
-          // Submit async job
-          const asyncResult = await client.callTool({
-            name: 'chat',
+      await withHTTPTestServer(async (client, manager) => {
+        // Submit async job
+        const asyncResult = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'Generate a 3-step plan for learning JavaScript',
+            async: true,
+            model: 'auto'
+          }
+        });
+
+        // Get the continuation ID from the response
+        expect(asyncResult.continuation).toBeDefined();
+        const jobId = asyncResult.continuation.id;
+
+        // Track progress updates
+        const progressUpdates = [];
+        let completed = false;
+        let lastSeq = 0;
+
+        while (!completed) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          const statusResult = await client.callTool({
+            name: 'check_status',
             arguments: {
-              prompt: 'Generate a 3-step plan for learning JavaScript',
-              async: true,
-              model: 'auto'
+              continuation_id: jobId
             }
           });
 
-          // Get the continuation ID from the response
-          expect(asyncResult.continuation).toBeDefined();
-          const jobId = asyncResult.continuation.id;
+          // Parse status response, handling potential metadata display
+          const statusText = statusResult.content[0].text;
+          const status = parseStatusResponse(statusText);
 
-          // Track progress updates
-          const progressUpdates = [];
+          if (status.events && status.events.length > 0) {
+            progressUpdates.push(...status.events);
+            lastSeq = Math.max(...status.events.map(e => e.seq || 0));
+          }
+
+          if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
+            completed = true;
+          }
+        }
+
+        // Progress tracking isn't exposed in human-readable format,
+        // but we should have completed successfully
+        expect(completed).toBe(true);
+
+        // Since events aren't exposed in human-readable format,
+        // we can't check for specific event types
+        // The test passes if the job completed
+
+        logger.info(`[async-integration] Received ${progressUpdates.length} progress updates`);
+      });
+    }, 40000);
+  });
+
+  describe('Concurrent Async Jobs', () => {
+    const testWithAnyKey = testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
+      requireAll: false
+    });
+
+    testWithAnyKey('should handle multiple concurrent async jobs', async () => {
+      await withHTTPTestServer(async (client, manager) => {
+        // Submit multiple async jobs concurrently
+        const jobs = await Promise.all([
+          client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: 'What is 2+2?',
+              async: true,
+              model: 'auto',
+              temperature: 0
+            }
+          }),
+
+          client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: 'What is 3+3?',
+              async: true,
+              model: 'auto',
+              temperature: 0
+            }
+          }),
+
+          client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: 'What is 4+4?',
+              async: true,
+              model: 'auto',
+              temperature: 0
+            }
+          })
+        ]);
+
+        const jobIds = jobs.map(j => j.continuation ? j.continuation.id : null).filter(id => id !== null);
+
+        expect(jobIds).toHaveLength(3);
+        expect(new Set(jobIds).size).toBe(3); // All IDs should be unique
+
+        logger.info('[async-integration] Submitted concurrent jobs:', jobIds);
+
+        // Poll all jobs until complete
+        const results = await Promise.all(jobIds.map(async (jobId) => {
           let completed = false;
-          let lastSeq = 0;
+          let attempts = 0;
+          const maxAttempts = 30;
 
-          while (!completed) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
+          while (!completed && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
@@ -383,129 +474,38 @@ describe('Async Workflow Integration Tests', () => {
             // Parse status response, handling potential metadata display
             const statusText = statusResult.content[0].text;
             const status = parseStatusResponse(statusText);
-            
-            if (status.events && status.events.length > 0) {
-              progressUpdates.push(...status.events);
-              lastSeq = Math.max(...status.events.map(e => e.seq || 0));
+
+            if (status.status === 'completed') {
+              completed = true;
+              return status;
+            } else if (status.status === 'failed') {
+              const errorMsg = typeof status.error === 'object'
+                ? (status.error.message || JSON.stringify(status.error))
+                : status.error;
+              throw new Error(`Job ${jobId} failed: ${errorMsg}`);
             }
 
-            if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
-              completed = true;
-            }
+            attempts++;
           }
 
-          // Progress tracking isn't exposed in human-readable format,
-          // but we should have completed successfully
-          expect(completed).toBe(true);
-          
-          // Since events aren't exposed in human-readable format,
-          // we can't check for specific event types
-          // The test passes if the job completed
+          throw new Error(`Job ${jobId} timed out`);
+        }));
 
-          logger.info(`[async-integration] Received ${progressUpdates.length} progress updates`);
+        // Verify all jobs completed successfully
+        expect(results).toHaveLength(3);
+        results.forEach(result => {
+          expect(result.status).toBe('completed');
+          expect(result.result).toBeDefined();
+          expect(result.result.content).toBeDefined();
         });
-      }, 40000);
-  });
 
-  describe('Concurrent Async Jobs', () => {
-    const testWithAnyKey = testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
-    });
-    
-    testWithAnyKey('should handle multiple concurrent async jobs', async () => {
-        await withHTTPTestServer(async (client, manager) => {
-          // Submit multiple async jobs concurrently
-          const jobs = await Promise.all([
-            client.callTool({
-              name: 'chat',
-              arguments: {
-                prompt: 'What is 2+2?',
-                async: true,
-                model: 'auto',
-                temperature: 0
-              }
-            }),
-            
-            client.callTool({
-              name: 'chat',
-              arguments: {
-                prompt: 'What is 3+3?',
-                async: true,
-                model: 'auto',
-                temperature: 0
-              }
-            }),
-            
-            client.callTool({
-              name: 'chat',
-              arguments: {
-                prompt: 'What is 4+4?',
-                async: true,
-                model: 'auto',
-                temperature: 0
-              }
-            })
-          ]);
+        // Check answers
+        expect(results[0].result.content).toMatch(/4/);
+        expect(results[1].result.content).toMatch(/6/);
+        expect(results[2].result.content).toMatch(/8/);
 
-          const jobIds = jobs.map(j => j.continuation ? j.continuation.id : null).filter(id => id !== null);
-          
-          expect(jobIds).toHaveLength(3);
-          expect(new Set(jobIds).size).toBe(3); // All IDs should be unique
-
-          logger.info('[async-integration] Submitted concurrent jobs:', jobIds);
-
-          // Poll all jobs until complete
-          const results = await Promise.all(jobIds.map(async (jobId) => {
-            let completed = false;
-            let attempts = 0;
-            const maxAttempts = 30;
-            
-            while (!completed && attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              
-              const statusResult = await client.callTool({
-                name: 'check_status',
-                arguments: {
-                  continuation_id: jobId
-                }
-              });
-
-              // Parse status response, handling potential metadata display
-            const statusText = statusResult.content[0].text;
-            const status = parseStatusResponse(statusText);
-              
-              if (status.status === 'completed') {
-                completed = true;
-                return status;
-              } else if (status.status === 'failed') {
-                const errorMsg = typeof status.error === 'object' 
-                  ? (status.error.message || JSON.stringify(status.error))
-                  : status.error;
-                throw new Error(`Job ${jobId} failed: ${errorMsg}`);
-              }
-
-              attempts++;
-            }
-            
-            throw new Error(`Job ${jobId} timed out`);
-          }));
-
-          // Verify all jobs completed successfully
-          expect(results).toHaveLength(3);
-          results.forEach(result => {
-            expect(result.status).toBe('completed');
-            expect(result.result).toBeDefined();
-            expect(result.result.content).toBeDefined();
-          });
-
-          // Check answers
-          expect(results[0].result.content).toMatch(/4/);
-          expect(results[1].result.content).toMatch(/6/);
-          expect(results[2].result.content).toMatch(/8/);
-
-          logger.info('[async-integration] All concurrent jobs completed successfully');
-        });
-      }, 60000);
+        logger.info('[async-integration] All concurrent jobs completed successfully');
+      });
+    }, 60000);
   });
 });

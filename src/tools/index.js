@@ -88,7 +88,7 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
 
   // Use elapsed_seconds from job if available, otherwise use executionTime
   const timeToShow = metadata.elapsed_seconds !== undefined ? metadata.elapsed_seconds : executionTime;
-  
+
   if (timeToShow !== null) {
     // Format time appropriately based on duration
     let timeDisplay;

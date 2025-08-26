@@ -74,11 +74,11 @@ export class FileCache extends FileCacheInterface {
     super();
     this.baseDir = options.baseDir || process.env.ASYNC_CACHE_DIR || path.join(process.cwd(), 'cache', 'async');
     this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000; // 10 minutes
-    
+
     // Check environment variable for disk TTL
     const envDiskTTL = process.env.ASYNC_DISK_TTL_MS ? parseInt(process.env.ASYNC_DISK_TTL_MS, 10) : null;
     this.maxAge = options.maxAge || envDiskTTL || 3 * 24 * 60 * 60 * 1000; // 3 days default
-    
+
     this.cleanupTimer = null;
 
     // Start cleanup timer
@@ -300,7 +300,7 @@ export class FileCache extends FileCacheInterface {
       try {
         const content = await fs.readFile(snapshotPath, 'utf8');
         const snapshot = JSON.parse(content);
-        
+
         // Check if snapshot has expired based on TTL
         if (snapshot.updated_at || snapshot.ended_at) {
           const lastUpdate = snapshot.updated_at || snapshot.ended_at;
@@ -310,7 +310,7 @@ export class FileCache extends FileCacheInterface {
             return null;
           }
         }
-        
+
         debugLog('FileCache', `Snapshot read for job ${jobId} from current date`);
         return snapshot;
       } catch (_currentDateError) {
@@ -326,7 +326,7 @@ export class FileCache extends FileCacheInterface {
               return null;
             }
           }
-          
+
           debugLog('FileCache', `Snapshot read for job ${jobId} from recent directories`);
           return result;
         }

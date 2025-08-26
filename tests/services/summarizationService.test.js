@@ -41,7 +41,7 @@ describe('SummarizationService', () => {
       });
 
       const title = await service.generateTitle('Create a REST API endpoint for user authentication');
-      
+
       expect(title).toBe('Test Title for Request');
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -61,7 +61,7 @@ describe('SummarizationService', () => {
       mockProviders.openai.invoke.mockRejectedValue(new Error('API error'));
 
       const title = await service.generateTitle('Create a REST API endpoint for user authentication');
-      
+
       expect(title).toBe('Create a REST API endpoint for user authentication');
     });
 
@@ -71,7 +71,7 @@ describe('SummarizationService', () => {
       });
 
       const title = await service.generateTitle('Test prompt');
-      
+
       // Note: substring(0, 50) includes position 50 with a space
       expect(title).toBe('This is a very long title that definitely exceeds ');
       expect(title.length).toBe(50);
@@ -79,7 +79,7 @@ describe('SummarizationService', () => {
 
     it('should handle empty prompt gracefully', async () => {
       const title = await service.generateTitle('');
-      
+
       expect(title).toBe('Untitled');
       expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
     });
@@ -95,7 +95,7 @@ describe('SummarizationService', () => {
         'Full implementation of authentication system',
         'JWT token validation'
       );
-      
+
       expect(summary).toBe('Overall the code implements authentication. Currently working on JWT validation.');
       expect(mockProviders.openai.invoke).toHaveBeenCalled();
     });
@@ -107,7 +107,7 @@ describe('SummarizationService', () => {
         'Full implementation of authentication system',
         'JWT token validation'
       );
-      
+
       expect(summary).toContain('Full implementation');
       expect(summary).toContain('JWT token validation');
       expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe('SummarizationService', () => {
       });
 
       const summary = await service.generateFinalSummary('Complete authentication implementation details...');
-      
+
       expect(summary).toBe('Successfully implemented user authentication with JWT tokens.');
       expect(mockProviders.openai.invoke).toHaveBeenCalled();
     });
@@ -130,7 +130,7 @@ describe('SummarizationService', () => {
       mockProviders.openai.invoke.mockRejectedValue(new Error('API error'));
 
       const summary = await service.generateFinalSummary('Complete authentication implementation details...');
-      
+
       expect(summary).toContain('Complete authentication implementation details');
       expect(summary).toContain('...');
     });
@@ -141,7 +141,7 @@ describe('SummarizationService', () => {
       service.setEnabled(false);
 
       const title = await service.generateTitle('Test prompt');
-      
+
       expect(title).toBe('Test prompt');
       expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
     });
@@ -155,7 +155,7 @@ describe('SummarizationService', () => {
       });
 
       const title = await service.generateTitle('Test prompt');
-      
+
       expect(title).toBe('Generated Title');
       expect(mockProviders.openai.invoke).toHaveBeenCalled();
     });
@@ -170,7 +170,7 @@ describe('SummarizationService', () => {
       });
 
       const title = await service.generateTitle('Test prompt');
-      
+
       expect(title).toBe('Google Generated Title');
       expect(mockProviders.google.invoke).toHaveBeenCalled();
     });
@@ -180,7 +180,7 @@ describe('SummarizationService', () => {
       mockProviders.google.isAvailable.mockReturnValue(false);
 
       const title = await service.generateTitle('Test prompt for fallback');
-      
+
       expect(title).toBe('Test prompt for fallback');
       expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
       expect(mockProviders.google.invoke).not.toHaveBeenCalled();

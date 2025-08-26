@@ -1,11 +1,11 @@
 ---
 id: task-043
 title: Modify async job storage for accumulated content and summaries
-status: To Do
+status: Done
 assignee:
   - '@ai'
 created_date: '2025-08-26 10:51'
-updated_date: '2025-08-26 11:10'
+updated_date: '2025-08-26 12:47'
 labels:
   - async
   - job-management
@@ -44,3 +44,7 @@ Data flow: Streaming content → accumulated_content → stored in job state
 Pattern: Follow existing field update patterns in updateJob()
 
 Note: The `streaming_preview` field is currently set in src/tools/chat.js (lines 638-640) and src/tools/consensus.js, not in asyncJobStore itself. Those will be handled in tasks 040 and 042 respectively. This task focuses on adding the new fields to the job state structure.
+
+## Implementation Notes
+
+Successfully implemented AsyncJobStore modifications for accumulated content and summaries. Changes made: 1) Added explicit support for accumulated_content, title, and final_summary fields in job creation and updates, 2) Updated reserved fields list to handle new fields properly, 3) Removed streaming_preview references and replaced with accumulated_content logic, 4) Updated formatStatus.js to generate streaming previews on-demand from accumulated_content, 5) Fixed test files to use new field names, 6) All tests passing including AsyncJobStore, checkStatus, and tool integration tests.

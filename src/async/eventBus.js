@@ -253,7 +253,7 @@ export class EventBus extends EventEmitter {
 
       // Emit event
       const hasListeners = this.emit(eventType, event);
-      
+
       // Update statistics
       this.stats.eventsEmitted++;
 
@@ -320,7 +320,7 @@ export class EventBus extends EventEmitter {
   _calculateMemoryUsage() {
     // Rough estimation of memory usage
     let totalSize = 0;
-    
+
     for (const [jobId, events] of this.eventHistory) {
       totalSize += jobId.length * 2; // UTF-16 string size
       totalSize += JSON.stringify(events).length;

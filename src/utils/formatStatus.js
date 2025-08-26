@@ -18,23 +18,23 @@ import { JOB_STATUS } from '../async/asyncJobStore.js';
  */
 export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
   const parts = [];
-  
+
   // Summary line
   parts.push(`📊 Jobs Summary: ${jobsList.summary.active_jobs} active, ${jobsList.summary.completed_jobs} completed, ${jobsList.summary.failed_jobs} failed`);
-  
+
   if (jobsList.jobs.length === 0) {
     parts.push('No jobs found.');
     return parts.join('\n');
   }
-  
+
   parts.push('─'.repeat(80));
-  
+
   // List each job
   for (const job of jobsList.jobs) {
-    const timeStr = job.elapsed_seconds >= 60 
+    const timeStr = job.elapsed_seconds >= 60
       ? `${Math.floor(job.elapsed_seconds / 60)}m${Math.round(job.elapsed_seconds % 60)}s`
       : `${job.elapsed_seconds.toFixed(1)}s`;
-    
+
     const statusEmoji = {
       'queued': '⏳',
       'running': '🔄',
@@ -43,42 +43,42 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
       'cancelled': '⛔',
       'completed_with_errors': '⚠️'
     }[job.status] || '❓';
-    
+
     const provider = job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
-    
+
     // Format start time as readable date/time
     const startTime = job.created_at ? new Date(job.created_at).toLocaleString() : 'unknown';
-    
+
     // Format: emoji STATUS | TOOL | id | sequence | started | time | [progress for consensus only] | provider
     const sequenceStr = '1/1';
-    
+
     // Build base status line
     let statusLine = `${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr}`;
-    
+
     // Add consensus progress if applicable
     if (job.tool === 'consensus' && job.consensus_progress) {
       statusLine += ` | ${job.consensus_progress}`;
     }
-    
+
     statusLine += ` | ${provider}`;
-    
+
     // Add title if available
     if (job.title) {
       statusLine += ` | "${job.title}"`;
     }
-    
+
     parts.push(statusLine);
-    
+
     // Add final summary snippet for completed jobs
     if (job.status === 'completed' && job.final_summary) {
       // Indent and truncate summary for list view
-      const summarySnippet = job.final_summary.length > 100 
+      const summarySnippet = job.final_summary.length > 100
         ? job.final_summary.substring(0, 100) + '...'
         : job.final_summary;
       parts.push(`  └─ ${summarySnippet}`);
     }
   }
-  
+
   return parts.join('\n');
 }
 
@@ -93,7 +93,7 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
  */
 export async function formatHumanReadableStatus(jobStatus, options = {}, dependencies = {}) {
   const parts = [];
-  
+
   // Format elapsed time
   let timeStr;
   if (jobStatus.elapsed_seconds >= 60) {
@@ -103,7 +103,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
   } else {
     timeStr = `${jobStatus.elapsed_seconds.toFixed(1)}s`;
   }
-  
+
   // Build status line based on status
   const statusEmoji = {
     'queued': '⏳',
@@ -113,21 +113,21 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
     'cancelled': '⛔',
     'completed_with_errors': '⚠️'
   }[jobStatus.status] || '❓';
-  
+
   // Format start time as readable date/time
   const startTime = jobStatus.created_at ? new Date(jobStatus.created_at).toLocaleString() : 'unknown';
-  
+
   // Add sequence info if provided
   const sequenceStr = options.sequence ? ` | ${options.sequence}` : '';
-  
+
   // Build complete status line with all info
   let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id}${sequenceStr} | Started: ${startTime} | ${timeStr} elapsed`;
-  
+
   // Add title if available
   if (jobStatus.title) {
     statusLine += ` | "${jobStatus.title}"`;
   }
-  
+
   // Add progress for consensus tool only (show x/y format)
   if (jobStatus.tool === 'consensus') {
     if (jobStatus.consensus_progress) {
@@ -135,7 +135,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
     } else if (jobStatus.providers) {
       // Calculate progress from provider states
       const providerEntries = Object.entries(jobStatus.providers);
-      const completed = providerEntries.filter(([_, state]) => 
+      const completed = providerEntries.filter(([_, state]) =>
         state.status === 'completed' || state.status === 'refined'
       ).length;
       const total = providerEntries.length;
@@ -153,38 +153,50 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       statusLine += ` | ${jobStatus.provider}`;
     }
   }
-  
+
   parts.push(statusLine);
-  
+
   // Generate streaming summary for running jobs if accumulated content available
-  if (jobStatus.status === 'running' && jobStatus.accumulated_content && dependencies.config && dependencies.providers) {
+  if (jobStatus.status === 'running' && jobStatus.accumulated_content) {
     try {
-      const summarizationService = new SummarizationService(dependencies.providers, dependencies.config);
-      
-      // Extract current focus from streaming preview or use default
-      const currentFocus = jobStatus.streaming_preview || 'Processing response...';
-      
-      // Generate streaming summary
-      const streamingSummary = await summarizationService.generateStreamingSummary(
-        jobStatus.accumulated_content,
-        currentFocus
-      );
-      
-      if (streamingSummary) {
-        parts.push(`Summary: ${streamingSummary}`);
+      if (dependencies.config && dependencies.providers) {
+        const summarizationService = new SummarizationService(dependencies.providers, dependencies.config);
+
+        // Use accumulated content to infer current focus, or default
+        const currentFocus = 'Processing response...';
+
+        // Generate streaming summary
+        const streamingSummary = await summarizationService.generateStreamingSummary(
+          jobStatus.accumulated_content,
+          currentFocus
+        );
+
+        if (streamingSummary) {
+          parts.push(`Summary: ${streamingSummary}`);
+        } else {
+          // Fallback: show truncated accumulated content as streaming preview
+          const preview = jobStatus.accumulated_content.length > 200
+            ? jobStatus.accumulated_content.substring(0, 200) + '...'
+            : jobStatus.accumulated_content;
+          parts.push(`Streaming: "${preview}"`);
+        }
+      } else {
+        // Fallback when summarization unavailable: show truncated accumulated content
+        const preview = jobStatus.accumulated_content.length > 200
+          ? jobStatus.accumulated_content.substring(0, 200) + '...'
+          : jobStatus.accumulated_content;
+        parts.push(`Streaming: "${preview}"`);
       }
     } catch (error) {
       debugError('formatHumanReadableStatus: Failed to generate streaming summary', error);
-      // Fall back to showing streaming preview if summary generation fails
-      if (jobStatus.streaming_preview) {
-        parts.push(`Streaming: "${jobStatus.streaming_preview}"`);
-      }
+      // Fall back to showing truncated accumulated content
+      const preview = jobStatus.accumulated_content.length > 200
+        ? jobStatus.accumulated_content.substring(0, 200) + '...'
+        : jobStatus.accumulated_content;
+      parts.push(`Streaming: "${preview}"`);
     }
-  } else if (jobStatus.status === 'running' && jobStatus.streaming_preview) {
-    // Show streaming preview as fallback when no accumulated content
-    parts.push(`Streaming: "${jobStatus.streaming_preview}"`);
   }
-  
+
   // Add provider previews for consensus
   if (jobStatus.status === 'running' && jobStatus.provider_previews) {
     const previewCount = Object.keys(jobStatus.provider_previews).length;
@@ -198,7 +210,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       }
     }
   }
-  
+
   // Add full result if completed
   if (jobStatus.status === 'completed' && jobStatus.result) {
     // Add continuation_id if present (for multi-step conversations)
@@ -207,7 +219,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
     } else if (jobStatus.result.continuation_id) {
       parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
     }
-    
+
     // Show final summary if available, otherwise show full content
     if (jobStatus.final_summary) {
       parts.push(`\nSummary: ${jobStatus.final_summary}`);
@@ -219,12 +231,12 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       parts.push(`\n${jobStatus.result.content}`);
     }
   }
-  
+
   // Add error info if failed
   if (jobStatus.status === 'failed' && jobStatus.error) {
     parts.push(`Error: ${jobStatus.error.message || jobStatus.error}`);
   }
-  
+
   // Add provider details for consensus
   if (jobStatus.providers && Object.keys(jobStatus.providers).length > 0) {
     const providerStatuses = Object.entries(jobStatus.providers)
@@ -232,7 +244,7 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       .join(', ');
     parts.push(`Providers: ${providerStatuses}`);
   }
-  
+
   return parts.join('\n');
 }
 
@@ -248,7 +260,7 @@ export function formatJobStatus(job, options = {}) {
   const startTime = job.createdAt || now;
   const elapsedMs = now - startTime;
   const elapsedSeconds = elapsedMs / 1000;
-  
+
   const formatted = {
     continuation_id: job.jobId,
     status: job.status,
@@ -263,13 +275,12 @@ export function formatJobStatus(job, options = {}) {
     model: job.model || null,
     models_list: job.models_list || null,
     consensus_progress: job.consensus_progress || null,
-    streaming_preview: job.streaming_preview || null,
     // Include new metadata fields if present
     accumulated_content: job.accumulated_content || null,
     title: job.title || null,
     final_summary: job.final_summary || null
   };
-  
+
   // For consensus, gather provider previews
   if (job.tool === 'consensus') {
     const providerPreviews = {};
@@ -303,7 +314,7 @@ export function formatJobStatus(job, options = {}) {
   // Include output (always included)
   if (job.overall?.result) {
     formatted.result = job.overall.result;
-    
+
     // Also include metadata from the result if available
     if (job.overall.result.metadata) {
       formatted.metadata = job.overall.result.metadata;
@@ -315,22 +326,22 @@ export function formatJobStatus(job, options = {}) {
 
 /**
  * Format conversation history for a continuation ID
- * @param {object} jobStatus - Formatted job status object  
+ * @param {object} jobStatus - Formatted job status object
  * @param {string} continuationId - The continuation ID
  * @param {object} dependencies - Dependencies object with config and providers
  * @returns {Promise<string>} Human-readable conversation history
  */
 export async function formatConversationHistory(jobStatus, continuationId, dependencies = {}) {
   const parts = [];
-  
+
   parts.push(`📊 Conversation History for ${continuationId}:`);
   parts.push('─'.repeat(80));
   parts.push('');
-  
+
   // For now, show the single job with sequence 1/1
   // TODO: Implement proper conversation tracking when multi-job conversations are supported
   const statusLine = await formatHumanReadableStatus(jobStatus, { sequence: '1/1', skipContent: false }, dependencies);
   parts.push(statusLine);
-  
+
   return parts.join('\n');
 }

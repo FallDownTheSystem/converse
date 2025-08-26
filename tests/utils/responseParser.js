@@ -1,6 +1,6 @@
 /**
  * Response Parser Utilities
- * 
+ *
  * Centralized helpers for parsing different response formats from the MCP tools.
  * Handles both human-readable status lines and JSON responses.
  */
@@ -13,7 +13,7 @@
 export function parseStatusResponse(text) {
   const lines = text.split('\n');
   const statusLine = lines[0];
-  
+
   // Parse status line: "🔄 RUNNING | CHAT | job_test123 | 5.0s elapsed | provider/model"
   const parts = statusLine.split(' | ');
   const statusWithEmoji = parts[0] || '';
@@ -21,12 +21,12 @@ export function parseStatusResponse(text) {
   const status = statusParts[statusParts.length - 1]?.toLowerCase() || '';
   const tool = parts[1]?.toLowerCase() || '';
   const continuationId = parts[2] || '';
-  
+
   // Extract time value
   const timeStr = parts[3] || '';
   const timeMatch = timeStr.match(/([\d.]+)/);
   const elapsedSeconds = timeMatch ? parseFloat(timeMatch[1]) : 0;
-  
+
   // Extract provider/model if present
   let provider = null;
   let model = null;
@@ -39,7 +39,7 @@ export function parseStatusResponse(text) {
     provider = providerModel[0] || null;
     model = providerModel[1] || null;
   }
-  
+
   // Check for completion response - new format shows full content after status line and continuation_id
   let result = null;
   if (status === 'completed') {
@@ -48,12 +48,12 @@ export function parseStatusResponse(text) {
     if (statusLineIndex >= 0) {
       // Skip status line and any continuation_id line
       let contentStartIndex = statusLineIndex + 1;
-      while (contentStartIndex < lines.length && 
-             (lines[contentStartIndex].trim() === '' || 
+      while (contentStartIndex < lines.length &&
+             (lines[contentStartIndex].trim() === '' ||
               lines[contentStartIndex].trim().startsWith('continuation_id:'))) {
         contentStartIndex++;
       }
-      
+
       if (contentStartIndex < lines.length) {
         const content = lines.slice(contentStartIndex).join('\n').trim();
         if (content) {
@@ -62,21 +62,21 @@ export function parseStatusResponse(text) {
       }
     }
   }
-  
+
   // Check for error
   let error = null;
   const errorLine = lines.find(l => l.startsWith('Error: '));
   if (errorLine) {
     error = errorLine.substring('Error: '.length);
   }
-  
+
   // Check for streaming preview
   let streamingPreview = null;
   const streamingLine = lines.find(l => l.startsWith('Streaming: "'));
   if (streamingLine) {
     streamingPreview = streamingLine.match(/Streaming: "([^"]+)"/)?.[1] || null;
   }
-  
+
   return {
     status,
     tool,
@@ -86,7 +86,7 @@ export function parseStatusResponse(text) {
     model,
     result,
     error,
-    streaming_preview: streamingPreview
+    accumulated_content: streamingPreview
   };
 }
 
@@ -98,13 +98,13 @@ export function parseStatusResponse(text) {
 export function parseJsonResponse(text) {
   // Check if response starts with status line or JSON
   const firstChar = text.trim()[0];
-  
+
   if (firstChar === '{') {
     // Pure JSON response (no status line)
     // Find where JSON ends (look for the final closing brace)
     let braceCount = 0;
     let jsonEndIndex = -1;
-    
+
     for (let i = 0; i < text.length; i++) {
       if (text[i] === '{') braceCount++;
       if (text[i] === '}') {
@@ -115,30 +115,30 @@ export function parseJsonResponse(text) {
         }
       }
     }
-    
+
     if (jsonEndIndex === -1) {
       // If we can't find the end, try parsing the whole thing
       return JSON.parse(text);
     }
-    
+
     const jsonText = text.substring(0, jsonEndIndex);
     return JSON.parse(jsonText);
   } else {
     // Has status line - skip it and find JSON
     const lines = text.split('\n');
     const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
-    
+
     if (jsonStart === -1) {
       throw new Error('No JSON found in response: ' + text.substring(0, 200));
     }
-    
+
     // Find the end of JSON by counting braces
     const jsonLines = lines.slice(jsonStart);
     const jsonText = jsonLines.join('\n');
-    
+
     let braceCount = 0;
     let jsonEndIndex = -1;
-    
+
     for (let i = 0; i < jsonText.length; i++) {
       if (jsonText[i] === '{') braceCount++;
       if (jsonText[i] === '}') {
@@ -149,12 +149,12 @@ export function parseJsonResponse(text) {
         }
       }
     }
-    
+
     if (jsonEndIndex === -1) {
       // If we can't find the end, try parsing the whole thing
       return JSON.parse(jsonText);
     }
-    
+
     return JSON.parse(jsonText.substring(0, jsonEndIndex));
   }
 }

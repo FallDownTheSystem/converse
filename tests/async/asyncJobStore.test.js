@@ -86,9 +86,9 @@ describe('AsyncJobStore Unit Tests', () => {
       const tool = 'chat';
       const testJobId = 'test_job_123';
 
-      const jobId = await jobStore.create(tool, { 
+      const jobId = await jobStore.create(tool, {
         jobId: testJobId,
-        sessionId 
+        sessionId
       });
 
       expect(typeof jobId).toBe('string');

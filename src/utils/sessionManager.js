@@ -1,6 +1,6 @@
 /**
  * Session Manager
- * 
+ *
  * Manages active sessions and provides a way to identify the current session
  * based on the active transport connection.
  */

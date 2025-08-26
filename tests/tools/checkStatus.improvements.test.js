@@ -1,6 +1,6 @@
 /**
  * Check Status Tool Improvements Tests
- * 
+ *
  * Tests for the new improvements:
  * 1. No progress percentage for chat tool
  * 2. x/y format for consensus progress
@@ -18,11 +18,11 @@ describe('Check Status Tool - Improvements', () => {
   let mockFileCache;
   let mockConfig;
   let originalDateNow;
-  
+
   beforeEach(() => {
     // Store original Date.now
     originalDateNow = Date.now;
-    
+
     // Mock AsyncJobStore
     mockAsyncJobStore = new class extends AsyncJobStoreInterface {
       get = vi.fn();
@@ -35,7 +35,7 @@ describe('Check Status Tool - Improvements', () => {
       exists = vi.fn();
       cleanup = vi.fn();
     }();
-    
+
     // Mock FileCache
     mockFileCache = new class extends FileCacheInterface {
       readSnapshot = vi.fn();
@@ -44,27 +44,27 @@ describe('Check Status Tool - Improvements', () => {
       cleanup = vi.fn();
       stopCleanupTimer = vi.fn();
     }();
-    
+
     mockConfig = {};
-    
+
     // Set mock instances
     setAsyncJobStore(mockAsyncJobStore);
     setFileCache(mockFileCache);
   });
-  
+
   afterEach(() => {
     // Restore Date.now
     Date.now = originalDateNow;
     vi.clearAllMocks();
   });
-  
+
   describe('Chat Tool: No Progress Percentage', () => {
     it('should not show progress percentage for chat tool', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 5000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockChatJob = {
         jobId: 'chat-job-123',
         status: JOB_STATUS.RUNNING,
@@ -73,7 +73,7 @@ describe('Check Status Tool - Improvements', () => {
         updatedAt: jobCreatedAt + 2000,
         provider: 'openai',
         model: 'gpt-5',
-        streaming_preview: 'The capital of France is Paris, which is located...',
+        accumulated_content: 'The capital of France is Paris, which is located...',
         overall: {
           progress: 0.5, // This should be ignored for chat
           startedAt: jobCreatedAt + 100,
@@ -85,41 +85,41 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'chat-job-123' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should NOT contain percentage
       expect(content).not.toContain('%');
       expect(content).not.toContain('50%');
-      
+
       // Should show tool name and continuation ID
       expect(content).toContain('CHAT');
       expect(content).toContain('chat-job-123');
-      
+
       // Should show streaming preview
       expect(content).toContain('Streaming: "The capital of France is Paris');
-      
+
       // Should show provider/model
       expect(content).toContain('openai/gpt-5');
     });
   });
-  
+
   describe('Consensus Tool: x/y Progress Format', () => {
     it('should show x/y initial format during initial phase', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 5000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockConsensusJob = {
         jobId: 'consensus-job-123',
         status: JOB_STATUS.RUNNING,
@@ -143,35 +143,35 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'consensus-job-123' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should show tool name and continuation ID
       expect(content).toContain('CONSENSUS');
       expect(content).toContain('consensus-job-123');
-      
+
       // Should show x/y format
       expect(content).toContain('2/3 initial');
-      
+
       // Should NOT show percentage
       expect(content).not.toContain('67%');
     });
-    
+
     it('should show x/y refined format during refinement phase', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 10000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockConsensusJob = {
         jobId: 'consensus-job-456',
         status: JOB_STATUS.RUNNING,
@@ -194,30 +194,30 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'consensus-job-456' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should show x/y refined format
       expect(content).toContain('1/2 refined');
     });
   });
-  
+
   describe('Consensus Tool: Models List Display', () => {
     it('should show list of models instead of "multiple"', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 5000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockConsensusJob = {
         jobId: 'consensus-list-123',
         status: JOB_STATUS.RUNNING,
@@ -237,33 +237,33 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'consensus-list-123' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should show the actual models list
       expect(content).toContain('gpt-5, gemini-2.5-pro, grok-4, o4-mini');
-      
+
       // Should NOT show "multiple"
       expect(content).not.toContain('multiple');
     });
   });
-  
+
   describe('Streaming Preview Capability', () => {
     it('should show streaming preview for chat tool', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 3000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockChatJob = {
         jobId: 'chat-stream-123',
         status: JOB_STATUS.RUNNING,
@@ -272,7 +272,7 @@ describe('Check Status Tool - Improvements', () => {
         updatedAt: jobCreatedAt + 2500,
         provider: 'openai',
         model: 'gpt-5',
-        streaming_preview: 'To implement a binary search tree in Python, you would start by defining a Node class that has a value and pointers to left and right children. Then you would create a BST class with methods for insertion, searching, and traversal...',
+        accumulated_content: 'To implement a binary search tree in Python, you would start by defining a Node class that has a value and pointers to left and right children. Then you would create a BST class with methods for insertion, searching, and traversal...',
         overall: {
           progress: 0.3,
           startedAt: jobCreatedAt + 100,
@@ -284,30 +284,30 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'chat-stream-123' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should show streaming preview
       expect(content).toContain('Streaming: "');
       expect(content).toContain('To implement a binary search tree');
       expect(content).toContain('...');
     });
-    
+
     it('should show provider previews for consensus tool', async () => {
       const jobCreatedAt = 1000000000000;
       const currentTime = jobCreatedAt + 5000;
-      
+
       Date.now = vi.fn().mockReturnValue(currentTime);
-      
+
       const mockConsensusJob = {
         jobId: 'consensus-preview-123',
         status: JOB_STATUS.RUNNING,
@@ -332,26 +332,26 @@ describe('Check Status Tool - Improvements', () => {
         events: [],
         seq: 1
       };
-      
+
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
-      
+
       const result = await checkStatusTool(
         { continuation_id: 'consensus-preview-123' },
         { config: mockConfig }
       );
-      
+
       expect(result.isError).toBe(false);
-      
+
       const content = result.content[0].text;
-      
+
       // Should show provider streaming info
       expect(content).toContain('2 provider(s) streaming responses');
-      
+
       // Should show a preview from one of the providers
       expect(content).toContain('Preview: "');
       // Should be truncated to 80 chars
       expect(content.match(/Preview: "[^"]+"/)[0].length).toBeLessThanOrEqual(100);
     });
   });
-  
+
 });

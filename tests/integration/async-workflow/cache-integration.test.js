@@ -1,6 +1,6 @@
 /**
  * Cache System Integration Tests
- * 
+ *
  * Tests the cache transitions and persistence:
  * - AsyncJobStore (memory) to FileCache (disk) transitions
  * - Cache TTL and cleanup
@@ -30,7 +30,7 @@ describe('Cache System Integration Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-      
+
       // Check for available API keys
       hasAnyApiKey = !!(
         (config?.apiKeys?.openai && config.apiKeys.openai.startsWith('sk-')) ||
@@ -45,7 +45,7 @@ describe('Cache System Integration Tests', () => {
       // Set up test cache directory
       cacheDir = path.join(os.tmpdir(), 'converse-test-cache', nanoid());
       await fs.mkdir(cacheDir, { recursive: true });
-      
+
     } catch (error) {
       logger.error('[cache-integration] Setup failed:', error);
       config = { apiKeys: {} };
@@ -65,96 +65,96 @@ describe('Cache System Integration Tests', () => {
   });
 
   describe('Memory to Disk Cache Transition', () => {
-    const testWithAnyKey = testWithApiKeys({ 
+    const testWithAnyKey = testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     });
-    
+
     testWithAnyKey('should transition completed jobs from memory to disk cache', async () => {
-        await withHTTPTestServer(async (client, manager) => {
-          
-          // Submit async job
-          const asyncResult = await client.callTool({
-            name: 'chat',
-            arguments: {
-              prompt: 'What is the capital of France? One word answer.',
-              async: true,
-              model: 'auto',
-              temperature: 0
-            }
-          });
+      await withHTTPTestServer(async (client, manager) => {
 
-          // Get continuation_id from the async response
-          const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
-
-          // Wait for job completion
-          let completed = false;
-          let attempts = 0;
-          const maxAttempts = 30;
-
-          while (!completed && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const statusResult = await client.callTool({
-              name: 'check_status',
-              arguments: {
-                continuation_id: continuationId
-              }
-            });
-
-            // Parse status response, handling potential metadata display
-            const statusText = statusResult.content[0].text;
-            const status = parseStatusResponse(statusText);
-            
-            if (status.status === 'completed') {
-              completed = true;
-              
-              // Job should still be in memory immediately after completion
-              expect(status.cache_location).toBeUndefined(); // Not exposed in response
-              expect(status.result).toBeDefined();
-              expect(status.result.content.toLowerCase()).toContain('paris');
-            } else if (status.status === 'failed') {
-              completed = true; // Exit loop on failure
-              throw new Error(`Job failed: ${status.error}`);
-            }
-
-            attempts++;
+        // Submit async job
+        const asyncResult = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'What is the capital of France? One word answer.',
+            async: true,
+            model: 'auto',
+            temperature: 0
           }
+        });
 
-          expect(completed).toBe(true);
+        // Get continuation_id from the async response
+        const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
 
-          // Wait for cache transition (typically happens after a short delay)
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait for job completion
+        let completed = false;
+        let attempts = 0;
+        const maxAttempts = 30;
 
-          // Check status again - should still be retrievable
-          const finalStatus = await client.callTool({
+        while (!completed && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
               continuation_id: continuationId
             }
           });
 
-          // Parse response using centralized helper
-          const finalText = finalStatus.content[0].text;
-          const finalContent = parseStatusResponse(finalText);
-          expect(finalContent.status).toBe('completed');
-          expect(finalContent.result).toBeDefined();
-          
-          logger.info('[cache-integration] Cache transition verified');
-        }, {
-          env: {
-            ASYNC_CACHE_DIR: cacheDir,
-            ASYNC_MEMORY_TTL_MS: '3000',  // Short TTL for testing
-            ASYNC_DISK_TTL_MS: '60000'
+          // Parse status response, handling potential metadata display
+          const statusText = statusResult.content[0].text;
+          const status = parseStatusResponse(statusText);
+
+          if (status.status === 'completed') {
+            completed = true;
+
+            // Job should still be in memory immediately after completion
+            expect(status.cache_location).toBeUndefined(); // Not exposed in response
+            expect(status.result).toBeDefined();
+            expect(status.result.content.toLowerCase()).toContain('paris');
+          } else if (status.status === 'failed') {
+            completed = true; // Exit loop on failure
+            throw new Error(`Job failed: ${status.error}`);
+          }
+
+          attempts++;
+        }
+
+        expect(completed).toBe(true);
+
+        // Wait for cache transition (typically happens after a short delay)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Check status again - should still be retrievable
+        const finalStatus = await client.callTool({
+          name: 'check_status',
+          arguments: {
+            continuation_id: continuationId
           }
         });
-      }, 40000);
+
+        // Parse response using centralized helper
+        const finalText = finalStatus.content[0].text;
+        const finalContent = parseStatusResponse(finalText);
+        expect(finalContent.status).toBe('completed');
+        expect(finalContent.result).toBeDefined();
+
+        logger.info('[cache-integration] Cache transition verified');
+      }, {
+        env: {
+          ASYNC_CACHE_DIR: cacheDir,
+          ASYNC_MEMORY_TTL_MS: '3000',  // Short TTL for testing
+          ASYNC_DISK_TTL_MS: '60000'
+        }
+      });
+    }, 40000);
 
     it.skip('should handle cache recovery after memory expires', async () => {
       // SKIPPED: Cannot test TTL properly with singletons in integration tests
       // Resetting singletons loses all jobs, making the test fail
       // This should be tested at the unit level instead
-      
+
       // Start first server instance
       const manager1 = new HTTPMCPServerManager({
         env: {
@@ -193,7 +193,7 @@ describe('Cache System Integration Tests', () => {
 
         while (!completed && attempts < 20) {
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+
           const statusResult = await client1.callTool({
             name: 'check_status',
             arguments: {
@@ -257,12 +257,12 @@ describe('Cache System Integration Tests', () => {
         const recoveredText = recoveredResult.content[0].text;
         const recoveredJsonStart = recoveredText.indexOf('{');
         const recoveredContent = recoveredJsonStart >= 0 ? JSON.parse(recoveredText.substring(recoveredJsonStart)) : JSON.parse(recoveredText);
-        
+
         // Should successfully recover from disk cache
         expect(recoveredContent.status).toBe('completed');
         expect(recoveredContent.result).toBeDefined();
         expect(recoveredContent.result.content.toLowerCase()).toContain('cached');
-        
+
         logger.info('[cache-integration] Cache recovery after restart verified');
 
       } finally {
@@ -272,89 +272,89 @@ describe('Cache System Integration Tests', () => {
   });
 
   describe('Large Result Handling', () => {
-    const testWithAnyKey = testWithApiKeys({ 
+    const testWithAnyKey = testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     });
-    
+
     it.skip('should handle large results efficiently', async () => {
       // SKIPPED: Timing issues with job completion in CI environment
-        await withHTTPTestServer(async (client, manager) => {
-          
-          // Request a large response
-          const asyncResult = await client.callTool({
-            name: 'chat',
+      await withHTTPTestServer(async (client, manager) => {
+
+        // Request a large response
+        const asyncResult = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'Generate a list of 50 random words, each on a new line',
+            async: true,
+            model: 'auto',
+            temperature: 0.8
+          }
+        });
+
+        // Parse response to get job ID
+        const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
+
+        // Wait for completion
+        let completed = false;
+        let finalResult = null;
+        let attempts = 0;
+        let lastError = null;
+
+        while (!completed && attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const statusResult = await client.callTool({
+            name: 'check_status',
             arguments: {
-              prompt: 'Generate a list of 50 random words, each on a new line',
-              async: true,
-              model: 'auto',
-              temperature: 0.8
+              continuation_id: continuationId
             }
           });
 
-          // Parse response to get job ID
-          const continuationId = asyncResult.continuation.id;  // Use continuation_id for status checking
-
-          // Wait for completion
-          let completed = false;
-          let finalResult = null;
-          let attempts = 0;
-          let lastError = null;
-
-          while (!completed && attempts < 30) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const statusResult = await client.callTool({
-              name: 'check_status',
-              arguments: {
-                continuation_id: continuationId
-              }
-            });
-
-            // Check for error response
-            if (statusResult.isError || statusResult.error) {
-              // Job not found or error - record but continue
-              lastError = statusResult.error || 'Job not found';
-              attempts++;
-              continue;
-            }
-
-            // Parse status response, handling potential metadata display
-            const statusText = statusResult.content[0].text;
-            const status = parseStatusResponse(statusText);
-            
-            if (status.status === 'completed') {
-              completed = true;
-              finalResult = status;
-            }
+          // Check for error response
+          if (statusResult.isError || statusResult.error) {
+            // Job not found or error - record but continue
+            lastError = statusResult.error || 'Job not found';
             attempts++;
+            continue;
           }
 
-          if (!completed) {
-            const errorMsg = lastError ? `Last error: ${JSON.stringify(lastError)}` : 'No status updates received';
-            throw new Error(`Large result job never completed after ${attempts} attempts. ${errorMsg}`);
-          }
-          expect(completed).toBe(true);
-          expect(finalResult.result).toBeDefined();
-          expect(finalResult.result.content).toBeDefined();
-          
-          // Verify we got a substantial response
-          const lines = finalResult.result.content.split('\n').filter(l => l.trim());
-          expect(lines.length).toBeGreaterThan(20); // At least 20 words
+          // Parse status response, handling potential metadata display
+          const statusText = statusResult.content[0].text;
+          const status = parseStatusResponse(statusText);
 
-          // Verify metadata exists (tokens may not be present for all providers)
-          expect(finalResult.metadata).toBeDefined();
-          if (finalResult.metadata.total_tokens !== undefined) {
-            expect(finalResult.metadata.total_tokens).toBeGreaterThan(0);
+          if (status.status === 'completed') {
+            completed = true;
+            finalResult = status;
           }
-          
-          logger.info('[cache-integration] Large result handled successfully');
-        }, {
-          env: {
-            ASYNC_CACHE_DIR: cacheDir
-          }
-        });
-      }, 40000);
+          attempts++;
+        }
+
+        if (!completed) {
+          const errorMsg = lastError ? `Last error: ${JSON.stringify(lastError)}` : 'No status updates received';
+          throw new Error(`Large result job never completed after ${attempts} attempts. ${errorMsg}`);
+        }
+        expect(completed).toBe(true);
+        expect(finalResult.result).toBeDefined();
+        expect(finalResult.result.content).toBeDefined();
+
+        // Verify we got a substantial response
+        const lines = finalResult.result.content.split('\n').filter(l => l.trim());
+        expect(lines.length).toBeGreaterThan(20); // At least 20 words
+
+        // Verify metadata exists (tokens may not be present for all providers)
+        expect(finalResult.metadata).toBeDefined();
+        if (finalResult.metadata.total_tokens !== undefined) {
+          expect(finalResult.metadata.total_tokens).toBeGreaterThan(0);
+        }
+
+        logger.info('[cache-integration] Large result handled successfully');
+      }, {
+        env: {
+          ASYNC_CACHE_DIR: cacheDir
+        }
+      });
+    }, 40000);
   });
 
   describe('Cache TTL and Cleanup', () => {
@@ -363,9 +363,9 @@ describe('Cache System Integration Tests', () => {
       // The AsyncJobStore and FileCache are singletons that read environment variables
       // once during initialization. Changing env vars after startup has no effect.
       // This functionality should be tested at the unit level with module resets.
-      
+
       await withHTTPTestServer(async (client, manager) => {
-          
+
         // Submit job with very short TTL
         const asyncResult = await client.callTool({
           name: 'chat',
@@ -385,7 +385,7 @@ describe('Cache System Integration Tests', () => {
 
         while (!completed && attempts < 20) {
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
@@ -451,7 +451,7 @@ describe('Cache System Integration Tests', () => {
 
         // Parse response, handling potential metadata display
         const expiredText = afterDiskExpiry.content[0].text;
-        
+
         // Check if it's an error response (might be returned as plain text error)
         if (expiredText.toLowerCase().includes('not found')) {
           // Error returned as text
@@ -476,166 +476,166 @@ describe('Cache System Integration Tests', () => {
   });
 
   describe('Concurrent Cache Access', () => {
-    const testWithAnyKey = testWithApiKeys({ 
+    const testWithAnyKey = testWithApiKeys({
       requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
+      requireAll: false
     });
-    
+
     testWithAnyKey('should handle concurrent cache operations safely', async () => {
-        await withHTTPTestServer(async (client, manager) => {
-          
-          // Submit multiple jobs
-          const jobPromises = Array(5).fill(null).map((_, i) => 
-            client.callTool({
-              name: 'chat',
-              arguments: {
-                prompt: `Count to ${i + 1}`,
-                async: true,
-                model: 'auto',
-                temperature: 0
-              }
-            })
-          );
+      await withHTTPTestServer(async (client, manager) => {
 
-          const jobs = await Promise.all(jobPromises);
-          const continuationIds = jobs.map(j => {
-            const text = j.content[0].text;
-            const jsonStart = text.indexOf('{');
-            const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
-            return parsed.continuation_id;
-          });
-
-          // Concurrently check status multiple times
-          const statusChecks = continuationIds.flatMap(continuationId => 
-            Array(3).fill(null).map(() => 
-              client.callTool({
-                name: 'check_status',
-                arguments: {
-                  continuation_id: continuationId,
-                  include_output: false,
-                  output_format: 'json'
-                }
-              })
-            )
-          );
-
-          const results = await Promise.all(statusChecks);
-          
-          // All status checks should succeed
-          results.forEach(result => {
-            // Skip error responses
-            if (result.isError || result.error) {
-              return;
+        // Submit multiple jobs
+        const jobPromises = Array(5).fill(null).map((_, i) =>
+          client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: `Count to ${i + 1}`,
+              async: true,
+              model: 'auto',
+              temperature: 0
             }
-            const text = result.content[0].text;
-            const jsonStart = text.indexOf('{');
-            const content = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
-            expect(['queued', 'running', 'completed']).toContain(content.status);
-          });
+          })
+        );
 
-          logger.info('[cache-integration] Concurrent cache access verified');
-        }, {
-          env: {
-            ASYNC_CACHE_DIR: cacheDir
-          }
+        const jobs = await Promise.all(jobPromises);
+        const continuationIds = jobs.map(j => {
+          const text = j.content[0].text;
+          const jsonStart = text.indexOf('{');
+          const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
+          return parsed.continuation_id;
         });
-      }, 30000);
-  });
 
-  describe('Cache Performance', () => {
-    const testWithAnyKey = testWithApiKeys({ 
-      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
-      requireAll: false 
-    });
-    
-    it.skip('should maintain performance with many cached jobs', async () => {
-      // SKIPPED: Timing issues with concurrent job completion
-        await withHTTPTestServer(async (client, manager) => {
-          const jobCount = 10;
-          
-          // Submit many jobs
-          const startSubmit = Date.now();
-          const jobPromises = Array(jobCount).fill(null).map((_, i) => 
-            client.callTool({
-              name: 'chat',
-              arguments: {
-                prompt: `What is ${i} + ${i}?`,
-                async: true,
-                model: 'auto',
-                temperature: 0
-              }
-            })
-          );
-
-          const jobs = await Promise.all(jobPromises);
-          const submitTime = Date.now() - startSubmit;
-          
-          expect(jobs).toHaveLength(jobCount);
-          expect(submitTime).toBeLessThan(5000); // Should submit all jobs quickly
-
-          const continuationIds = jobs.map(j => {
-            const text = j.content[0].text;
-            const jsonStart = text.indexOf('{');
-            const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
-            return parsed.continuation_id;
-          });
-
-          // Wait for all to complete (give more time for 10 jobs)
-          await new Promise(resolve => setTimeout(resolve, 15000));
-
-          // Measure retrieval performance
-          const startRetrieve = Date.now();
-          const retrievalPromises = continuationIds.map(continuationId =>
+        // Concurrently check status multiple times
+        const statusChecks = continuationIds.flatMap(continuationId =>
+          Array(3).fill(null).map(() =>
             client.callTool({
               name: 'check_status',
               arguments: {
                 continuation_id: continuationId,
-                include_output: true,
+                include_output: false,
                 output_format: 'json'
               }
             })
-          );
+          )
+        );
 
-          const retrievals = await Promise.all(retrievalPromises);
-          const retrieveTime = Date.now() - startRetrieve;
+        const results = await Promise.all(statusChecks);
 
-          expect(retrievals).toHaveLength(jobCount);
-          expect(retrieveTime).toBeLessThan(2000); // Should retrieve quickly from cache
-
-          // Verify all are at least running or completed
-          let completedCount = 0;
-          retrievals.forEach((result, i) => {
-            // Skip error responses
-            if (result.isError || result.error) {
-              return;
-            }
-            const text = result.content[0].text;
-            const jsonStart = text.indexOf('{');
-            const content = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
-            expect(['running', 'completed']).toContain(content.status);
-            if (content.status === 'completed') {
-              completedCount++;
-              expect(content.result).toBeDefined();
-            }
-          });
-          
-          // At least some should be completed after 15 seconds, but if not, just warn
-          if (completedCount === 0) {
-            console.warn('WARNING: No jobs completed after 15 seconds, but some are still running');
-            // Don't fail the test if jobs are at least running
-            const runningCount = retrievals.filter(r => !r.isError && !r.error).length;
-            expect(runningCount).toBeGreaterThan(0);
-          } else {
-            expect(completedCount).toBeGreaterThan(0);
+        // All status checks should succeed
+        results.forEach(result => {
+          // Skip error responses
+          if (result.isError || result.error) {
+            return;
           }
+          const text = result.content[0].text;
+          const jsonStart = text.indexOf('{');
+          const content = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
+          expect(['queued', 'running', 'completed']).toContain(content.status);
+        });
 
-          logger.info(`[cache-integration] Performance test: ${jobCount} jobs submitted in ${submitTime}ms, retrieved in ${retrieveTime}ms`);
-        }, {
-          env: {
-            ASYNC_CACHE_DIR: cacheDir,
-            ASYNC_MAX_CONCURRENT_JOBS: '20'
+        logger.info('[cache-integration] Concurrent cache access verified');
+      }, {
+        env: {
+          ASYNC_CACHE_DIR: cacheDir
+        }
+      });
+    }, 30000);
+  });
+
+  describe('Cache Performance', () => {
+    const testWithAnyKey = testWithApiKeys({
+      requiredProviders: ['OPENAI', 'XAI', 'GOOGLE'],
+      requireAll: false
+    });
+
+    it.skip('should maintain performance with many cached jobs', async () => {
+      // SKIPPED: Timing issues with concurrent job completion
+      await withHTTPTestServer(async (client, manager) => {
+        const jobCount = 10;
+
+        // Submit many jobs
+        const startSubmit = Date.now();
+        const jobPromises = Array(jobCount).fill(null).map((_, i) =>
+          client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: `What is ${i} + ${i}?`,
+              async: true,
+              model: 'auto',
+              temperature: 0
+            }
+          })
+        );
+
+        const jobs = await Promise.all(jobPromises);
+        const submitTime = Date.now() - startSubmit;
+
+        expect(jobs).toHaveLength(jobCount);
+        expect(submitTime).toBeLessThan(5000); // Should submit all jobs quickly
+
+        const continuationIds = jobs.map(j => {
+          const text = j.content[0].text;
+          const jsonStart = text.indexOf('{');
+          const parsed = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
+          return parsed.continuation_id;
+        });
+
+        // Wait for all to complete (give more time for 10 jobs)
+        await new Promise(resolve => setTimeout(resolve, 15000));
+
+        // Measure retrieval performance
+        const startRetrieve = Date.now();
+        const retrievalPromises = continuationIds.map(continuationId =>
+          client.callTool({
+            name: 'check_status',
+            arguments: {
+              continuation_id: continuationId,
+              include_output: true,
+              output_format: 'json'
+            }
+          })
+        );
+
+        const retrievals = await Promise.all(retrievalPromises);
+        const retrieveTime = Date.now() - startRetrieve;
+
+        expect(retrievals).toHaveLength(jobCount);
+        expect(retrieveTime).toBeLessThan(2000); // Should retrieve quickly from cache
+
+        // Verify all are at least running or completed
+        let completedCount = 0;
+        retrievals.forEach((result, i) => {
+          // Skip error responses
+          if (result.isError || result.error) {
+            return;
+          }
+          const text = result.content[0].text;
+          const jsonStart = text.indexOf('{');
+          const content = jsonStart >= 0 ? JSON.parse(text.substring(jsonStart)) : JSON.parse(text);
+          expect(['running', 'completed']).toContain(content.status);
+          if (content.status === 'completed') {
+            completedCount++;
+            expect(content.result).toBeDefined();
           }
         });
-      }, 60000);
+
+        // At least some should be completed after 15 seconds, but if not, just warn
+        if (completedCount === 0) {
+          console.warn('WARNING: No jobs completed after 15 seconds, but some are still running');
+          // Don't fail the test if jobs are at least running
+          const runningCount = retrievals.filter(r => !r.isError && !r.error).length;
+          expect(runningCount).toBeGreaterThan(0);
+        } else {
+          expect(completedCount).toBeGreaterThan(0);
+        }
+
+        logger.info(`[cache-integration] Performance test: ${jobCount} jobs submitted in ${submitTime}ms, retrieved in ${retrieveTime}ms`);
+      }, {
+        env: {
+          ASYNC_CACHE_DIR: cacheDir,
+          ASYNC_MAX_CONCURRENT_JOBS: '20'
+        }
+      });
+    }, 60000);
   });
 });

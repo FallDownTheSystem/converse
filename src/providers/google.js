@@ -452,7 +452,7 @@ export const googleProvider = {
         if (signal?.aborted) {
           throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
         }
-        
+
         return await genAI.models.generateContent({
           model: resolvedModel,
           contents: geminiContents,
@@ -564,7 +564,7 @@ export const googleProvider = {
         if (signal?.aborted) {
           throw new Error(`Request aborted: ${signal.reason || 'Cancelled'}`);
         }
-        
+
         // Google GenAI client doesn't directly support AbortSignal in the same way
         // but we can check for cancellation before and during processing
         return await genAI.models.generateContentStream({

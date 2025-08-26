@@ -63,7 +63,7 @@ describe('Check Status Tool', () => {
   describe('Input Validation', () => {
     // Session ID is no longer required - using 'local-user' for single-user local server
     it.skip('should require session ID (deprecated - now using local-user)', async () => {
-      const result = await checkStatusTool({}, { 
+      const result = await checkStatusTool({}, {
         config: mockConfig,
         request: { headers: {} }
       });
@@ -119,7 +119,7 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.get).toHaveBeenCalledWith('job_test123');
-      
+
       // Parse human-readable format
       const text = result.content[0].text;
       const response = parseStatusResponse(text);
@@ -141,7 +141,7 @@ describe('Check Status Tool', () => {
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.get).toHaveBeenCalledWith('job_test123');
       expect(mockFileCache.readSnapshot).toHaveBeenCalledWith('job_test123');
-      
+
       // Parse human-readable format
       const text = result.content[0].text;
       const response = parseStatusResponse(text);
@@ -262,7 +262,7 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      
+
       // Parse human-readable job list
       const text = result.content[0].text;
       expect(text).toContain('Jobs Summary: 0 active, 0 completed, 0 failed');
@@ -304,7 +304,7 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      
+
       // Parse human-readable format
       const text = result.content[0].text;
       // Check for response content in completed jobs
@@ -320,7 +320,7 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      
+
       // Parse human-readable format
       const text = result.content[0].text;
       // Provider details shown in consensus tool format
@@ -362,7 +362,7 @@ describe('Check Status Tool', () => {
 
     it('should have valid input schema', () => {
       const schema = checkStatusTool.inputSchema;
-      
+
       expect(schema.type).toBe('object');
       expect(schema.properties.continuation_id).toBeDefined();
       // Deprecated parameters should no longer exist

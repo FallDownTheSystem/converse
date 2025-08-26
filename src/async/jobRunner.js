@@ -90,8 +90,8 @@ export class JobRunner extends EventEmitter {
   async submit(jobSpec, runFunction, options = {}) {
     try {
       // Debug log the jobSpec
-      debugLog(`JobRunner: Received jobSpec:`, jobSpec);
-      
+      debugLog('JobRunner: Received jobSpec:', jobSpec);
+
       // Validate parameters
       if (!jobSpec || !jobSpec.tool) {
         throw new JobRunnerError(

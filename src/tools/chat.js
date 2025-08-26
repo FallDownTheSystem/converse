@@ -287,7 +287,7 @@ export async function chatTool(args, dependencies) {
 
 
     // Create unified status line (similar to async status display)
-    const statusLine = config.environment?.nodeEnv !== 'test' 
+    const statusLine = config.environment?.nodeEnv !== 'test'
       ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n\n`
       : '';
 
