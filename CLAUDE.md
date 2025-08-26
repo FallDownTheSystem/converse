@@ -153,22 +153,28 @@ npm run test:prompts
 
 ### Available Tools
 
-The Converse MCP Server includes two main tools:
+The Converse MCP Server includes four main tools:
 
 1. **Chat Tool** (`chat`)
-   - General conversational AI
+   - General conversational AI with async support
    - File and image support
    - Continuation support for persistent conversations
-   - Uses functional architecture
+   - Background execution with `async: true` parameter
+   - Uses functional architecture with streaming
 
 2. **Consensus Tool** (`consensus`)
-   - Parallel multi-model consensus gathering
-   - Two-phase workflow: initial responses + cross-model refinement
-   - All models consulted simultaneously for speed
-   - Models can see each other's responses and refine their answers
-   - Single tool call with clean interface
+   - Parallel multi-model consensus gathering with async support
+   - Background processing with per-provider progress tracking
    - Robust error handling - partial failures don't stop other models
-   - Optional: disable cross-feedback for faster single-phase consensus
+
+3. **Check Status Tool** (`check_status`)
+   - Monitor progress of asynchronous operations
+   - Retrieve results from completed background jobs
+   - List recent jobs with status information
+
+4. **Cancel Job Tool** (`cancel_job`)
+   - Cancel running asynchronous operations
+   - Graceful termination with resource cleanup
 
 ### Using the Consensus Tool
 
@@ -191,6 +197,15 @@ The consensus tool operates with parallel processing across multiple AI provider
   "prompt": "Should we use TypeScript for this component?",
   "models": ["gemini-2.5-flash", "o4-mini", "gpt-4.1"],
   "files": ["/c/Users/username/project/src/components/Header.tsx"]
+}
+
+// Asynchronous consensus (for complex analysis):
+{
+  "prompt": "Design a scalable architecture for our system",
+  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+  "files": ["/c/Users/username/project/docs/architecture.md"],
+  "async": true,          // Run in background
+  "enable_cross_feedback": true
 }
 ```
 

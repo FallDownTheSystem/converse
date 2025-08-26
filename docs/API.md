@@ -2,10 +2,14 @@
 
 ## Overview
 
-The Converse MCP Server provides two main tools through the Model Context Protocol (MCP):
+The Converse MCP Server provides four main tools through the Model Context Protocol (MCP):
 
 1. **Chat Tool** - Single-provider conversational AI with context support
 2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
+3. **Check Status Tool** - Monitor and retrieve results from asynchronous operations
+4. **Cancel Job Tool** - Cancel running background operations
+
+All tools support both **synchronous** (immediate response) and **asynchronous** (background processing) execution modes.
 
 ## Transport Protocols
 
@@ -94,6 +98,11 @@ MCP_TRANSPORT=stdio npm start
       "type": "boolean",
       "default": false,
       "description": "Enable web search for current information. Example: true for framework docs, false for private code analysis"
+    },
+    "async": {
+      "type": "boolean",
+      "default": false,
+      "description": "Execute in background mode. Returns continuation_id immediately for status monitoring. Example: true for long-running analysis"
     }
   },
   "required": ["prompt"]
@@ -102,6 +111,7 @@ MCP_TRANSPORT=stdio npm start
 
 #### Response Format
 
+**Synchronous Response (async=false):**
 ```json
 {
   "content": "AI response text",
@@ -121,6 +131,18 @@ MCP_TRANSPORT=stdio npm start
     "response_time_ms": 1247,
     "provider": "openai"
   }
+}
+```
+
+**Asynchronous Response (async=true):**
+```json
+{
+  "content": "⏳ PROCESSING | CHAT | conv_abc123def | 1/1 | Started: 2023-12-01 10:30:00 | openai/gpt-5",
+  "continuation": {
+    "id": "conv_abc123def",
+    "status": "processing"
+  },
+  "async_execution": true
 }
 ```
 
@@ -191,6 +213,11 @@ MCP_TRANSPORT=stdio npm start
       "enum": ["minimal", "low", "medium", "high", "max"],
       "default": "medium",
       "description": "Reasoning depth. Examples: 'medium' (balanced), 'high' (complex analysis), 'max' (thorough evaluation)"
+    },
+    "async": {
+      "type": "boolean",
+      "default": false,
+      "description": "Execute in background mode with per-provider progress tracking. Returns continuation_id immediately for monitoring."
     }
   },
   "required": ["prompt", "models"]
@@ -199,6 +226,7 @@ MCP_TRANSPORT=stdio npm start
 
 #### Response Format
 
+**Synchronous Response (async=false):**
 ```json
 {
   "status": "consensus_complete",
@@ -243,6 +271,23 @@ MCP_TRANSPORT=stdio npm start
     "enable_cross_feedback": true,
     "temperature": 0.2,
     "models_requested": ["o3", "gemini-2.5-flash", "grok-4-0709"]
+  }
+}
+```
+
+**Asynchronous Response (async=true):**
+```json
+{
+  "content": "⏳ PROCESSING | CONSENSUS | consensus_xyz789 | 0/3 | Started: 2023-12-01 10:30:00 | gpt-5,gemini-2.5-pro,grok-4",
+  "continuation": {
+    "id": "consensus_xyz789",
+    "status": "processing"
+  },
+  "async_execution": true,
+  "metadata": {
+    "total_models": 3,
+    "successful_models": 0,
+    "models_list": "gpt-5,gemini-2.5-pro,grok-4"
   }
 }
 ```
@@ -903,6 +948,236 @@ describe('New Provider', () => {
   });
 });
 ```
+
+### Check Status Tool
+
+**Description**: Monitor progress and retrieve results from asynchronous operations.
+
+#### Request Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "continuation_id": {
+      "type": "string",
+      "description": "Optional job continuation ID to query. If not provided, returns the 10 most recent jobs."
+    },
+    "full_history": {
+      "type": "boolean",
+      "default": false,
+      "description": "When used with continuation_id, returns the full conversation history for that continuation ID."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+#### Response Format
+
+**Status Check Response:**
+```json
+{
+  "content": {
+    "id": "conv_abc123def",
+    "status": "completed",
+    "tool": "chat",
+    "progress": {
+      "completed": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "result": {
+      "content": "Final AI response...",
+      "metadata": {
+        "provider": "openai",
+        "model": "gpt-5",
+        "usage": {
+          "input_tokens": 150,
+          "output_tokens": 85
+        }
+      }
+    },
+    "elapsed_seconds": 4.2,
+    "completed_at": "2023-12-01T10:30:04.200Z"
+  }
+}
+```
+
+**Recent Jobs List Response:**
+```json
+{
+  "content": {
+    "jobs": [
+      {
+        "id": "conv_abc123def",
+        "status": "completed",
+        "tool": "chat",
+        "elapsed_seconds": 4.2,
+        "completed_at": "2023-12-01T10:30:04.200Z"
+      },
+      {
+        "id": "consensus_xyz789",
+        "status": "processing",
+        "tool": "consensus",
+        "progress": {
+          "completed": 2,
+          "total": 3,
+          "percentage": 67
+        },
+        "elapsed_seconds": 8.5
+      }
+    ]
+  }
+}
+```
+
+#### Example Usage
+
+```json
+// Check specific job
+{
+  "continuation_id": "conv_abc123def"
+}
+
+// List recent jobs
+{}
+
+// Get full history for completed job
+{
+  "continuation_id": "conv_abc123def",
+  "full_history": true
+}
+```
+
+### Cancel Job Tool
+
+**Description**: Cancel running asynchronous operations when needed.
+
+#### Request Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "continuation_id": {
+      "type": "string",
+      "description": "The continuation_id of the job to cancel"
+    }
+  },
+  "required": ["continuation_id"],
+  "additionalProperties": false
+}
+```
+
+#### Response Format
+
+**Successful Cancellation:**
+```json
+{
+  "content": {
+    "status": "cancelled",
+    "message": "Job conv_abc123def cancelled successfully",
+    "job_id": "conv_abc123def",
+    "elapsed_seconds": 2.1,
+    "cancelled_at": "2023-12-01T10:30:02.100Z"
+  }
+}
+```
+
+**Already Completed:**
+```json
+{
+  "content": {
+    "status": "completed",
+    "message": "Job conv_abc123def has already completed and cannot be cancelled",
+    "job_id": "conv_abc123def"
+  }
+}
+```
+
+#### Example Usage
+
+```json
+{
+  "continuation_id": "conv_abc123def"
+}
+```
+
+## Asynchronous Execution
+
+### Overview
+
+Both Chat and Consensus tools support asynchronous execution mode for long-running operations. When `async: true` is specified:
+
+1. **Immediate Response**: Returns a `continuation_id` instantly
+2. **Background Processing**: Job runs in the background with streaming support
+3. **Status Monitoring**: Use `check_status` tool to monitor progress
+4. **Result Retrieval**: Full results available when job completes
+5. **Cancellation**: Use `cancel_job` tool to stop running operations
+
+### Async Workflow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant Provider
+    
+    Client->>Server: chat(prompt, async=true)
+    Server-->>Client: continuation_id (immediate)
+    
+    Server->>Provider: Background execution
+    Provider-->>Server: Streaming response
+    
+    loop Status Checking
+        Client->>Server: check_status(continuation_id)
+        Server-->>Client: Progress update
+    end
+    
+    Provider->>Server: Final response
+    Server->>Server: Cache result
+    
+    Client->>Server: check_status(continuation_id)
+    Server-->>Client: Complete result
+```
+
+### Status Types
+
+| Status | Description | Actions Available |
+|--------|-------------|------------------|
+| `processing` | Job is running | Cancel, Check Status |
+| `completed` | Job finished successfully | Get Results |
+| `failed` | Job encountered an error | Check Error Details |
+| `cancelled` | Job was cancelled by user | None |
+| `completed_with_errors` | Partial success (consensus only) | Get Partial Results |
+
+### Caching System
+
+**Memory Cache (24 hours):**
+- Active jobs and recent completions
+- Fast lookup for status checks
+- Automatic cleanup
+
+**Disk Cache (3 days):**
+- Long-term result storage
+- Survives server restarts
+- Automatic cleanup of old results
+
+### Performance Considerations
+
+**Async Benefits:**
+- Non-blocking client operations
+- Better resource utilization
+- Parallel processing for consensus
+- Graceful handling of long operations
+
+**When to Use Async:**
+- Long analysis tasks (>30 seconds)
+- Large file processing
+- Multi-model consensus
+- Complex reasoning operations
+- Batch operations
 
 ### Best Practices
 

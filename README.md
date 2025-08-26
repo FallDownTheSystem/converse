@@ -81,6 +81,9 @@ Once installed, you can:
 
 - **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
 - **Get consensus**: Ask Claude to use the consensus tool when you need multiple perspectives
+- **Run tasks in background**: Use `async: true` for long-running operations that you can check later
+- **Monitor progress**: Use the check_status tool to monitor async operations
+- **Cancel jobs**: Use the cancel_job tool to stop running operations
 - **Get help**: Type `/converse:help` in Claude
 
 ## 🛠️ Available Tools
@@ -90,17 +93,24 @@ Once installed, you can:
 Talk to any AI model with support for files, images, and conversation history. The tool automatically routes your request to the right provider based on the model name.
 
 ```javascript
-// Example usage
+// Synchronous execution (default)
 {
   "prompt": "How should I structure the authentication module for this Express.js API?",
   "model": "gemini-2.5-flash",         // Routes to Google
-  // "model": "anthropic/claude-3.5-sonnet", // Routes to OpenRouter (if enabled)
-  // "model": "openrouter/auto",          // Auto-select best model
   "files": ["/path/to/src/auth.js", "/path/to/config.json"],
   "images": ["/path/to/architecture.png"],
   "temperature": 0.5,
   "reasoning_effort": "medium",
   "use_websearch": false
+}
+
+// Asynchronous execution (for long-running tasks)
+{
+  "prompt": "Analyze this large codebase and provide optimization recommendations",
+  "model": "gpt-5",
+  "files": ["/path/to/large-project"],
+  "async": true,           // Enables background processing
+  "continuation_id": "my-analysis-task"  // Optional: custom ID for tracking
 }
 ```
 
@@ -109,13 +119,53 @@ Talk to any AI model with support for files, images, and conversation history. T
 Get multiple AI models to analyze the same question simultaneously. Each model can see and respond to the others' answers, creating a rich discussion.
 
 ```javascript
-// Example usage
+// Synchronous consensus (default)
 {
   "prompt": "Should we use microservices or monolith architecture for our e-commerce platform?",
   "models": ["gpt-5", "gemini-2.5-flash", "grok-4-0709"],
   "files": ["/path/to/requirements.md"],
   "enable_cross_feedback": true,
   "temperature": 0.2
+}
+
+// Asynchronous consensus (for complex analysis)
+{
+  "prompt": "Review our system architecture and provide comprehensive recommendations",
+  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+  "files": ["/path/to/architecture-docs"],
+  "async": true,          // Run in background
+  "enable_cross_feedback": true
+}
+```
+
+### 3. Check Status Tool
+
+Monitor the progress and retrieve results from asynchronous operations.
+
+```javascript
+// Check status of a specific job
+{
+  "continuation_id": "my-analysis-task"
+}
+
+// List recent jobs (shows last 10)
+{}
+
+// Get full conversation history for completed job
+{
+  "continuation_id": "my-analysis-task",
+  "full_history": true
+}
+```
+
+### 4. Cancel Job Tool
+
+Cancel running asynchronous operations when needed.
+
+```javascript
+// Cancel a running job
+{
+  "continuation_id": "my-analysis-task"
 }
 ```
 
@@ -177,10 +227,11 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 ### Built-in Help
 Type these commands directly in Claude:
 - `/converse:help` - Full documentation
-- `/converse:help tools` - Tool-specific help
+- `/converse:help tools` - Tool-specific help (includes async features)
 - `/converse:help models` - Model information
 - `/converse:help parameters` - Configuration details
-- `/converse:help examples` - Usage examples
+- `/converse:help examples` - Usage examples (sync and async)
+- `/converse:help async` - Async execution guide
 
 ### Additional Resources
 - **API Reference**: [docs/API.md](docs/API.md)

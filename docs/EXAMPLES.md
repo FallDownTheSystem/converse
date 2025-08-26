@@ -48,6 +48,182 @@
 }
 ```
 
+## ⏱️ Asynchronous Execution Examples
+
+### Basic Async Chat
+
+For long-running tasks, use async mode to get immediate response and monitor progress:
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Analyze this large codebase and provide comprehensive optimization recommendations",
+    "model": "gpt-5",
+    "files": ["/path/to/large-project"],
+    "async": true,
+    "continuation_id": "analysis-task-001"
+  }
+}
+```
+
+**Immediate Response:**
+```json
+{
+  "content": "⏳ PROCESSING | CHAT | analysis-task-001 | 1/1 | Started: 2023-12-01 10:30:00 | openai/gpt-5",
+  "continuation": {
+    "id": "analysis-task-001",
+    "status": "processing"
+  },
+  "async_execution": true
+}
+```
+
+### Monitoring Async Progress
+
+```json
+{
+  "tool": "check_status",
+  "arguments": {
+    "continuation_id": "analysis-task-001"
+  }
+}
+```
+
+**While Processing:**
+```json
+{
+  "content": {
+    "id": "analysis-task-001",
+    "status": "processing",
+    "tool": "chat",
+    "progress": {
+      "completed": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "elapsed_seconds": 12.5
+  }
+}
+```
+
+**When Complete:**
+```json
+{
+  "content": {
+    "id": "analysis-task-001",
+    "status": "completed",
+    "tool": "chat",
+    "result": {
+      "content": "# Codebase Analysis Results\n\nAfter analyzing your codebase, here are the key optimization opportunities...",
+      "metadata": {
+        "provider": "openai",
+        "model": "gpt-5",
+        "usage": {
+          "input_tokens": 15420,
+          "output_tokens": 2340
+        }
+      }
+    },
+    "elapsed_seconds": 45.2,
+    "completed_at": "2023-12-01T10:30:45.200Z"
+  }
+}
+```
+
+### Async Consensus Example
+
+```json
+{
+  "tool": "consensus",
+  "arguments": {
+    "prompt": "Design a scalable microservices architecture for our e-commerce platform",
+    "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+    "files": ["/docs/requirements.md", "/docs/current-architecture.md"],
+    "async": true,
+    "enable_cross_feedback": true
+  }
+}
+```
+
+**Immediate Response:**
+```json
+{
+  "content": "⏳ PROCESSING | CONSENSUS | consensus_xyz789 | 0/3 | Started: 2023-12-01 10:30:00 | gpt-5,gemini-2.5-pro,claude-sonnet-4",
+  "continuation": {
+    "id": "consensus_xyz789",
+    "status": "processing"
+  },
+  "async_execution": true,
+  "metadata": {
+    "total_models": 3,
+    "successful_models": 0,
+    "models_list": "gpt-5,gemini-2.5-pro,claude-sonnet-4"
+  }
+}
+```
+
+### Cancelling Long-Running Jobs
+
+```json
+{
+  "tool": "cancel_job",
+  "arguments": {
+    "continuation_id": "analysis-task-001"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "content": {
+    "status": "cancelled",
+    "message": "Job analysis-task-001 cancelled successfully",
+    "job_id": "analysis-task-001",
+    "elapsed_seconds": 15.3,
+    "cancelled_at": "2023-12-01T10:30:15.300Z"
+  }
+}
+```
+
+### Listing Recent Jobs
+
+```json
+{
+  "tool": "check_status",
+  "arguments": {}
+}
+```
+
+**Response:**
+```json
+{
+  "content": {
+    "jobs": [
+      {
+        "id": "analysis-task-001",
+        "status": "completed",
+        "tool": "chat",
+        "elapsed_seconds": 45.2,
+        "completed_at": "2023-12-01T10:30:45.200Z"
+      },
+      {
+        "id": "consensus_xyz789",
+        "status": "processing",
+        "tool": "consensus",
+        "progress": {
+          "completed": 2,
+          "total": 3,
+          "percentage": 67
+        },
+        "elapsed_seconds": 28.7
+      }
+    ]
+  }
+}
+```
+
 ## 🚀 GPT-5 Advanced Features
 
 ### Using Minimal Reasoning for Fast Responses
