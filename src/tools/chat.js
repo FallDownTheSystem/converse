@@ -87,13 +87,9 @@ export async function chatTool(args, dependencies) {
           }
         );
 
-        const startTime = new Date().toLocaleString();
-        
-        // Return immediate response as human-readable status line
-        const statusLine = `⏳ PROCESSING | CHAT | ${conversationContinuationId} | 1/1 | Started: ${startTime} | ${providerName}/${resolvedModel}`;
-        
+        // Return immediate response with standard message
         return createToolResponse({
-          content: statusLine,
+          content: `Chat request submitted for background processing. Job ID: ${conversationContinuationId}`,
           continuation: {
             id: conversationContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
@@ -703,6 +699,12 @@ async function executeChatWithStreaming(args, dependencies, context) {
     try {
       finalSummary = await summarizationService.generateFinalSummary(response.content);
       debugLog(`Chat: Generated final summary - "${finalSummary}"`);
+      // Store final summary in job
+      if (finalSummary && context && context.updateJob) {
+        await context.updateJob({
+          final_summary: finalSummary
+        });
+      }
     } catch (error) {
       debugError('Chat: Failed to generate final summary', error);
       // Continue without summary if generation fails

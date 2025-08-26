@@ -313,6 +313,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         });
       }
 
+      // Apply any other updates as direct properties on the job
+      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq'];
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!reservedFields.includes(key)) {
+          job[key] = value;
+        }
+      });
+
       // Update timestamp
       job.updatedAt = now;
 

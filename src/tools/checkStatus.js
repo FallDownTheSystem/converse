@@ -11,6 +11,12 @@ import { getAsyncJobStore, JOB_STATUS } from '../async/asyncJobStore.js';
 import { getFileCache } from '../async/fileCache.js';
 import { debugLog, debugError } from '../utils/console.js';
 import { createLogger } from '../utils/logger.js';
+import { 
+  formatJobStatus, 
+  formatHumanReadableStatus, 
+  formatJobListHumanReadable,
+  formatConversationHistory 
+} from '../utils/formatStatus.js';
 
 const logger = createLogger('check-status');
 
@@ -24,7 +30,7 @@ export async function checkStatusTool(args, dependencies) {
   const startTime = Date.now();
 
   try {
-    const { config } = dependencies;
+    const { config, providers } = dependencies;
 
     // Extract and validate arguments
     const {
@@ -61,10 +67,10 @@ export async function checkStatusTool(args, dependencies) {
         return createToolError(`Job not found or access denied: ${continuation_id}`);
       }
 
-      // Format content as human-readable status
+      // Format content as human-readable status (now async)
       const content = full_history 
-        ? formatConversationHistory(jobStatus, continuation_id)
-        : formatHumanReadableStatus(jobStatus, { sequence: '1/1' });
+        ? await formatConversationHistory(jobStatus, continuation_id, { config, providers })
+        : await formatHumanReadableStatus(jobStatus, { sequence: '1/1' }, { config, providers });
       
       return createToolResponse({
         content,
@@ -86,8 +92,8 @@ export async function checkStatusTool(args, dependencies) {
         }
       );
 
-      // Format content as human-readable jobs list
-      const content = formatJobListHumanReadable(jobsList);
+      // Format content as human-readable jobs list (now async)
+      const content = await formatJobListHumanReadable(jobsList, { config, providers });
       
       return createToolResponse({
         content,
@@ -228,272 +234,9 @@ async function getAllJobsFromStore(asyncJobStore, options = {}) {
   }
 }
 
-/**
- * Format job list as human-readable text
- * @param {object} jobsList - Jobs list object with summary
- * @returns {string} Human-readable jobs list
- */
-function formatJobListHumanReadable(jobsList) {
-  const parts = [];
-  
-  // Summary line
-  parts.push(`📊 Jobs Summary: ${jobsList.summary.active_jobs} active, ${jobsList.summary.completed_jobs} completed, ${jobsList.summary.failed_jobs} failed`);
-  
-  if (jobsList.jobs.length === 0) {
-    parts.push('No jobs found.');
-    return parts.join('\n');
-  }
-  
-  parts.push('─'.repeat(80));
-  
-  // List each job
-  jobsList.jobs.forEach(job => {
-    const timeStr = job.elapsed_seconds >= 60 
-      ? `${Math.floor(job.elapsed_seconds / 60)}m${Math.round(job.elapsed_seconds % 60)}s`
-      : `${job.elapsed_seconds.toFixed(1)}s`;
-    
-    const statusEmoji = {
-      'queued': '⏳',
-      'running': '🔄',
-      'completed': '✅',
-      'failed': '❌',
-      'cancelled': '⛔',
-      'completed_with_errors': '⚠️'
-    }[job.status] || '❓';
-    
-    const provider = job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
-    
-    // Format start time as readable date/time
-    const startTime = job.created_at ? new Date(job.created_at).toLocaleString() : 'unknown';
-    
-    // Format: emoji STATUS | TOOL | id | sequence | started | time | [progress for consensus only] | provider
-    // For job listing, each job shows as 1/1 since they're independent jobs
-    const sequenceStr = '1/1';
-    
-    if (job.tool === 'consensus' && job.consensus_progress) {
-      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr} | ${job.consensus_progress} | ${provider}`);
-    } else {
-      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr} | ${provider}`);
-    }
-  });
-  
-  return parts.join('\n');
-}
 
-/**
- * Format conversation history for a continuation ID
- * @param {object} jobStatus - Formatted job status object  
- * @param {string} continuationId - The continuation ID
- * @returns {string} Human-readable conversation history
- */
-function formatConversationHistory(jobStatus, continuationId) {
-  const parts = [];
-  
-  parts.push(`📊 Conversation History for ${continuationId}:`);
-  parts.push('─'.repeat(80));
-  parts.push('');
-  
-  // For now, show the single job with sequence 1/1
-  // TODO: Implement proper conversation tracking when multi-job conversations are supported
-  const statusLine = formatHumanReadableStatus(jobStatus, { sequence: '1/1', skipContent: false });
-  parts.push(statusLine);
-  
-  return parts.join('\n');
-}
 
-/**
- * Format job status as human-readable text
- * @param {object} jobStatus - Formatted job status object
- * @param {object} options - Formatting options
- * @param {string} options.sequence - Sequence indicator (e.g., '1/5')
- * @param {boolean} options.skipContent - Skip showing full content
- * @returns {string} Human-readable status text
- */
-function formatHumanReadableStatus(jobStatus, options = {}) {
-  const parts = [];
-  
-  // Format elapsed time
-  let timeStr;
-  if (jobStatus.elapsed_seconds >= 60) {
-    const minutes = Math.floor(jobStatus.elapsed_seconds / 60);
-    const seconds = Math.round(jobStatus.elapsed_seconds % 60);
-    timeStr = `${minutes}m${seconds}s`;
-  } else {
-    timeStr = `${jobStatus.elapsed_seconds.toFixed(1)}s`;
-  }
-  
-  // Build status line based on status
-  const statusEmoji = {
-    'queued': '⏳',
-    'running': '🔄',
-    'completed': '✅',
-    'failed': '❌',
-    'cancelled': '⛔',
-    'completed_with_errors': '⚠️'
-  }[jobStatus.status] || '❓';
-  
-  // Format start time as readable date/time
-  const startTime = jobStatus.created_at ? new Date(jobStatus.created_at).toLocaleString() : 'unknown';
-  
-  // Add sequence info if provided
-  const sequenceStr = options.sequence ? ` | ${options.sequence}` : '';
-  
-  // Build complete status line with all info
-  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id}${sequenceStr} | Started: ${startTime} | ${timeStr} elapsed`;
-  
-  // Add progress for consensus tool only (show x/y format)
-  if (jobStatus.tool === 'consensus') {
-    if (jobStatus.consensus_progress) {
-      statusLine += ` | ${jobStatus.consensus_progress}`;
-    } else if (jobStatus.providers) {
-      // Calculate progress from provider states
-      const providerEntries = Object.entries(jobStatus.providers);
-      const completed = providerEntries.filter(([_, state]) => 
-        state.status === 'completed' || state.status === 'refined'
-      ).length;
-      const total = providerEntries.length;
-      statusLine += ` | ${completed}/${total} responded`;
-    }
-    // Add models list for consensus
-    if (jobStatus.models_list) {
-      statusLine += ` | ${jobStatus.models_list}`;
-    }
-  } else if (jobStatus.tool === 'chat') {
-    // Add provider/model for chat
-    if (jobStatus.provider && jobStatus.model) {
-      statusLine += ` | ${jobStatus.provider}/${jobStatus.model}`;
-    } else if (jobStatus.provider) {
-      statusLine += ` | ${jobStatus.provider}`;
-    }
-  }
-  
-  parts.push(statusLine);
-  
-  // Add streaming preview if available and still running
-  if (jobStatus.status === 'running' && jobStatus.streaming_preview) {
-    parts.push(`Streaming: "${jobStatus.streaming_preview}"`);
-  }
-  
-  // Add provider previews for consensus
-  if (jobStatus.status === 'running' && jobStatus.provider_previews) {
-    const previewCount = Object.keys(jobStatus.provider_previews).length;
-    if (previewCount > 0) {
-      parts.push(`${previewCount} provider(s) streaming responses...`);
-      // Optionally show first provider's preview
-      const firstPreview = Object.values(jobStatus.provider_previews)[0];
-      if (firstPreview) {
-        const truncated = firstPreview.length > 80 ? firstPreview.substring(0, 80) + '...' : firstPreview;
-        parts.push(`Preview: "${truncated}"`);
-      }
-    }
-  }
-  
-  // Add full result if completed
-  if (jobStatus.status === 'completed' && jobStatus.result) {
-    // Add continuation_id if present (for multi-step conversations)
-    // Chat tool returns continuation.id, not continuation_id
-    if (jobStatus.result.continuation?.id) {
-      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation.id}`);
-    } else if (jobStatus.result.continuation_id) {
-      parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
-    }
-    
-    // Show full response content
-    if (jobStatus.result.content) {
-      parts.push(`\n${jobStatus.result.content}`);
-    }
-  }
-  
-  // Add error info if failed
-  if (jobStatus.status === 'failed' && jobStatus.error) {
-    parts.push(`Error: ${jobStatus.error.message || jobStatus.error}`);
-  }
-  
-  // Add provider details for consensus
-  if (jobStatus.providers && Object.keys(jobStatus.providers).length > 0) {
-    const providerStatuses = Object.entries(jobStatus.providers)
-      .map(([id, state]) => `${id}: ${state.status}`)
-      .join(', ');
-    parts.push(`Providers: ${providerStatuses}`);
-  }
-  
-  return parts.join('\n');
-}
 
-/**
- * Format job status for client response
- * @param {object} job - Raw job object
- * @param {object} options - Formatting options
- * @returns {object} Formatted job status
- */
-function formatJobStatus(job, options = {}) {
-  // Calculate elapsed time
-  const now = Date.now();
-  const startTime = job.createdAt || now;
-  const elapsedMs = now - startTime;
-  const elapsedSeconds = elapsedMs / 1000;
-  
-  const formatted = {
-    continuation_id: job.jobId,
-    status: job.status,
-    tool: job.tool,
-    created_at: job.createdAt,
-    updated_at: job.updatedAt,
-    progress: job.overall?.progress || 0,
-    started_at: job.overall?.startedAt || null,
-    ended_at: job.overall?.endedAt || null,
-    elapsed_seconds: elapsedSeconds,
-    provider: job.provider || null,
-    model: job.model || null,
-    models_list: job.models_list || null,
-    consensus_progress: job.consensus_progress || null,
-    streaming_preview: job.streaming_preview || null
-  };
-  
-  // For consensus, gather provider previews
-  if (job.tool === 'consensus') {
-    const providerPreviews = {};
-    for (let i = 0; i < 10; i++) { // Check up to 10 providers
-      if (job[`provider_${i}_preview`]) {
-        providerPreviews[`provider_${i}`] = job[`provider_${i}_preview`];
-      }
-    }
-    if (Object.keys(providerPreviews).length > 0) {
-      formatted.provider_previews = providerPreviews;
-    }
-  }
-
-  // Add error information if failed
-  if (job.status === JOB_STATUS.FAILED && job.overall?.error) {
-    formatted.error = job.overall.error;
-  }
-
-  // Add provider details if available
-  if (job.providers && job.providers.size > 0) {
-    formatted.providers = {};
-    for (const [providerId, providerState] of job.providers) {
-      formatted.providers[providerId] = {
-        status: providerState.status || 'unknown',
-        progress: providerState.progress || 0,
-        updated_at: providerState.updatedAt || null
-      };
-    }
-  }
-
-  // Include output (always included)
-  if (job.overall?.result) {
-    formatted.result = job.overall.result;
-    
-    // Also include metadata from the result if available
-    if (job.overall.result.metadata) {
-      formatted.metadata = job.overall.result.metadata;
-    }
-  }
-
-  // Events are no longer included in the response
-
-  return formatted;
-}
 
 // Tool metadata and input schema
 checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list the 10 most recent jobs. Returns job status with start time and progress information.';

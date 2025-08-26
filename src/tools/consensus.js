@@ -88,13 +88,9 @@ export async function consensusTool(args, dependencies) {
           }
         );
 
-        const startTime = new Date().toLocaleString();
-        
-        // Return immediate response as human-readable status line
-        const statusLine = `⏳ PROCESSING | CONSENSUS | ${bgContinuationId} | 1/1 | Started: ${startTime} | ${modelsList}`;
-        
+        // Return immediate response with standard message
         return createToolResponse({
-          content: statusLine,
+          content: `Consensus request submitted for background processing. Job ID: ${bgContinuationId}`,
           continuation: {
             id: bgContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
