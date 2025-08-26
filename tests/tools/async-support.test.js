@@ -156,7 +156,8 @@ describe('Async Support Tests', () => {
 
       const result = await chatTool(args, mockDependencies);
 
-      expect(result.content[0].text).toContain('Chat request submitted for background processing');
+      expect(result.content[0].text).toContain('⏳ SUBMITTED | CHAT');
+      expect(result.content[0].text).toContain('Test async chat');
       expect(result.continuation.id).toBeTruthy();
       // job_id is no longer returned in continuation object
       expect(result.continuation.status).toBe('processing');
@@ -257,7 +258,8 @@ describe('Async Support Tests', () => {
 
       const result = await consensusTool(args, mockDependencies);
 
-      expect(result.content[0].text).toContain('Consensus request submitted for background processing');
+      expect(result.content[0].text).toContain('⏳ SUBMITTED | CONSENSUS');
+      expect(result.content[0].text).toContain('Test async consensus');
       expect(result.continuation.id).toBeTruthy();
       // job_id is no longer returned in continuation object
       expect(result.continuation.status).toBe('processing');
