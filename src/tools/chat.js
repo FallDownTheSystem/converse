@@ -13,6 +13,7 @@ import { createLogger } from '../utils/logger.js';
 import { CHAT_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
+import { SummarizationService } from '../services/summarizationService.js';
 
 const logger = createLogger('chat');
 
@@ -461,6 +462,19 @@ async function executeChatWithStreaming(args, dependencies, context) {
     verbosity = 'medium'
   } = args;
 
+  // Initialize SummarizationService
+  const summarizationService = new SummarizationService(providers, config);
+
+  // Generate title from user prompt (non-blocking)
+  let title = null;
+  try {
+    title = await summarizationService.generateTitle(prompt);
+    debugLog(`Chat: Generated title - "${title}"`);
+  } catch (error) {
+    debugError('Chat: Failed to generate title', error);
+    // Continue without title if generation fails
+  }
+
   let conversationHistory = [];
 
   // Load existing conversation if continuation_id provided
@@ -622,22 +636,21 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
       switch (event.type) {
       case 'start':
-        // Update job with streaming started status and provider info
+        // Update job with streaming started status, provider info, and title
         await context.updateJob({
           status: 'running',
           provider: providerName,
           model: resolvedModel,
+          title: title || undefined, // Include title if generated
           progress: { phase: 'streaming_started', provider: providerName, model: resolvedModel }
         });
         break;
 
       case 'delta':
         accumulatedContent += event.data.textDelta;
-        // Update job with progress and streaming preview (first 200 chars)
+        // Update job with progress and full accumulated content
         await context.updateJob({
-          streaming_preview: accumulatedContent.length > 200 
-            ? accumulatedContent.substring(0, 200) + '...'
-            : accumulatedContent,
+          accumulated_content: accumulatedContent, // Store full content
           progress: {
             phase: 'streaming',
             provider: providerName,
@@ -684,6 +697,18 @@ async function executeChatWithStreaming(args, dependencies, context) {
     throw new Error('Provider returned invalid response');
   }
 
+  // Generate final summary for responses longer than 100 characters (non-blocking)
+  let finalSummary = null;
+  if (response.content && response.content.length > 100) {
+    try {
+      finalSummary = await summarizationService.generateFinalSummary(response.content);
+      debugLog(`Chat: Generated final summary - "${finalSummary}"`);
+    } catch (error) {
+      debugError('Chat: Failed to generate final summary', error);
+      // Continue without summary if generation fails
+    }
+  }
+
   // Add assistant response to conversation history
   const assistantMessage = {
     role: 'assistant',
@@ -710,6 +735,8 @@ async function executeChatWithStreaming(args, dependencies, context) {
   // Return complete result for job completion
   return {
     content: response.content,
+    title: title || undefined, // Include title if generated
+    summary: finalSummary || undefined, // Include summary if generated
     continuation: {
       id: continuationId,
       provider: providerName,

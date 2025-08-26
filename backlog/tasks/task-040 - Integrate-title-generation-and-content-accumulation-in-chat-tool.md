@@ -1,11 +1,11 @@
 ---
 id: task-040
 title: Integrate title generation and content accumulation in chat tool
-status: To Do
+status: Done
 assignee:
   - '@ai'
 created_date: '2025-08-26 10:51'
-updated_date: '2025-08-26 11:11'
+updated_date: '2025-08-26 11:43'
 labels:
   - tools
   - chat
@@ -51,3 +51,7 @@ SummarizationService instantiation:
 - Extract config and providers from dependencies parameter
 - Create instance: `const summarizer = new SummarizationService(config, providers);`
 - Note: providers is the full providers object from dependencies, not a single provider
+
+## Implementation Notes
+
+Successfully integrated SummarizationService into chat tool's streaming flow. Changes made: 1) Added SummarizationService import to chat.js, 2) Generate title from user prompt at request start, 3) Replaced 200-char streaming_preview with full accumulated_content storage, 4) Generate final summary for responses > 100 chars after completion, 5) Added title and summary to returned result object. Non-blocking implementation ensures main flow continues even if summarization fails. Tests passing, type checking passed.
