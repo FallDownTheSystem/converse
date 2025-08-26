@@ -377,10 +377,7 @@ describe('Async Workflow Integration Tests', () => {
             const statusResult = await client.callTool({
               name: 'check_status',
               arguments: {
-                continuation_id: jobId,
-                since_seq: lastSeq,
-                include_events: true,
-                include_output: true
+                continuation_id: jobId
               }
             });
 

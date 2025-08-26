@@ -28,10 +28,7 @@ export async function checkStatusTool(args, dependencies) {
 
     // Extract and validate arguments
     const {
-      continuation_id,
-      since_seq,
-      include_events = false,
-      max_results = 50
+      continuation_id
     } = args;
 
     // Validate arguments
@@ -39,22 +36,11 @@ export async function checkStatusTool(args, dependencies) {
       return createToolError('continuation_id must be a string');
     }
 
-    if (since_seq !== undefined && (!Number.isInteger(since_seq) || since_seq < 0)) {
-      return createToolError('since_seq must be a non-negative integer');
-    }
-
-    if (!Number.isInteger(max_results) || max_results < 1 || max_results > 100) {
-      return createToolError('max_results must be an integer between 1 and 100');
-    }
-
     const asyncJobStore = getAsyncJobStore();
     const fileCache = getFileCache();
 
     debugLog('checkStatus', 'Processing status query', {
-      continuation_id,
-      since_seq,
-      include_events,
-      max_results
+      continuation_id
     });
 
     if (continuation_id) {
@@ -64,8 +50,6 @@ export async function checkStatusTool(args, dependencies) {
         asyncJobStore,
         fileCache,
         {
-          since_seq,
-          include_events,
           include_output: true  // Always include output
         }
       );
@@ -86,15 +70,13 @@ export async function checkStatusTool(args, dependencies) {
       });
 
     } else {
-      // List all active/recent jobs
+      // List all active/recent jobs (hardcoded to 10 latest)
       const jobsList = await listAllJobs(
         asyncJobStore,
         fileCache,
         {
-          since_seq,
-          include_events,
           include_output: true,  // Always include output
-          max_results
+          max_results: 10
         }
       );
 
@@ -196,10 +178,10 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
       }
     }
 
-    // If we haven't reached max_results, try to get more from FileCache
+    // If we haven't reached 10 jobs, try to get more from FileCache
     // Note: This is a simplified approach - in production, you might want
     // to implement a more sophisticated indexing system for file-based jobs
-    if (jobs.length < options.max_results) {
+    if (jobs.length < 10) {
       debugLog('checkStatus', 'Checking FileCache for additional completed jobs');
       // For now, we'll just note that FileCache lookup would happen here
       // A production implementation might maintain an index of jobs by session
@@ -209,10 +191,8 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
       jobs,
       summary,
       query_options: {
-        since_seq: options.since_seq,
-        include_events: options.include_events,
         include_output: true,  // Always include output
-        max_results: options.max_results
+        max_results: 10
       },
       timestamp: Date.now()
     };
@@ -232,7 +212,7 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
 async function getAllJobsFromStore(asyncJobStore, options = {}) {
   try {
     return await asyncJobStore.getAllJobs({
-      limit: options.max_results || 50,
+      limit: 10,
       sortBy: 'updatedAt',
       sortOrder: 'desc'
     });
@@ -277,12 +257,15 @@ function formatJobListHumanReadable(jobsList) {
     
     const provider = job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
     
-    // Format: emoji STATUS | TOOL | id | time | progress/provider
-    const progressStr = job.tool === 'consensus' && job.consensus_progress 
-      ? job.consensus_progress 
-      : `${Math.round(job.progress * 100)}%`;
+    // Format start time as readable date/time
+    const startTime = job.created_at ? new Date(job.created_at).toLocaleString() : 'unknown';
     
-    parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${timeStr} | ${progressStr} | ${provider}`);
+    // Format: emoji STATUS | TOOL | id | started | time | [progress for consensus only] | provider
+    if (job.tool === 'consensus' && job.consensus_progress) {
+      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${startTime} | ${timeStr} | ${job.consensus_progress} | ${provider}`);
+    } else {
+      parts.push(`${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${startTime} | ${timeStr} | ${provider}`);
+    }
   });
   
   return parts.join('\n');
@@ -316,8 +299,11 @@ function formatHumanReadableStatus(jobStatus) {
     'completed_with_errors': '⚠️'
   }[jobStatus.status] || '❓';
   
+  // Format start time as readable date/time
+  const startTime = jobStatus.created_at ? new Date(jobStatus.created_at).toLocaleString() : 'unknown';
+  
   // Build complete status line with all info
-  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id} | ${timeStr} elapsed`;
+  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
   
   // Add progress for consensus tool only (show x/y format)
   if (jobStatus.tool === 'consensus') {
@@ -468,48 +454,20 @@ function formatJobStatus(job, options = {}) {
     }
   }
 
-  // Include events if requested
-  if (options.include_events && job.events && job.events.length > 0) {
-    let events = job.events;
-    
-    // Filter events by sequence number if since_seq provided
-    if (options.since_seq !== undefined) {
-      events = events.filter(event => event.seq > options.since_seq);
-    }
-
-    formatted.events = events;
-    formatted.latest_seq = job.seq || 0;
-  }
+  // Events are no longer included in the response
 
   return formatted;
 }
 
 // Tool metadata and input schema
-checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list all active jobs. Supports incremental polling and detailed progress information.';
+checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list the 10 most recent jobs. Returns job status with start time and progress information.';
 
 checkStatusTool.inputSchema = {
   type: 'object',
   properties: {
     continuation_id: {
       type: 'string',
-      description: 'Optional job continuation ID to query. If not provided, returns all active/recent jobs.'
-    },
-    since_seq: {
-      type: 'integer',
-      minimum: 0,
-      description: 'Optional sequence number for incremental polling. Returns only events/updates after this sequence number.'
-    },
-    include_events: {
-      type: 'boolean',
-      default: false,
-      description: 'Include job lifecycle events in the response (useful for debugging and detailed monitoring).'
-    },
-    max_results: {
-      type: 'integer',
-      minimum: 1,
-      maximum: 100,
-      default: 50,
-      description: 'Maximum number of jobs to return when listing all jobs (ignored when querying specific job).'
+      description: 'Optional job continuation ID to query. If not provided, returns the 10 most recent jobs.'
     }
   },
   additionalProperties: false

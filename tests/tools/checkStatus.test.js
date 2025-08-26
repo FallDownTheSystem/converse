@@ -82,25 +82,7 @@ describe('Check Status Tool', () => {
       expect(result.content[0].text).toContain('continuation_id must be a string');
     });
 
-    it('should validate since_seq parameter', async () => {
-      const result = await checkStatusTool(
-        { since_seq: -1 },
-        { config: mockConfig, request: mockRequest }
-      );
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('since_seq must be a non-negative integer');
-    });
-
-    it('should validate max_results range', async () => {
-      const result = await checkStatusTool(
-        { max_results: 200 },
-        { config: mockConfig, request: mockRequest }
-      );
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('max_results must be an integer between 1 and 100');
-    });
+    // Tests for deprecated parameters removed - since_seq, max_results, include_events no longer supported
   });
 
   describe('Specific Job Queries', () => {
@@ -237,7 +219,7 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
-        limit: 50,
+        limit: 10,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
       });
@@ -250,17 +232,17 @@ describe('Check Status Tool', () => {
       expect(text).toContain('1 completed');
     });
 
-    it('should respect max_results parameter', async () => {
+    it('should return 10 most recent jobs by default', async () => {
       mockAsyncJobStore.getAllJobs.mockResolvedValue([mockJobs[0]]);
 
       const result = await checkStatusTool(
-        { max_results: 1 },
+        {},
         { config: mockConfig, request: mockRequest }
       );
 
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
-        limit: 1,
+        limit: 10,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
       });
@@ -313,11 +295,11 @@ describe('Check Status Tool', () => {
       seq: 2
     };
 
-    it('should include result when include_output is true', async () => {
+    it('should always include result (output always enabled)', async () => {
       mockAsyncJobStore.get.mockResolvedValue(mockJob);
 
       const result = await checkStatusTool(
-        { continuation_id: 'job_test123', include_output: true },
+        { continuation_id: 'job_test123' },
         { config: mockConfig, request: mockRequest }
       );
 
@@ -325,57 +307,8 @@ describe('Check Status Tool', () => {
       
       // Parse human-readable format
       const text = result.content[0].text;
-      // Check for response preview in completed jobs
-      expect(text).toContain('Response: "Test response');
-    });
-
-    it('should exclude result when include_output is false', async () => {
-      mockAsyncJobStore.get.mockResolvedValue(mockJob);
-
-      const result = await checkStatusTool(
-        { continuation_id: 'job_test123', include_output: false },
-        { config: mockConfig, request: mockRequest }
-      );
-
-      expect(result.isError).toBe(false);
-      
-      // Parse human-readable format
-      const text = result.content[0].text;
-      // Should not show response when include_output is false
-      expect(text).not.toContain('Response:');
-    });
-
-    it('should include events when include_events is true', async () => {
-      mockAsyncJobStore.get.mockResolvedValue(mockJob);
-
-      const result = await checkStatusTool(
-        { continuation_id: 'job_test123', include_events: true },
-        { config: mockConfig, request: mockRequest }
-      );
-
-      expect(result.isError).toBe(false);
-      
-      // Parse human-readable format
-      const text = result.content[0].text;
-      // Events are not shown in human-readable format,
-      // but the status should still be shown correctly
-      expect(text).toContain('COMPLETED | CHAT');
-    });
-
-    it('should filter events by since_seq', async () => {
-      mockAsyncJobStore.get.mockResolvedValue(mockJob);
-
-      const result = await checkStatusTool(
-        { continuation_id: 'job_test123', include_events: true, since_seq: 1 },
-        { config: mockConfig, request: mockRequest }
-      );
-
-      expect(result.isError).toBe(false);
-      
-      // Parse human-readable format  
-      const text = result.content[0].text;
-      // since_seq filtering works internally but doesn't affect human-readable output
-      expect(text).toContain('COMPLETED | CHAT');
+      // Check for response content in completed jobs
+      expect(text).toContain('Test response');
     });
 
     it('should include provider details', async () => {
@@ -432,10 +365,10 @@ describe('Check Status Tool', () => {
       
       expect(schema.type).toBe('object');
       expect(schema.properties.continuation_id).toBeDefined();
-      expect(schema.properties.since_seq).toBeDefined();
-      expect(schema.properties.include_events).toBeDefined();
-      expect(schema.properties.include_output).toBeDefined();
-      expect(schema.properties.max_results).toBeDefined();
+      // Deprecated parameters should no longer exist
+      expect(schema.properties.since_seq).toBeUndefined();
+      expect(schema.properties.include_events).toBeUndefined();
+      expect(schema.properties.max_results).toBeUndefined();
     });
   });
 });
