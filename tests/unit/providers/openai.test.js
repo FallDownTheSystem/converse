@@ -514,15 +514,15 @@ describe('OpenAI Provider', () => {
       // Create mock stream for Responses API
       const mockStreamChunks = [
         {
-          type: 'response.delta',
-          delta: { output_text: 'Response' }
+          type: 'response.output_text.delta',
+          delta: 'Response'
         },
         {
-          type: 'response.delta',
-          delta: { output_text: ' text' }
+          type: 'response.output_text.delta',
+          delta: ' text'
         },
         {
-          type: 'response.done',
+          type: 'response.completed',
           response: {
             status: 'completed',
             model: 'gpt-5',
@@ -558,6 +558,9 @@ describe('OpenAI Provider', () => {
       for await (const event of result) {
         events.push(event);
       }
+
+      // Debug: log actual events
+      console.log('Actual events:', events.map(e => ({ type: e.type, content: e.content, ...e })));
 
       // Verify event structure for Responses API
       expect(events).toHaveLength(5); // start, 2 deltas, usage, end

@@ -86,7 +86,7 @@ describe('DeepSeek Provider', () => {
 
       expect(config).toBeDefined();
       expect(config.modelName).toBe('deepseek-chat');
-      expect(config.contextWindow).toBe(64000);
+      expect(config.contextWindow).toBe(128000);
       expect(config.maxOutputTokens).toBe(8000);
       expect(config.supportsImages).toBe(false);
     });
