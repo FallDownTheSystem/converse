@@ -106,6 +106,12 @@ const CONFIG_SCHEMA = {
   mcp: {
     MAX_MCP_OUTPUT_TOKENS: { type: 'number', default: 25000, description: 'Maximum tokens in MCP tool responses' },
   },
+
+  // Summarization configuration
+  summarization: {
+    ENABLE_RESPONSE_SUMMARIZATION: { type: 'boolean', default: false, description: 'Enable AI-powered response summarization for async operations' },
+    SUMMARIZATION_MODEL: { type: 'string', default: 'gpt-5', description: 'Model to use for summarization tasks (title generation, streaming summaries, final summaries)' },
+  },
 };
 
 // ConfigurationError now imported from errorHandler
@@ -201,6 +207,7 @@ export async function loadConfig() {
     apiKeys: {},
     providers: {},
     mcp: {},
+    summarization: {},
     environment: {
       isDevelopment: false,
       isProduction: false,
@@ -292,6 +299,20 @@ export async function loadConfig() {
         const value = validateEnvVar(key, process.env[key], schema);
         const configKey = key.replace('MAX_MCP_OUTPUT_TOKENS', 'max_mcp_output_tokens').toLowerCase();
         config.mcp[configKey] = value;
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+
+    // Load Summarization configuration
+    for (const [key, schema] of Object.entries(CONFIG_SCHEMA.summarization)) {
+      try {
+        const value = validateEnvVar(key, process.env[key], schema);
+        if (key === 'ENABLE_RESPONSE_SUMMARIZATION') {
+          config.summarization.enabled = value;
+        } else if (key === 'SUMMARIZATION_MODEL') {
+          config.summarization.model = value;
+        }
       } catch (error) {
         errors.push(error.message);
       }

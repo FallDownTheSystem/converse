@@ -27,6 +27,10 @@ describe('SummarizationService', () => {
     mockConfig = {
       apiKeys: {
         openai: 'test-key'
+      },
+      summarization: {
+        enabled: true,  // Enable summarization for tests
+        model: null     // Use auto-selection
       }
     };
 
@@ -184,6 +188,50 @@ describe('SummarizationService', () => {
       expect(title).toBe('Test prompt for fallback');
       expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
       expect(mockProviders.google.invoke).not.toHaveBeenCalled();
+    });
+
+    it('should use fallback when summarization is disabled', async () => {
+      // Create service with summarization disabled
+      const disabledConfig = {
+        ...mockConfig,
+        summarization: {
+          enabled: false,
+          model: null
+        }
+      };
+      const disabledService = new SummarizationService(mockProviders, disabledConfig);
+
+      const title = await disabledService.generateTitle('Test prompt with disabled summarization');
+
+      // Should use fallback (truncated prompt)
+      expect(title).toBe('Test prompt with disabled summarization');
+      expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
+    });
+
+    it('should use configured model when specified', async () => {
+      // Create service with custom model
+      const customModelConfig = {
+        ...mockConfig,
+        summarization: {
+          enabled: true,
+          model: 'gpt-4o-mini'
+        }
+      };
+      const customService = new SummarizationService(mockProviders, customModelConfig);
+      
+      mockProviders.openai.invoke.mockResolvedValue({
+        content: 'Custom Model Title'
+      });
+
+      const title = await customService.generateTitle('Test with custom model');
+
+      expect(title).toBe('Custom Model Title');
+      expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          model: 'gpt-4o-mini'
+        })
+      );
     });
   });
 });

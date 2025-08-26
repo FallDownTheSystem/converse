@@ -1,10 +1,11 @@
 ---
 id: task-044
 title: Add summarization configuration to config schema
-status: To Do
+status: In Progress
 assignee:
   - '@ai'
 created_date: '2025-08-26 10:51'
+updated_date: '2025-08-26 12:53'
 labels:
   - configuration
   - summarization

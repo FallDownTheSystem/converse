@@ -32,7 +32,12 @@ export class SummarizationService {
   constructor(providers, config) {
     this.providers = providers;
     this.config = config;
-    this.enabled = true; // Can be disabled via config in the future
+    // Use config to determine if summarization is enabled
+    this.enabled = config.summarization?.enabled ?? false;
+    // Store configured model preference
+    this.configuredModel = config.summarization?.model || null;
+    
+    debugLog(`SummarizationService initialized - enabled: ${this.enabled}, model: ${this.configuredModel || 'auto-select'}`);
   }
 
   /**
@@ -210,6 +215,17 @@ export class SummarizationService {
    * @private
    */
   _selectFastModel() {
+    // If a model is configured, try to use it first
+    if (this.configuredModel) {
+      const providerName = mapModelToProvider(this.configuredModel, this.providers);
+      const provider = this.providers[providerName];
+      if (provider && provider.isAvailable(this.config)) {
+        debugLog(`Summarization: Using configured model ${this.configuredModel} from ${providerName}`);
+        return this.configuredModel;
+      }
+      debugLog(`Summarization: Configured model ${this.configuredModel} not available, falling back to auto-selection`);
+    }
+
     // Check which providers are available and return the first fast model
     for (const [providerName, fastModel] of Object.entries(FAST_MODELS)) {
       const provider = this.providers[providerName];
@@ -219,9 +235,10 @@ export class SummarizationService {
       }
     }
 
-    // Fallback to default
-    debugLog('Summarization: No fast model available, using default');
-    return 'gpt-4o-mini';
+    // Fallback to default or configured model
+    const fallbackModel = this.configuredModel || 'gpt-4o-mini';
+    debugLog(`Summarization: No fast model available, using ${fallbackModel} as fallback`);
+    return fallbackModel;
   }
 
   /**
