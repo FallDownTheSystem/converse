@@ -4,12 +4,12 @@
 
 The Converse MCP Server provides four main tools through the Model Context Protocol (MCP):
 
-1. **Chat Tool** - Single-provider conversational AI with context support
-2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
-3. **Check Status Tool** - Monitor and retrieve results from asynchronous operations
+1. **Chat Tool** - Single-provider conversational AI with context support and AI summarization
+2. **Consensus Tool** - Multi-provider parallel execution with response aggregation and combined summaries
+3. **Check Status Tool** - Monitor and retrieve results from asynchronous operations with intelligent summaries
 4. **Cancel Job Tool** - Cancel running background operations
 
-All tools support both **synchronous** (immediate response) and **asynchronous** (background processing) execution modes.
+All tools support both **synchronous** (immediate response) and **asynchronous** (background processing) execution modes. When AI summarization is enabled, tools automatically generate titles and summaries for better context understanding.
 
 ## Transport Protocols
 
@@ -130,7 +130,9 @@ MCP_TRANSPORT=stdio npm start
     },
     "response_time_ms": 1247,
     "provider": "openai"
-  }
+  },
+  "title": "Authentication Module Structure Guide",  // When summarization enabled
+  "final_summary": "Provided architectural recommendations for Express.js auth module with JWT tokens and role-based access control."  // When summarization enabled
 }
 ```
 
@@ -234,6 +236,8 @@ MCP_TRANSPORT=stdio npm start
   "successful_initial_responses": 3,
   "failed_responses": 0,
   "refined_responses": 3,
+  "title": "Architecture Review Recommendations",  // When summarization enabled
+  "final_summary": "All models agree on microservices approach with event-driven architecture for scalability.",  // When summarization enabled  
   "phases": {
     "initial": [
       {
@@ -394,6 +398,31 @@ Use `"auto"` for automatic selection or specify exact models:
 {"model": "pro"}    // -> gemini-2.5-pro  
 {"model": "grok"}   // -> grok-4-0709
 ```
+
+## Configuration
+
+### AI Summarization
+
+Configure intelligent title and summary generation for better context understanding:
+
+```bash
+# Environment variables
+ENABLE_RESPONSE_SUMMARIZATION=true    # Enable AI-powered summarization (default: false)
+SUMMARIZATION_MODEL=gpt-5-nano        # Model for summarization (default: gpt-5-nano)
+```
+
+**When Enabled:**
+- Automatic title generation (up to 60 chars) for each request
+- Status check returns an up-to-date summary of the progress based on the partially streamed response  
+- Final summaries (1-2 sentences) for completed responses
+- Enhanced check_status display with titles and summaries
+- Persistent storage of summaries with async jobs
+
+**Implementation Details:**
+- Uses fast models (gpt-5-nano, gemini-2.5-flash) for minimal latency
+- Temperature set to 0.3 for consistent, focused summaries
+- Graceful fallback to text snippets when disabled or on errors
+- Non-blocking - summarization failures don't affect main flow
 
 ## Context Processing
 

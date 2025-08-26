@@ -5,6 +5,77 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2025-08-26
+
+### Added
+- **AI-Powered Summarization**: Intelligent title generation and content summarization for async operations
+  - Automatic title generation (up to 60 chars) from user prompts at request initiation  
+  - Status check returns an up-to-date summary of the progress based on the partially streamed response
+  - Final summaries (1-2 sentences) generated for completed responses
+  - Smart summaries in check_status tool for better context understanding
+  - Configurable via `ENABLE_RESPONSE_SUMMARIZATION` and `SUMMARIZATION_MODEL` (default: gpt-5-nano) environment variables
+
+- **Enhanced Async Job Storage**: Improved job state tracking with new fields
+  - `accumulated_content`: Full streaming content instead of limited preview
+  - `title`: AI-generated descriptive title for each job
+  - `final_summary`: Concise summary of completed job results
+  - Removed `streaming_preview` field (now generated on-demand from accumulated content)
+
+- **SummarizationService**: New centralized service for all summarization operations
+  - Uses fast models (gpt-5-nano, gemini-2.5-flash) for minimal latency
+  - Graceful fallback to text snippets when disabled or on errors
+  - Non-blocking implementation ensures main flow continues even if summarization fails
+  - Temperature set to 0.3 for consistent, focused summaries
+
+- **FileCache Integration**: Persistent storage for async job results  
+  - Wire up FileCache to persist job state across server restarts
+  - Comprehensive integration tests for cache recovery and TTL management
+  - Improved memory management with proper cleanup
+
+### Changed
+- **Check Status Tool**: Enhanced display with AI-generated summaries
+  - Running jobs show AI-generated summaries based on accumulated content when checked
+  - Job listings include titles for quick identification
+  - Completed jobs display final summaries in listings
+  - Async formatting functions for on-demand summary generation
+
+- **Chat Tool Integration**: Title and summary generation during streaming
+  - Generates title from user prompt at request start
+  - Accumulates full content during streaming (replacing 200-char preview)
+  - Creates final summary for responses over 100 characters
+
+- **Consensus Tool Integration**: Multi-provider summary aggregation  
+  - Combined content accumulation from all providers
+  - Handles both single-phase and two-phase (cross-feedback) flows
+  - Provider-specific previews maintained alongside combined summaries
+
+### Technical
+- New `formatStatus.js` utility for async status formatting
+- Configuration schema extended with summarization settings
+- Updated AsyncJobStore to accept arbitrary job fields
+- Comprehensive test coverage for summarization features
+- Fixed integration tests for async workflow scenarios
+
+## [1.13.0] - 2025-01-20
+
+### Added
+- **Async Execution Support**: Run chat and consensus tools in background mode
+  - Use `async: true` parameter for non-blocking execution
+  - Monitor progress with check_status tool
+  - Cancel running jobs with cancel_job tool
+  - Persistent conversation state across async operations
+
+- **Job Management System**: Complete async job lifecycle management
+  - AsyncJobStore with LRU cache for memory management
+  - EventBus for real-time progress updates
+  - JobRunner for concurrent task execution
+  - Automatic cleanup of completed jobs
+
+- **Progress Tracking**: Real-time status updates for async operations
+  - Streaming progress for individual providers
+  - Combined progress for consensus operations
+  - Detailed error reporting and recovery
+
 ## [1.12.0] - 2025-01-19
 
 ### Added

@@ -84,6 +84,9 @@ LOG_LEVEL=debug npm run dev
 
 # Or check specific log levels
 LOG_LEVEL=info npm start
+
+# Debug with summarization enabled
+ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug npm run dev
 ```
 
 ### Testing
@@ -161,16 +164,19 @@ The Converse MCP Server includes four main tools:
    - Continuation support for persistent conversations
    - Background execution with `async: true` parameter
    - Uses functional architecture with streaming
+   - AI-powered title generation and content summarization
 
 2. **Consensus Tool** (`consensus`)
    - Parallel multi-model consensus gathering with async support
    - Background processing with per-provider progress tracking
    - Robust error handling - partial failures don't stop other models
+   - Combined summaries from all providers
 
 3. **Check Status Tool** (`check_status`)
    - Monitor progress of asynchronous operations
    - Retrieve results from completed background jobs
    - List recent jobs with status information
+   - Smart display with AI-generated titles and summaries
 
 4. **Cancel Job Tool** (`cancel_job`)
    - Cancel running asynchronous operations
@@ -273,6 +279,23 @@ LOG_LEVEL=debug npm start
 - API keys for at least one provider (OpenAI, Google, or XAI)
 - Environment variables configured in `.env` file
 
+### AI Summarization Feature (v1.14.0+)
+
+When enabled, the server automatically generates intelligent titles and summaries for better context understanding:
+
+- **Automatic Title Generation**: Creates descriptive titles (up to 60 chars) for each request
+- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response  
+- **Final Summaries**: Concise 1-2 sentence summaries of completed responses
+- **Smart Status Display**: Enhanced check_status tool shows titles and summaries in job listings
+- **Persistent Context**: Summaries are stored with async jobs for better progress tracking
+
+**Configuration**:
+```bash
+# Enable in your .env file
+ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false  
+SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
+```
+
 ### Configuration
 
 The server uses environment-driven configuration. Copy `.env.example` to `.env` and configure:
@@ -287,6 +310,10 @@ XAI_API_KEY=xai-your_key_here
 MAX_MCP_OUTPUT_TOKENS=200000
 LOG_LEVEL=info
 PORT=3157
+
+# Optional: AI Summarization (v1.14.0+)
+ENABLE_RESPONSE_SUMMARIZATION=true
+SUMMARIZATION_MODEL=gpt-5-nano
 ```
 
 ### Deployment

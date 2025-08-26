@@ -32,7 +32,9 @@
     },
     "response_time_ms": 1200,
     "provider": "openai"
-  }
+  },
+  "title": "Understanding JavaScript Promises",  // When summarization enabled
+  "final_summary": "Explained JavaScript promises as objects for handling asynchronous operations with practical examples."  // When summarization enabled
 }
 ```
 
@@ -90,13 +92,15 @@ For long-running tasks, use async mode to get immediate response and monitor pro
 }
 ```
 
-**While Processing:**
+**While Processing (with summarization enabled):**
 ```json
 {
   "content": {
     "id": "analysis-task-001",
     "status": "processing",
     "tool": "chat",
+    "title": "Codebase Optimization Analysis",  // AI-generated title
+    "streaming_summary": "Analyzing codebase structure and dependencies. Currently examining performance bottlenecks in the API layer.",  // Summary based on partially streamed response
     "progress": {
       "completed": 1,
       "total": 1,
@@ -107,13 +111,15 @@ For long-running tasks, use async mode to get immediate response and monitor pro
 }
 ```
 
-**When Complete:**
+**When Complete (with summarization enabled):**
 ```json
 {
   "content": {
     "id": "analysis-task-001",
     "status": "completed",
     "tool": "chat",
+    "title": "Codebase Optimization Analysis",  // AI-generated title
+    "final_summary": "Identified 5 critical performance bottlenecks and provided refactoring recommendations for improved scalability.",  // Final summary
     "result": {
       "content": "# Codebase Analysis Results\n\nAfter analyzing your codebase, here are the key optimization opportunities...",
       "metadata": {
@@ -196,7 +202,7 @@ For long-running tasks, use async mode to get immediate response and monitor pro
 }
 ```
 
-**Response:**
+**Response (with summarization enabled):**
 ```json
 {
   "content": {
@@ -205,6 +211,8 @@ For long-running tasks, use async mode to get immediate response and monitor pro
         "id": "analysis-task-001",
         "status": "completed",
         "tool": "chat",
+        "title": "Codebase Optimization Analysis",  // AI-generated title
+        "final_summary": "Identified 5 critical performance bottlenecks and provided refactoring recommendations.",  // Summary shown in listing
         "elapsed_seconds": 45.2,
         "completed_at": "2023-12-01T10:30:45.200Z"
       },
@@ -212,6 +220,7 @@ For long-running tasks, use async mode to get immediate response and monitor pro
         "id": "consensus_xyz789",
         "status": "processing",
         "tool": "consensus",
+        "title": "E-commerce Architecture Design",  // AI-generated title
         "progress": {
           "completed": 2,
           "total": 3,

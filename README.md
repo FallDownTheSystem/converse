@@ -39,6 +39,8 @@ claude mcp add converse \
   -e MISTRAL_API_KEY=your_key_here \
   -e DEEPSEEK_API_KEY=your_key_here \
   -e OPENROUTER_API_KEY=your_key_here \
+  -e ENABLE_RESPONSE_SUMMARIZATION=true \
+  -e SUMMARIZATION_MODEL=gpt-5 \
   -s user \
   npx converse-mcp-server
 ```
@@ -60,7 +62,9 @@ Add this configuration to your Claude Desktop settings:
         "ANTHROPIC_API_KEY": "your_key_here",
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here"
+        "OPENROUTER_API_KEY": "your_key_here",
+        "ENABLE_RESPONSE_SUMMARIZATION": "true",
+        "SUMMARIZATION_MODEL": "gpt-5"
       }
     }
   }
@@ -71,7 +75,12 @@ Add this configuration to your Claude Desktop settings:
 ```json
 {
   "command": "cmd",
-  "args": ["/c", "npx", "converse-mcp-server"]
+  "args": ["/c", "npx", "converse-mcp-server"],
+  "env": {
+    "ENABLE_RESPONSE_SUMMARIZATION": "true",
+    "SUMMARIZATION_MODEL": "gpt-5"
+    // ... add your API keys here
+  }
 }
 ```
 
@@ -82,15 +91,16 @@ Once installed, you can:
 - **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
 - **Get consensus**: Ask Claude to use the consensus tool when you need multiple perspectives
 - **Run tasks in background**: Use `async: true` for long-running operations that you can check later
-- **Monitor progress**: Use the check_status tool to monitor async operations
+- **Monitor progress**: Use the check_status tool to monitor async operations with AI-generated summaries
 - **Cancel jobs**: Use the cancel_job tool to stop running operations
+- **Smart summaries**: Get auto-generated titles and summaries for better context understanding
 - **Get help**: Type `/converse:help` in Claude
 
 ## 🛠️ Available Tools
 
 ### 1. Chat Tool
 
-Talk to any AI model with support for files, images, and conversation history. The tool automatically routes your request to the right provider based on the model name.
+Talk to any AI model with support for files, images, and conversation history. The tool automatically routes your request to the right provider based on the model name. When AI summarization is enabled, generates smart titles and summaries for better context understanding.
 
 ```javascript
 // Synchronous execution (default)
@@ -140,7 +150,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 
 ### 3. Check Status Tool
 
-Monitor the progress and retrieve results from asynchronous operations.
+Monitor the progress and retrieve results from asynchronous operations. When AI summarization is enabled, provides intelligent summaries of ongoing and completed tasks.
 
 ```javascript
 // Check status of a specific job
@@ -149,6 +159,7 @@ Monitor the progress and retrieve results from asynchronous operations.
 }
 
 // List recent jobs (shows last 10)
+// With summarization enabled, displays titles and final summaries
 {}
 
 // Get full conversation history for completed job
@@ -168,6 +179,29 @@ Cancel running asynchronous operations when needed.
   "continuation_id": "my-analysis-task"
 }
 ```
+
+## 🤖 AI Summarization Feature
+
+When enabled, the server automatically generates intelligent titles and summaries for better context understanding:
+
+- **Automatic Title Generation**: Creates descriptive titles (up to 60 chars) for each request
+- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response  
+- **Final Summaries**: Concise 1-2 sentence summaries of completed responses
+- **Smart Status Display**: Enhanced check_status tool shows titles and summaries in job listings
+- **Persistent Context**: Summaries are stored with async jobs for better progress tracking
+
+**Configuration**:
+```bash
+# Enable in your environment
+ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false  
+SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
+```
+
+**Benefits**:
+- Quickly understand what each async job is doing without reading full responses
+- Better context when reviewing multiple ongoing operations
+- Improved job management with at-a-glance understanding of task progress
+- Graceful fallback to text snippets when summarization is disabled or fails
 
 ## 📊 Supported Models
 
@@ -257,6 +291,10 @@ OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
 # Optional: Server configuration
 PORT=3157
 LOG_LEVEL=info
+
+# Optional: AI Summarization (Enhanced async status display)
+ENABLE_RESPONSE_SUMMARIZATION=true    # Enable AI-generated titles and summaries
+SUMMARIZATION_MODEL=gpt-5-nano        # Model to use for summarization (default: gpt-5-nano)
 
 # Optional: OpenRouter configuration
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
