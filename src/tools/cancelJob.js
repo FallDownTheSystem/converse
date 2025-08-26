@@ -135,15 +135,6 @@ export async function cancelJobTool(args, dependencies) {
 // Add metadata for MCP tool registration
 cancelJobTool.description = `Cancel a running async job by its continuation_id.
 
-This tool allows you to cancel jobs that are currently queued or running. It integrates with the JobRunner and provider-level AbortController support to gracefully terminate in-progress LLM requests.
-
-Key features:
-- Cancels jobs in 'queued' or 'running' status
-- Gracefully terminates streaming requests across all providers
-- Preserves partial results for consensus jobs cancelled mid-execution
-- Cleans up resources and updates job status to 'cancelled'
-- Returns detailed cancellation status and any available partial results
-
-Use this when you need to stop long-running operations or have changed your mind about a request.`;
+Terminates queued or running jobs with graceful cleanup. Preserves partial results when available.`;
 
 cancelJobTool.inputSchema = CANCEL_JOB_SCHEMA;
