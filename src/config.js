@@ -110,7 +110,7 @@ const CONFIG_SCHEMA = {
   // Summarization configuration
   summarization: {
     ENABLE_RESPONSE_SUMMARIZATION: { type: 'boolean', default: false, description: 'Enable AI-powered response summarization for async operations' },
-    SUMMARIZATION_MODEL: { type: 'string', default: 'gpt-5', description: 'Model to use for summarization tasks (title generation, streaming summaries, final summaries)' },
+    SUMMARIZATION_MODEL: { type: 'string', default: 'gpt-5-nano', description: 'Model to use for summarization tasks (title generation, streaming summaries, final summaries)' },
   },
 };
 

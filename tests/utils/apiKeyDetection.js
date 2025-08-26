@@ -39,6 +39,7 @@ const API_KEY_CONFIGS = {
   },
   GOOGLE: {
     envVar: 'GOOGLE_API_KEY',
+    alternateEnvVar: 'GEMINI_API_KEY',  // Also check GEMINI_API_KEY
     prefix: null,
     minLength: 20,
     providerName: 'Google'
@@ -83,7 +84,15 @@ function hasApiKey(provider) {
     return false;
   }
 
-  return isValidApiKey(config.envVar, config.prefix, config.minLength);
+  // Check primary key first
+  const hasPrimaryKey = isValidApiKey(config.envVar, config.prefix, config.minLength);
+  
+  // If primary key not found and alternate key is defined, check it
+  if (!hasPrimaryKey && config.alternateEnvVar) {
+    return isValidApiKey(config.alternateEnvVar, config.prefix, config.minLength);
+  }
+  
+  return hasPrimaryKey;
 }
 
 /**

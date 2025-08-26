@@ -136,7 +136,7 @@ module.exports = { fibonacci };`
         // Wait for first job to complete
         let job1Complete = false;
         // Use the conversation continuation ID from the original async response
-        const continuationId1 = step1Content.continuation_id;
+        continuationId1 = step1Content.continuation_id;
         let attempts = 0;
 
         console.log('[DEBUG] Starting to poll for job completion at', Date.now() - testStartTime, 'ms...');

@@ -14,9 +14,9 @@ import { mapModelToProvider } from '../tools/chat.js';
 
 const logger = createLogger('summarization');
 
-// Default fast models for summarization tasks
+// Default fast models for summarization tasks (prioritize GPT-5-nano for speed)
 const FAST_MODELS = {
-  openai: 'gpt-4o-mini',
+  openai: 'gpt-5-nano', // Fastest GPT-5 model with minimal reasoning
   google: 'gemini-2.5-flash',
   xai: 'grok-4',
   anthropic: 'claude-3-5-haiku-latest',
@@ -74,11 +74,13 @@ export class SummarizationService {
         }
       ];
 
-      // Invoke provider
+      // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
         temperature: SUMMARIZATION_TEMPERATURE,
-        maxTokens: 50,
+        maxTokens: 200, // Increased to prevent incomplete responses
+        reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
+        verbosity: 'low', // Keep outputs concise
         config: this.config
       });
 
@@ -132,11 +134,13 @@ export class SummarizationService {
         }
       ];
 
-      // Invoke provider
+      // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
         temperature: SUMMARIZATION_TEMPERATURE,
-        maxTokens: 150,
+        maxTokens: 300, // Increased to prevent incomplete responses
+        reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
+        verbosity: 'low', // Keep outputs concise
         config: this.config
       });
 
@@ -188,11 +192,13 @@ export class SummarizationService {
         }
       ];
 
-      // Invoke provider
+      // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
         temperature: SUMMARIZATION_TEMPERATURE,
-        maxTokens: 100,
+        maxTokens: 250, // Increased to prevent incomplete responses
+        reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
+        verbosity: 'low', // Keep outputs concise
         config: this.config
       });
 
@@ -235,8 +241,8 @@ export class SummarizationService {
       }
     }
 
-    // Fallback to default or configured model
-    const fallbackModel = this.configuredModel || 'gpt-4o-mini';
+    // Fallback to default or configured model (gpt-5-nano is fastest)
+    const fallbackModel = this.configuredModel || 'gpt-5-nano';
     debugLog(`Summarization: No fast model available, using ${fallbackModel} as fallback`);
     return fallbackModel;
   }

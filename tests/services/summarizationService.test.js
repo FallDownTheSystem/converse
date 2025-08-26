@@ -53,9 +53,11 @@ describe('SummarizationService', () => {
           expect.objectContaining({ role: 'user', content: 'Create a REST API endpoint for user authentication' })
         ]),
         expect.objectContaining({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-nano', // Updated to new default
           temperature: 0.3,
-          maxTokens: 50,
+          maxTokens: 200, // Increased tokens
+          reasoning_effort: 'minimal', // Added for speed
+          verbosity: 'low', // Added for conciseness
           config: mockConfig
         })
       );
@@ -76,7 +78,7 @@ describe('SummarizationService', () => {
 
       const title = await service.generateTitle('Test prompt');
 
-      // Note: substring(0, 50) includes position 50 with a space
+      // Note: trim() first, then substring(0, 50) gives exactly 50 chars (may end with space)
       expect(title).toBe('This is a very long title that definitely exceeds ');
       expect(title.length).toBe(50);
     });
