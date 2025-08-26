@@ -321,6 +321,31 @@ export class JobRunner extends EventEmitter {
         // Complete the job
         await this.asyncJobStore.complete(jobId, result);
 
+        // Write to FileCache if available
+        if (this.fileCache) {
+          try {
+            // Get the latest job state with all metadata
+            const finalJobState = await this.asyncJobStore.get(jobId);
+            await this.fileCache.writeSnapshot(jobId, {
+              jobId,
+              status: JOB_STATUS.COMPLETED,
+              tool: finalJobState.tool,
+              result,
+              completedAt: Date.now(),
+              createdAt: finalJobState.createdAt,
+              startedAt: finalJobState.startedAt,
+              provider: finalJobState.provider,
+              model: finalJobState.model,
+              title: finalJobState.title,
+              final_summary: finalJobState.final_summary
+            });
+            debugLog(`JobRunner: Written snapshot to FileCache for completed job ${jobId}`);
+          } catch (cacheError) {
+            debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+            // Continue even if cache write fails
+          }
+        }
+
         // Emit completion event through EventBus
         this.eventBus.emitJobCompleted(jobId, jobState.sessionId, result);
 
@@ -352,6 +377,30 @@ export class JobRunner extends EventEmitter {
             result: partialResult, // Preserve any partial results
           });
 
+          // Write to FileCache if available
+          if (this.fileCache) {
+            try {
+              // Get the latest job state with all metadata
+              const cancelledJobState = await this.asyncJobStore.get(jobId);
+              await this.fileCache.writeSnapshot(jobId, {
+                jobId,
+                status: JOB_STATUS.CANCELLED,
+                tool: cancelledJobState.tool,
+                result: partialResult,
+                cancelledAt: Date.now(),
+                createdAt: cancelledJobState.createdAt,
+                startedAt: cancelledJobState.startedAt,
+                provider: cancelledJobState.provider,
+                model: cancelledJobState.model,
+                title: cancelledJobState.title
+              });
+              debugLog(`JobRunner: Written snapshot to FileCache for cancelled job ${jobId}`);
+            } catch (cacheError) {
+              debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+              // Continue even if cache write fails
+            }
+          }
+
           // Emit cancellation event through EventBus
           this.eventBus.emitJobCancelled(jobId, jobState.sessionId, {
             reason: 'Job aborted during execution',
@@ -372,6 +421,30 @@ export class JobRunner extends EventEmitter {
 
         // Handle execution error
         await this.asyncJobStore.fail(jobId, executionError);
+
+        // Write to FileCache if available
+        if (this.fileCache) {
+          try {
+            // Get the latest job state with all metadata
+            const failedJobState = await this.asyncJobStore.get(jobId);
+            await this.fileCache.writeSnapshot(jobId, {
+              jobId,
+              status: JOB_STATUS.FAILED,
+              tool: failedJobState.tool,
+              error: executionError.message || executionError,
+              failedAt: Date.now(),
+              createdAt: failedJobState.createdAt,
+              startedAt: failedJobState.startedAt,
+              provider: failedJobState.provider,
+              model: failedJobState.model,
+              title: failedJobState.title
+            });
+            debugLog(`JobRunner: Written snapshot to FileCache for failed job ${jobId}`);
+          } catch (cacheError) {
+            debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+            // Continue even if cache write fails
+          }
+        }
 
         // Emit failure event through EventBus
         this.eventBus.emitJobFailed(jobId, jobState.sessionId, executionError);

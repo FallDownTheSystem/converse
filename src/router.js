@@ -15,6 +15,7 @@ import { helpResourceHandler, helpResourceMetadata, listResources } from './reso
 import { processUnifiedContext } from './utils/contextProcessor.js';
 import { getAsyncJobStore } from './async/asyncJobStore.js';
 import { getJobRunner } from './async/jobRunner.js';
+import { getFileCache } from './async/fileCache.js';
 import providerStreamNormalizer from './async/providerStreamNormalizer.js';
 import { createLogger, startTimer } from './utils/logger.js';
 import { debugError } from './utils/console.js';
@@ -101,8 +102,10 @@ async function createDependencies(config, context = {}) {
 
     // Initialize async infrastructure
     const asyncJobStore = getAsyncJobStore();
+    const fileCache = getFileCache(); // Initialize FileCache
     const jobRunner = getJobRunner({
       asyncJobStore,
+      fileCache // Pass FileCache to JobRunner
     });
 
     // Validate that we have the necessary dependencies
@@ -148,6 +151,7 @@ async function createDependencies(config, context = {}) {
       contextProcessor: { processUnifiedContext },
       asyncJobStore,
       jobRunner,
+      fileCache, // Include FileCache in dependencies
       providerStreamNormalizer,
       sessionId: 'local-user', // Always use local-user for single-user server
       router: {

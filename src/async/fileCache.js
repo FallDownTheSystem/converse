@@ -382,6 +382,91 @@ export class FileCache extends FileCacheInterface {
   }
 
   /**
+   * List recent completed jobs from cache
+   * @param {object} options - Query options
+   * @param {number} options.limit - Maximum number of jobs to return (default: 10)
+   * @param {number} options.daysBack - Number of days to look back (default: 3)
+   * @returns {Promise<Array>} Array of job snapshots
+   */
+  async listRecentJobs(options = {}) {
+    const { limit = 10, daysBack = 3 } = options;
+    const jobs = [];
+
+    try {
+      // Check if base directory exists
+      try {
+        await fs.access(this.baseDir);
+      } catch {
+        // Base directory doesn't exist, return empty array
+        return jobs;
+      }
+
+      // Get directories in base directory
+      const entries = await fs.readdir(this.baseDir, { withFileTypes: true });
+      const dateDirs = entries
+        .filter(entry => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
+        .sort((a, b) => b.name.localeCompare(a.name)) // Most recent first
+        .slice(0, daysBack); // Only check specified days back
+
+      // Iterate through date directories
+      for (const dateDir of dateDirs) {
+        if (jobs.length >= limit) break;
+
+        const dateDirPath = path.join(this.baseDir, dateDir.name);
+
+        try {
+          // Get all job directories in this date
+          const jobEntries = await fs.readdir(dateDirPath, { withFileTypes: true });
+          const jobDirs = jobEntries
+            .filter(entry => entry.isDirectory())
+            .sort((a, b) => {
+              // Try to sort by modification time if possible
+              try {
+                const aPath = path.join(dateDirPath, a.name);
+                const bPath = path.join(dateDirPath, b.name);
+                const aStat = fs.statSync(aPath);
+                const bStat = fs.statSync(bPath);
+                return bStat.mtime.getTime() - aStat.mtime.getTime();
+              } catch {
+                return 0;
+              }
+            });
+
+          // Check each job directory for a result.json
+          for (const jobDir of jobDirs) {
+            if (jobs.length >= limit) break;
+
+            const snapshotPath = path.join(dateDirPath, jobDir.name, 'result.json');
+
+            try {
+              const content = await fs.readFile(snapshotPath, 'utf8');
+              const snapshot = JSON.parse(content);
+
+              // Add the job to our list if it's completed
+              if (snapshot && (snapshot.status === 'completed' || snapshot.status === 'failed' || snapshot.status === 'cancelled')) {
+                jobs.push(snapshot);
+              }
+            } catch {
+              // Skip jobs without valid snapshots
+              continue;
+            }
+          }
+        } catch (error) {
+          debugError('FileCache', `Failed to read date directory ${dateDir.name}:`, error);
+          // Continue with other directories
+        }
+      }
+
+      debugLog('FileCache', `Listed ${jobs.length} recent jobs from cache`);
+      return jobs;
+    } catch (error) {
+      debugError('FileCache', 'Failed to list recent jobs:', error);
+      // Return whatever we've collected so far
+      return jobs;
+    }
+  }
+
+  /**
    * Clean up old cache directories
    * @param {number} maxAgeMs - Maximum age in milliseconds (default: 3 days)
    * @returns {Promise<number>} Number of directories cleaned up

@@ -191,12 +191,62 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
     }
 
     // If we haven't reached 10 jobs, try to get more from FileCache
-    // Note: This is a simplified approach - in production, you might want
-    // to implement a more sophisticated indexing system for file-based jobs
-    if (jobs.length < 10) {
-      debugLog('checkStatus', 'Checking FileCache for additional completed jobs');
-      // For now, we'll just note that FileCache lookup would happen here
-      // A production implementation might maintain an index of jobs by session
+    if (jobs.length < 10 && fileCache) {
+      debugLog('checkStatus', `Have ${jobs.length} jobs from memory, checking FileCache for additional completed jobs`);
+
+      try {
+        // Get recent jobs from FileCache
+        const remainingLimit = 10 - jobs.length;
+        const cachedJobs = await fileCache.listRecentJobs({
+          limit: remainingLimit,
+          daysBack: 3
+        });
+
+        debugLog('checkStatus', `Found ${cachedJobs.length} additional jobs in FileCache`);
+
+        // Format and add cached jobs to the list
+        for (const cachedJob of cachedJobs) {
+          // Check if this job is already in our list (avoid duplicates)
+          const isDuplicate = jobs.some(j => j.continuation_id === cachedJob.jobId);
+          if (!isDuplicate) {
+            // Format the cached job to match our standard format
+            const formattedJob = formatJobStatus({
+              jobId: cachedJob.jobId,
+              status: cachedJob.status || 'completed',
+              tool: cachedJob.tool || 'unknown',
+              createdAt: cachedJob.createdAt || cachedJob.startedAt,
+              updatedAt: cachedJob.completedAt || cachedJob.updatedAt || Date.now(),
+              overall: {
+                result: cachedJob.result || cachedJob,
+                progress: 100,
+                startedAt: cachedJob.startedAt,
+                endedAt: cachedJob.completedAt
+              },
+              provider: cachedJob.provider,
+              model: cachedJob.model,
+              title: cachedJob.title,
+              final_summary: cachedJob.final_summary
+            }, options);
+
+            jobs.push(formattedJob);
+
+            // Update summary
+            summary.total_jobs++;
+            if (cachedJob.status === 'completed') {
+              summary.completed_jobs++;
+            } else if (cachedJob.status === 'failed') {
+              summary.failed_jobs++;
+            } else if (cachedJob.status === 'cancelled') {
+              summary.cancelled_jobs++;
+            }
+
+            if (jobs.length >= 10) break;
+          }
+        }
+      } catch (error) {
+        debugError('checkStatus', 'Error retrieving jobs from FileCache:', error);
+        // Continue without cached jobs if there's an error
+      }
     }
 
     return {
