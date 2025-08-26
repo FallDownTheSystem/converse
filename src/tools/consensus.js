@@ -551,7 +551,7 @@ Please provide your refined response:`;
       finalContent = limitedResult.content + failureInfo;
     }
 
-    // Prepend status line and continuation_id line
+    // Prepend status line and continuation_id line when appropriate
     finalContent = statusLine + continuationIdLine + finalContent;
 
     // Return with continuation at top level for test compatibility

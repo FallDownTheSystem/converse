@@ -19,8 +19,15 @@ import { JOB_STATUS } from '../async/asyncJobStore.js';
 export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
   const parts = [];
 
-  // Summary line
-  parts.push(`📊 Jobs Summary: ${jobsList.summary.active_jobs} active, ${jobsList.summary.completed_jobs} completed, ${jobsList.summary.failed_jobs} failed`);
+  // Summary line - include cancelled jobs if any
+  let summaryParts = [];
+  if (jobsList.summary.active_jobs > 0) summaryParts.push(`${jobsList.summary.active_jobs} active`);
+  if (jobsList.summary.completed_jobs > 0) summaryParts.push(`${jobsList.summary.completed_jobs} completed`);
+  if (jobsList.summary.failed_jobs > 0) summaryParts.push(`${jobsList.summary.failed_jobs} failed`);
+  if (jobsList.summary.cancelled_jobs > 0) summaryParts.push(`${jobsList.summary.cancelled_jobs} cancelled`);
+  
+  const summaryStr = summaryParts.length > 0 ? summaryParts.join(', ') : '0 jobs';
+  parts.push(`📊 Jobs Summary: ${summaryStr}`);
 
   if (jobsList.jobs.length === 0) {
     parts.push('No jobs found.');

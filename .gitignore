@@ -133,3 +133,4 @@ logs/
 .claude
 pnpm-lock.yaml
 pnpm-workspace.yaml
+cache

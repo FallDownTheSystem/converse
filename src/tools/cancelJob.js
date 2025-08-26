@@ -35,7 +35,6 @@ const CANCEL_JOB_SCHEMA = {
  * @returns {Promise<object>} MCP tool response
  */
 export async function cancelJobTool(args, dependencies) {
-  const startTime = Date.now();
   const { continuation_id } = args;
 
   // Validate dependencies
@@ -49,7 +48,7 @@ export async function cancelJobTool(args, dependencies) {
     return createToolError('Service not available: AsyncJobStore not configured');
   }
 
-  const { jobRunner, asyncJobStore } = dependencies;
+  const { jobRunner, asyncJobStore, config, providers } = dependencies;
 
   try {
     // Validate continuation_id
@@ -95,18 +94,63 @@ export async function cancelJobTool(args, dependencies) {
       // Get updated job state to return current information
       const updatedJobState = await asyncJobStore.get(continuation_id);
 
-      const executionTime = (Date.now() - startTime) / 1000;
-      const metadataDisplay = `⏱️ ${executionTime.toFixed(2)}s | 🚫 Job cancelled`;
+      // Calculate actual elapsed time from job creation
+      const elapsedMs = Date.now() - (updatedJobState?.createdAt || jobState.createdAt || Date.now());
+      const elapsedSeconds = elapsedMs / 1000;
+      
+      // Format elapsed time
+      let timeStr;
+      if (elapsedSeconds >= 60) {
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = Math.round(elapsedSeconds % 60);
+        timeStr = `${minutes}m${seconds}s`;
+      } else {
+        timeStr = `${elapsedSeconds.toFixed(1)}s`;
+      }
+
+      // Build human-readable response parts
+      const parts = [];
+      
+      // Status line with proper timing
+      const statusEmoji = '⛔';
+      const startTime = updatedJobState?.createdAt ? new Date(updatedJobState.createdAt).toLocaleString() : 'unknown';
+      
+      let statusLine = `${statusEmoji} CANCELLED | ${updatedJobState?.tool?.toUpperCase() || jobState.tool?.toUpperCase() || 'UNKNOWN'} | ${continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
+      
+      // Add title if available
+      if (updatedJobState?.title) {
+        statusLine += ` | "${updatedJobState.title}"`;
+      }
+      
+      parts.push(statusLine);
+      
+      // Add cancellation info
+      parts.push(`Cancelled at: ${new Date().toLocaleString()}`);
+      parts.push(`Previous status: ${jobState.status}`);
+      
+      // Add partial results info if available
+      if (updatedJobState?.accumulated_content) {
+        const preview = updatedJobState.accumulated_content.length > 200
+          ? updatedJobState.accumulated_content.substring(0, 200) + '...'
+          : updatedJobState.accumulated_content;
+        parts.push(`Partial results available: "${preview}"`);
+      } else if (updatedJobState?.result) {
+        parts.push('Partial results available in job state');
+      }
+      
+      // Add continuation_id for easy reference
+      parts.push(`continuation_id: ${continuation_id}`);
 
       return createToolResponse({
-        status: 'cancelled',
-        message: `Job ${continuation_id} has been successfully cancelled.`,
-        continuation_id,
-        cancelled_at: new Date().toISOString(),
-        previous_status: jobState.status,
-        partial_results: updatedJobState?.result || null,
-        metadata_display: metadataDisplay,
-        has_partial_results: !!(updatedJobState?.result),
+        content: parts.join('\n'),
+        metadata: {
+          status: 'cancelled',
+          continuation_id,
+          cancelled_at: new Date().toISOString(),
+          previous_status: jobState.status,
+          elapsed_seconds: elapsedSeconds,
+          has_partial_results: !!(updatedJobState?.result || updatedJobState?.accumulated_content)
+        }
       });
     } else {
       debugLog(`CancelJob: Failed to cancel job ${continuation_id} - may have completed`);

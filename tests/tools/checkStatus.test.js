@@ -265,7 +265,7 @@ describe('Check Status Tool', () => {
 
       // Parse human-readable job list
       const text = result.content[0].text;
-      expect(text).toContain('Jobs Summary: 0 active, 0 completed, 0 failed');
+      expect(text).toContain('Jobs Summary: 0 jobs');
       expect(text).toContain('No jobs found');
     });
   });

@@ -172,10 +172,9 @@ describe('Cancel Job Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"status": "cancelled"');
-      expect(result.content[0].text).toContain('successfully cancelled');
-      expect(result.content[0].text).toContain('"previous_status": "queued"');
-      expect(result.content[0].text).toContain('"has_partial_results": false');
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.content[0].text).toContain('Previous status: queued');
+      expect(result.content[0].text).toContain('continuation_id: queued-job');
 
       expect(mockJobRunner.cancel).toHaveBeenCalledWith('queued-job');
     });
@@ -198,8 +197,9 @@ describe('Cancel Job Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"status": "cancelled"');
-      expect(result.content[0].text).toContain('"previous_status": "running"');
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.content[0].text).toContain('Previous status: running');
+      expect(result.content[0].text).toContain('continuation_id: running-job');
       expect(mockJobRunner.cancel).toHaveBeenCalledWith('running-job');
     });
   });
@@ -230,11 +230,35 @@ describe('Cancel Job Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"status": "cancelled"');
-      expect(result.content[0].text).toContain('"has_partial_results": true');
-      expect(result.content[0].text).toContain('Partial response from GPT-4');
-      expect(result.content[0].text).toContain('Partial response from Claude');
-      expect(result.content[0].text).toContain('partial');
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.content[0].text).toContain('Partial results available');
+      expect(result.metadata.has_partial_results).toBe(true);
+    });
+    
+    it('should preserve accumulated_content when available', async () => {
+      const jobState = { status: 'running', createdAt: Date.now() - 5000 };
+      const updatedJobState = {
+        status: 'cancelled',
+        tool: 'chat',
+        createdAt: jobState.createdAt,
+        accumulated_content: 'This is the partial streamed response that was accumulated before cancellation...',
+        result: null
+      };
+
+      mockAsyncJobStore.get
+        .mockResolvedValueOnce(jobState)
+        .mockResolvedValueOnce(updatedJobState);
+      mockJobRunner.cancel.mockResolvedValue(true);
+
+      const result = await cancelJobTool(
+        { continuation_id: 'job-with-accumulated-content' },
+        dependencies
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.content[0].text).toContain('Partial results available: "This is the partial streamed response');
+      expect(result.metadata.has_partial_results).toBe(true);
     });
 
     it('should handle null partial results', async () => {
@@ -255,8 +279,8 @@ describe('Cancel Job Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"partial_results": null');
-      expect(result.content[0].text).toContain('"has_partial_results": false');
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.metadata.has_partial_results).toBe(false);
     });
   });
 
@@ -348,10 +372,10 @@ describe('Cancel Job Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('⏱️');
-      expect(result.content[0].text).toContain('🚫 Job cancelled');
-      expect(result.content[0].text).toContain('"cancelled_at"');
-      expect(result.content[0].text).toContain('"continuation_id": "metadata-job"');
+      expect(result.content[0].text).toContain('⛔ CANCELLED');
+      expect(result.content[0].text).toContain('elapsed');
+      expect(result.content[0].text).toContain('Cancelled at:');
+      expect(result.content[0].text).toContain('continuation_id: metadata-job');
     });
 
     it('should return proper MCP response structure', async () => {
@@ -380,7 +404,7 @@ describe('Cancel Job Tool', () => {
     it('should have correct tool description', () => {
       expect(cancelJobTool.description).toContain('Cancel a running async job');
       expect(cancelJobTool.description).toContain('continuation_id');
-      expect(cancelJobTool.description).toContain('AbortController');
+      expect(cancelJobTool.description).toContain('graceful');
       expect(cancelJobTool.description).toContain('partial results');
     });
 
