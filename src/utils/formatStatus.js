@@ -163,7 +163,16 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
 
   parts.push(statusLine);
 
-  // Generate streaming summary for running jobs if accumulated content available
+  // Show reasoning summary for running jobs from OpenAI reasoning models
+  if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.reasoning_summary) {
+    parts.push(`Thinking: ${jobStatus.reasoning_summary}`);
+  } else if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.elapsed_seconds > 5) {
+    // Fallback thinking status for jobs without reasoning summaries
+    const thinkingTime = Math.floor(jobStatus.elapsed_seconds);
+    parts.push(`Thinking: Model is processing your request (${thinkingTime}s elapsed)`);
+  }
+
+  // Generate streaming summary for running jobs if accumulated content available  
   if (jobStatus.status === 'running' && jobStatus.accumulated_content) {
     try {
       if (dependencies.config && dependencies.providers) {
@@ -282,7 +291,8 @@ export function formatJobStatus(job, options = {}) {
     // Include new metadata fields if present
     accumulated_content: job.accumulated_content || null,
     title: job.title || null,
-    final_summary: job.final_summary || null
+    final_summary: job.final_summary || null,
+    reasoning_summary: job.reasoning_summary || null
   };
 
   // For consensus, gather provider previews

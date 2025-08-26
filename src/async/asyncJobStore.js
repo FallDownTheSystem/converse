@@ -202,6 +202,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         accumulated_content: null, // Full streaming content
         title: null, // Generated request title
         final_summary: null, // Completed job summary
+        reasoning_summary: null, // OpenAI reasoning summary
         ...options, // Allow additional options
       };
 
@@ -330,8 +331,12 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
         job.final_summary = updates.final_summary;
       }
 
+      if (updates.reasoning_summary !== undefined) {
+        job.reasoning_summary = updates.reasoning_summary;
+      }
+
       // Apply any other updates as direct properties on the job
-      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq', 'accumulated_content', 'title', 'final_summary'];
+      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq', 'accumulated_content', 'title', 'final_summary', 'reasoning_summary'];
       Object.entries(updates).forEach(([key, value]) => {
         if (!reservedFields.includes(key)) {
           job[key] = value;

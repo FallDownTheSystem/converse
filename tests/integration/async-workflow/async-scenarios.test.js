@@ -165,7 +165,7 @@ module.exports = { fibonacci };`
 
             // Parse response
             const statusText = statusResult.content[0].text;
-            console.log('[DEBUG] Status response (first 200 chars):', statusText.substring(0, 200));
+            console.log('[DEBUG] Status response:', statusText);
 
             let status;
             try {
@@ -271,7 +271,7 @@ module.exports = { fibonacci };`
 
             // Parse response, handling potential metadata display
             const statusText = statusResult.content[0].text;
-            console.log('[DEBUG] Step 2 status response (first 200 chars):', statusText.substring(0, 200));
+            console.log('[DEBUG] Step 2 status response:', statusText);
             const status = parseStatusResponse(statusText);
             console.log('[DEBUG] Step 2 parsed status:', status.status, 'at', Date.now() - testStartTime, 'ms');
 

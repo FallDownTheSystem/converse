@@ -106,6 +106,7 @@ export function parseStatusResponse(text) {
   let accumulated_content = null;
   const streamingLine = lines.find(l => l.startsWith('Streaming: "'));
   const summaryLine = lines.find(l => l.startsWith('Summary: ') && !l.startsWith('Summary: ${'));
+  const statusSummaryLine = lines.find(l => l.startsWith('Status: '));
 
   if (streamingLine) {
     streamingPreview = streamingLine.match(/Streaming: "([^"]+)"/)?.[1] || null;
@@ -113,6 +114,9 @@ export function parseStatusResponse(text) {
   } else if (summaryLine) {
     // Extract summary text (could be streaming summary or final summary)
     accumulated_content = summaryLine.substring('Summary: '.length).trim();
+  } else if (statusSummaryLine) {
+    // Extract status text (streaming summary from summarization service)
+    accumulated_content = statusSummaryLine.substring('Status: '.length).trim();
   }
 
   // Extract final summary for completed jobs

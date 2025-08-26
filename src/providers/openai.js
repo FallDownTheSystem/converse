@@ -389,7 +389,10 @@ export const openaiProvider = {
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
-        requestPayload.reasoning = { effort: reasoning_effort };
+        requestPayload.reasoning = { 
+          effort: reasoning_effort,
+          summary: "auto" // Enable reasoning summaries
+        };
       }
 
       // Add verbosity for GPT-5 models
@@ -479,12 +482,45 @@ export const openaiProvider = {
 
       if (shouldUseResponsesAPI) {
         // Handle Responses API response format
-        if (!response.output_text) {
-          throw new OpenAIProviderError('No output_text in Responses API response', 'NO_RESPONSE_CONTENT');
+        let reasoningSummary = null;
+        
+        if (response.output) {
+          // New format with output array (includes reasoning summaries)
+          const messageOutput = response.output.find(item => item.type === 'message');
+          const reasoningOutput = response.output.find(item => item.type === 'reasoning');
+          
+          if (!messageOutput || !messageOutput.content) {
+            throw new OpenAIProviderError('No message content in Responses API response', 'NO_RESPONSE_CONTENT');
+          }
+          
+          // Extract content from message output
+          const textContent = messageOutput.content.find(item => item.type === 'output_text');
+          if (!textContent) {
+            throw new OpenAIProviderError('No text content in message output', 'NO_RESPONSE_CONTENT');
+          }
+          content = textContent.text;
+          
+          // Extract reasoning summary if available
+          if (reasoningOutput && reasoningOutput.summary) {
+            const summaryText = reasoningOutput.summary.find(item => item.type === 'summary_text');
+            if (summaryText) {
+              reasoningSummary = summaryText.text;
+            }
+          }
+        } else if (response.output_text) {
+          // Legacy format
+          content = response.output_text;
+        } else {
+          throw new OpenAIProviderError('No output in Responses API response', 'NO_RESPONSE_CONTENT');
         }
-        content = response.output_text;
+        
         stopReason = response.status || 'stop';
         usage = response.usage || {};
+        
+        // Store reasoning summary in metadata
+        if (reasoningSummary) {
+          usage.reasoning_summary = reasoningSummary;
+        }
       } else {
         // Handle Chat Completions API response format
         const choice = response.choices[0];

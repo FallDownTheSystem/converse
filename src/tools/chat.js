@@ -727,6 +727,18 @@ async function executeChatWithStreaming(args, dependencies, context) {
     throw new Error('Provider returned invalid response');
   }
 
+  // Store reasoning summary from OpenAI if available
+  if (response.metadata?.usage?.reasoning_summary && context && context.updateJob) {
+    try {
+      await context.updateJob({
+        reasoning_summary: response.metadata.usage.reasoning_summary
+      });
+      debugLog(`Chat: Stored reasoning summary`);
+    } catch (error) {
+      debugError('Chat: Failed to store reasoning summary', error);
+    }
+  }
+
   // Generate final summary for responses longer than 100 characters (non-blocking)
   let finalSummary = null;
   if (response.content && response.content.length > 100) {
