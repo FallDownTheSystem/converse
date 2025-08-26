@@ -64,14 +64,11 @@ describe('Async Workflow Integration Tests', () => {
         // The response should contain the message and job/continuation info
         expect(asyncResult.content[0].text).toContain('Chat request submitted for background processing');
         expect(asyncResult.continuation).toBeDefined();
-        expect(asyncResult.continuation.job_id).toBeDefined();
-        expect(asyncResult.continuation.job_id).toContain('job_');
-        expect(asyncResult.continuation.continuation_id).toBeDefined(); 
-        expect(asyncResult.continuation.continuation_id).toContain('conv_');
+        expect(asyncResult.continuation.id).toBeDefined();
+        expect(asyncResult.continuation.id).toContain('conv_');
         expect(asyncResult.continuation.status).toBe('processing');
 
-        logger.info('[async-integration] Received job_id:', asyncResult.continuation.job_id);
-        logger.info('[async-integration] Received continuation_id:', asyncResult.continuation.continuation_id);
+        logger.info('[async-integration] Received continuation_id:', asyncResult.continuation.id);
       });
     }, 20000);
 
@@ -89,7 +86,7 @@ describe('Async Workflow Integration Tests', () => {
         });
 
         // Use the job ID for status checks
-        const jobId = asyncResult.continuation.job_id;
+        const jobId = asyncResult.continuation.id;
         
         logger.info('[async-integration] Job submitted:', jobId);
 
@@ -119,9 +116,11 @@ describe('Async Workflow Integration Tests', () => {
             completed = true;
             finalResult = statusContent;
           } else if (statusContent.status === 'failed') {
-            const errorMsg = typeof statusContent.error === 'object' 
-              ? (statusContent.error.message || JSON.stringify(statusContent.error))
-              : statusContent.error;
+            const errorMsg = statusContent.error 
+              ? (typeof statusContent.error === 'object' 
+                ? (statusContent.error.message || JSON.stringify(statusContent.error))
+                : statusContent.error)
+              : 'Unknown error';
             throw new Error(`Job failed: ${errorMsg}`);
           }
 
@@ -297,7 +296,7 @@ describe('Async Workflow Integration Tests', () => {
 
         // Get the job ID from the response for cancellation
         expect(asyncResult.continuation).toBeDefined();
-        const jobId = asyncResult.continuation.job_id;
+        const jobId = asyncResult.continuation.id;
 
         // Wait briefly then cancel
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -449,7 +448,7 @@ describe('Async Workflow Integration Tests', () => {
             })
           ]);
 
-          const jobIds = jobs.map(j => j.continuation ? j.continuation.job_id : null).filter(id => id !== null);
+          const jobIds = jobs.map(j => j.continuation ? j.continuation.id : null).filter(id => id !== null);
           
           expect(jobIds).toHaveLength(3);
           expect(new Set(jobIds).size).toBe(3); // All IDs should be unique
