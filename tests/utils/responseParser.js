@@ -14,7 +14,11 @@ export function parseStatusResponse(text) {
   const lines = text.split('\n');
   const statusLine = lines[0];
 
-  // Parse status line: "🔄 RUNNING | CHAT | job_test123 | 5.0s elapsed | provider/model"
+  // Parse status line - format varies with position of title and provider/model
+  // Examples:
+  // "🔄 RUNNING | CHAT | job_test123 | 1/1 | Started: date | 5.0s elapsed | provider/model"
+  // "🔄 RUNNING | CHAT | job_test123 | 1/1 | Started: date | 5.0s elapsed | "title" | provider/model"
+  // "✅ COMPLETED | CHAT | job_test123 | 1/1 | Started: date | 5.0s elapsed | "title" | provider/model"
   const parts = statusLine.split(' | ');
   const statusWithEmoji = parts[0] || '';
   const statusParts = statusWithEmoji.split(' ');
@@ -22,22 +26,49 @@ export function parseStatusResponse(text) {
   const tool = parts[1]?.toLowerCase() || '';
   const continuationId = parts[2] || '';
 
-  // Extract time value
-  const timeStr = parts[3] || '';
-  const timeMatch = timeStr.match(/([\d.]+)/);
-  const elapsedSeconds = timeMatch ? parseFloat(timeMatch[1]) : 0;
+  // Find elapsed time part (contains "elapsed")
+  let elapsedSeconds = 0;
+  let elapsedIndex = -1;
+  for (let i = 3; i < parts.length; i++) {
+    if (parts[i] && parts[i].includes('elapsed')) {
+      const timeMatch = parts[i].match(/([\d.]+)([ms])/);
+      if (timeMatch) {
+        elapsedSeconds = timeMatch[2] === 'm' 
+          ? parseFloat(timeMatch[1]) * 60 
+          : parseFloat(timeMatch[1]);
+      }
+      elapsedIndex = i;
+      break;
+    }
+  }
 
-  // Extract provider/model if present
+  // Extract title and provider/model based on what comes after elapsed time
+  let title = null;
   let provider = null;
   let model = null;
-  if (parts[4] && !parts[4].includes('/')) {
-    // Consensus progress format: "2/3 refined"
-    const consensusProgress = parts[4];
-  } else if (parts[4]) {
-    // Provider/model format: "openai/gpt-5"
-    const providerModel = parts[4].split('/');
-    provider = providerModel[0] || null;
-    model = providerModel[1] || null;
+  
+  if (elapsedIndex >= 0 && elapsedIndex < parts.length - 1) {
+    const nextPart = parts[elapsedIndex + 1];
+    
+    // Check if next part is a quoted title
+    if (nextPart && nextPart.startsWith('"') && nextPart.endsWith('"')) {
+      title = nextPart.slice(1, -1);
+      
+      // Provider/model should be the next part after title
+      if (elapsedIndex + 2 < parts.length) {
+        const providerPart = parts[elapsedIndex + 2];
+        if (providerPart && providerPart.includes('/')) {
+          const [p, m] = providerPart.split('/');
+          provider = p;
+          model = m;
+        }
+      }
+    } else if (nextPart && nextPart.includes('/')) {
+      // No title, just provider/model
+      const [p, m] = nextPart.split('/');
+      provider = p;
+      model = m;
+    }
   }
 
   // Check for completion response - new format shows full content after status line and continuation_id
@@ -70,11 +101,24 @@ export function parseStatusResponse(text) {
     error = errorLine.substring('Error: '.length);
   }
 
-  // Check for streaming preview
+  // Check for streaming preview or summary
   let streamingPreview = null;
+  let accumulated_content = null;
   const streamingLine = lines.find(l => l.startsWith('Streaming: "'));
+  const summaryLine = lines.find(l => l.startsWith('Summary: ') && !l.startsWith('Summary: ${'));
+  
   if (streamingLine) {
     streamingPreview = streamingLine.match(/Streaming: "([^"]+)"/)?.[1] || null;
+    accumulated_content = streamingPreview; // For running jobs, this is the preview
+  } else if (summaryLine) {
+    // Extract summary text (could be streaming summary or final summary)
+    accumulated_content = summaryLine.substring('Summary: '.length).trim();
+  }
+  
+  // Extract final summary for completed jobs
+  let final_summary = null;
+  if (status === 'completed' && summaryLine) {
+    final_summary = summaryLine.substring('Summary: '.length).trim();
   }
 
   return {
@@ -86,7 +130,9 @@ export function parseStatusResponse(text) {
     model,
     result,
     error,
-    accumulated_content: streamingPreview
+    accumulated_content,
+    title,
+    final_summary
   };
 }
 

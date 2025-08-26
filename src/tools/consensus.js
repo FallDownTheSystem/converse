@@ -89,9 +89,9 @@ export async function consensusTool(args, dependencies) {
           }
         );
 
-        // Return immediate response with standard message
+        // Return immediate response with standard message and continuation_id
         return createToolResponse({
-          content: `Consensus request submitted for background processing. Job ID: ${bgContinuationId}`,
+          content: `Consensus request submitted for background processing. Job ID: ${bgContinuationId}\ncontinuation_id: ${bgContinuationId}`,
           continuation: {
             id: bgContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
@@ -484,8 +484,11 @@ Please provide your refined response:`;
     const finalCount = refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : initialPhase.successful.length;
     const totalCount = models.length;
     const statusLine = config.environment?.nodeEnv !== 'test'
-      ? `✅ COMPLETED | CONSENSUS | ${continuationId} | ${consensusExecutionTime.toFixed(1)}s elapsed | ${finalCount}/${totalCount} succeeded | ${modelsList}\n\n`
+      ? `✅ COMPLETED | CONSENSUS | ${continuationId} | ${consensusExecutionTime.toFixed(1)}s elapsed | ${finalCount}/${totalCount} succeeded | ${modelsList}\n`
       : '';
+    
+    // Always include continuation_id line for clarity
+    const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
 
     // Build result object keeping backward compatibility but removing rawResponse
     const result = {
@@ -522,10 +525,8 @@ Please provide your refined response:`;
       finalContent = limitedResult.content + failureInfo;
     }
 
-    // Prepend status line if not in test environment
-    if (config.environment?.nodeEnv !== 'test') {
-      finalContent = statusLine + finalContent;
-    }
+    // Prepend status line and continuation_id line
+    finalContent = statusLine + continuationIdLine + finalContent;
 
     // Return with continuation at top level for test compatibility
     return createToolResponse({

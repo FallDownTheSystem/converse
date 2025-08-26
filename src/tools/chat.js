@@ -87,9 +87,9 @@ export async function chatTool(args, dependencies) {
           }
         );
 
-        // Return immediate response with standard message
+        // Return immediate response with standard message and continuation_id
         return createToolResponse({
-          content: `Chat request submitted for background processing. Job ID: ${conversationContinuationId}`,
+          content: `Chat request submitted for background processing. Job ID: ${conversationContinuationId}\ncontinuation_id: ${conversationContinuationId}`,
           continuation: {
             id: conversationContinuationId,  // Use continuation_id as the primary ID
             status: 'processing'
@@ -288,11 +288,14 @@ export async function chatTool(args, dependencies) {
 
     // Create unified status line (similar to async status display)
     const statusLine = config.environment?.nodeEnv !== 'test'
-      ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n\n`
+      ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n`
       : '';
+    
+    // Always include continuation_id line for clarity
+    const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
 
     const result = {
-      content: statusLine + response.content,
+      content: statusLine + continuationIdLine + response.content,
       continuation: {
         id: continuationId,
         provider: providerName,

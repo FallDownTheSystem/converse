@@ -665,8 +665,11 @@ describe('Consensus Tool Unit Tests', () => {
 
       const result = await consensusTool(args, mockDependencies);
 
-      expect(() => JSON.parse(result.content[0].text)).not.toThrow();
-
+      // The response now includes continuation_id line before JSON
+      const text = result.content[0].text;
+      expect(text).toContain('continuation_id:');
+      
+      // Parse JSON using the helper that handles the continuation_id line
       const consensusResult = parseJsonResponse(result.content[0].text);
       expect(consensusResult).toHaveProperty('status');
       expect(consensusResult).toHaveProperty('models_consulted');

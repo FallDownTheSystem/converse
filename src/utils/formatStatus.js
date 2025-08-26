@@ -162,8 +162,11 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       if (dependencies.config && dependencies.providers) {
         const summarizationService = new SummarizationService(dependencies.providers, dependencies.config);
 
-        // Use accumulated content to infer current focus, or default
-        const currentFocus = 'Processing response...';
+        // Extract the last 500 characters as the current focus area
+        const contentLength = jobStatus.accumulated_content.length;
+        const currentFocus = contentLength > 500 
+          ? jobStatus.accumulated_content.substring(contentLength - 500)
+          : jobStatus.accumulated_content;
 
         // Generate streaming summary
         const streamingSummary = await summarizationService.generateStreamingSummary(
@@ -220,14 +223,8 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       parts.push(`\ncontinuation_id: ${jobStatus.result.continuation_id}`);
     }
 
-    // Show final summary if available, otherwise show full content
-    if (jobStatus.final_summary) {
-      parts.push(`\nSummary: ${jobStatus.final_summary}`);
-      // Optionally show full content if not skipped
-      if (!options.skipContent && jobStatus.result.content) {
-        parts.push(`\nFull Response:\n${jobStatus.result.content}`);
-      }
-    } else if (jobStatus.result.content) {
+    // For completed jobs, just show the full content (no summary needed)
+    if (jobStatus.result.content) {
       parts.push(`\n${jobStatus.result.content}`);
     }
   }

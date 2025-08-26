@@ -122,8 +122,8 @@ module.exports = { fibonacci };`
         try {
           // Response is now human-readable status line, use continuation object
           step1Content = { continuation_id: step1Result.continuation.id };
-          // Use job_id for status checking (NOT continuation_id)
-          continuationId1 = step1Content.job_id;
+          // Use continuation_id for status checking
+          continuationId1 = step1Content.continuation_id;
           console.log('[DEBUG] Parsed step 1 content:', step1Content);
           console.log('[DEBUG] Job ID for status checking:', continuationId1);
           console.log('[DEBUG] Conversation continuation ID:', step1Content.continuation_id);
@@ -135,8 +135,6 @@ module.exports = { fibonacci };`
 
         // Wait for first job to complete
         let job1Complete = false;
-        // Use the conversation continuation ID from the original async response
-        continuationId1 = step1Content.continuation_id;
         let attempts = 0;
 
         console.log('[DEBUG] Starting to poll for job completion at', Date.now() - testStartTime, 'ms...');
@@ -199,7 +197,7 @@ module.exports = { fibonacci };`
         }
 
         expect(job1Complete).toBe(true);
-        console.log('[DEBUG] Using continuation ID for step 2:', continuationId);
+        console.log('[DEBUG] Using continuation ID for step 2:', continuationId1);
         console.log('[DEBUG] *** STARTING STEP 2 at', Date.now() - testStartTime, 'ms ***');
         currentStep = "STARTING_STEP2";
 
@@ -212,7 +210,7 @@ module.exports = { fibonacci };`
           name: 'chat',
           arguments: {
             prompt: 'What number did I ask you to remember?',
-            continuation_id: continuationId,
+            continuation_id: continuationId1,
             async: true,
             model: 'auto',
             temperature: 0
@@ -232,8 +230,8 @@ module.exports = { fibonacci };`
         try {
           // Response is now human-readable status line, use continuation object
           step2Content = { continuation_id: step2Result.continuation.id };
-          // Use job_id for status checking (NOT continuation_id)
-          continuationId2 = step2Content.job_id;
+          // Use continuation_id for status checking
+          continuationId2 = step2Content.continuation_id;
           console.log('[DEBUG] Parsed step 2 content:', step2Content);
           console.log('[DEBUG] Job ID 2 for status checking:', continuationId2);
         } catch (parseError) {
@@ -370,7 +368,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId
+              continuation_id: fileTestContinuationId
             }
           });
 
@@ -473,7 +471,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId
+              continuation_id: asyncContinuationId
             }
           });
 
@@ -556,7 +554,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId
+              continuation_id: errorTestContinuationId
             }
           });
 
@@ -616,7 +614,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId
+              continuation_id: timeoutTestContinuationId
             }
           });
 
@@ -798,7 +796,7 @@ module.exports = { fibonacci };`
           const statusResult = await client.callTool({
             name: 'check_status',
             arguments: {
-              continuation_id: continuationId
+              continuation_id: consensusContinuationId
             }
           });
 

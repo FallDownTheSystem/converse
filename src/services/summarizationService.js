@@ -126,11 +126,11 @@ export class SummarizationService {
       const messages = [
         {
           role: 'system',
-          content: 'Generate a brief summary (2-3 sentences) that captures the overall gist of the content and highlights what is currently being focused on. Be concise and informative.'
+          content: 'You are summarizing an in-progress AI response. Generate a brief summary (2-3 sentences max) that: 1) Captures the overall topic/gist of the response so far, and 2) Describes what the AI is currently discussing (based on the last portion). Make each status check unique by focusing on the current section. Be concise and informative.'
         },
         {
           role: 'user',
-          content: `Content: ${content}\n\nCurrent focus: ${currentFocus}`
+          content: `Full content so far:\n${content}\n\n---\nLast section (current focus):\n${currentFocus}\n\nProvide a dynamic summary that shows both the overall topic and what\'s being discussed right now.`
         }
       ];
 
