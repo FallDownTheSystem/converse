@@ -13,6 +13,7 @@ import { createLogger } from '../utils/logger.js';
 import { CONSENSUS_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
+import { SummarizationService } from '../services/summarizationService.js';
 
 const logger = createLogger('consensus');
 
@@ -477,7 +478,7 @@ Please provide your refined response:`;
 
     // Create models list string for display
     const modelsList = providerCalls.map(call => call.model).join(', ');
-    
+
 
     // Create unified status line (similar to async status display)
     const finalCount = refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : initialPhase.successful.length;
@@ -520,7 +521,7 @@ Please provide your refined response:`;
       const failureInfo = formatFailureDetails(failureDetails);
       finalContent = limitedResult.content + failureInfo;
     }
-    
+
     // Prepend status line if not in test environment
     if (config.environment?.nodeEnv !== 'test') {
       finalContent = statusLine + finalContent;
@@ -857,9 +858,24 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
   // Create models list string for display
   const modelsList = providerCalls.map(call => call.model).join(', ');
 
-  // Update job status for phase 1
+  // Initialize SummarizationService
+  const summarizationService = new SummarizationService(providers, config);
+
+  // Generate title from user prompt (non-blocking)
+  let title = null;
+  try {
+    title = await summarizationService.generateTitle(prompt);
+    debugLog(`Consensus: Generated title - "${title}"`);
+  } catch (error) {
+    debugError('Consensus: Error generating title', error);
+    // Continue without title if generation fails
+    title = prompt.substring(0, 50);
+  }
+
+  // Update job status for phase 1 with title
   await context.updateJob({
     models_list: modelsList,
+    title,
     consensus_progress: `0/${providerCalls.length} initial`,
     progress: {
       phase: 'initial_consensus',
@@ -999,6 +1015,49 @@ Please provide your refined response:`;
 
   const consensusExecutionTime = (Date.now() - consensusStartTime) / 1000;
 
+  // Generate final summary from combined responses
+  let finalSummary = null;
+  const combinedResponses = [];
+
+  // Collect all successful responses for summary generation
+  if (refinedPhase) {
+    // Use refined responses when available
+    refinedPhase.forEach(result => {
+      if (result.status === 'success' && result.refined_response) {
+        combinedResponses.push(`${result.model}:\n${result.refined_response}`);
+      } else if (result.initial_response) {
+        // Fall back to initial response if refinement failed
+        combinedResponses.push(`${result.model}:\n${result.initial_response}`);
+      }
+    });
+  } else {
+    // Use initial responses
+    initialPhase.successful.forEach(result => {
+      if (result.response) {
+        combinedResponses.push(`${result.model}:\n${result.response}`);
+      }
+    });
+  }
+
+  // Generate summary if we have responses
+  if (combinedResponses.length > 0) {
+    const combinedContent = combinedResponses.join('\n\n---\n\n');
+    if (combinedContent.length > 100) {
+      try {
+        finalSummary = await summarizationService.generateFinalSummary(combinedContent);
+        debugLog(`Consensus: Generated final summary - "${finalSummary}"`);
+
+        // Update job with final summary
+        await context.updateJob({
+          final_summary: finalSummary
+        });
+      } catch (error) {
+        debugError('Consensus: Error generating final summary', error);
+        // Continue without summary if generation fails
+      }
+    }
+  }
+
   // Calculate final success count and collect failure details
   let finalSuccessCount;
   const failureDetails = [];
@@ -1048,7 +1107,9 @@ Please provide your refined response:`;
       async_execution: true,
       successful_models: finalSuccessCount,
       total_models: models.length,
-      failure_details: failureDetails
+      failure_details: failureDetails,
+      title,
+      final_summary: finalSummary
     }
   };
 }
@@ -1065,7 +1126,8 @@ Please provide your refined response:`;
 async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase, context, streamNormalizer) {
   let completedCount = 0;
   const totalCount = providerCalls.length;
-  
+  const providerContents = {}; // Store accumulated content per provider
+
   const results = await Promise.allSettled(
     providerCalls.map(async (call, index) => {
       try {
@@ -1111,11 +1173,20 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
             switch (event.type) {
             case 'delta':
               accumulatedContent += event.data.textDelta;
-              // Update streaming preview for this provider
+              // Store provider's accumulated content
+              providerContents[index] = accumulatedContent;
+
+              // Combine all provider contents for unified accumulated_content
+              const combinedContent = Object.values(providerContents)
+                .filter(content => content && content.length > 0)
+                .join('\n\n---\n\n');
+
+              // Update with both provider preview and combined accumulated content
               await context.updateJob({
-                [`provider_${index}_preview`]: accumulatedContent.length > 150 
+                [`provider_${index}_preview`]: accumulatedContent.length > 150
                   ? accumulatedContent.substring(0, 150) + '...'
-                  : accumulatedContent
+                  : accumulatedContent,
+                accumulated_content: combinedContent // Full combined content from all providers
               });
               break;
             case 'usage':
@@ -1140,19 +1211,36 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
             }
           };
 
+          // Store final provider content
+          providerContents[index] = accumulatedContent;
+
         } else {
           // Fall back to regular invoke
           response = await call.providerInstance.invoke(messagesToSend, call.options);
+
+          // Store provider content for non-streaming response
+          if (response && response.content) {
+            providerContents[index] = response.content;
+
+            // Update accumulated content for non-streaming provider
+            const combinedContent = Object.values(providerContents)
+              .filter(content => content && content.length > 0)
+              .join('\n\n---\n\n');
+
+            await context.updateJob({
+              accumulated_content: combinedContent
+            });
+          }
         }
 
         // Update provider status to 'finished'
         completedCount++;
-        const progressText = phase === 'initial' 
+        const progressText = phase === 'initial'
           ? `${completedCount}/${totalCount} initial`
-          : phase === 'refinement' 
+          : phase === 'refinement'
             ? `${completedCount}/${totalCount} refined`
             : `${completedCount}/${totalCount} responded`;
-        
+
         await context.updateJob({
           consensus_progress: progressText,
           progress: {
@@ -1188,6 +1276,17 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
       }
     })
   );
+
+  // After all providers complete, update with final combined content
+  const finalCombinedContent = Object.values(providerContents)
+    .filter(content => content && content.length > 0)
+    .join('\n\n---\n\n');
+
+  if (finalCombinedContent) {
+    await context.updateJob({
+      accumulated_content: finalCombinedContent
+    });
+  }
 
   return results.map((result, index) => {
     if (result.status === 'fulfilled') {
