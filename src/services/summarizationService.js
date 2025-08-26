@@ -85,8 +85,8 @@ export class SummarizationService {
       });
 
       if (response && response.content) {
-        // Ensure title is within 50 character limit
-        const title = response.content.trim().substring(0, 50);
+        // Ensure title is within 60 characters
+        const title = response.content.trim().substring(0, 60);
         debugLog(`Summarization: Generated title - "${title}"`);
         return title;
       }
