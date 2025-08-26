@@ -6,7 +6,7 @@
  * and memory-first lookup with FileCache fallback for completed jobs.
  */
 
-import { createToolResponse, createToolError, formatMetadataDisplay } from './index.js';
+import { createToolResponse, createToolError } from './index.js';
 import { getAsyncJobStore, JOB_STATUS } from '../async/asyncJobStore.js';
 import { getFileCache } from '../async/fileCache.js';
 import { debugLog, debugError } from '../utils/console.js';
@@ -32,8 +32,7 @@ export async function checkStatusTool(args, dependencies) {
       since_seq,
       include_events = false,
       include_output = true,
-      max_results = 50,
-      output_format = 'human' // 'human' or 'json' - default to human-readable
+      max_results = 50
     } = args;
 
     // Validate arguments
@@ -77,37 +76,16 @@ export async function checkStatusTool(args, dependencies) {
         return createToolError(`Job not found or access denied: ${continuation_id}`);
       }
 
-      const executionTime = (Date.now() - startTime) / 1000;
-      const metadataDisplay = formatMetadataDisplay(
-        {
-          continuation_id,
-          job_status: jobStatus.status,
-          provider: jobStatus.provider,
-          elapsed_seconds: jobStatus.elapsed_seconds
-        },
-        'check_status',
-        executionTime
-      );
-
-      // Format content based on output_format parameter
-      const content = output_format === 'json' 
-        ? JSON.stringify(jobStatus, null, 2)
-        : formatHumanReadableStatus(jobStatus);
+      // Format content as human-readable status
+      const content = formatHumanReadableStatus(jobStatus);
       
-      // Only include metadata_display for human format
-      const response = {
+      return createToolResponse({
         content,
         metadata: {
           continuation_id,
-          execution_time: executionTime
+          execution_time: (Date.now() - startTime) / 1000
         }
-      };
-      
-      if (output_format !== 'json') {
-        response.metadata_display = metadataDisplay;
-      }
-      
-      return createToolResponse(response);
+      });
 
     } else {
       // List all active/recent jobs
@@ -122,36 +100,16 @@ export async function checkStatusTool(args, dependencies) {
         }
       );
 
-      const executionTime = (Date.now() - startTime) / 1000;
-      const metadataDisplay = formatMetadataDisplay(
-        {
-          total_jobs: jobsList.jobs.length,
-          active_jobs: jobsList.summary.active_jobs,
-          completed_jobs: jobsList.summary.completed_jobs
-        },
-        'check_status',
-        executionTime
-      );
-
-      // Format content based on output_format parameter
-      const content = output_format === 'json'
-        ? JSON.stringify(jobsList, null, 2)
-        : formatJobListHumanReadable(jobsList);
+      // Format content as human-readable jobs list
+      const content = formatJobListHumanReadable(jobsList);
       
-      // Only include metadata_display for human format
-      const response = {
+      return createToolResponse({
         content,
         metadata: {
-          execution_time: executionTime,
+          execution_time: (Date.now() - startTime) / 1000,
           total_jobs: jobsList.jobs.length
         }
-      };
-      
-      if (output_format !== 'json') {
-        response.metadata_display = metadataDisplay;
-      }
-      
-      return createToolResponse(response);
+      });
     }
 
   } catch (error) {
@@ -360,33 +318,36 @@ function formatHumanReadableStatus(jobStatus) {
     'completed_with_errors': '⚠️'
   }[jobStatus.status] || '❓';
   
-  // Build base status line with tool and continuation ID
+  // Build complete status line with all info
   let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id} | ${timeStr} elapsed`;
   
   // Add progress for consensus tool only (show x/y format)
-  if (jobStatus.tool === 'consensus' && jobStatus.consensus_progress) {
-    statusLine += ` | ${jobStatus.consensus_progress}`;
-  } else if (jobStatus.tool === 'consensus' && jobStatus.providers) {
-    // Calculate progress from provider states
-    const providerEntries = Object.entries(jobStatus.providers);
-    const completed = providerEntries.filter(([_, state]) => 
-      state.status === 'completed' || state.status === 'refined'
-    ).length;
-    const total = providerEntries.length;
-    statusLine += ` | ${completed}/${total} responded`;
+  if (jobStatus.tool === 'consensus') {
+    if (jobStatus.consensus_progress) {
+      statusLine += ` | ${jobStatus.consensus_progress}`;
+    } else if (jobStatus.providers) {
+      // Calculate progress from provider states
+      const providerEntries = Object.entries(jobStatus.providers);
+      const completed = providerEntries.filter(([_, state]) => 
+        state.status === 'completed' || state.status === 'refined'
+      ).length;
+      const total = providerEntries.length;
+      statusLine += ` | ${completed}/${total} responded`;
+    }
+    // Add models list for consensus
+    if (jobStatus.models_list) {
+      statusLine += ` | ${jobStatus.models_list}`;
+    }
+  } else if (jobStatus.tool === 'chat') {
+    // Add provider/model for chat
+    if (jobStatus.provider && jobStatus.model) {
+      statusLine += ` | ${jobStatus.provider}/${jobStatus.model}`;
+    } else if (jobStatus.provider) {
+      statusLine += ` | ${jobStatus.provider}`;
+    }
   }
   
-  // Add provider/model info
-  if (jobStatus.tool === 'chat' && jobStatus.provider && jobStatus.model) {
-    parts.push(`${statusLine} | ${jobStatus.provider}/${jobStatus.model}`);
-  } else if (jobStatus.tool === 'chat' && jobStatus.provider) {
-    parts.push(`${statusLine} | ${jobStatus.provider}`);
-  } else if (jobStatus.tool === 'consensus' && jobStatus.models_list) {
-    // Show list of models for consensus
-    parts.push(`${statusLine} | ${jobStatus.models_list}`);
-  } else {
-    parts.push(statusLine);
-  }
+  parts.push(statusLine);
   
   // Add streaming preview if available and still running
   if (jobStatus.status === 'running' && jobStatus.streaming_preview) {
@@ -547,12 +508,6 @@ checkStatusTool.inputSchema = {
       maximum: 100,
       default: 50,
       description: 'Maximum number of jobs to return when listing all jobs (ignored when querying specific job).'
-    },
-    output_format: {
-      type: 'string',
-      enum: ['human', 'json'],
-      default: 'human',
-      description: 'Output format for the status response. "human" for readable format, "json" for raw JSON.'
     }
   },
   additionalProperties: false

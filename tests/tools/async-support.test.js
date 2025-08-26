@@ -179,7 +179,10 @@ describe('Async Support Tests', () => {
         expect.objectContaining({
           sessionId: existingContinuationId,
           tool: 'chat',
-          options: args
+          options: expect.objectContaining({
+            ...args,
+            jobId: existingContinuationId
+          })
         }),
         expect.any(Function)
       );
@@ -278,7 +281,10 @@ describe('Async Support Tests', () => {
         expect.objectContaining({
           sessionId: existingContinuationId,
           tool: 'consensus',
-          options: args
+          options: expect.objectContaining({
+            ...args,
+            jobId: existingContinuationId
+          })
         }),
         expect.any(Function)
       );

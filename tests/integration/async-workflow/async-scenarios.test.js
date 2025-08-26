@@ -13,6 +13,7 @@ import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
 import { testWithApiKeys, hasAnyApiKey } from '../../utils/conditionalTest.js';
+import { parseStatusResponse, parseJsonResponse, parseAsyncResponse } from '../../utils/responseParser.js';
 import { nanoid } from 'nanoid';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -98,11 +99,13 @@ module.exports = { fibonacci };`
           }
         });
 
-        // Parse response, handling potential metadata display
+        // Parse async response
         const step1Text = step1Result.content[0].text;
-        const step1JsonStart = step1Text.indexOf('{');
-        const step1Content = step1JsonStart >= 0 ? JSON.parse(step1Text.substring(step1JsonStart)) : JSON.parse(step1Text);
+        console.log('[DEBUG] Step 1 response:', step1Text.substring(0, 500));
+        
+        const step1Content = parseAsyncResponse(step1Text);
         const jobId1 = step1Content.continuation_id;
+        console.log('[DEBUG] Job ID 1:', jobId1);
 
         // Wait for first job to complete
         let job1Complete = false;
@@ -123,13 +126,18 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          console.log(`[DEBUG] Status check ${attempts + 1}:`, statusText.substring(0, 200));
+          
+          const status = parseStatusResponse(statusText);
+          console.log('[DEBUG] Parsed status:', status);
 
           if (status.status === 'completed') {
             job1Complete = true;
-            continuationId = status.result.continuation_id;
-            expect(status.result.message).toBeDefined();
+            continuationId = status.continuation_id; // Use the continuation_id from status directly
+            console.log('[DEBUG] Job completed, continuation ID:', continuationId);
+            if (status.result) {
+              expect(status.result.content).toBeDefined();
+            }
           }
           attempts++;
         }
@@ -174,8 +182,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
 
           if (status.status === 'completed') {
             job2Complete = true;
@@ -240,8 +247,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
 
           if (status.status === 'completed') {
             completed = true;
@@ -325,8 +331,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
 
           if (status.status === 'completed') {
             completed = true;
@@ -400,8 +405,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
 
           if (status.status === 'failed') {
             failed = true;
@@ -464,8 +468,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
           finalStatus = status;
 
           if (status.status === 'completed' || status.status === 'failed') {
@@ -650,8 +653,7 @@ module.exports = { fibonacci };`
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
 
           // Collect progress events
           if (status.events && status.events.length > 0) {

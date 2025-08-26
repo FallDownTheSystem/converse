@@ -177,6 +177,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       // Create initial job state
       const jobState = {
         jobId,
+        sessionId: options.sessionId || 'local-user',
         status: JOB_STATUS.QUEUED,
         tool,
         createdAt: now,

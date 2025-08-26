@@ -15,6 +15,7 @@ import { HTTPMCPServerManager } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
 import { testWithApiKeys, hasAnyApiKey } from '../../utils/conditionalTest.js';
+import { parseStatusResponse, parseAsyncResponse } from '../../utils/responseParser.js';
 import { nanoid } from 'nanoid';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -108,8 +109,7 @@ describe('Cache System Integration Tests', () => {
 
             // Parse status response, handling potential metadata display
             const statusText = statusResult.content[0].text;
-            const jsonStart = statusText.indexOf('{');
-            const status = jsonStart >= 0 ? JSON.parse(statusText.substring(jsonStart)) : JSON.parse(statusText);
+            const status = parseStatusResponse(statusText);
             
             if (status.status === 'completed') {
               completed = true;
@@ -221,8 +221,7 @@ describe('Cache System Integration Tests', () => {
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
           if (status.status === 'completed') {
             completed = true;
           }
@@ -335,8 +334,7 @@ describe('Cache System Integration Tests', () => {
 
             // Parse status response, handling potential metadata display
             const statusText = statusResult.content[0].text;
-            const jsonStart = statusText.indexOf('{');
-            const status = jsonStart >= 0 ? JSON.parse(statusText.substring(jsonStart)) : JSON.parse(statusText);
+            const status = parseStatusResponse(statusText);
             
             if (status.status === 'completed') {
               completed = true;
@@ -422,8 +420,7 @@ describe('Cache System Integration Tests', () => {
 
           // Parse response, handling potential metadata display
           const statusText = statusResult.content[0].text;
-          const statusJsonStart = statusText.indexOf('{');
-          const status = statusJsonStart >= 0 ? JSON.parse(statusText.substring(statusJsonStart)) : JSON.parse(statusText);
+          const status = parseStatusResponse(statusText);
           if (status.status === 'completed') {
             completed = true;
           }

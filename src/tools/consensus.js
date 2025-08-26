@@ -5,7 +5,7 @@
  * Calls all available providers simultaneously and aggregates responses.
  */
 
-import { createToolResponse, createToolError, formatMetadataDisplay, formatFailureDetails } from './index.js';
+import { createToolResponse, createToolError, formatFailureDetails } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
@@ -65,7 +65,7 @@ export async function consensusTool(args, dependencies) {
         const jobId = await jobRunner.submit(
           {
             tool: 'consensus',
-            sessionId: dependencies.sessionId || 'local-user',
+            sessionId: bgContinuationId, // Use continuation_id as sessionId for consistency
             options: {
               ...args,
               jobId: bgContinuationId // Use continuation ID as job ID
@@ -481,23 +481,13 @@ Please provide your refined response:`;
     // Create models list string for display
     const modelsList = providerCalls.map(call => call.model).join(', ');
     
-    // Prepare metadata for display
-    const displayMetadata = {
-      continuation_id: continuationId,
-      successful_models: finalSuccessCount,
-      total_models: models.length,
-      models_list: modelsList,
-      execution_time: consensusExecutionTime,
-      cross_feedback: enable_cross_feedback,
-      refined_responses: refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : 0,
-      initial_successes: initialPhase.successful.length,
-      partial_successes: refinedPhase ? refinedPhase.filter(r => r.status === 'partial').length : 0,
-      failure_details: failureDetails
-    };
 
-    // Format metadata display (disable in test environment)
-    const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
-    const metadataDisplay = formatMetadataDisplay(displayMetadata, 'consensus', consensusExecutionTime, enableMetadataDisplay);
+    // Create unified status line (similar to async status display)
+    const finalCount = refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : initialPhase.successful.length;
+    const totalCount = models.length;
+    const statusLine = config.environment?.nodeEnv !== 'test'
+      ? `✅ COMPLETED | CONSENSUS | ${continuationId} | ${consensusExecutionTime.toFixed(1)}s elapsed | ${finalCount}/${totalCount} succeeded | ${modelsList}\n\n`
+      : '';
 
     // Build result object keeping backward compatibility but removing rawResponse
     const result = {
@@ -519,8 +509,7 @@ Please provide your refined response:`;
         enable_cross_feedback,
         temperature,
         models_requested: models
-      },
-      metadata_display: metadataDisplay
+      }
     };
 
     // Apply token limiting to the final response
@@ -528,22 +517,25 @@ Please provide your refined response:`;
     const resultStr = JSON.stringify(result, null, 2);
     const limitedResult = applyTokenLimit(resultStr, tokenLimit);
 
-    // Add failure details to the response content if there are failures and display is enabled
+    // Add failure details to the response content if there are failures
     let finalContent = limitedResult.content;
-    if (enableMetadataDisplay && failureDetails.length > 0) {
+    if (failureDetails.length > 0) {
       const failureInfo = formatFailureDetails(failureDetails);
       finalContent = limitedResult.content + failureInfo;
     }
+    
+    // Prepend status line if not in test environment
+    if (config.environment?.nodeEnv !== 'test') {
+      finalContent = statusLine + finalContent;
+    }
 
     // Return with continuation at top level for test compatibility
-    // For consensus, we'll add metadata display to a separate field to maintain JSON structure
     return createToolResponse({
       content: finalContent,
       continuation: {
         id: continuationId,
         messageCount: messages.length + 1
-      },
-      metadata_display: metadataDisplay
+      }
     });
 
   } catch (error) {

@@ -111,6 +111,7 @@ export class JobRunner extends EventEmitter {
       const jobId = await this.asyncJobStore.create(
         jobSpec.tool,
         {
+          sessionId: jobSpec.sessionId,
           timeout: options.timeout || this.defaultTimeout,
           priority: options.priority || false,
           ...jobSpec.options,

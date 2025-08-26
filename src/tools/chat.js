@@ -5,7 +5,7 @@
  * Handles context processing, provider calls, and state management.
  */
 
-import { createToolResponse, createToolError, formatMetadataDisplay } from './index.js';
+import { createToolResponse, createToolError } from './index.js';
 import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
 import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
@@ -60,7 +60,7 @@ export async function chatTool(args, dependencies) {
         const jobId = await jobRunner.submit(
           {
             tool: 'chat',
-            sessionId: dependencies.sessionId || 'local-user',
+            sessionId: bgContinuationId, // Use continuation_id as sessionId for consistency
             options: {
               ...args,
               jobId: bgContinuationId // Use continuation ID as job ID
@@ -284,25 +284,14 @@ export async function chatTool(args, dependencies) {
       // Continue even if save fails
     }
 
-    // Prepare metadata for display
-    const displayMetadata = {
-      continuation_id: continuationId,
-      provider: providerName,
-      model: resolvedModel,
-      execution_time: executionTime,
-      message_count: updatedMessages.filter(msg => msg.role !== 'system').length,
-      ...response.metadata
-    };
 
-    // Format metadata display (disable in test environment)
-    const enableMetadataDisplay = config.environment?.nodeEnv !== 'test';
-    const metadataDisplay = formatMetadataDisplay(displayMetadata, 'chat', executionTime, enableMetadataDisplay);
-
-    // Create response with continuation and metadata display
-    const responseContent = metadataDisplay ? `${metadataDisplay}\n\n${response.content}` : response.content;
+    // Create unified status line (similar to async status display)
+    const statusLine = config.environment?.nodeEnv !== 'test' 
+      ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n\n`
+      : '';
 
     const result = {
-      content: responseContent,
+      content: statusLine + response.content,
       continuation: {
         id: continuationId,
         provider: providerName,

@@ -89,7 +89,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'chat-job-123', output_format: 'human' },
+        { continuation_id: 'chat-job-123' },
         { config: mockConfig }
       );
       
@@ -147,7 +147,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'consensus-job-123', output_format: 'human' },
+        { continuation_id: 'consensus-job-123' },
         { config: mockConfig }
       );
       
@@ -198,7 +198,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'consensus-job-456', output_format: 'human' },
+        { continuation_id: 'consensus-job-456' },
         { config: mockConfig }
       );
       
@@ -241,7 +241,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'consensus-list-123', output_format: 'human' },
+        { continuation_id: 'consensus-list-123' },
         { config: mockConfig }
       );
       
@@ -288,7 +288,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'chat-stream-123', output_format: 'human' },
+        { continuation_id: 'chat-stream-123' },
         { config: mockConfig }
       );
       
@@ -336,7 +336,7 @@ describe('Check Status Tool - Improvements', () => {
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
       
       const result = await checkStatusTool(
-        { continuation_id: 'consensus-preview-123', output_format: 'human' },
+        { continuation_id: 'consensus-preview-123' },
         { config: mockConfig }
       );
       
@@ -354,51 +354,4 @@ describe('Check Status Tool - Improvements', () => {
     });
   });
   
-  describe('JSON Format Compatibility', () => {
-    it('should return JSON format when requested', async () => {
-      const jobCreatedAt = 1000000000000;
-      const currentTime = jobCreatedAt + 5000;
-      
-      Date.now = vi.fn().mockReturnValue(currentTime);
-      
-      const mockJob = {
-        jobId: 'json-test-123',
-        status: JOB_STATUS.RUNNING,
-        tool: 'consensus',
-        createdAt: jobCreatedAt,
-        updatedAt: jobCreatedAt + 2000,
-        models_list: 'gpt-5, gemini-2.5-pro',
-        consensus_progress: '1/2 initial',
-        overall: {
-          progress: 0.5,
-          startedAt: jobCreatedAt + 100,
-          endedAt: null,
-          result: null,
-          error: null
-        },
-        providers: new Map(),
-        events: [],
-        seq: 1
-      };
-      
-      mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
-      
-      const result = await checkStatusTool(
-        { continuation_id: 'json-test-123', output_format: 'json' },
-        { config: mockConfig }
-      );
-      
-      expect(result.isError).toBe(false);
-      
-      const content = result.content[0].text;
-      
-      // Should be valid JSON
-      const parsed = JSON.parse(content);
-      
-      // Should contain all the new fields
-      expect(parsed.models_list).toBe('gpt-5, gemini-2.5-pro');
-      expect(parsed.consensus_progress).toBe('1/2 initial');
-      expect(parsed.elapsed_seconds).toBeCloseTo(5, 1);
-    });
-  });
 });

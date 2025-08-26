@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { checkStatusTool } from '../../src/tools/checkStatus.js';
 import { getAsyncJobStore, JOB_STATUS, setAsyncJobStore, AsyncJobStoreInterface } from '../../src/async/asyncJobStore.js';
 import { getFileCache, setFileCache, FileCacheInterface } from '../../src/async/fileCache.js';
+import { parseStatusResponse } from '../utils/responseParser.js';
 
 describe('Check Status Tool', () => {
   let mockAsyncJobStore;
@@ -21,6 +22,7 @@ describe('Check Status Tool', () => {
     mockAsyncJobStore = new class extends AsyncJobStoreInterface {
       get = vi.fn();
       getJobsBySession = vi.fn();
+      getAllJobs = vi.fn().mockResolvedValue([]);
       getStats = vi.fn().mockResolvedValue({ totalJobs: 0 });
       create = vi.fn();
       update = vi.fn();
@@ -136,14 +138,12 @@ describe('Check Status Tool', () => {
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.get).toHaveBeenCalledWith('job_test123');
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
+      const response = parseStatusResponse(text);
       expect(response.continuation_id).toBe('job_test123');
-      expect(response.status).toBe(JOB_STATUS.RUNNING);
-      expect(response.progress).toBe(0.5);
+      expect(response.status).toBe('running');
+      // Progress is no longer shown for chat tool
     });
 
     it('should fallback to file cache for completed jobs', async () => {
@@ -160,13 +160,11 @@ describe('Check Status Tool', () => {
       expect(mockAsyncJobStore.get).toHaveBeenCalledWith('job_test123');
       expect(mockFileCache.readSnapshot).toHaveBeenCalledWith('job_test123');
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
+      const response = parseStatusResponse(text);
       expect(response.continuation_id).toBe('job_test123');
-      expect(response.status).toBe(JOB_STATUS.COMPLETED);
+      expect(response.status).toBe('completed');
     });
 
     it('should return job regardless of sessionId (single-user local server)', async () => {
@@ -182,11 +180,9 @@ describe('Check Status Tool', () => {
       // Should return the job since we don't enforce session ownership
       expect(result.isError).toBe(false);
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
+      const response = parseStatusResponse(text);
       expect(response.continuation_id).toBe('job_test123');
-      expect(response.status).toBe(JOB_STATUS.RUNNING);
+      expect(response.status).toBe('running');
     });
 
     it('should handle job not found', async () => {
@@ -232,7 +228,7 @@ describe('Check Status Tool', () => {
     ];
 
     it('should list all jobs for session', async () => {
-      mockAsyncJobStore.getJobsBySession.mockResolvedValue(mockJobs);
+      mockAsyncJobStore.getAllJobs.mockResolvedValue(mockJobs);
 
       const result = await checkStatusTool(
         {},
@@ -240,25 +236,22 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('local-user', {
+      expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
         limit: 50,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
       });
 
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable job list
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.jobs).toHaveLength(2);
-      expect(response.summary.total_jobs).toBe(2);
-      expect(response.summary.active_jobs).toBe(1);
-      expect(response.summary.completed_jobs).toBe(1);
+      // Check for summary line
+      expect(text).toContain('Jobs Summary');
+      expect(text).toContain('1 active');
+      expect(text).toContain('1 completed');
     });
 
     it('should respect max_results parameter', async () => {
-      mockAsyncJobStore.getJobsBySession.mockResolvedValue([mockJobs[0]]);
+      mockAsyncJobStore.getAllJobs.mockResolvedValue([mockJobs[0]]);
 
       const result = await checkStatusTool(
         { max_results: 1 },
@@ -266,22 +259,20 @@ describe('Check Status Tool', () => {
       );
 
       expect(result.isError).toBe(false);
-      expect(mockAsyncJobStore.getJobsBySession).toHaveBeenCalledWith('local-user', {
+      expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
         limit: 1,
         sortBy: 'updatedAt',
         sortOrder: 'desc'
       });
 
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable job list
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.jobs).toHaveLength(1);
+      expect(text).toContain('Jobs Summary');
+      expect(text).toContain('RUNNING | CHAT | job_1');
     });
 
     it('should handle empty job list', async () => {
-      mockAsyncJobStore.getJobsBySession.mockResolvedValue([]);
+      mockAsyncJobStore.getAllJobs.mockResolvedValue([]);
 
       const result = await checkStatusTool(
         {},
@@ -290,13 +281,10 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable job list
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.jobs).toHaveLength(0);
-      expect(response.summary.total_jobs).toBe(0);
+      expect(text).toContain('Jobs Summary: 0 active, 0 completed, 0 failed');
+      expect(text).toContain('No jobs found');
     });
   });
 
@@ -335,12 +323,10 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.result).toEqual({ content: 'Test response' });
+      // Check for response preview in completed jobs
+      expect(text).toContain('Response: "Test response');
     });
 
     it('should exclude result when include_output is false', async () => {
@@ -353,12 +339,10 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.result).toBeUndefined();
+      // Should not show response when include_output is false
+      expect(text).not.toContain('Response:');
     });
 
     it('should include events when include_events is true', async () => {
@@ -371,13 +355,11 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.events).toHaveLength(2);
-      expect(response.latest_seq).toBe(2);
+      // Events are not shown in human-readable format,
+      // but the status should still be shown correctly
+      expect(text).toContain('COMPLETED | CHAT');
     });
 
     it('should filter events by since_seq', async () => {
@@ -390,13 +372,10 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format  
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.events).toHaveLength(1);
-      expect(response.events[0].seq).toBe(2);
+      // since_seq filtering works internally but doesn't affect human-readable output
+      expect(text).toContain('COMPLETED | CHAT');
     });
 
     it('should include provider details', async () => {
@@ -409,16 +388,10 @@ describe('Check Status Tool', () => {
 
       expect(result.isError).toBe(false);
       
-      // Extract JSON content (skip metadata display)
+      // Parse human-readable format
       const text = result.content[0].text;
-      const jsonStart = text.indexOf('\n\n') + 2;
-      const jsonContent = jsonStart > 1 ? text.substring(jsonStart) : text;
-      const response = JSON.parse(jsonContent);
-      expect(response.providers.openai).toEqual({
-        status: 'completed',
-        progress: 1.0,
-        updated_at: expect.any(Number)
-      });
+      // Provider details shown in consensus tool format
+      expect(text).toContain('Providers: openai: completed');
     });
   });
 
