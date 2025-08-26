@@ -357,7 +357,7 @@ function resolveAutoModel(model, providerName) {
   return defaults[providerName] || 'gpt-5';
 }
 
-function mapModelToProvider(model, providers) {
+export function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
   // Handle "auto" - default to OpenAI
