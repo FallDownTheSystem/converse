@@ -23,6 +23,19 @@ const SUPPORTED_MODELS = {
     description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support and live search',
     aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest', 'grok 4', 'grok 4 latest']
   },
+  'grok-code-fast-1': {
+    modelName: 'grok-code-fast-1',
+    friendlyName: 'X.AI (Grok Code Fast 1)',
+    contextWindow: 256000,
+    maxOutputTokens: 256000,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    timeout: 300000, // 5 minutes
+    description: 'GROK Code Fast 1 (256K context) - Speedy and economical reasoning model that excels at agentic coding',
+    aliases: ['grok-code-fast', 'grok-code-fast-1-0825', 'grok code fast', 'grok code fast 1']
+  },
   'grok-3': {
     modelName: 'grok-3',
     friendlyName: 'X.AI (Grok 3)',

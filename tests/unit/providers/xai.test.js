@@ -92,6 +92,7 @@ describe('XAI Provider', () => {
 
       expect(typeof models).toBe('object');
       expect('grok-4-0709' in models).toBeTruthy();
+      expect('grok-code-fast-1' in models).toBeTruthy();
       expect('grok-3' in models).toBeTruthy();
       expect('grok-3-fast' in models).toBeTruthy();
     });
