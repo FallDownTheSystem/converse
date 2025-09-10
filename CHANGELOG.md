@@ -5,6 +5,17 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.2] - 2025-09-10
+
+### Changed
+- **OpenAI Provider**: Increased timeouts for GPT-5 and O3 models to handle longer processing times
+  - `gpt-5`: 5 minutes → 1 hour
+  - `gpt-5-mini`: 3 minutes → 30 minutes
+  - `gpt-5-nano`: 2 minutes → 10 minutes
+  - `o3`: 5 minutes → 10 minutes
+  - `o3-pro`: 30 minutes → 60 minutes
+  - `o3-deep-research-2025-06-26`: 90 minutes → 120 minutes
+
 ## [1.14.1] - 2025-09-02
 
 ### Added
