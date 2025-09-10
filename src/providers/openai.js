@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,  // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 300000, // 5 minutes
+    timeout: 3600000, // 1 hour
     description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis',
     aliases: ['gpt5', 'gpt 5', 'gpt-5-2025-08-07']
   },
@@ -34,7 +34,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,  // GPT-5 models don't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 180000, // 3 minutes
+    timeout: 1800000, // 30 minutes
     description: 'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
     aliases: ['gpt5-mini', 'gpt-5mini', 'gpt 5 mini', 'gpt-5-mini-2025-08-07']
   },
@@ -48,7 +48,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,  // GPT-5 models don't support temperature
     supportsWebSearch: false,    // GPT-5-nano doesn't support web search
     supportsResponsesAPI: true,
-    timeout: 120000, // 2 minutes
+    timeout: 600000, // 10 minutes
     description: 'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07']
   },
@@ -62,7 +62,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 300000, // 5 minutes
+    timeout: 600000, // 10 minutes
     description: 'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
     aliases: ['o3-2025-01-31']
   },
@@ -90,7 +90,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 1800000, // 30 minutes
+    timeout: 3600000, // 60 minutes
     description: 'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
     aliases: ['o3-pro', 'o3pro', 'o3 pro']
   },
@@ -161,7 +161,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
-    timeout: 5400000, // 90 minutes for deep research
+    timeout: 7200000, // 120 minutes for deep research
     description: 'Deep research model (200K context) - In-depth synthesis, comprehensive reports, multi-source analysis (30-90 min runtime)',
     aliases: ['o3-deep-research', 'o3-research', 'o3 deep research', 'deep-research-o3']
   },
