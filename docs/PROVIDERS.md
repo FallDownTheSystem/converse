@@ -29,7 +29,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Environment Variable**: `XAI_API_KEY`
 - **Supported Models**:
   - `grok-4-0709` - Latest with image support and web search
-  - `grok-3`, `grok-3-fast` - Previous generation
+  - `grok-code-fast-1` - Speedy and economical reasoning model that excels at agentic coding
 
 ### Anthropic (Claude)
 - **API Key Format**: `sk-ant-...` (starts with `sk-ant-`)
@@ -173,7 +173,7 @@ When using the chat or consensus tools, specify models using their identifiers:
   "model": "claude-opus-4",       // Anthropic (keyword match, auto-resolves)
   "model": "sonnet",              // Anthropic (keyword match)
   "model": "gemini-2.5-pro",      // Google (keyword match)
-  "model": "grok-4-0709",         // X.AI (keyword match)
+  "model": "grok-4",              // X.AI (keyword match)
   "model": "mistral-large",       // Mistral (keyword match)
   "model": "deepseek-chat",       // DeepSeek (keyword match)
   "model": "anthropic/claude-3.5-sonnet",  // OpenRouter (slash format, not in Anthropic)

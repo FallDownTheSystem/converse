@@ -93,8 +93,6 @@ describe('XAI Provider', () => {
       expect(typeof models).toBe('object');
       expect('grok-4-0709' in models).toBeTruthy();
       expect('grok-code-fast-1' in models).toBeTruthy();
-      expect('grok-3' in models).toBeTruthy();
-      expect('grok-3-fast' in models).toBeTruthy();
     });
 
     it('should include model configuration details', () => {
@@ -114,9 +112,8 @@ describe('XAI Provider', () => {
       // Grok-4 supports images
       expect(models['grok-4-0709'].supportsImages).toBe(true);
 
-      // Grok-3 models don't support images
-      expect(models['grok-3'].supportsImages).toBe(false);
-      expect(models['grok-3-fast'].supportsImages).toBe(false);
+      // Grok-code-fast-1 doesn't support images
+      expect(models['grok-code-fast-1'].supportsImages).toBe(false);
     });
   });
 
@@ -255,8 +252,7 @@ describe('XAI Provider', () => {
       expect(models['grok-4-0709'].aliases.includes('grok')).toBe(true);
       expect(models['grok-4-0709'].aliases.includes('grok4')).toBe(true);
       expect(models['grok-4-0709'].aliases.includes('grok-4')).toBe(true);
-      expect(models['grok-3'].aliases.includes('grok3')).toBe(true);
-      expect(models['grok-3-fast'].aliases.includes('grok3fast')).toBe(true);
+      expect(models['grok-code-fast-1'].aliases.includes('grok-code-fast')).toBe(true);
     });
 
     it('should default to grok-4-0709 model', () => {
@@ -274,8 +270,7 @@ describe('XAI Provider', () => {
 
       // All Grok models support temperature
       expect(models['grok-4-0709'].supportsTemperature).toBe(true);
-      expect(models['grok-3'].supportsTemperature).toBe(true);
-      expect(models['grok-3-fast'].supportsTemperature).toBe(true);
+      expect(models['grok-code-fast-1'].supportsTemperature).toBe(true);
     });
   });
 
@@ -548,7 +543,7 @@ describe('XAI Provider', () => {
 
     it('should handle all Grok models with streaming', async () => {
       const messages = [{ role: 'user', content: 'Test message' }];
-      const models = ['grok-4-0709', 'grok-3', 'grok-3-fast'];
+      const models = ['grok-4-0709', 'grok-code-fast-1'];
       const OpenAI = (await import('openai')).default;
 
       for (const model of models) {

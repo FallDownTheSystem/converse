@@ -36,32 +36,6 @@ const SUPPORTED_MODELS = {
     description: 'GROK Code Fast 1 (256K context) - Speedy and economical reasoning model that excels at agentic coding',
     aliases: ['grok-code-fast', 'grok-code-fast-1-0825', 'grok code fast', 'grok code fast 1']
   },
-  'grok-3': {
-    modelName: 'grok-3',
-    friendlyName: 'X.AI (Grok 3)',
-    contextWindow: 131072,
-    maxOutputTokens: 131072,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsTemperature: true,
-    supportsWebSearch: false,
-    timeout: 300000,
-    description: 'GROK-3 (131K context) - Previous generation reasoning model from X.AI',
-    aliases: ['grok3', 'grok 3']
-  },
-  'grok-3-fast': {
-    modelName: 'grok-3-fast',
-    friendlyName: 'X.AI (Grok 3 Fast)',
-    contextWindow: 131072,
-    maxOutputTokens: 131072,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsTemperature: true,
-    supportsWebSearch: false,
-    timeout: 300000,
-    description: 'GROK-3 Fast (131K context) - Higher performance variant, faster processing but more expensive',
-    aliases: ['grok3fast', 'grok3-fast', 'grok 3 fast']
-  }
 };
 
 /**

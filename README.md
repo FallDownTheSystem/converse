@@ -132,7 +132,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 // Synchronous consensus (default)
 {
   "prompt": "Should we use microservices or monolith architecture for our e-commerce platform?",
-  "models": ["gpt-5", "gemini-2.5-flash", "grok-4-0709"],
+  "models": ["gpt-5", "gemini-2.5-flash", "grok-4"],
   "files": ["/path/to/requirements.md"],
   "enable_cross_feedback": true,
   "temperature": 0.2
@@ -231,9 +231,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **gemini-2.0-flash-lite**: Lightweight fast model, text-only
 
 ### X.AI/Grok Models  
-- **grok-4-0709** (alias: `grok`): Latest advanced model (256K context)
-- **grok-3**: Previous generation (131K context)
-- **grok-3-fast**: Higher performance variant
+- **grok-4-0709** (aliases: `grok`, `grok-4`): Latest advanced model (256K context)
+- **grok-code-fast-1**: Speedy and economical reasoning model that excels at agentic coding (256K context)
 
 ### Anthropic Models
 - **claude-opus-4.1**: Highest intelligence with extended thinking (200K context)
@@ -342,6 +341,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 "flash"    // -> gemini-2.5-flash
 "pro"      // -> gemini-2.5-pro
 "grok"     // -> grok-4-0709
+"grok-4"   // -> grok-4-0709
 ```
 
 **Auto Model Behavior:**
@@ -351,7 +351,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 Provider priority order (requires corresponding API key):
   1. OpenAI (`gpt-5`)
   2. Google (`gemini-2.5-pro`)
-  3. XAI (`grok-4-0709`)
+  3. XAI (`grok-4`)
   4. Anthropic (`claude-sonnet-4-20250514`)
   5. Mistral (`magistral-medium-2506`)
   6. DeepSeek (`deepseek-reasoner`)

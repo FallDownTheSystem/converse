@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.3] - 2025-09-12
+
+### Changed
+- **XAI Provider**: Removed discontinued `grok-3` and `grok-3-fast` models
+  - These models are no longer available from X.AI
+  - Added `grok-4` as an alias for `grok-4-0709` for cleaner model names
+  - Updated all documentation and examples to use `grok-4` instead of `grok-4-0709`
+  - `grok-code-fast-1` remains available for fast, economical coding tasks
+
+### Fixed
+- Updated consensus tool examples to use simplified `grok-4` model name instead of versioned `grok-4-0709`
+- Cleaned up test files to remove references to discontinued models
+
 ## [1.14.2] - 2025-09-10
 
 ### Changed

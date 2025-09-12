@@ -59,7 +59,7 @@ MCP_TRANSPORT=stdio npm start
     },
     "model": {
       "type": "string", 
-      "description": "AI model to use. Examples: 'auto' (recommended), 'gemini-2.5-flash', 'gpt-5', 'grok-4-0709'. Default: 'auto'"
+      "description": "AI model to use. Examples: 'auto' (recommended), 'gemini-2.5-flash', 'gpt-5', 'grok-4'. Default: 'auto'"
     },
     "files": {
       "type": "array",
@@ -178,7 +178,7 @@ MCP_TRANSPORT=stdio npm start
       "type": "array",
       "items": {"type": "string"},
       "minItems": 1,
-      "description": "List of models to consult. Example: ['o3', 'gemini-2.5-flash', 'grok-4-0709']"
+      "description": "List of models to consult. Example: ['o3', 'gemini-2.5-flash', 'grok-4']"
     },
     "files": {
       "type": "array",
@@ -274,7 +274,7 @@ MCP_TRANSPORT=stdio npm start
   "settings": {
     "enable_cross_feedback": true,
     "temperature": 0.2,
-    "models_requested": ["o3", "gemini-2.5-flash", "grok-4-0709"]
+    "models_requested": ["o3", "gemini-2.5-flash", "grok-4"]
   }
 }
 ```
@@ -304,7 +304,7 @@ MCP_TRANSPORT=stdio npm start
   "models": [
     {"model": "o3"},
     {"model": "gemini-2.5-pro"}, 
-    {"model": "grok-4-0709"}
+    {"model": "grok-4"}
   ],
   "files": ["/docs/requirements.md", "/docs/current_architecture.md"],
   "enable_cross_feedback": true,
@@ -337,9 +337,8 @@ MCP_TRANSPORT=stdio npm start
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
-| `grok-4-0709` | `grok` | 256K | 256K | Advanced | Latest capabilities |
-| `grok-3` | `grok3` | 131K | 131K | Previous gen | Stable reasoning |
-| `grok-3-fast` | - | 131K | 131K | High perf | Faster processing |
+| `grok-4-0709` | `grok`, `grok-4` | 256K | 256K | Advanced | Latest capabilities |
+| `grok-code-fast-1` | `grok-code-fast` | 256K | 256K | Code optimization | Agentic coding |
 
 ### Anthropic Models
 
@@ -397,6 +396,7 @@ Use `"auto"` for automatic selection or specify exact models:
 {"model": "flash"}  // -> gemini-2.5-flash
 {"model": "pro"}    // -> gemini-2.5-pro  
 {"model": "grok"}   // -> grok-4-0709
+{"model": "grok-4"}  // -> grok-4-0709
 ```
 
 ## Configuration
@@ -725,7 +725,7 @@ LOG_LEVEL=error  # Errors only
     "models": [
       {"model": "o3"},
       {"model": "gemini-2.5-pro"},
-      {"model": "grok-4-0709"}
+      {"model": "grok-4"}
     ],
     "files": [
       "/docs/requirements.md",
