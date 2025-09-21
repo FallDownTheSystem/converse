@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.4] - 2025-09-21
+
+### Added
+- **XAI Provider**: Added support for new Grok 4 Fast models
+  - `grok-4-fast-reasoning`: Cost-efficient reasoning model with 2M token context window
+  - `grok-4-fast-non-reasoning`: Fast non-reasoning variant for quick responses
+  - Both models support function calling, structured outputs, and web search
+  - Pricing: $0.20 input / $0.50 output per 1M tokens
+
+### Changed
+- **Mistral Provider**: Updated all models to latest versions
+  - `magistral-medium-2509` (v1.2): Now includes vision support and 128K context window
+  - `magistral-small-2509` (v1.2): Now includes vision support and 128K context window
+  - `mistral-medium-2508` (v3.1): Improved tone and performance with 128K context window
+  - All models now support image inputs after the September 2025 update
+
 ## [1.14.3] - 2025-09-12
 
 ### Changed
