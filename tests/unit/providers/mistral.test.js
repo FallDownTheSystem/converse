@@ -78,16 +78,16 @@ describe('Mistral Provider', () => {
       expect(Object.keys(models).length).toBeGreaterThan(0);
 
       // Check for expected models
-      expect(models['magistral-medium-2506']).toBeDefined();
-      expect(models['magistral-small-2506']).toBeDefined();
-      expect(models['mistral-medium-2505']).toBeDefined();
+      expect(models['magistral-medium-2509']).toBeDefined();
+      expect(models['magistral-small-2509']).toBeDefined();
+      expect(models['mistral-medium-2508']).toBeDefined();
     });
 
     it('should get model config by exact name', () => {
-      const config = mistralProvider.getModelConfig('mistral-medium-2505');
+      const config = mistralProvider.getModelConfig('mistral-medium-2508');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('mistral-medium-2505');
+      expect(config.modelName).toBe('mistral-medium-2508');
       expect(config.contextWindow).toBe(128000);
       expect(config.maxOutputTokens).toBe(32768);
       expect(config.supportsImages).toBe(true);
@@ -97,14 +97,14 @@ describe('Mistral Provider', () => {
       const config = mistralProvider.getModelConfig('magistral-medium');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('magistral-medium-2506');
+      expect(config.modelName).toBe('magistral-medium-2509');
     });
 
     it('should handle case-insensitive model names', () => {
-      const config = mistralProvider.getModelConfig('MAGISTRAL-SMALL-2506');
+      const config = mistralProvider.getModelConfig('MAGISTRAL-SMALL-2509');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('magistral-small-2506');
+      expect(config.modelName).toBe('magistral-small-2509');
     });
 
     it('should return null for unknown model', () => {
@@ -130,7 +130,7 @@ describe('Mistral Provider', () => {
           completion_tokens: 20,
           total_tokens: 30
         },
-        model: 'magistral-medium-2506'
+        model: 'magistral-medium-2509'
       };
 
       mockChatComplete.mockResolvedValue(mockResponse);
@@ -148,13 +148,13 @@ describe('Mistral Provider', () => {
       expect(mockChatComplete).toHaveBeenCalled();
       const callArgs = mockChatComplete.mock.calls[0][0];
       expect(callArgs.messages).toEqual(messages);
-      expect(callArgs.model).toBe('magistral-medium-2506');
+      expect(callArgs.model).toBe('magistral-medium-2509');
 
       expect(result).toMatchObject({
         content: 'Test response',
         stop_reason: StopReasons.STOP,
         metadata: {
-          model: 'magistral-medium-2506',
+          model: 'magistral-medium-2509',
           usage: {
             input_tokens: 10,
             output_tokens: 20,
@@ -181,7 +181,7 @@ describe('Mistral Provider', () => {
       }];
 
       await mistralProvider.invoke(messages, {
-        model: 'mistral-medium-2505',
+        model: 'mistral-medium-2508',
         config: mockConfig
       });
 
@@ -215,16 +215,19 @@ describe('Mistral Provider', () => {
       const messages = [{ role: 'user', content: 'Hello' }];
 
       await mistralProvider.invoke(messages, {
-        model: 'magistral-small-2506',
+        model: 'magistral-small-2509',
         maxTokens: 100000,
         config: mockConfig
       });
 
       const callArgs = mockChatComplete.mock.calls[0][0];
-      expect(callArgs.max_tokens).toBe(8192); // Model's max
+      expect(callArgs.max_tokens).toBe(32768); // Model's max
     });
 
-    it('should reject image content for models that do not support it', async () => {
+    // Note: All current Mistral models support images after the September 2025 update
+    // Keeping the test as a placeholder for potential future non-image models
+    it.skip('should reject image content for models that do not support it', async () => {
+      // This test would be enabled if we add any models that don't support images
       const messages = [{
         role: 'user',
         content: [
@@ -239,9 +242,10 @@ describe('Mistral Provider', () => {
         ]
       }];
 
+      // Example with hypothetical non-image model
       await expect(
         mistralProvider.invoke(messages, {
-          model: 'magistral-small-2506',
+          model: 'hypothetical-text-only-model',
           config: mockConfig
         })
       ).rejects.toMatchObject({

@@ -10,37 +10,37 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Mistral models with their capabilities
 const SUPPORTED_MODELS = {
-  'magistral-medium-2506': {
-    modelName: 'magistral-medium-2506',
-    friendlyName: 'Magistral Medium',
-    contextWindow: 40000,
-    maxOutputTokens: 8192,
+  'magistral-medium-2509': {
+    modelName: 'magistral-medium-2509',
+    friendlyName: 'Magistral Medium 1.2',
+    contextWindow: 128000,
+    maxOutputTokens: 32768,
     supportsStreaming: true,
-    supportsImages: false,
+    supportsImages: true, // Version 1.2 adds vision support
     supportsTemperature: true,
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 300000,
-    description: 'Magistral Medium - Frontier-class reasoning model (June 2025)',
-    aliases: ['magistral-medium', 'magistral-medium-latest', 'magistral', 'magistral medium']
+    description: 'Magistral Medium 1.2 - Frontier-class reasoning model with vision support (September 2025)',
+    aliases: ['magistral-medium', 'magistral-medium-latest', 'magistral', 'magistral medium', 'magistral-medium-1.2']
   },
-  'magistral-small-2506': {
-    modelName: 'magistral-small-2506',
-    friendlyName: 'Magistral Small',
-    contextWindow: 40000,
-    maxOutputTokens: 8192,
+  'magistral-small-2509': {
+    modelName: 'magistral-small-2509',
+    friendlyName: 'Magistral Small 1.2',
+    contextWindow: 128000,
+    maxOutputTokens: 32768,
     supportsStreaming: true,
-    supportsImages: false,
+    supportsImages: true, // Version 1.2 adds vision support
     supportsTemperature: true,
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 180000,
-    description: 'Magistral Small - Small reasoning model (June 2025)',
-    aliases: ['magistral-small', 'magistral-small-latest', 'magistral small']
+    description: 'Magistral Small 1.2 - Small reasoning model with vision support (September 2025)',
+    aliases: ['magistral-small', 'magistral-small-latest', 'magistral small', 'magistral-small-1.2']
   },
-  'mistral-medium-2505': {
-    modelName: 'mistral-medium-2505',
-    friendlyName: 'Mistral Medium 3',
+  'mistral-medium-2508': {
+    modelName: 'mistral-medium-2508',
+    friendlyName: 'Mistral Medium 3.1',
     contextWindow: 128000,
     maxOutputTokens: 32768,
     supportsStreaming: true,
@@ -48,8 +48,8 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
-    description: 'Mistral Medium 3 - Frontier-class multimodal model (May 2025)',
-    aliases: ['mistral-medium-3', 'mistral-medium-latest', 'mistral-medium', 'mistral medium 3', 'mistral', 'medium-3']
+    description: 'Mistral Medium 3.1 - Frontier-class multimodal model with improved tone and performance (August 2025)',
+    aliases: ['mistral-medium-3.1', 'mistral-medium-latest', 'mistral-medium', 'mistral medium 3.1', 'mistral', 'medium-3.1', 'mistral-medium-3']
   }
 };
 
@@ -218,7 +218,7 @@ export const mistralProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'magistral-medium-2506',
+      model = 'magistral-medium-2509',
       temperature = 0.7,
       maxTokens = null,
       stream = false,

@@ -23,6 +23,38 @@ const SUPPORTED_MODELS = {
     description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support and live search',
     aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest', 'grok 4', 'grok 4 latest']
   },
+  'grok-4-fast-reasoning': {
+    modelName: 'grok-4-fast-reasoning',
+    friendlyName: 'X.AI (Grok 4 Fast Reasoning)',
+    contextWindow: 2000000, // 2M tokens
+    maxOutputTokens: 2000000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: true,
+    supportsReasoning: true,
+    supportsFunctionCalling: true,
+    supportsStructuredOutputs: true,
+    timeout: 300000, // 5 minutes
+    description: 'GROK-4 Fast Reasoning (2M context) - Cost-efficient reasoning model with function calling and structured outputs',
+    aliases: ['grok-4-fast', 'grok-4-fast-reasoning-latest', 'grok 4 fast', 'grok 4 fast reasoning']
+  },
+  'grok-4-fast-non-reasoning': {
+    modelName: 'grok-4-fast-non-reasoning',
+    friendlyName: 'X.AI (Grok 4 Fast Non-Reasoning)',
+    contextWindow: 2000000, // 2M tokens
+    maxOutputTokens: 2000000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: true,
+    supportsReasoning: false,
+    supportsFunctionCalling: true,
+    supportsStructuredOutputs: true,
+    timeout: 300000, // 5 minutes
+    description: 'GROK-4 Fast Non-Reasoning (2M context) - Fast, cost-efficient model without reasoning for quick responses',
+    aliases: ['grok-4-fast-non-reasoning-latest', 'grok 4 fast non-reasoning']
+  },
   'grok-code-fast-1': {
     modelName: 'grok-code-fast-1',
     friendlyName: 'X.AI (Grok Code Fast 1)',
