@@ -5,6 +5,37 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2025-10-01
+
+### Added
+- **Configuration**: New `DISABLE_ASYNC_TOOLS` environment variable to disable async execution features
+  - When enabled, removes `check_status` and `cancel_job` tools completely
+  - Removes `async` parameter from `chat` and `consensus` tool schemas
+  - Help documentation automatically reflects filtered tools based on configuration
+  - Useful for deployments that don't need background execution capabilities
+
+- **Google Provider**: Added Gemini 2.5 Flash Lite model
+  - `gemini-2.5-flash-lite`: Lightweight fast model with 1M context window
+  - Supports images, thinking mode, and web search with grounding
+  - Efficient for quick responses with lower resource usage
+
+- **OpenRouter Provider**: Added Z.AI GLM 4.6 model
+  - `z-ai/glm-4.6`: 200K context window model with improved coding and reasoning
+  - Better performance in agentic tasks and tool usage
+  - Enhanced writing quality and role-playing capabilities
+
+### Changed
+- **Google Provider**: Updated Gemini Flash model references
+  - `gemini-2.5-flash` now uses `gemini-flash-latest` endpoint
+  - Added aliases for `gemini-2.5-flash-preview-09-2025` and `gemini-2.5-flash-latest`
+  - Ensures automatic access to latest Flash model improvements
+
+### Fixed
+- **Consensus Tool**: Fixed display showing incorrect model counts (e.g., "3/1" instead of "3/3")
+  - Now correctly shows successful models vs total models in completion status
+  - Applies to both synchronous and asynchronous consensus executions
+  - Uses `providerCalls.length` instead of `models.length` for accurate counting
+
 ## [1.14.4] - 2025-09-21
 
 ### Added
