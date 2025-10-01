@@ -68,6 +68,19 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     description: 'Auto-selects the best model for your prompt using NotDiamond routing',
     aliases: ['openrouter auto', 'auto router', 'auto-router', 'openrouter-auto']
+  },
+  'z-ai/glm-4.6': {
+    modelName: 'z-ai/glm-4.6',
+    friendlyName: 'Z.AI GLM 4.6 (via OpenRouter)',
+    contextWindow: 202752,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Z.AI GLM 4.6 with 200K context - improved coding, reasoning, and agent performance',
+    aliases: ['glm-4.6', 'glm4.6', 'glm 4.6', 'z-ai glm', 'z-ai-glm', 'zai-glm']
   }
 };
 

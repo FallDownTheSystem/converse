@@ -234,7 +234,7 @@ describe('Cancel Job Tool', () => {
       expect(result.content[0].text).toContain('Partial results available');
       expect(result.metadata.has_partial_results).toBe(true);
     });
-    
+
     it('should preserve accumulated_content when available', async () => {
       const jobState = { status: 'running', createdAt: Date.now() - 5000 };
       const updatedJobState = {

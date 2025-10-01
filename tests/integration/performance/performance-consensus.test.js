@@ -34,19 +34,19 @@ describe('Consensus Performance Tests', () => {
           }
         }
       }
-      
+
       console.log(`DEBUG: Failed to parse consensus response as JSON in ${testName}:`, {
         error: parseError.message,
         responseText: responseText.substring(0, 200) + '...',
         isError: result.isError
       });
-      
+
       // If this appears to be an async job response, skip the test
       if (responseText.includes('continuation_id:')) {
         console.log(`DEBUG: Detected async job response in ${testName} - skipping performance assertions`);
         throw new Error(`SKIP: Test ${testName} got async response instead of sync JSON - system may be overloaded`);
       }
-      
+
       throw parseError;
     }
   };
@@ -419,7 +419,7 @@ describe('Consensus Performance Tests', () => {
             enable_cross_feedback: false
           }
         });
-        
+
         // Handle both sync and async responses for continuation ID
         if (result.continuation && result.continuation.id) {
           conversations.push(result.continuation.id);

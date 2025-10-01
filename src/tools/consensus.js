@@ -508,7 +508,7 @@ Please provide your refined response:`;
 
     // Create unified status line (similar to async status display)
     const finalCount = refinedPhase ? refinedPhase.filter(r => r.status === 'success').length : initialPhase.successful.length;
-    const totalCount = models.length;
+    const totalCount = providerCalls.length;
     const statusLine = config.environment?.nodeEnv !== 'test'
       ? `✅ COMPLETED | CONSENSUS | ${continuationId} | ${consensusExecutionTime.toFixed(1)}s elapsed | ${finalCount}/${totalCount} succeeded | ${modelsList}\n`
       : '';

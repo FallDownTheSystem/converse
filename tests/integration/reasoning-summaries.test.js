@@ -14,7 +14,7 @@ describe('OpenAI Reasoning Summaries', () => {
   })('should show thinking summaries during reasoning phase', async () => {
     await withHTTPTestServer(async (client, manager) => {
       console.log('🧠 Testing OpenAI Reasoning Summaries...');
-      
+
       // Start async chat with complex reasoning task and max effort
       const asyncResult = await client.callTool({
         name: 'chat',
@@ -40,43 +40,43 @@ Think through this step by step, considering all possibilities and eliminating c
       expect(asyncResult.isError).toBeFalsy();
       expect(asyncResult.continuation?.id).toBeTruthy();
       console.log(`✅ Started async job: ${asyncResult.continuation.id}`);
-      
+
       let sawThinking = false;
       let sawStatus = false;
       let completed = false;
-      
+
       // Check status repeatedly to catch both thinking and streaming phases
       for (let i = 0; i < 20 && !completed; i++) {
         await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds between checks
-        
+
         const statusResult = await client.callTool({
-          name: 'check_status', 
+          name: 'check_status',
           arguments: {
             continuation_id: asyncResult.continuation.id
           }
         });
-        
+
         expect(statusResult.isError).toBeFalsy();
         const statusText = statusResult.content[0].text;
         const status = parseStatusResponse(statusText);
-        
+
         console.log(`\n📊 Status Check ${i + 1} (${3 * (i + 1)}s elapsed):`);
         console.log('=' .repeat(80));
         console.log(statusText);
         console.log('=' .repeat(80));
-        
+
         // Check for "Thinking:" line (reasoning summaries or fallback)
         if (statusText.includes('Thinking:')) {
           sawThinking = true;
           console.log('🧠 Found Thinking status!');
         }
-        
-        // Check for "Status:" line (streaming summaries)  
+
+        // Check for "Status:" line (streaming summaries)
         if (statusText.includes('Status:')) {
           sawStatus = true;
           console.log('📝 Found Status summary!');
         }
-        
+
         // Stop if completed
         if (status.status === 'completed') {
           completed = true;
@@ -84,18 +84,18 @@ Think through this step by step, considering all possibilities and eliminating c
           break;
         }
       }
-      
+
       // Verify we saw either thinking or status updates
       expect(completed).toBe(true);
       expect(sawThinking || sawStatus).toBe(true);
-      
+
       if (sawThinking) {
         console.log('✅ Successfully captured reasoning/thinking phase');
       }
       if (sawStatus) {
-        console.log('✅ Successfully captured streaming status phase'); 
+        console.log('✅ Successfully captured streaming status phase');
       }
-      
+
     }, 300000); // 5 minute timeout for reasoning models
   }, 300000);
 });

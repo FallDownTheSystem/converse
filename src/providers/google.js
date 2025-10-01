@@ -41,7 +41,7 @@ const SUPPORTED_MODELS = {
     aliases: ['flashlite', 'flash-lite', 'flash lite', 'flash-lite-2.0', 'gemini flash lite', 'gemini-2.0-flash-lite-latest']
   },
   'gemini-2.5-flash': {
-    modelName: 'gemini-2.5-flash',
+    modelName: 'gemini-flash-latest',
     friendlyName: 'Gemini (Flash 2.5)',
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 65536,
@@ -53,7 +53,22 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 24576,
     timeout: 300000,
     description: 'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
-    aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5', 'flash 2.5', 'gemini flash 2.5', 'gemini-2.5-flash-latest']
+    aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5', 'flash 2.5', 'gemini flash 2.5', 'gemini-2.5-flash', 'gemini-2.5-flash-preview-09-2025', 'gemini-2.5-flash-latest']
+  },
+  'gemini-2.5-flash-lite': {
+    modelName: 'gemini-flash-lite-latest',
+    friendlyName: 'Gemini (Flash Lite 2.5)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    maxThinkingTokens: 24576,
+    timeout: 300000,
+    description: 'Lightweight fast model (1M context) - Efficient quick responses with grounding',
+    aliases: ['flashlite2.5', 'flash-lite', 'flash lite', 'gemini-flash-lite', 'gemini flash lite', 'gemini-2.5-flash-lite-preview-09-2025', 'gemini-2.5-flash-lite-latest']
   },
   'gemini-2.5-pro': {
     modelName: 'gemini-2.5-pro',

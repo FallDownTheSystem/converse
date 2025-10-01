@@ -97,7 +97,7 @@ export async function cancelJobTool(args, dependencies) {
       // Calculate actual elapsed time from job creation
       const elapsedMs = Date.now() - (updatedJobState?.createdAt || jobState.createdAt || Date.now());
       const elapsedSeconds = elapsedMs / 1000;
-      
+
       // Format elapsed time
       let timeStr;
       if (elapsedSeconds >= 60) {
@@ -110,24 +110,24 @@ export async function cancelJobTool(args, dependencies) {
 
       // Build human-readable response parts
       const parts = [];
-      
+
       // Status line with proper timing
       const statusEmoji = '⛔';
       const startTime = updatedJobState?.createdAt ? new Date(updatedJobState.createdAt).toLocaleString() : 'unknown';
-      
+
       let statusLine = `${statusEmoji} CANCELLED | ${updatedJobState?.tool?.toUpperCase() || jobState.tool?.toUpperCase() || 'UNKNOWN'} | ${continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
-      
+
       // Add title if available
       if (updatedJobState?.title) {
         statusLine += ` | "${updatedJobState.title}"`;
       }
-      
+
       parts.push(statusLine);
-      
+
       // Add cancellation info
       parts.push(`Cancelled at: ${new Date().toLocaleString()}`);
       parts.push(`Previous status: ${jobState.status}`);
-      
+
       // Add partial results info if available
       if (updatedJobState?.accumulated_content) {
         const preview = updatedJobState.accumulated_content.length > 200
@@ -137,7 +137,7 @@ export async function cancelJobTool(args, dependencies) {
       } else if (updatedJobState?.result) {
         parts.push('Partial results available in job state');
       }
-      
+
       // Add continuation_id for easy reference
       parts.push(`continuation_id: ${continuation_id}`);
 

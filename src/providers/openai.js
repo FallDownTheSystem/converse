@@ -389,9 +389,9 @@ export const openaiProvider = {
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
-        requestPayload.reasoning = { 
+        requestPayload.reasoning = {
           effort: reasoning_effort,
-          summary: "auto" // Enable reasoning summaries
+          summary: 'auto' // Enable reasoning summaries
         };
       }
 
@@ -483,23 +483,23 @@ export const openaiProvider = {
       if (shouldUseResponsesAPI) {
         // Handle Responses API response format
         let reasoningSummary = null;
-        
+
         if (response.output) {
           // New format with output array (includes reasoning summaries)
           const messageOutput = response.output.find(item => item.type === 'message');
           const reasoningOutput = response.output.find(item => item.type === 'reasoning');
-          
+
           if (!messageOutput || !messageOutput.content) {
             throw new OpenAIProviderError('No message content in Responses API response', 'NO_RESPONSE_CONTENT');
           }
-          
+
           // Extract content from message output
           const textContent = messageOutput.content.find(item => item.type === 'output_text');
           if (!textContent) {
             throw new OpenAIProviderError('No text content in message output', 'NO_RESPONSE_CONTENT');
           }
           content = textContent.text;
-          
+
           // Extract reasoning summary if available
           if (reasoningOutput && reasoningOutput.summary) {
             const summaryText = reasoningOutput.summary.find(item => item.type === 'summary_text');
@@ -513,17 +513,17 @@ export const openaiProvider = {
         } else {
           throw new OpenAIProviderError('No output in Responses API response', 'NO_RESPONSE_CONTENT');
         }
-        
+
         stopReason = response.status || 'stop';
         usage = response.usage || {};
-        
+
         // Store reasoning summary in metadata
         if (reasoningSummary) {
           usage.reasoning_summary = reasoningSummary;
           debugLog(`[OpenAI] Found reasoning summary: ${reasoningSummary.substring(0, 100)}...`);
         } else {
-          debugLog(`[OpenAI] No reasoning summary found in response`);
-          debugLog(`[OpenAI] Response structure:`, JSON.stringify(response, null, 2).substring(0, 500));
+          debugLog('[OpenAI] No reasoning summary found in response');
+          debugLog('[OpenAI] Response structure:', JSON.stringify(response, null, 2).substring(0, 500));
         }
       } else {
         // Handle Chat Completions API response format
@@ -652,7 +652,7 @@ export const openaiProvider = {
             break;
           }
           if (shouldUseResponsesAPI) {
-            
+
             // Handle Responses API streaming format
             if (chunk.type === 'response.output_text.delta') {
               const content = chunk.delta || '';
@@ -666,14 +666,14 @@ export const openaiProvider = {
               }
             } else if (chunk.type === 'response.reasoning_summary_part.added') {
               // Event 1: reasoning summary part added (usually empty initially)
-              debugLog(`[OpenAI] *** REASONING PART ADDED`);
+              debugLog('[OpenAI] *** REASONING PART ADDED');
             } else if (chunk.type === 'response.reasoning_summary_part.done') {
               // Event 2: reasoning summary part completed with full text
               const summaryText = chunk.part?.text || '';
               if (summaryText) {
                 totalReasoningSummary = summaryText;
                 debugLog(`[OpenAI] *** REASONING PART DONE: "${summaryText.substring(0, 100)}..."`);
-                
+
                 yield {
                   type: 'reasoning_summary',
                   content: totalReasoningSummary,
@@ -686,7 +686,7 @@ export const openaiProvider = {
               if (summaryDelta) {
                 totalReasoningSummary += summaryDelta;
                 debugLog(`[OpenAI] *** REASONING TEXT DELTA: "${summaryDelta}"`);
-                
+
                 yield {
                   type: 'reasoning_summary',
                   content: totalReasoningSummary,
@@ -699,7 +699,7 @@ export const openaiProvider = {
               if (fullSummary) {
                 totalReasoningSummary = fullSummary;
                 debugLog(`[OpenAI] *** REASONING TEXT DONE: "${fullSummary.substring(0, 100)}..."`);
-                
+
                 yield {
                   type: 'reasoning_summary',
                   content: fullSummary,

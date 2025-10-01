@@ -741,7 +741,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
       await context.updateJob({
         reasoning_summary: response.metadata.usage.reasoning_summary
       });
-      debugLog(`Chat: Stored reasoning summary`);
+      debugLog('Chat: Stored reasoning summary');
     } catch (error) {
       debugError('Chat: Failed to store reasoning summary', error);
     }

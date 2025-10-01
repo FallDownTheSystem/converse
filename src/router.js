@@ -97,7 +97,7 @@ function validateTool(toolName, tools) {
 async function createDependencies(config, context = {}) {
   try {
     const continuationStore = getContinuationStore();
-    const tools = getTools();
+    const tools = getTools(config);
     const providers = getProviders();
 
     // Initialize async infrastructure
@@ -181,7 +181,7 @@ export async function createRouter(server, config) {
 
     // Initialize dependencies with validation
     const dependencies = await createDependencies(config);
-    const tools = getTools();
+    const tools = getTools(config);
 
     createRouterLogger.info(`Router initialized with ${Object.keys(tools).length} tools`);
 
@@ -307,7 +307,7 @@ export async function createRouter(server, config) {
 
       if (promptName === 'help') {
         const promptArgs = request.params?.arguments || {};
-        const result = await helpPromptHandler(promptArgs);
+        const result = await helpPromptHandler(promptArgs, config);
 
         return {
           description: helpPromptMetadata.description,
@@ -335,7 +335,7 @@ export async function createRouter(server, config) {
       const resourceUri = request.params?.uri;
 
       if (resourceUri === helpResourceMetadata.uri) {
-        return await helpResourceHandler();
+        return await helpResourceHandler(config);
       }
 
       throw new RouterError(
@@ -360,7 +360,7 @@ export async function createRouter(server, config) {
     // Return router interface for testing purposes
     return {
       listTools: async () => {
-        const tools = getTools();
+        const tools = getTools(config);
         return {
           tools: Object.entries(tools).map(([name, tool]) => {
             const toolSchema = {
@@ -553,7 +553,7 @@ export function validateToolArguments(args, schema) {
  */
 export async function getRouterStats(dependencies) {
   try {
-    const tools = getTools();
+    const tools = getTools(dependencies.config);
     const storeStats = await dependencies.continuationStore.getStats();
 
     return {

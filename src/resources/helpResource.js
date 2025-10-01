@@ -39,10 +39,11 @@ export const helpResourceMetadata = {
 
 /**
  * Handler for reading the help resource
+ * @param {object} config - Configuration object (optional)
  * @returns {object} Resource content
  */
-export async function helpResourceHandler() {
-  const helpContent = generateHelpContent();
+export async function helpResourceHandler(config = null) {
+  const helpContent = generateHelpContent(config);
   const version = getServerVersion();
 
   // Add version information to the help content

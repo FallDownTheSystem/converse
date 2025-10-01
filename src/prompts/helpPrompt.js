@@ -9,8 +9,9 @@ import { getTools } from '../tools/index.js';
 
 /**
  * Generate comprehensive help content dynamically based on current providers
+ * @param {object} config - Configuration object (optional)
  */
-export function generateHelpContent() {
+export function generateHelpContent(config = null) {
   const providers = getProviders();
 
   // Collect all models from all providers
@@ -58,7 +59,7 @@ export function generateHelpContent() {
   };
 
   // Get tools and format their documentation
-  const tools = getTools();
+  const tools = getTools(config);
   const formatToolParameters = (inputSchema) => {
     if (!inputSchema || !inputSchema.properties) return '';
 
@@ -235,11 +236,13 @@ Note: Server name and version are automatically read from package.json.
 
 /**
  * Help prompt handler function
+ * @param {object} args - Prompt arguments
+ * @param {object} config - Configuration object (optional)
  */
-export async function helpPromptHandler(args = {}) {
+export async function helpPromptHandler(args = {}, config = null) {
   const { topic } = args;
 
-  const fullHelp = generateHelpContent();
+  const fullHelp = generateHelpContent(config);
 
   // If no topic specified, return full help
   if (!topic) {

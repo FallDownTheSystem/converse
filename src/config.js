@@ -112,6 +112,11 @@ const CONFIG_SCHEMA = {
     ENABLE_RESPONSE_SUMMARIZATION: { type: 'boolean', default: false, description: 'Enable AI-powered response summarization for async operations' },
     SUMMARIZATION_MODEL: { type: 'string', default: 'gpt-5-nano', description: 'Model to use for summarization tasks (title generation, streaming summaries, final summaries)' },
   },
+
+  // Async tools configuration
+  async: {
+    DISABLE_ASYNC_TOOLS: { type: 'boolean', default: false, description: 'Disable async execution support (removes async parameter from tools and status check tools)' },
+  },
 };
 
 // ConfigurationError now imported from errorHandler
@@ -312,6 +317,19 @@ export async function loadConfig() {
           config.summarization.enabled = value;
         } else if (key === 'SUMMARIZATION_MODEL') {
           config.summarization.model = value;
+        }
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+
+    // Load Async tools configuration
+    config.async = {};
+    for (const [key, schema] of Object.entries(CONFIG_SCHEMA.async)) {
+      try {
+        const value = validateEnvVar(key, process.env[key], schema);
+        if (key === 'DISABLE_ASYNC_TOOLS') {
+          config.async.disableAsyncTools = value;
         }
       } catch (error) {
         errors.push(error.message);

@@ -24,11 +24,50 @@ const tools = {
 };
 
 /**
- * Get all available tools
+ * Get all available tools, optionally filtered based on configuration
+ * @param {object} config - Configuration object (optional)
  * @returns {object} Map of tool name to tool implementation
  */
-export function getTools() {
-  return tools;
+export function getTools(config = null) {
+  // If no config provided or async tools not disabled, return all tools
+  if (!config || !config.async?.disableAsyncTools) {
+    return tools;
+  }
+
+  // Filter out async-only tools when async is disabled
+  const filteredTools = {};
+  for (const [name, tool] of Object.entries(tools)) {
+    // Exclude check_status and cancel_job tools
+    if (name === 'check_status' || name === 'cancel_job') {
+      continue;
+    }
+
+    // Clone the tool to avoid mutating the original
+    const clonedTool = tool;
+
+    // For chat and consensus tools, remove the 'async' parameter from their schemas
+    if (name === 'chat' || name === 'consensus') {
+      // Create a modified inputSchema without the async parameter
+      const modifiedSchema = {
+        ...tool.inputSchema,
+        properties: { ...tool.inputSchema.properties }
+      };
+      delete modifiedSchema.properties.async;
+
+      // Create a wrapper function with modified metadata
+      const wrappedTool = async function(...args) {
+        return await tool(...args);
+      };
+      wrappedTool.description = tool.description;
+      wrappedTool.inputSchema = modifiedSchema;
+
+      filteredTools[name] = wrappedTool;
+    } else {
+      filteredTools[name] = clonedTool;
+    }
+  }
+
+  return filteredTools;
 }
 
 /**
