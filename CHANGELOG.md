@@ -5,6 +5,16 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.1] - 2025-10-01
+
+### Changed
+- **Tool Descriptions**: Shortened chat and consensus tool descriptions for better clarity
+  - Removed implementation details (e.g., "handles partial failures gracefully")
+  - Focus on tool behavior, use cases, and parameter usage
+  - Chat tool: Explicitly mentions `continuation_id` parameter for multi-turn conversations
+  - Consensus tool: Reduced from 334 to 225 characters while maintaining essential information
+  - Optimized for LLM understanding rather than human marketing
+
 ## [1.15.0] - 2025-10-01
 
 ### Added
