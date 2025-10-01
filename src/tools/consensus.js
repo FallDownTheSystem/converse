@@ -1336,7 +1336,7 @@ async function executeConsensusPhaseWithStreaming(providerCalls, messages, phase
 }
 
 // Tool metadata
-consensusTool.description = 'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Gathers perspectives from multiple AI models simultaneously. Models provide initial responses, then optionally refine based on others\' insights. Returns both phases in a single call. Handles partial failures gracefully. For: complex decisions, architectural choices, technical evaluations. Use models: ["auto"] for automatic model selection.';
+consensusTool.description = 'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Query multiple models simultaneously, then optionally refine responses based on cross-feedback. For complex decisions, architectural choices, technical evaluations. Use models: ["auto"] for automatic selection.';
 consensusTool.inputSchema = {
   type: 'object',
   properties: {

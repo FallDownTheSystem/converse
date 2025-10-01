@@ -810,7 +810,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
 }
 
 // Tool metadata
-chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - For development assistance, brainstorming, and code analysis. Supports files, images, and conversation continuation. Use model: "auto" for automatic model selection.';
+chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - Development assistance, brainstorming, code analysis. Supports files, images, continuation_id for multi-turn conversations. Use model: "auto" for automatic selection.';
 chatTool.inputSchema = {
   type: 'object',
   properties: {
