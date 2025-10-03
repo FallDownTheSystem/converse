@@ -5,6 +5,40 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2025-10-03
+
+### Added
+- **Anthropic Provider**: Added Claude Sonnet 4.5 support
+  - `claude-sonnet-4-5-20250929`: Latest Sonnet with enhanced intelligence
+  - 200K standard context / 1M beta context window support
+  - 64K max output tokens with extended thinking capabilities
+  - Aliases: `claude-4.5-sonnet`, `sonnet-4.5`, `claude-sonnet-4.5`, `sonnet4.5`
+
+- **Anthropic Provider**: Beta 1M context window support
+  - Enabled for Claude Sonnet 4.5 and Claude Sonnet 4 models
+  - Automatic `context-1m-2025-08-07` beta header when using supported models
+  - Uses modern SDK `betas` parameter API instead of deprecated `defaultHeaders`
+
+### Changed
+- **Dependencies**: Updated to latest versions
+  - `@anthropic-ai/sdk`: 0.57.0 → 0.65.0 (8 versions)
+  - `openai`: 5.11.0 → 6.1.0 (major version upgrade)
+  - `@google/genai`: 1.12.0 → 1.22.0 (10 versions)
+  - `@mistralai/mistralai`: 1.7.5 → 1.10.0
+  - `@modelcontextprotocol/sdk`: 1.17.1 → 1.19.1
+  - Various dev dependencies updated (eslint, cross-env, vitest)
+
+- **Anthropic Provider**: Migrated to modern beta features API
+  - Now uses `betas` parameter in `messages.create()` calls
+  - Removed deprecated `defaultHeaders` approach for beta features
+  - Improved compatibility with latest Anthropic SDK
+
+### Fixed
+- **Code Quality**: Fixed linting errors
+  - Changed `let` to `const` for non-reassigned variables
+  - Fixed string quote consistency
+  - Removed trailing whitespace
+
 ## [1.15.1] - 2025-10-01
 
 ### Changed
