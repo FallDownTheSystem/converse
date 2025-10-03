@@ -29,6 +29,23 @@ const SUPPORTED_MODELS = {
     description: 'Claude Opus 4.1 - Highest level of intelligence and capability with extended thinking',
     aliases: ['claude-opus-4-1', 'claude-4.1-opus', 'claude-4-1-opus', 'opus-4.1', 'opus-4-1', 'claude-4-opus', 'opus-4', 'opus', 'claude-opus', 'claude-opus-4', 'opus4', 'opus4.1', 'claude-opus-4.1']
   },
+  'claude-sonnet-4-5-20250929': {
+    modelName: 'claude-sonnet-4-5-20250929',
+    friendlyName: 'Claude Sonnet 4.5',
+    contextWindow: 200000,
+    maxOutputTokens: 64000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 64000,
+    timeout: 300000,
+    supports1MContext: true, // Beta 1M context support
+    description: 'Claude Sonnet 4.5 - Latest Sonnet with enhanced intelligence and optional 1M context',
+    aliases: ['claude-4.5-sonnet', 'sonnet-4.5', 'claude-sonnet-4.5', 'sonnet4.5', 'claude-sonnet-4-5']
+  },
   'claude-sonnet-4-20250514': {
     modelName: 'claude-sonnet-4-20250514',
     friendlyName: 'Claude Sonnet 4',
@@ -42,6 +59,7 @@ const SUPPORTED_MODELS = {
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
     timeout: 300000,
+    supports1MContext: true, // Beta 1M context support
     description: 'Claude Sonnet 4 - High intelligence and balanced performance with extended thinking',
     aliases: ['claude-4-sonnet', 'sonnet-4', 'sonnet', 'claude-sonnet', 'claude-sonnet-4', 'sonnet4']
   },
@@ -357,19 +375,22 @@ export const anthropicProvider = {
     const resolvedModel = resolveModelName(model);
     const modelConfig = SUPPORTED_MODELS[resolvedModel] || {};
 
-    // Initialize Anthropic client with default headers
-    // Use both prompt caching and extended cache duration headers for 1-hour caching
-    // Set beta headers for caching
-    const betaHeaders = ['prompt-caching-2024-07-31', 'extended-cache-ttl-2025-04-11'];
-
+    // Initialize Anthropic client
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
-      defaultHeaders: {
-        'anthropic-beta': betaHeaders.join(',')
-      },
       // Increase timeout to 20 minutes for thinking models that may take longer
       timeout: 20 * 60 * 1000
     });
+
+    // Build beta features array for the request
+    // Use both prompt caching and extended cache duration for 1-hour caching
+    const betas = ['prompt-caching-2024-07-31', 'extended-cache-ttl-2025-04-11'];
+
+    // Add 1M context beta feature if model supports it
+    if (modelConfig.supports1MContext) {
+      betas.push('context-1m-2025-08-07');
+      debugLog(`[Anthropic] Model ${resolvedModel} supports 1M context window with beta feature`);
+    }
 
     // Convert messages to Anthropic format (system messages are always cached)
     const { systemPrompt, messages: anthropicMessages } = convertMessagesToAnthropic(messages);
@@ -379,6 +400,7 @@ export const anthropicProvider = {
       model: resolvedModel,
       messages: anthropicMessages,
       stream,
+      betas, // Include beta features
       ...otherOptions
     };
 
@@ -404,7 +426,7 @@ export const anthropicProvider = {
       // For other models, check against max_tokens if set
       const maxTokensLimit = requestPayload.max_tokens ||
         (resolvedModel.includes('claude-opus-4') ? 32000 :
-          resolvedModel.includes('claude-sonnet-4') ? 64000 :
+          (resolvedModel.includes('claude-sonnet-4-5') || resolvedModel.includes('claude-sonnet-4')) ? 64000 :
             modelConfig.maxOutputTokens);
 
       if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
@@ -449,6 +471,7 @@ export const anthropicProvider = {
         max_tokens: requestPayload.max_tokens,
         thinking: requestPayload.thinking,
         temperature: requestPayload.temperature,
+        betas: requestPayload.betas,
         message_count: requestPayload.messages?.length,
         system_length: Array.isArray(requestPayload.system) ? requestPayload.system[0]?.text?.length : requestPayload.system?.length
       }, null, 2));

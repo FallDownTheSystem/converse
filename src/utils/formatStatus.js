@@ -20,12 +20,11 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
   const parts = [];
 
   // Summary line - include cancelled jobs if any
-  let summaryParts = [];
+  const summaryParts = [];
   if (jobsList.summary.active_jobs > 0) summaryParts.push(`${jobsList.summary.active_jobs} active`);
   if (jobsList.summary.completed_jobs > 0) summaryParts.push(`${jobsList.summary.completed_jobs} completed`);
   if (jobsList.summary.failed_jobs > 0) summaryParts.push(`${jobsList.summary.failed_jobs} failed`);
   if (jobsList.summary.cancelled_jobs > 0) summaryParts.push(`${jobsList.summary.cancelled_jobs} cancelled`);
-  
   const summaryStr = summaryParts.length > 0 ? summaryParts.join(', ') : '0 jobs';
   parts.push(`📊 Jobs Summary: ${summaryStr}`);
 
@@ -170,11 +169,11 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
   } else if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.elapsed_seconds > 5) {
     // Fallback thinking status for jobs without reasoning summaries
     const thinkingTime = Math.floor(jobStatus.elapsed_seconds);
-    debugLog(`[FormatStatus] *** FALLBACK THINKING (no reasoning_summary available)`);
-    parts.push(`Thinking: Model is processing your request (${thinkingTime}s elapsed)`);
+    debugLog('[FormatStatus] *** FALLBACK THINKING (no reasoning_summary available)');
+    parts.push('Thinking: Model is processing your request (' + thinkingTime + 's elapsed)');
   }
 
-  // Generate streaming summary for running jobs if accumulated content available  
+  // Generate streaming summary for running jobs if accumulated content available
   if (jobStatus.status === 'running' && jobStatus.accumulated_content) {
     try {
       if (dependencies.config && dependencies.providers) {
