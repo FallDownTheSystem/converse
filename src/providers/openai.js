@@ -63,7 +63,6 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: false,  // Not a deep research model
-    reasoningEffort: 'high',      // Only supports 'high' - always enforced
     timeout: 3600000, // 60 minutes - some requests may take several minutes
     description: 'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
     aliases: ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro', 'gpt-5-pro-2025-10-06']
