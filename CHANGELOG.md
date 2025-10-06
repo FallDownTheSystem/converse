@@ -5,6 +5,17 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **OpenAI Provider**: Added GPT-5 Pro support
+  - `gpt-5-pro`: Most advanced reasoning model (400K context, 272K output)
+  - Designed for the hardest problems requiring extended compute time
+  - Supports web search, images, and reasoning summaries
+  - Responses API only (no streaming support)
+  - Defaults to high reasoning effort
+  - Aliases: `gpt5-pro`, `gpt-5pro`, `gpt 5 pro`, `gpt-5 pro`, `gpt-5-pro-2025-10-06`
+
 ## [1.16.0] - 2025-10-03
 
 ### Added

@@ -141,12 +141,12 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ### For Large Context Windows
 - **1M+ Tokens**: gpt-4.1 (1M), all Gemini models (1M)
-- **400K Tokens**: gpt-5 family (gpt-5, gpt-5-mini, gpt-5-nano)
+- **400K Tokens**: gpt-5 family (gpt-5, gpt-5-mini, gpt-5-nano, gpt-5-pro)
 - **256K Tokens**: grok-4 series
-- **200K Tokens**: gpt-5 series, o4-mini
+- **200K Tokens**: o3 series, o4-mini
 
 ### Special Features
-- **Web Search**: gpt-5, gpt-5-mini, gpt-5 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
+- **Web Search**: gpt-5, gpt-5-mini, gpt-5-pro, o3 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
 - **Thinking Mode**: gpt-5 series (reasoning_effort), gemini models (thinking budget)
 - **Image Support**: All models except gemini-2.0-flash-lite and grok-code-fast-1
 

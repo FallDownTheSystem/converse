@@ -209,8 +209,9 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **gpt-5**: Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis
 - **gpt-5-mini**: Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts
 - **gpt-5-nano**: Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification
+- **gpt-5-pro**: Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)
 - **o3**: Strong reasoning (200K context)
-- **o3-mini**: Fast O3 variant (200K context)  
+- **o3-mini**: Fast O3 variant (200K context)
 - **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE
 - **o3-deep-research**: Deep research model (200K context) - 30-90 min runtime
 - **o4-mini**: Latest reasoning model (200K context)

@@ -9,6 +9,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Environment Variable**: `OPENAI_API_KEY`
 - **Supported Models**:
+  - `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro` - GPT-5 family with advanced reasoning
   - `o3`, `o3-mini`, `o3-pro` - Advanced reasoning models
   - `o4-mini` - Latest fast reasoning model
   - `gpt-4.1` - Large context (1M tokens)

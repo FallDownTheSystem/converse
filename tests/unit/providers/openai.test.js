@@ -88,6 +88,8 @@ describe('OpenAI Provider', () => {
       expect('o3-mini' in models).toBe(true);
       expect('gpt-4o' in models).toBe(true);
       expect('gpt-4o-mini' in models).toBe(true);
+      expect('gpt-5' in models).toBe(true);
+      expect('gpt-5-pro' in models).toBe(true);
     });
 
     it('should include model configuration details', () => {
@@ -98,6 +100,22 @@ describe('OpenAI Provider', () => {
       expect(o3Model.friendlyName).toBe('OpenAI (O3)');
       expect(o3Model.contextWindow).toBe(200000);
       expect(o3Model.supportsImages).toBe(true);
+    });
+
+    it('should include GPT-5 Pro configuration with correct properties', () => {
+      const models = openaiProvider.getSupportedModels();
+      const gpt5ProModel = models['gpt-5-pro'];
+
+      expect(gpt5ProModel).toBeTruthy();
+      expect(gpt5ProModel.modelName).toBe('gpt-5-pro');
+      expect(gpt5ProModel.friendlyName).toBe('OpenAI (GPT-5 Pro)');
+      expect(gpt5ProModel.contextWindow).toBe(400000);
+      expect(gpt5ProModel.maxOutputTokens).toBe(272000);
+      expect(gpt5ProModel.supportsStreaming).toBe(false);
+      expect(gpt5ProModel.supportsImages).toBe(true);
+      expect(gpt5ProModel.supportsWebSearch).toBe(true);
+      expect(gpt5ProModel.supportsResponsesAPI).toBe(true);
+      expect(gpt5ProModel.supportsTemperature).toBe(false);
     });
   });
 
@@ -127,6 +145,16 @@ describe('OpenAI Provider', () => {
 
       expect(config).toBeTruthy();
       expect(config.modelName).toBe('o3');
+    });
+
+    it('should return config for GPT-5 Pro aliases', () => {
+      const aliases = ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro'];
+
+      aliases.forEach(alias => {
+        const config = openaiProvider.getModelConfig(alias);
+        expect(config).toBeTruthy();
+        expect(config.modelName).toBe('gpt-5-pro');
+      });
     });
   });
 

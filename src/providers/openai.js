@@ -52,6 +52,21 @@ const SUPPORTED_MODELS = {
     description: 'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07']
   },
+  'gpt-5-pro': {
+    modelName: 'gpt-5-pro',
+    friendlyName: 'OpenAI (GPT-5 Pro)',
+    contextWindow: 400000,
+    maxOutputTokens: 272000,
+    supportsStreaming: false,     // GPT-5 Pro doesn't support streaming
+    supportsImages: true,
+    supportsTemperature: false,   // GPT-5 models don't support temperature
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsDeepResearch: false,  // Not a deep research model
+    timeout: 3600000, // 60 minutes - some requests may take several minutes
+    description: 'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
+    aliases: ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro', 'gpt-5-pro-2025-10-06']
+  },
   'o3': {
     modelName: 'o3',
     friendlyName: 'OpenAI (O3)',
