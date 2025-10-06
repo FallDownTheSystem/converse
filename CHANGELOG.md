@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **OpenAI Provider**: Fixed GPT-5 Pro reasoning effort handling
+  - Automatically enforces `reasoning_effort: 'high'` for GPT-5 Pro (only supported value)
+  - Prevents API errors when users specify 'medium' or other unsupported values
+
 ## [1.17.0] - 2025-10-06
 
 ### Added

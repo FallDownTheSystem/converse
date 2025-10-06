@@ -116,6 +116,7 @@ describe('OpenAI Provider', () => {
       expect(gpt5ProModel.supportsWebSearch).toBe(true);
       expect(gpt5ProModel.supportsResponsesAPI).toBe(true);
       expect(gpt5ProModel.supportsTemperature).toBe(false);
+      expect(gpt5ProModel.reasoningEffort).toBe('high');
     });
   });
 

@@ -63,6 +63,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: false,  // Not a deep research model
+    reasoningEffort: 'high',      // Only supports 'high' - always enforced
     timeout: 3600000, // 60 minutes - some requests may take several minutes
     description: 'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
     aliases: ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro', 'gpt-5-pro-2025-10-06']
@@ -404,8 +405,10 @@ export const openaiProvider = {
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
+        // GPT-5 Pro only supports 'high' reasoning effort
+        const effectiveEffort = resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
         requestPayload.reasoning = {
-          effort: reasoning_effort,
+          effort: effectiveEffort,
           summary: 'auto' // Enable reasoning summaries
         };
       }
@@ -431,7 +434,9 @@ export const openaiProvider = {
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
       if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
-        requestPayload.reasoning_effort = reasoning_effort;
+        // GPT-5 Pro only supports 'high' reasoning effort
+        const effectiveEffort = resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
+        requestPayload.reasoning_effort = effectiveEffort;
       }
 
       // Add verbosity for GPT-5 models
