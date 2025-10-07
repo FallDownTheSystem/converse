@@ -101,6 +101,7 @@ const CONFIG_SCHEMA = {
     GOOGLE_API_VERSION: { type: 'string', default: 'v1beta', description: 'Google API version (v1, v1beta, v1alpha)' },
 
     // Codex configuration
+    CODEX_API_KEY: { type: 'string', required: false, secret: true, description: 'Codex API key (alternative to ChatGPT login)' },
     CODEX_SANDBOX_MODE: { type: 'string', default: 'read-only', description: 'Codex sandbox mode (read-only | workspace-write | danger-full-access)' },
     CODEX_SKIP_GIT_CHECK: { type: 'boolean', default: true, description: 'Skip Git repository validation check' },
     CODEX_APPROVAL_POLICY: { type: 'string', default: 'never', description: 'Approval policy (never | untrusted | on-failure | on-request)' },

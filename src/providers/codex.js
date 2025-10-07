@@ -8,7 +8,7 @@
  * - Uses thread-based conversations (persistent state managed by Codex SDK)
  * - Converts message arrays to single prompts (Codex expects prompts, not message history)
  * - Spawns local process (bundled CLI binary) for execution
- * - Requires ChatGPT authentication or OPENAI_API_KEY
+ * - Requires ChatGPT authentication OR CODEX_API_KEY (NOT OPENAI_API_KEY)
  *
  * For implementation details, see: backlog/docs/guides/doc-codex-research-findings.md
  */
@@ -217,8 +217,28 @@ export const codexProvider = {
       debugLog('[Codex] Parameter "use_websearch" not supported by Codex (ignored)');
     }
 
-    // Get Codex SDK
-    const Codex = await getCodexSDK();
+    // Handle CODEX_API_KEY authentication
+    // CRITICAL: Codex SDK reads OPENAI_API_KEY from environment, but we want to use CODEX_API_KEY
+    // We need to temporarily set OPENAI_API_KEY if CODEX_API_KEY is provided
+    const codexApiKey = config.providers?.codexapikey;
+    const originalOpenAIKey = process.env.OPENAI_API_KEY;
+
+    if (codexApiKey) {
+      // User provided CODEX_API_KEY - use it for Codex authentication
+      process.env.OPENAI_API_KEY = codexApiKey;
+      debugLog('[Codex] Using CODEX_API_KEY for authentication');
+    } else if (originalOpenAIKey) {
+      // Remove OPENAI_API_KEY to prevent Codex from using it
+      // Codex should only use ChatGPT login if no CODEX_API_KEY is set
+      delete process.env.OPENAI_API_KEY;
+      debugLog('[Codex] Using ChatGPT login for authentication (OPENAI_API_KEY cleared)');
+    } else {
+      debugLog('[Codex] Using ChatGPT login for authentication');
+    }
+
+    try {
+      // Get Codex SDK
+      const Codex = await getCodexSDK();
 
     // Convert messages to prompt
     const prompt = convertMessagesToPrompt(messages);
@@ -316,7 +336,7 @@ export const codexProvider = {
       // Map common errors to standard error codes
       if (error.message?.includes('authentication')) {
         throw new CodexProviderError(
-          'Codex authentication failed. Ensure ChatGPT login or OPENAI_API_KEY is set.',
+          'Codex authentication failed. Ensure ChatGPT login or CODEX_API_KEY is set.',
           ErrorCodes.INVALID_API_KEY,
           error
         );
@@ -344,12 +364,20 @@ export const codexProvider = {
         ErrorCodes.API_ERROR,
         error
       );
+    } finally {
+      // CRITICAL: Restore original OPENAI_API_KEY to prevent leaking CODEX_API_KEY to other providers
+      if (originalOpenAIKey) {
+        process.env.OPENAI_API_KEY = originalOpenAIKey;
+      } else if (codexApiKey) {
+        // We set OPENAI_API_KEY from CODEX_API_KEY, remove it now
+        delete process.env.OPENAI_API_KEY;
+      }
     }
   },
 
   /**
    * Validate Codex configuration
-   * Codex uses ChatGPT authentication or OPENAI_API_KEY
+   * Codex uses ChatGPT authentication or CODEX_API_KEY (NOT OPENAI_API_KEY)
    */
   validateConfig(_config) {
     // Codex can work with either ChatGPT login or API key

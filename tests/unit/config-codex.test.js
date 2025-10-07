@@ -30,6 +30,7 @@ describe('Codex Configuration', () => {
     it('should load default values when env vars not set', async () => {
       const config = await loadConfig();
 
+      expect(config.providers.codexapikey).toBeUndefined();
       expect(config.providers.codexsandboxmode).toBe('read-only');
       expect(config.providers.codexskipgitcheck).toBe(true);
       expect(config.providers.codexapprovalpolicy).toBe('never');
