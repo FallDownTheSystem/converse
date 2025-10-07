@@ -356,6 +356,90 @@ For long-running tasks, use async mode to get immediate response and monitor pro
 }
 ```
 
+## 🤖 Codex Examples
+
+Codex is an agentic coding assistant that runs locally with direct filesystem access.
+
+### Basic Code Analysis
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Explain what this function does",
+    "model": "codex",
+    "files": ["/path/to/src/utils.js"]
+  }
+}
+```
+
+### Thread Continuation
+
+Codex maintains conversation history through threads:
+
+```json
+// First request
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Review this authentication module",
+    "model": "codex",
+    "files": ["/path/to/auth.js"]
+  }
+}
+// Response includes: "continuation": { "id": "conv_abc123" }
+
+// Follow-up request (maintains context)
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Now add rate limiting to the login endpoint",
+    "model": "codex",
+    "continuation_id": "conv_abc123"
+  }
+}
+```
+
+### Async Mode for Long Tasks
+
+Codex responses can take several minutes for complex tasks:
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Analyze this entire codebase and suggest refactoring opportunities",
+    "model": "codex",
+    "files": ["/path/to/project"],
+    "async": true
+  }
+}
+// Response: { "job_id": "conv_xyz789", "status": "SUBMITTED" }
+
+// Check progress
+{
+  "tool": "check_status",
+  "arguments": {
+    "continuation_id": "conv_xyz789"
+  }
+}
+```
+
+### Sandbox Modes
+
+Control filesystem access through `CODEX_SANDBOX_MODE`:
+
+```bash
+# Read-only mode (default) - safe for exploration
+CODEX_SANDBOX_MODE=read-only
+
+# Workspace-write - allow modifications in project directory
+CODEX_SANDBOX_MODE=workspace-write
+
+# Full access - use only in containers with proper isolation
+CODEX_SANDBOX_MODE=danger-full-access
+```
+
 ## 🤝 Consensus Examples
 
 ### Simple Technical Decision

@@ -379,6 +379,28 @@ MCP_TRANSPORT=stdio npm start
 | `qwen/qwen-2.5-coder-32b-instruct` | `qwen-coder` | 32K | 32K | Code focus | Programming |
 | `qwen/qwq-32b-preview` | `qwen-thinking`, `qwq` | 32K | 32K | Reasoning | Step-by-step thinking |
 
+### Codex Models
+
+**Codex** is an agentic coding assistant with direct filesystem access:
+
+- **Model**: `codex`
+- **Thread-based sessions**: Persistent conversation history via continuation_id
+- **Direct file access**: Reads files from working directory (paths relative to CLIENT_CWD)
+- **Response times**: 6-20 seconds typical (complex tasks may take minutes)
+- **Authentication**: Requires ChatGPT login OR `CODEX_API_KEY` environment variable
+
+**Codex-Specific Behavior:**
+- `continuation_id` - Required for thread continuation (maintains full conversation history)
+- `files` parameter - Files accessed directly from working directory, not passed as message content
+- `temperature`, `use_websearch` - Not supported by Codex (ignored if specified)
+- Responses significantly longer than API-based providers
+
+**Configuration (see [Codex Configuration](#codex-configuration) section):**
+- `CODEX_SANDBOX_MODE` - Filesystem access control
+- `CODEX_SKIP_GIT_CHECK` - Git repository requirement
+- `CODEX_APPROVAL_POLICY` - Command approval behavior
+- `CODEX_DEFAULT_MODEL` - Default model when using `model: 'codex'`
+
 ### Model Selection
 
 Use `"auto"` for automatic selection or specify exact models:
@@ -423,6 +445,44 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Model for summarization (default: gpt-5-
 - Temperature set to 0.3 for consistent, focused summaries
 - Graceful fallback to text snippets when disabled or on errors
 - Non-blocking - summarization failures don't affect main flow
+
+### Codex Configuration
+
+Control Codex behavior through environment variables:
+
+**CODEX_SANDBOX_MODE** - Filesystem access control:
+- `read-only` (default): Can read files but not modify
+- `workspace-write`: Can modify files in workspace only
+- `danger-full-access`: Full filesystem access (use in containers only)
+
+**CODEX_SKIP_GIT_CHECK** - Git repository requirement:
+- `true` (default): Works in any directory
+- `false`: Requires working directory to be a Git repository
+
+**CODEX_APPROVAL_POLICY** - Command approval behavior:
+- `never` (default): Never prompt for approval (recommended for servers)
+- `untrusted`: Prompt for untrusted commands
+- `on-failure`: Prompt when commands fail
+- `on-request`: Let model decide (may hang in headless mode)
+
+**CODEX_DEFAULT_MODEL** - Default model when `model: 'codex'`:
+- Default: `gpt-5-codex`
+
+**Authentication:**
+- Requires ChatGPT login (system-wide, persists across restarts)
+- Alternative: Set `CODEX_API_KEY` environment variable for headless deployments
+
+**Example Configuration (.env file):**
+```bash
+# Codex authentication (optional if ChatGPT login available)
+CODEX_API_KEY=your_codex_api_key_here
+
+# Codex behavior
+CODEX_SANDBOX_MODE=read-only                 # Default: read-only
+CODEX_SKIP_GIT_CHECK=true                    # Default: true
+CODEX_APPROVAL_POLICY=never                  # Default: never
+CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
+```
 
 ## Context Processing
 

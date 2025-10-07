@@ -1,9 +1,9 @@
 ---
 id: task-048-map-chat-tool-parameters-to-codex-configuration
 title: Map Chat tool parameters to Codex configuration
-status: "In Progress"
+status: "Done"
 created_date: '2025-10-07 13:57'
-updated_date: '2025-10-07 14:34'
+updated_date: '2025-10-07 15:55'
 parent: task-045
 subtasks: []
 dependencies: [task-047]
@@ -1068,5 +1068,49 @@ if (use_websearch) {
 - Invalid config values properly rejected ✅
 
 **Ready for User Testing** - Implementation complete, awaiting user confirmation.
+
+---
+
+### Task Completed (2025-10-07 15:55)
+
+**Status:** ✅ Done - All requirements met, tested, and deployed
+
+**Implementation Summary:**
+- All 4 Codex configuration parameters successfully added to CONFIG_SCHEMA
+- Provider now reads all config values (sandbox mode, skip git check, approval policy, default model)
+- Parameter mapping implemented with debug logging for unsupported options
+- Boolean config loader bug fixed (preserves false values)
+- Comprehensive unit tests added (18 tests passing)
+- Integration tests updated with config testing
+- Documentation updated (.env.example)
+
+**Bug Fixes During Implementation:**
+
+1. **Syntax Error (beta.1 → beta.2)**
+   - Issue: Nested try-catch-finally blocks caused "Missing catch or finally" error
+   - Fix: Restructured to single try-catch-finally wrapping entire invoke method
+   - Impact: Server now starts successfully
+
+2. **Continuation Failure (beta.2 → beta.3)**
+   - Issue: `resumeThread()` not receiving configuration options
+   - Error: "Not inside a trusted directory and --skip-git-repo-check was not specified"
+   - Fix: Pass `threadOptions` to both `startThread()` and `resumeThread()`
+   - Impact: Continuation requests now work correctly
+
+**Testing Results:**
+- ✅ New conversation: Works (6.8s for simple responses, ~5min for complex tasks)
+- ✅ Continuation: Works (6.8s, maintains thread ID correctly)
+- ✅ Configuration: All 4 parameters respected
+- ✅ Linting: Passes (warnings only)
+
+**Versions Published:**
+- 1.18.0-beta.2: Fixed syntax error
+- 1.18.0-beta.3: Fixed continuation config bug
+
+**Performance Notes:**
+Codex execution time varies significantly based on task complexity:
+- Simple acknowledgments: ~7 seconds
+- Complex tasks (analysis, command execution): ~5 minutes
+- This is expected behavior based on Codex's actual workload
 
 <!-- NOTES:END -->

@@ -217,25 +217,6 @@ export const codexProvider = {
       debugLog('[Codex] Parameter "use_websearch" not supported by Codex (ignored)');
     }
 
-    // Handle CODEX_API_KEY authentication
-    // CRITICAL: Codex SDK reads OPENAI_API_KEY from environment, but we want to use CODEX_API_KEY
-    // We need to temporarily set OPENAI_API_KEY if CODEX_API_KEY is provided
-    const codexApiKey = config.providers?.codexapikey;
-    const originalOpenAIKey = process.env.OPENAI_API_KEY;
-
-    if (codexApiKey) {
-      // User provided CODEX_API_KEY - use it for Codex authentication
-      process.env.OPENAI_API_KEY = codexApiKey;
-      debugLog('[Codex] Using CODEX_API_KEY for authentication');
-    } else if (originalOpenAIKey) {
-      // Remove OPENAI_API_KEY to prevent Codex from using it
-      // Codex should only use ChatGPT login if no CODEX_API_KEY is set
-      delete process.env.OPENAI_API_KEY;
-      debugLog('[Codex] Using ChatGPT login for authentication (OPENAI_API_KEY cleared)');
-    } else {
-      debugLog('[Codex] Using ChatGPT login for authentication');
-    }
-
     try {
       // Get Codex SDK
       const Codex = await getCodexSDK();
@@ -248,8 +229,18 @@ export const codexProvider = {
         ? await getThreadIdFromContinuation(continuation_id, continuationStore)
         : null;
 
-      // Initialize Codex
-      const codex = new Codex();
+      // Initialize Codex with API key if provided
+      const codexApiKey = config.providers?.codexapikey;
+      const codexOptions = {};
+
+      if (codexApiKey) {
+        codexOptions.apiKey = codexApiKey;
+        debugLog('[Codex] Using CODEX_API_KEY for authentication');
+      } else {
+        debugLog('[Codex] Using ChatGPT login for authentication');
+      }
+
+      const codex = new Codex(codexOptions);
 
       // Read configuration values (with secure defaults)
       // Note: Using CLIENT_CWD directly, no separate CODEX_WORKING_DIRECTORY
@@ -261,10 +252,12 @@ export const codexProvider = {
       debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
         model,
         workingDirectory,
+        workingDirectoryType: workingDirectory.startsWith('\\\\?\\') ? 'extended-length' : 'normal',
         sandbox,
         skipGitRepoCheck,
         approvalPolicy,
-        threadId: threadId || 'new'
+        threadId: threadId || 'new',
+        promptLength: prompt.length
       });
 
       // Create or resume thread
@@ -292,6 +285,12 @@ export const codexProvider = {
 
       // Non-streaming execution
       const startTime = Date.now();
+      debugLog('[Codex] Starting thread.run()...', {
+        threadId: thread.id,
+        hasRunOptions: !!Object.keys(runOptions).length,
+        promptLength: prompt.length
+      });
+
       // Try with reasoning_effort, fallback without if SDK doesn't support it
       let turn;
       try {
@@ -305,6 +304,7 @@ export const codexProvider = {
         }
       }
       const responseTime = Date.now() - startTime;
+      debugLog('[Codex] thread.run() completed', { responseTime });
 
       debugLog('[Codex] Non-streaming execution completed', {
         threadId: thread.id,
@@ -364,14 +364,6 @@ export const codexProvider = {
         ErrorCodes.API_ERROR,
         error
       );
-    } finally {
-    // CRITICAL: Restore original OPENAI_API_KEY to prevent leaking CODEX_API_KEY to other providers
-      if (originalOpenAIKey) {
-        process.env.OPENAI_API_KEY = originalOpenAIKey;
-      } else if (codexApiKey) {
-      // We set OPENAI_API_KEY from CODEX_API_KEY, remove it now
-        delete process.env.OPENAI_API_KEY;
-      }
     }
   },
 

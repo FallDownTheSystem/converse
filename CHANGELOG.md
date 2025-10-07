@@ -5,6 +5,21 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2025-10-07
+
+### Added
+- **Codex Provider**: OpenAI Codex integration for agentic coding assistance
+  - Thread-based conversation sessions with persistent context
+  - Local file system access with configurable sandbox modes
+  - Support for `model: 'codex'` in Chat tool
+  - Configuration options:
+    - `CODEX_SANDBOX_MODE`: read-only (default), workspace-write, danger-full-access
+    - `CODEX_SKIP_GIT_CHECK`: Skip Git repository validation (default: true)
+    - `CODEX_APPROVAL_POLICY`: Command approval behavior (default: never)
+    - `CODEX_DEFAULT_MODEL`: Default Codex model (default: gpt-5-codex)
+  - Requires ChatGPT login or `CODEX_API_KEY` environment variable
+  - See `.env.example` for configuration details
+
 ## [1.17.2] - 2025-10-06
 
 ### Changed

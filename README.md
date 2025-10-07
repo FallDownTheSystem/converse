@@ -25,6 +25,9 @@ You need at least one API key from these providers:
 | **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | `wfBMkWL0...` |
 | **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | `sk-...` |
 | **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `sk-or-...` |
+| **Codex** | ChatGPT login (system-wide) | Local agentic assistant |
+
+**Note:** Codex uses your ChatGPT login (not an API key). If you have an active ChatGPT session, Codex will work automatically. For headless/server deployments, set `CODEX_API_KEY` in your environment.
 
 ### Step 2: Add to Claude Code or Claude Desktop
 
@@ -122,7 +125,21 @@ Talk to any AI model with support for files, images, and conversation history. T
   "async": true,           // Enables background processing
   "continuation_id": "my-analysis-task"  // Optional: custom ID for tracking
 }
+
+// Codex - Agentic coding assistant with local file access
+{
+  "prompt": "Analyze this codebase and suggest improvements",
+  "model": "codex",
+  "files": ["/path/to/your/project"],
+  "async": true  // Recommended for Codex (responses take 6-20+ seconds)
+}
 ```
+
+**Codex Notes:**
+- Uses thread-based sessions (context persists with `continuation_id`)
+- Responses typically take 6-20 seconds (complex tasks may take minutes)
+- Accesses files directly from your working directory
+- Configure sandbox mode via `CODEX_SANDBOX_MODE` environment variable
 
 ### 2. Consensus Tool
 
@@ -256,6 +273,14 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **qwen3-coder**: Specialized for programming tasks (32K context)
 - **kimi-k2**: Moonshot AI Kimi K2 with extended context (200K context)
 
+### Codex Models
+- **codex**: OpenAI Codex agentic coding assistant
+  - Thread-based sessions with persistent context
+  - Direct filesystem access from working directory
+  - Typical response time: 6-20 seconds (longer for complex tasks)
+  - Requires ChatGPT login or CODEX_API_KEY
+  - See [Configuration](#configuration) for sandbox and approval settings
+
 ## 📚 Help & Documentation
 
 ### Built-in Help
@@ -300,6 +325,13 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Model to use for summarization (default:
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
 OPENROUTER_TITLE=Converse
 OPENROUTER_DYNAMIC_MODELS=true
+
+# Optional: Codex configuration
+CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login available
+CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
+CODEX_SKIP_GIT_CHECK=true                    # true (default), false
+CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
+CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ```
 
 ### Configuration Options

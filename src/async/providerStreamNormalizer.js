@@ -768,6 +768,33 @@ class ProviderStreamNormalizer {
           }, provider, model);
           break;
 
+        case 'turn.failed':
+          // Turn failed with error
+          debugError('[Codex] Turn failed', event.error);
+          yield this.createErrorEvent(
+            new Error(event.error?.message || 'Turn failed'),
+            provider
+          );
+          break;
+
+        case 'error':
+          // Fatal error from stream
+          debugError('[Codex] Stream error', event.message);
+          yield this.createErrorEvent(
+            new Error(event.message || 'Stream error'),
+            provider
+          );
+          break;
+
+        case 'item.started':
+        case 'item.updated':
+          // Item progress events - log for debugging
+          debugLog('[Codex] Item event', {
+            type: event.type,
+            itemType: event.item?.type
+          });
+          break;
+
         default:
           // Unknown event type - log at debug level but don't crash
           debugLog('[Codex] Unknown event type', {

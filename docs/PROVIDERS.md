@@ -83,6 +83,34 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `meta-llama/llama-3.1-405b-instruct`
   - And many more - see [openrouter.ai/models](https://openrouter.ai/models)
 
+### Codex
+- **API Key Format**: Optional (uses ChatGPT login by default)
+- **Authentication**: ChatGPT login (system-wide) OR `CODEX_API_KEY`
+- **Environment Variables**:
+  - `CODEX_API_KEY` - Optional API key for headless deployments
+  - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
+  - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
+  - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
+  - `CODEX_DEFAULT_MODEL` - Default model (default: gpt-5-codex)
+- **Supported Models**:
+  - `codex` - OpenAI Codex agentic coding assistant
+  - Thread-based sessions with persistent context
+  - Direct filesystem access from working directory
+  - Typical response time: 6-20 seconds (longer for complex tasks)
+
+**Key Features:**
+- **Thread-Based Sessions**: Maintains full conversation history across requests
+- **Local File Access**: Reads files directly from working directory
+- **Sandbox Modes**: Configurable filesystem access (read-only, workspace-write, danger-full-access)
+- **Approval Policies**: Control command execution behavior
+- **Performance**: Slower than API-based providers (6-20 seconds typical, minutes for complex tasks)
+
+**Best Practices:**
+- Use `async: true` for Codex requests (long response times)
+- Set `CODEX_SANDBOX_MODE=read-only` for safe exploration
+- Use `CODEX_APPROVAL_POLICY=never` for headless server deployments
+- Always use `continuation_id` for thread continuation
+
 ## Configuration Examples
 
 ### Basic Configuration (.env file)
@@ -100,6 +128,13 @@ OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
 OPENROUTER_DYNAMIC_MODELS=true
 # Optional: Add title for request tracking
 OPENROUTER_TITLE=Converse
+
+# Codex - Optional API key (uses ChatGPT login by default)
+CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login available
+CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
+CODEX_SKIP_GIT_CHECK=true                    # true (default), false
+CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
+CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ```
 
 ### Claude Configuration (claude_desktop_config.json)
@@ -132,17 +167,22 @@ All providers support streaming responses for real-time output.
 ### Image Support
 - **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-3.5-Sonnet, Claude-3-Opus)
 - **Via OpenRouter**: Depends on the underlying model
-- **No Support**: DeepSeek, Mistral (except Large), Claude-3.5-Haiku
+- **No Support**: DeepSeek, Mistral (except Large), Claude-3.5-Haiku, Codex
 
 ### Web Search
 - **Native Support**: OpenAI, Google, X.AI (Grok-4)
-- **No Support**: Anthropic, Mistral, DeepSeek, OpenRouter
+- **No Support**: Anthropic, Mistral, DeepSeek, OpenRouter, Codex
 
 ### Thinking/Reasoning Modes
 - **OpenAI**: O3 series models support `reasoning_effort` parameter
 - **Google**: Gemini Pro/Flash support thinking mode with configurable budget
 - **Anthropic**: Claude 4 and 3.7 models support extended thinking with `reasoning_effort`
+- **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only
+
+### Local Execution
+- **Codex**: Runs locally with direct filesystem access and thread-based sessions
+- **All Others**: API-based remote execution
 
 ## Model Selection in Tools
 
