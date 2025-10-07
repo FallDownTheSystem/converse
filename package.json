@@ -98,6 +98,7 @@
     "@google/genai": "^1.22.0",
     "@mistralai/mistralai": "^1.10.0",
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "@openai/codex-sdk": "^0.45.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
