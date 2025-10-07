@@ -240,57 +240,56 @@ export const codexProvider = {
       // Get Codex SDK
       const Codex = await getCodexSDK();
 
-    // Convert messages to prompt
-    const prompt = convertMessagesToPrompt(messages);
+      // Convert messages to prompt
+      const prompt = convertMessagesToPrompt(messages);
 
-    // Get thread ID if resuming conversation
-    const threadId = continuation_id && continuationStore
-      ? await getThreadIdFromContinuation(continuation_id, continuationStore)
-      : null;
+      // Get thread ID if resuming conversation
+      const threadId = continuation_id && continuationStore
+        ? await getThreadIdFromContinuation(continuation_id, continuationStore)
+        : null;
 
-    // Initialize Codex
-    const codex = new Codex();
+      // Initialize Codex
+      const codex = new Codex();
 
-    // Read configuration values (with secure defaults)
-    // Note: Using CLIENT_CWD directly, no separate CODEX_WORKING_DIRECTORY
-    const workingDirectory = config.server?.client_cwd || process.cwd();
-    const sandbox = config.providers?.codexsandboxmode || 'read-only';
-    const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
-    const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
+      // Read configuration values (with secure defaults)
+      // Note: Using CLIENT_CWD directly, no separate CODEX_WORKING_DIRECTORY
+      const workingDirectory = config.server?.client_cwd || process.cwd();
+      const sandbox = config.providers?.codexsandboxmode || 'read-only';
+      const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
+      const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
 
-    debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
-      model,
-      workingDirectory,
-      sandbox,
-      skipGitRepoCheck,
-      approvalPolicy,
-      threadId: threadId || 'new'
-    });
-
-    // Create or resume thread
-    const thread = threadId
-      ? codex.resumeThread(threadId)
-      : codex.startThread({
+      debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
+        model,
         workingDirectory,
         sandbox,
         skipGitRepoCheck,
-        approvalPolicy
+        approvalPolicy,
+        threadId: threadId || 'new'
       });
 
-    // Build run options with reasoning_effort if provided
-    const runOptions = {};
-    if (reasoning_effort) {
-      runOptions.reasoningEffort = reasoning_effort; // Best-effort mapping
-      debugLog('[Codex] Using reasoning_effort:', reasoning_effort);
-    }
+      // Create or resume thread
+      const thread = threadId
+        ? codex.resumeThread(threadId)
+        : codex.startThread({
+          workingDirectory,
+          sandbox,
+          skipGitRepoCheck,
+          approvalPolicy
+        });
 
-    // Handle streaming
-    if (stream) {
-      return createStreamingGenerator(thread, prompt, signal, runOptions);
-    }
+      // Build run options with reasoning_effort if provided
+      const runOptions = {};
+      if (reasoning_effort) {
+        runOptions.reasoningEffort = reasoning_effort; // Best-effort mapping
+        debugLog('[Codex] Using reasoning_effort:', reasoning_effort);
+      }
 
-    // Non-streaming execution
-    try {
+      // Handle streaming
+      if (stream) {
+        return createStreamingGenerator(thread, prompt, signal, runOptions);
+      }
+
+      // Non-streaming execution
       const startTime = Date.now();
       // Try with reasoning_effort, fallback without if SDK doesn't support it
       let turn;
@@ -365,11 +364,11 @@ export const codexProvider = {
         error
       );
     } finally {
-      // CRITICAL: Restore original OPENAI_API_KEY to prevent leaking CODEX_API_KEY to other providers
+    // CRITICAL: Restore original OPENAI_API_KEY to prevent leaking CODEX_API_KEY to other providers
       if (originalOpenAIKey) {
         process.env.OPENAI_API_KEY = originalOpenAIKey;
       } else if (codexApiKey) {
-        // We set OPENAI_API_KEY from CODEX_API_KEY, remove it now
+      // We set OPENAI_API_KEY from CODEX_API_KEY, remove it now
         delete process.env.OPENAI_API_KEY;
       }
     }
