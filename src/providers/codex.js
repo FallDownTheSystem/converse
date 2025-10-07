@@ -236,9 +236,6 @@ export const codexProvider = {
 
       if (codexApiKey) {
         codexOptions.apiKey = codexApiKey;
-        debugLog('[Codex] Using CODEX_API_KEY for authentication');
-      } else {
-        debugLog('[Codex] Using ChatGPT login for authentication');
       }
 
       const codex = new Codex(codexOptions);
@@ -251,16 +248,6 @@ export const codexProvider = {
       const sandbox = config.providers?.codexsandboxmode || 'read-only';
       const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
       const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
-
-      debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
-        model,
-        workingDirectory,
-        sandbox,
-        skipGitRepoCheck,
-        approvalPolicy,
-        threadId: threadId || 'new',
-        promptLength: prompt.length
-      });
 
       // Create or resume thread
       const threadOptions = {
@@ -277,63 +264,56 @@ export const codexProvider = {
       const runOptions = {};
       if (reasoning_effort) {
         runOptions.reasoningEffort = reasoning_effort; // Best-effort mapping
-        debugLog('[Codex] Using reasoning_effort:', reasoning_effort);
       }
 
-      // WORKAROUND: Always use streaming to avoid SDK bug where thread.run() hangs
-      // The SDK's thread.run() waits indefinitely when CLI exits without emitting turn.completed
-      // Force streaming until OpenAI fixes the SDK - stream closes naturally when process exits
-      if (stream || true) {
+      // WORKAROUND: SDK's thread.run() hangs due to missing break after turn.completed
+      // Always use streaming internally, consume synchronously when stream=false
+      if (stream) {
         return createStreamingGenerator(thread, prompt, signal, runOptions);
       }
 
-      // Non-streaming execution (disabled due to SDK bug - see above)
+      // Synchronous mode: consume streaming internally and return complete response
       const startTime = Date.now();
-      debugLog('[Codex] Starting thread.run()...', {
-        threadId: thread.id,
-        hasRunOptions: !!Object.keys(runOptions).length,
-        promptLength: prompt.length
-      });
+      const generator = createStreamingGenerator(thread, prompt, signal, runOptions);
 
-      // Try with reasoning_effort, fallback without if SDK doesn't support it
-      let turn;
-      try {
-        turn = await thread.run(prompt, runOptions);
-      } catch (error) {
-        if (reasoning_effort && (error.message?.includes('reasoningEffort') || error.message?.includes('unknown option'))) {
-          debugLog('[Codex] reasoning_effort not supported by this SDK version, retrying without it');
-          turn = await thread.run(prompt);
-        } else {
-          throw error;
+      let content = '';
+      let usage = null;
+      let threadIdFromStream = null;
+
+      for await (const event of generator) {
+        if (event?.type === 'thread.started') {
+          threadIdFromStream = event.thread_id;
+        } else if (event?.type === 'item.completed' && event.item?.type === 'agent_message') {
+          content += event.item.text || '';
+        } else if (event?.type === 'turn.completed') {
+          usage = event.usage;
+          break; // Exit after turn.completed
+        } else if (event?.type === 'turn.failed') {
+          throw new CodexProviderError(event.error?.message || 'Turn failed', 'TURN_FAILED');
         }
       }
-      const responseTime = Date.now() - startTime;
-      debugLog('[Codex] thread.run() completed', { responseTime });
 
-      debugLog('[Codex] Non-streaming execution completed', {
-        threadId: thread.id,
-        responseTime,
-        usage: turn.usage
-      });
+      const responseTime = Date.now() - startTime;
 
       return {
-        content: turn.finalResponse || '',
+        content,
         stop_reason: StopReasons.STOP,
-        rawResponse: turn,
+        rawResponse: { content, usage },
         metadata: {
           provider: 'codex',
           model,
-          threadId: thread.id, // Store for continuation
-          usage: turn.usage ? {
-            input_tokens: turn.usage.input_tokens || 0,
-            output_tokens: turn.usage.output_tokens || 0,
-            total_tokens: (turn.usage.input_tokens || 0) + (turn.usage.output_tokens || 0),
-            cached_input_tokens: turn.usage.cached_input_tokens || 0
+          threadId: threadIdFromStream || thread.id,
+          usage: usage ? {
+            input_tokens: usage.input_tokens || 0,
+            output_tokens: usage.output_tokens || 0,
+            total_tokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+            cached_input_tokens: usage.cached_input_tokens || 0
           } : null,
           response_time_ms: responseTime,
           finish_reason: 'stop'
         }
       };
+
     } catch (error) {
       debugError('[Codex] Execution error', error);
 
