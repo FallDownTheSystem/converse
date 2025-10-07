@@ -197,3 +197,27 @@ export function getPlatformName() {
   };
   return platformMap[platform()] || platform();
 }
+
+/**
+ * Normalize Windows extended-length paths to regular paths
+ * Removes the \\?\ prefix that Windows uses for paths longer than 260 characters
+ * @param {string} inputPath - Path that may have extended-length prefix
+ * @returns {string} Normalized path without extended-length prefix
+ */
+export function normalizeExtendedPath(inputPath) {
+  if (!inputPath || typeof inputPath !== 'string') {
+    return inputPath;
+  }
+
+  // Remove Windows extended-length path prefix \\?\
+  if (inputPath.startsWith('\\\\?\\')) {
+    return inputPath.substring(4);
+  }
+
+  // Also handle UNC paths: \\?\UNC\server\share -> \\server\share
+  if (inputPath.startsWith('\\\\?\\UNC\\')) {
+    return '\\' + inputPath.substring(7);
+  }
+
+  return inputPath;
+}

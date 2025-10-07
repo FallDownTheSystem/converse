@@ -15,6 +15,7 @@
 
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { normalizeExtendedPath } from '../utils/pathUtils.js';
 
 // Supported Codex models with their configurations
 const SUPPORTED_MODELS = {
@@ -244,7 +245,9 @@ export const codexProvider = {
 
       // Read configuration values (with secure defaults)
       // Note: Using CLIENT_CWD directly, no separate CODEX_WORKING_DIRECTORY
-      const workingDirectory = config.server?.client_cwd || process.cwd();
+      const rawWorkingDirectory = config.server?.client_cwd || process.cwd();
+      // Normalize Windows extended-length paths (\\?\C:\...) to regular paths
+      const workingDirectory = normalizeExtendedPath(rawWorkingDirectory);
       const sandbox = config.providers?.codexsandboxmode || 'read-only';
       const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
       const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
@@ -252,7 +255,6 @@ export const codexProvider = {
       debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
         model,
         workingDirectory,
-        workingDirectoryType: workingDirectory.startsWith('\\\\?\\') ? 'extended-length' : 'normal',
         sandbox,
         skipGitRepoCheck,
         approvalPolicy,
