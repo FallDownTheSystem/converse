@@ -268,14 +268,15 @@ export const codexProvider = {
       });
 
       // Create or resume thread
+      const threadOptions = {
+        workingDirectory,
+        sandbox,
+        skipGitRepoCheck,
+        approvalPolicy
+      };
       const thread = threadId
-        ? codex.resumeThread(threadId)
-        : codex.startThread({
-          workingDirectory,
-          sandbox,
-          skipGitRepoCheck,
-          approvalPolicy
-        });
+        ? codex.resumeThread(threadId, threadOptions)
+        : codex.startThread(threadOptions);
 
       // Build run options with reasoning_effort if provided
       const runOptions = {};
