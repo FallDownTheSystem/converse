@@ -713,6 +713,7 @@ class ProviderStreamNormalizer {
     let accumulatedContent = '';
     let finalUsage = null;
     let threadId = null;
+    let hasEnded = false; // Track if we've already sent an end event
 
     try {
       for await (const event of stream) {
@@ -753,6 +754,7 @@ class ProviderStreamNormalizer {
         case 'turn.completed':
           // Turn execution completed - final event with usage
           finalUsage = event.usage;
+          hasEnded = true;
 
           yield this.createEndEvent({
             content: accumulatedContent,
@@ -766,25 +768,30 @@ class ProviderStreamNormalizer {
             responseTime: Date.now() - startTime,
             metadata: { threadId }
           }, provider, model);
-          break;
+          // Exit the generator after turn completion - no more events expected
+          return;
 
         case 'turn.failed':
           // Turn failed with error
+          hasEnded = true;
           debugError('[Codex] Turn failed', event.error);
           yield this.createErrorEvent(
             new Error(event.error?.message || 'Turn failed'),
             provider
           );
-          break;
+          // Exit the generator after turn failure
+          return;
 
         case 'error':
           // Fatal error from stream
+          hasEnded = true;
           debugError('[Codex] Stream error', event.message);
           yield this.createErrorEvent(
             new Error(event.message || 'Stream error'),
             provider
           );
-          break;
+          // Exit the generator after fatal error
+          return;
 
         case 'item.started':
         case 'item.updated':
@@ -803,6 +810,19 @@ class ProviderStreamNormalizer {
           });
           break;
         }
+      }
+
+      // If the stream ended naturally without a turn.completed event,
+      // yield a final end event with whatever content we accumulated
+      if (!hasEnded) {
+        debugLog('[Codex] Stream ended naturally without turn.completed event');
+        yield this.createEndEvent({
+          content: accumulatedContent,
+          stopReason: 'stop',
+          usage: finalUsage,
+          responseTime: Date.now() - startTime,
+          metadata: { threadId }
+        }, provider, model);
       }
     } catch (error) {
       debugError('[Codex] Stream normalization error:', error);
