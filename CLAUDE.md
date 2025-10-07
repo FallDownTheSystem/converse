@@ -19,15 +19,18 @@ The **Converse MCP Server** follows a functional architecture with two main tool
 2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
 
 ### Development Setup
+
+**IMPORTANT: This project uses pnpm, not npm.**
+
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (use pnpm, NOT npm)
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 
 # Run tests
-npm test
+pnpm test
 ```
 
 For detailed implementation guidance, see:
@@ -37,56 +40,58 @@ For detailed implementation guidance, see:
 
 ## Quick Reference Commands
 
+**IMPORTANT: Always use `pnpm` instead of `npm` for this project.**
+
 ### Code Quality Checks
 
 Before making any changes or submitting PRs, always run the comprehensive quality checks:
 
 ```bash
 # Run all quality checks (linting, formatting, tests)
-npm run validate
+pnpm run validate
 
 # Run individual checks
-npm run lint
-npm run typecheck
-npm run test
-npm run format:check
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run format:check
 ```
 
 ### Development Commands
 
 ```bash
 # Start development server with hot reload
-npm run dev
+pnpm run dev
 
 # Run in debug mode
-npm run debug
+pnpm run debug
 
 # Run specific test suites
-npm run test:unit
-npm run test:integration
-npm run test:providers
-npm run test:tools
+pnpm run test:unit
+pnpm run test:integration
+pnpm run test:providers
+pnpm run test:tools
 ```
 
 ### Server Management
 
 #### Setup/Update the Server
 ```bash
-# Install dependencies and start
-npm install
-npm start
+# Install dependencies and start (use pnpm)
+pnpm install
+pnpm start
 ```
 
 #### View Logs
 ```bash
 # Follow logs in real-time with debug logging
-LOG_LEVEL=debug npm run dev
+LOG_LEVEL=debug pnpm run dev
 
 # Or check specific log levels
-LOG_LEVEL=info npm start
+LOG_LEVEL=info pnpm start
 
 # Debug with summarization enabled
-ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug npm run dev
+ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug pnpm run dev
 ```
 
 ### Testing
@@ -94,64 +99,64 @@ ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug npm run dev
 #### Run All Tests
 ```bash
 # Run full test suite
-npm test
+pnpm test
 
 # Run tests with coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Run tests in watch mode
-npm run test:watch
+pnpm run test:watch
 ```
 
 #### Run Specific Test Categories
 ```bash
 # Unit tests only
-npm run test:unit
+pnpm run test:unit
 
 # Integration tests only
-npm run test:integration
+pnpm run test:integration
 
 # End-to-end tests with real API calls
-npm run test:e2e
+pnpm run test:e2e
 
 # Provider tests
-npm run test:providers
+pnpm run test:providers
 
 # Tool tests
-npm run test:tools
+pnpm run test:tools
 
 # MCP client tests (HTTP-based client-server testing)
-npm run test:mcp-client
+pnpm run test:mcp-client
 
 # Performance tests
-npm run test:performance
+pnpm run test:performance
 
 # Utility tests
-npm run test:utils
+pnpm run test:utils
 
 # Resource tests
-npm run test:resources
+pnpm run test:resources
 
 # Prompt tests
-npm run test:prompts
+pnpm run test:prompts
 ```
 
 ### Development Workflow
 
 #### Before Making Changes
-1. Install dependencies: `npm install`
-2. Run quality checks: `npm run validate`
-3. Start development server: `npm run dev`
+1. Install dependencies: `pnpm install`
+2. Run quality checks: `pnpm run validate`
+3. Start development server: `pnpm run dev`
 
 #### After Making Changes
-1. Run quality checks again: `npm run validate`
-2. Run tests: `npm test`
-3. Verify functionality: `npm start`
+1. Run quality checks again: `pnpm run validate`
+2. Run tests: `pnpm test`
+3. Verify functionality: `pnpm start`
 4. Check logs for any issues
 
 #### Before Committing/PR
-1. Final quality check: `npm run validate`
-2. Verify all tests pass: `npm test`
+1. Final quality check: `pnpm run validate`
+2. Verify all tests pass: `pnpm test`
 3. Check documentation is up to date
 
 ### Available Tools
@@ -227,25 +232,25 @@ The tool will:
 #### Server Issues
 ```bash
 # Check if environment is set up correctly
-npm run validate
+pnpm run validate
 
 # View recent errors
-LOG_LEVEL=debug npm start
+LOG_LEVEL=debug pnpm start
 
 # Check dependencies
-npm install
+pnpm install
 ```
 
 #### Test Failures
 ```bash
 # Run tests with verbose output
-npm run test -- --verbose
+pnpm test -- --verbose
 
 # Run specific test file
-npm run test tests/tools/chat.test.js
+pnpm test tests/tools/chat.test.js
 
 # Check for syntax issues
-npm run lint
+pnpm run lint
 ```
 
 #### Configuration Issues
@@ -275,7 +280,8 @@ LOG_LEVEL=debug npm start
 ### Environment Requirements
 
 - Node.js 20.0.0+ (LTS recommended)
-- NPM or compatible package manager
+- **pnpm** (required - do NOT use npm or yarn)
+  - Install: `npm install -g pnpm` or `corepack enable`
 - API keys for at least one provider (OpenAI, Google, or XAI)
 - Environment variables configured in `.env` file
 
@@ -321,18 +327,20 @@ SUMMARIZATION_MODEL=gpt-5-nano
 The server can be deployed using:
 
 ```bash
-# NPX (recommended)
+# NPX (for users - uses npm registry)
 npx converse-mcp-server
 
-# Global installation
+# Global installation (for users)
 npm install -g converse-mcp-server
 converse
 
-# From source
+# From source (for development - use pnpm)
 git clone https://github.com/FallDownTheSystem/converse.git
 cd converse
-npm install
-npm start
+pnpm install
+pnpm start
 ```
+
+**Note:** End users can use npm/npx to install the published package. Developers working on the codebase must use pnpm.
 
 This guide provides everything needed to efficiently work with the Converse MCP Server codebase using Claude.
