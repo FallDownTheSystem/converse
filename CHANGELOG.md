@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2025-10-07
+
+### Fixed
+- **Codex Provider**: Fixed 5-minute timeout issue when Codex completes without emitting turn.completed event
+  - Applied permanent pnpm patch to `@openai/codex-sdk@0.45.0` to fix SDK's `thread.run()` hanging bug
+  - Updated stream normalizer to handle natural stream closure when CLI process exits
+  - Force streaming mode for all Codex calls (workaround until OpenAI fixes SDK)
+  - See `CODEX_SDK_PATCH.md` for detailed patch documentation
+- **Codex Provider**: Normalized Windows extended-length paths (`\\?\C:\...` → `C:\...`)
+  - Added `normalizeExtendedPath()` utility to strip `\\?\` prefix
+  - Codex responses now show clean paths instead of extended-length notation
+
+### Documentation
+- Added `CODEX_SDK_PATCH.md` documenting SDK bug and permanent patch solution
+- Documented pnpm patch workflow for team sharing and future updates
+
 ## [2.0.0] - 2025-10-07
 
 ### Added
