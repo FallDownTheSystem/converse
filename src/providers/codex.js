@@ -280,12 +280,14 @@ export const codexProvider = {
         debugLog('[Codex] Using reasoning_effort:', reasoning_effort);
       }
 
-      // Handle streaming
-      if (stream) {
+      // WORKAROUND: Always use streaming to avoid SDK bug where thread.run() hangs
+      // The SDK's thread.run() waits indefinitely when CLI exits without emitting turn.completed
+      // Force streaming until OpenAI fixes the SDK - stream closes naturally when process exits
+      if (stream || true) {
         return createStreamingGenerator(thread, prompt, signal, runOptions);
       }
 
-      // Non-streaming execution
+      // Non-streaming execution (disabled due to SDK bug - see above)
       const startTime = Date.now();
       debugLog('[Codex] Starting thread.run()...', {
         threadId: thread.id,
