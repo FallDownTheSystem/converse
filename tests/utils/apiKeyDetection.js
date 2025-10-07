@@ -67,6 +67,24 @@ const API_KEY_CONFIGS = {
     prefix: 'sk-or-',
     minLength: 20,
     providerName: 'OpenRouter'
+  },
+  CODEX: {
+    envVar: null, // Codex uses cached authentication from user's machine
+    prefix: null,
+    minLength: 0,
+    providerName: 'Codex',
+    customCheck: () => {
+      // Check if Codex SDK is available
+      try {
+        // Simple check - try to resolve the module path
+        const fs = require('fs');
+        const path = require('path');
+        const pkgPath = path.resolve('node_modules/@openai/codex-sdk/package.json');
+        return fs.existsSync(pkgPath);
+      } catch {
+        return false;
+      }
+    }
   }
 };
 
@@ -82,6 +100,11 @@ function hasApiKey(provider) {
     // This makes testing more robust and prevents crashes
     console.warn(`Warning: Unknown provider '${provider}' - treating as unavailable`);
     return false;
+  }
+
+  // Check if provider has custom check logic (e.g., Codex SDK availability)
+  if (config.customCheck) {
+    return config.customCheck();
   }
 
   // Check primary key first
@@ -201,6 +224,7 @@ const hasAnthropic = hasApiKey('ANTHROPIC');
 const hasMistral = hasApiKey('MISTRAL');
 const hasDeepSeek = hasApiKey('DEEPSEEK');
 const hasOpenRouter = hasApiKey('OPENROUTER');
+const hasCodex = hasApiKey('CODEX');
 
 // Common combinations
 const hasAnyMainProvider = hasAnyApiKey(['OPENAI', 'XAI', 'GOOGLE']);
@@ -223,6 +247,7 @@ module.exports = {
   hasMistral,
   hasDeepSeek,
   hasOpenRouter,
+  hasCodex,
 
   // Common combinations
   hasAnyMainProvider,

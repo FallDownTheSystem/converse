@@ -40,7 +40,8 @@ class ProviderStreamNormalizer {
       anthropic: this.normalizeAnthropicStream.bind(this),
       mistral: this.normalizeMistralStream.bind(this),
       deepseek: this.normalizeDeepSeekStream.bind(this),
-      openrouter: this.normalizeOpenRouterStream.bind(this)
+      openrouter: this.normalizeOpenRouterStream.bind(this),
+      codex: this.normalizeCodexStream.bind(this)
     };
   }
 
@@ -691,6 +692,96 @@ class ProviderStreamNormalizer {
         }
       }
     };
+  }
+
+  /**
+   * Normalize Codex streaming format
+   * Handles Codex SDK events: thread.started, turn.started, item.completed, turn.completed
+   *
+   * Event mapping:
+   * - thread.started → start event (capture thread_id)
+   * - item.completed (type: agent_message) → delta events (user-facing content)
+   * - item.completed (type: reasoning) → ignored (internal reasoning)
+   * - turn.completed → end event (includes usage)
+   * - Unknown events → logged at debug level, preserved in metadata
+   */
+  async *normalizeCodexStream(stream, context) {
+    const provider = 'codex';
+    const model = context.model || 'codex';
+    const startTime = Date.now();
+
+    let accumulatedContent = '';
+    let finalUsage = null;
+    let threadId = null;
+
+    try {
+      for await (const event of stream) {
+        switch (event?.type) {
+        case 'thread.started':
+          // Thread initialization - capture thread ID for continuation
+          threadId = event.thread_id;
+          yield this.createStartEvent(provider, model, { threadId });
+          break;
+
+        case 'turn.started':
+          // Turn execution begins - informational only, no event needed
+          debugLog('[Codex] Turn started');
+          break;
+
+        case 'item.completed':
+          // Item completion - filter by item type
+          if (event.item?.type === 'agent_message') {
+            // User-facing response content
+            const text = event.item.text || '';
+            accumulatedContent += text;
+            yield this.createDeltaEvent(text, provider, model);
+          } else if (event.item?.type === 'reasoning') {
+            // Internal reasoning - log for debugging but don't send to user
+            debugLog('[Codex] Reasoning item completed', {
+              id: event.item.id,
+              text: event.item.text?.substring(0, 100) // Log first 100 chars
+            });
+          } else {
+            // Unknown item type - log and preserve
+            debugLog('[Codex] Unknown item type', {
+              type: event.item?.type,
+              event
+            });
+          }
+          break;
+
+        case 'turn.completed':
+          // Turn execution completed - final event with usage
+          finalUsage = event.usage;
+
+          yield this.createEndEvent({
+            content: accumulatedContent,
+            stopReason: 'stop',
+            usage: finalUsage ? {
+              input_tokens: finalUsage.input_tokens || 0,
+              output_tokens: finalUsage.output_tokens || 0,
+              total_tokens: (finalUsage.input_tokens || 0) + (finalUsage.output_tokens || 0),
+              cached_input_tokens: finalUsage.cached_input_tokens || 0
+            } : null,
+            responseTime: Date.now() - startTime,
+            metadata: { threadId }
+          }, provider, model);
+          break;
+
+        default:
+          // Unknown event type - log at debug level but don't crash
+          debugLog('[Codex] Unknown event type', {
+            type: event?.type,
+            event
+          });
+          break;
+        }
+      }
+    } catch (error) {
+      debugError('[Codex] Stream normalization error:', error);
+      yield this.createErrorEvent(error, provider);
+      throw error;
+    }
   }
 
   /**

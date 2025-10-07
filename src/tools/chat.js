@@ -269,7 +269,9 @@ export async function chatTool(args, dependencies) {
       reasoning_effort,
       verbosity,
       use_websearch,
-      config
+      config,
+      continuation_id, // Pass for thread resumption
+      continuationStore // Pass store for state management
     };
 
     // Call provider
@@ -302,7 +304,9 @@ export async function chatTool(args, dependencies) {
         messages: updatedMessages,
         provider: providerName,
         model,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
+        // Store Codex thread ID if available (for thread resumption)
+        codexThreadId: response.metadata?.threadId
       };
 
       await continuationStore.set(continuationId, conversationState);
@@ -389,6 +393,11 @@ export function mapModelToProvider(model, providers) {
   // Handle "auto" - default to OpenAI
   if (modelLower === 'auto') {
     return 'openai';
+  }
+
+  // Check Codex (exact match only - don't route "gpt-5-codex" etc to Codex provider)
+  if (modelLower === 'codex') {
+    return 'codex';
   }
 
   // Check OpenRouter-specific patterns first
@@ -628,7 +637,9 @@ async function executeChatWithStreaming(args, dependencies, context) {
     reasoning_effort,
     verbosity,
     use_websearch,
-    config
+    config,
+    continuation_id: continuationId, // Pass for thread resumption
+    continuationStore // Pass store for state management
   };
 
   // For streaming, add the stream flag and signal separately
@@ -779,7 +790,9 @@ async function executeChatWithStreaming(args, dependencies, context) {
       messages: updatedMessages,
       provider: providerName,
       model,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
+      // Store Codex thread ID if available (for thread resumption)
+      codexThreadId: response.metadata?.threadId
     };
 
     await continuationStore.set(continuationId, conversationState);

@@ -13,6 +13,7 @@ import { anthropicProvider } from './anthropic.js';
 import { mistralProvider } from './mistral.js';
 import { deepseekProvider } from './deepseek.js';
 import { openrouterProvider } from './openrouter.js';
+import { codexProvider } from './codex.js';
 
 /**
  * Provider registry map
@@ -29,6 +30,7 @@ const providers = {
   mistral: mistralProvider,
   deepseek: deepseekProvider,
   openrouter: openrouterProvider,
+  codex: codexProvider,
 };
 
 /**
