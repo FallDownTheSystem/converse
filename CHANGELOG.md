@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-10-07
+
+### Fixed
+- **Codex Provider**: Fixed SDK hang issue with cleaner workaround approach
+  - Removed pnpm patch dependency (not published with npm packages)
+  - Always use `thread.runStreamed()` internally, bypassing buggy `thread.run()`
+  - Consume stream synchronously when `stream: false` is requested
+  - Explicitly break after `turn.completed` event in our own code
+  - Works for all users regardless of package manager (npm, pnpm, yarn)
+  - No more 5-minute hangs - responses return in ~10-15 seconds
+
+### Changed
+- **Codex Provider**: Removed all debug logging added during investigation
+- **Codex Provider**: Simplified code by removing unreachable legacy `thread.run()` path
+- **Build**: Removed SDK patch file (workaround makes it unnecessary)
+
 ## [2.0.1] - 2025-10-07
 
 ### Fixed
