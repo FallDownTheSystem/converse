@@ -5,7 +5,7 @@ status: "To Do"
 created_date: '2025-10-07 09:53'
 updated_date: '2025-10-07 12:12'
 parent: null
-subtasks: [task-046, task-047, task-048, task-049, task-050, task-051, task-052]
+subtasks: [task-046, task-047, task-048, task-049, task-050, task-051]
 dependencies: []
 ---
 
@@ -1832,7 +1832,58 @@ if (modelLower.includes('gpt') || modelLower.includes('o3') || modelLower.includ
 - Sandbox escapes → Sandboxbox mode defaults to read-only
 - Privilege escalation → Per-request overrides clamped by server allowlist
 
-**Deliverable:** Hardened Codex integration ready for production with security best practices, operational safeguards, and comprehensive threat mitigation.
+**Production Validation Tests:**
+
+1. **HTTP Transport Parity:**
+   - Test streaming over HTTP vs stdio (identical behavior)
+   - Measure latency under load (target: <500ms for check_status)
+   - Verify no HTTP-specific blocking or degradation
+
+2. **Multi-Tenant CODEX_HOME Isolation:**
+   - Test CODEX_HOME override to custom directory
+   - Verify sessions persist in override location
+   - Test multiple CODEX_HOME values simultaneously (different tenants)
+   - Verify no cross-tenant session leakage
+   - Document Docker/Kubernetes deployment patterns
+
+3. **Large Output Stress Testing:**
+   - Test >500KB responses (no backpressure issues)
+   - Verify continuous accumulated_content updates (no buffering)
+   - Monitor memory usage (no unbounded accumulation)
+   - Test cancellation mid-large-stream
+
+4. **Platform Support Matrix:**
+   - **macOS** (arm64/x64): execution, streaming, thread resumption, cleanup
+   - **Linux** (Ubuntu/glibc, Alpine/musl): same suite + Docker testing
+   - **Windows**: Document limitations or blocking
+   - Verify process cleanup on all platforms (no zombies)
+
+5. **Authentication Precedence:**
+   - Test with only ChatGPT login → should work
+   - Test with only OPENAI_API_KEY → should work
+   - Test with both → document precedence
+   - Test with neither → verify clear error
+   - Document deployment-specific guidance (Docker, CI/CD, production)
+
+6. **Approval Event Deadlock Prevention:**
+   - Execute operations that would request approval
+   - Verify approvalPolicy='never' prevents interactive prompts
+   - Monitor for hanging/timeout behavior
+   - Verify approval denial logged but doesn't crash
+
+7. **Performance Characterization:**
+   - Measure warm vs cold start latency (first execution vs subsequent)
+   - Document first-byte latency expectations
+   - Test if Codex process stays resident or respawns
+   - Provide user guidance on expected response times
+
+8. **Shutdown Cleanup Validation:**
+   - Test graceful shutdown on SIGTERM/SIGINT
+   - Verify JobRunner.shutdown() called with timeout
+   - Verify no zombie Codex processes remain
+   - Test platform-specific shutdown (Windows SIGINT vs Unix SIGTERM)
+
+**Deliverable:** Hardened Codex integration ready for production with security best practices, operational safeguards, comprehensive validation across platforms and deployment scenarios, and threat mitigation.
 
 <!-- TODO:END -->
 
@@ -1845,12 +1896,11 @@ if (modelLower.includes('gpt') || modelLower.includes('o3') || modelLower.includ
 
 **Subtask Structure:**
 - **046**: Research SDK behavior through experimentation ✅ Done
-- **047**: Implement Codex Provider and E2E Tests (in planning)
-- **048**: Build configuration and parameter mapping
+- **047**: Implement Codex Provider and E2E Tests ✅ Done
+- **048**: Build configuration and parameter mapping ✅ Done
 - **049**: Implement streaming and continuation
 - **050**: Complete provider and documentation
-- **051**: Security and ops hardening
-- **052**: Additional integration validation (see plan below)
+- **051**: Security, ops hardening, and production validation
 
 Each subtask will be planned individually using `/new-task` after the previous phase is complete, allowing us to make informed decisions based on actual findings.
 
@@ -1953,233 +2003,5 @@ Each subtask will be planned individually using `/new-task` after the previous p
 - docs/PROVIDERS.md - Provider implementation guidelines (our system)
 
 **Note:** Documentation marked "theoretical" needs validation through hands-on testing in Subtasks 046-047.
-
----
-
-### Plan for Task-052: Additional Integration Validation
-
-**Context:** After task-047 review by GPT-5, several additional integration validation scenarios were identified that go beyond the core MCP integration testing. These are important for production readiness but are separate enough to warrant their own task after task-050 (full provider implementation).
-
-**Goal:** Validate edge cases, deployment scenarios, and platform-specific behaviors that weren't covered in task-047's core integration testing.
-
-**When to Execute:** After task-050 (full provider implementation) is complete, as part of final hardening before production release. Could potentially be merged with task-051 (Security & Ops Hardening) depending on findings.
-
-#### Test Categories to Add
-
-**1. HTTP Transport Parity Testing**
-
-**Why:** Task-047 focuses on stdio transport. HTTP transport may have different behavior for streaming, chunking, and job status updates.
-
-**Tests:**
-- Submit Codex streaming job over HTTP transport
-- Poll check_status via HTTP while streaming
-- Verify identical event behavior and timing vs stdio
-- Verify accumulated_content updates at same frequency
-- Measure latency under load (target: <500ms for check_status)
-- Test with concurrent HTTP connections + Codex streaming
-
-**Exit Criteria:**
-- Streaming events identical between stdio and HTTP
-- No HTTP-specific degradation or blocking
-- Latency targets met under load
-
----
-
-**2. CODEX_HOME Override and Multi-Tenant Isolation**
-
-**Why:** Production deployments may need session isolation per tenant/user to prevent cross-contamination.
-
-**Tests:**
-- Override CODEX_HOME to temporary directory via environment variable
-- Execute Codex request, verify session files created in override location
-- Resume thread using stored thread ID after server restart
-- Test with multiple CODEX_HOME values simultaneously (different users)
-- Verify no cross-tenant session leakage
-- Document session storage patterns for Docker/Kubernetes
-
-**Exit Criteria:**
-- Sessions persist under custom CODEX_HOME
-- No cross-tenant contamination observed
-- Documentation complete for multi-tenant deployments
-
----
-
-**3. Large-Output Stream Stress Testing**
-
-**Why:** Task-047 tests basic streaming, but large outputs (>500KB) could reveal backpressure issues, memory leaks, or MCP responsiveness degradation.
-
-**Tests:**
-- Prompt: "Generate a 50KB markdown explanation with extensive code samples"
-- Alternative: "Print integers from 1 to 10,000 with explanations"
-- Verify accumulated_content updates continuously (not buffered)
-- Monitor MCP responsiveness (check_status latency) during large stream
-- Verify memory usage stays reasonable (no unbounded accumulation)
-- Test cancellation mid-large-stream
-
-**Exit Criteria:**
-- No backpressure-related stalls or timeouts
-- MCP remains responsive during large streams
-- Memory usage bounded and predictable
-
----
-
-**4. Windows-Specific Shutdown Testing**
-
-**Why:** SIGTERM handling on Windows is unreliable and may not trigger graceful shutdown paths. Need platform-specific testing.
-
-**Tests:**
-- **On Windows:**
-  - Test gracefulShutdown() invocation directly (not via SIGTERM)
-  - Verify JobRunner.shutdown() is called
-  - Test SIGINT handling (more reliable on Windows)
-  - Verify no zombie Codex processes remain after shutdown
-- **Cross-platform:**
-  - Document platform differences in shutdown behavior
-  - Provide Windows-specific deployment guidance
-
-**Exit Criteria:**
-- Clean shutdown verified on Windows without zombies
-- Platform-specific shutdown documentation complete
-- Fallback shutdown paths tested and documented
-
----
-
-**5. Approval Event No-Hang Validation**
-
-**Why:** Codex may emit approval.requested events during tool execution. If approvalPolicy isn't correctly set to 'never', this could deadlock headless runs.
-
-**Tests:**
-- Execute Codex operation that would normally request approval
-- Verify approvalPolicy='never' prevents interactive prompt
-- Monitor for hanging/timeout behavior
-- Verify approval denial is logged but doesn't crash
-- Test with different approval policy settings and document behavior
-
-**Exit Criteria:**
-- No deadlocks observed with approvalPolicy='never'
-- Approval events handled gracefully
-- Clear documentation of approval policy implications
-
----
-
-**6. API Key vs ChatGPT Login Precedence**
-
-**Why:** Codex supports both authentication methods. Need to clarify precedence and document recommended approach for different deployment scenarios.
-
-**Tests:**
-- **Test Matrix:**
-  1. Only ChatGPT login (no OPENAI_API_KEY) → should work
-  2. Only OPENAI_API_KEY (no ChatGPT session) → should work
-  3. Both present → verify which takes precedence
-  4. Neither present → verify clear error message
-- Document authentication precedence explicitly
-- Provide deployment-specific guidance:
-  - Docker: Prefer API key or mount ~/.codex/ with session
-  - CI/CD: API key recommended
-  - Development: ChatGPT login convenient
-  - Production servers: API key or pre-configured session
-
-**Exit Criteria:**
-- Authentication precedence documented and tested
-- Clear deployment guidance for all scenarios
-- Error messages helpful when auth missing
-
----
-
-**7. Warm vs Cold Start Performance**
-
-**Why:** First Codex execution may have higher latency due to process spawning. Understanding warm vs cold start helps set user expectations.
-
-**Tests:**
-- Measure first-byte latency for first Codex execution in server process
-- Measure first-byte latency for subsequent executions
-- Document the difference and implications
-- Test if Codex process stays resident or respawns per request
-- Provide guidance on expected response times
-
-**Exit Criteria:**
-- Warm vs cold start latency documented
-- User expectation guidance provided
-- Any optimization opportunities identified
-
----
-
-**8. Platform Support Matrix Validation**
-
-**Why:** Task-046 only tested Windows. Need explicit validation on macOS and Linux for production support claims.
-
-**Tests:**
-- **macOS (arm64 and x64):**
-  - Basic execution, streaming, thread resumption
-  - Process cleanup verification
-  - Sandbox mode enforcement
-- **Linux (Ubuntu/glibc and Alpine/musl):**
-  - Same test suite as macOS
-  - Docker container testing
-- Document platform-specific differences
-- Note any limitations per platform
-
-**Exit Criteria:**
-- Works on macOS and Linux without issues
-- Platform-specific behaviors documented
-- Deployment guide updated with platform requirements
-
----
-
-#### Implementation Artifacts Provided by GPT-5
-
-GPT-5's review included ready-to-use code implementations:
-
-**1. ProviderStreamNormalizer Enhancement**
-- Location: `src/async/providerStreamNormalizer.js`
-- Add `codex: this.normalizeCodexStream.bind(this)` to registry
-- Complete `normalizeCodexStream()` implementation provided
-- Handles all 4 Codex event types with filtering
-
-**2. Temporary Test Harness**
-- Location: `src/tools/_codexTest.js` (temporary, for task-047)
-- `codexTestRun()` - Raw Codex execution
-- `codexTestRunNormalized()` - Normalized stream integration
-- Supports: streaming, thread resumption, CODEX_HOME override, AbortSignal
-
-**3. Shutdown Path Fix**
-- Location: `src/index.js` gracefulShutdown()
-- Add JobRunner.shutdown() call with 30s timeout
-- Ensures running jobs are aborted on SIGTERM/SIGINT
-
-**4. Process Monitor Utility**
-- Location: `tests/utils/processMonitor.js`
-- `getProcessCountByName()` - Cross-platform process counting
-- `killProcessTree()` - Force kill with tree support
-
-These implementations can be used directly in task-047/052 or refined based on actual integration experience.
-
----
-
-#### Dependencies and Timing
-
-**Depends On:**
-- Task-050 (Full provider implementation) must be complete
-- Task-047 findings inform which tests are most critical
-
-**Coordinates With:**
-- Task-051 (Security & Ops Hardening) - may overlap in scope
-- Could be merged with task-051 if findings suggest
-
-**Duration Estimate:**
-- ~15-20 hours of testing across all platforms and scenarios
-- Can be parallelized if multiple team members available
-
----
-
-#### Decision Point
-
-After task-047 is complete, evaluate:
-- Which of these tests are critical vs nice-to-have?
-- Can they be incorporated into task-051 instead of separate task-052?
-- Are there platform limitations that block certain tests?
-- What's the priority order based on deployment needs?
-
-**Recommendation:** Plan task-052 after seeing task-047 results. Some of these tests may be unnecessary if task-047 reveals simpler patterns or certain platforms are deprioritized.
 
 <!-- NOTES:END -->

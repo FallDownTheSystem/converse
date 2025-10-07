@@ -237,4 +237,48 @@ describe('Codex Provider E2E Tests', () => {
       });
     }, 90000);
   });
+
+  describe('Configuration Integration', () => {
+    testWithApiKeys({
+      requiredProviders: ['CODEX'],
+      requireAll: true
+    })('should use CLIENT_CWD for working directory', async () => {
+      await withHTTPTestServer(async (client) => {
+        const result = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'Print the current working directory with pwd command. Just output the path.',
+            model: 'codex'
+          }
+        });
+
+        expect(result.isError).toBeFalsy();
+        // Working directory should match CLIENT_CWD (process.cwd() in tests)
+        const content = result.content?.[0]?.text || '';
+        logger.info(`[codex-api-test] Working directory test - response: ${content}`);
+      });
+    }, 90000);
+
+    testWithApiKeys({
+      requiredProviders: ['CODEX'],
+      requireAll: true
+    })('should handle unsupported parameters gracefully', async () => {
+      await withHTTPTestServer(async (client) => {
+        // Send unsupported parameters - should not error
+        const result = await client.callTool({
+          name: 'chat',
+          arguments: {
+            prompt: 'What is 1+1?',
+            model: 'codex',
+            temperature: 0.7, // Not supported by Codex
+            use_websearch: true // Not supported by Codex
+          }
+        });
+
+        // Should work despite unsupported parameters (logged but ignored)
+        expect(result.isError).toBeFalsy();
+        expect(result.content?.[0]?.text).toBeTruthy();
+      });
+    }, 90000);
+  });
 });

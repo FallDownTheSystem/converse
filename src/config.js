@@ -98,7 +98,13 @@ const CONFIG_SCHEMA = {
     GOOGLE_GENAI_USE_VERTEXAI: { type: 'boolean', default: false, description: 'Use Google Vertex AI instead of Gemini Developer API' },
     GOOGLE_CLOUD_PROJECT: { type: 'string', required: false, description: 'Google Cloud project ID for Vertex AI' },
     GOOGLE_CLOUD_LOCATION: { type: 'string', required: false, description: 'Google Cloud location for Vertex AI (e.g., us-central1)' },
-    GOOGLE_API_VERSION: { type: 'string', default: 'v1beta', description: 'Google API version (v1, v1beta, v1alpha)' }
+    GOOGLE_API_VERSION: { type: 'string', default: 'v1beta', description: 'Google API version (v1, v1beta, v1alpha)' },
+
+    // Codex configuration
+    CODEX_SANDBOX_MODE: { type: 'string', default: 'read-only', description: 'Codex sandbox mode (read-only | workspace-write | danger-full-access)' },
+    CODEX_SKIP_GIT_CHECK: { type: 'boolean', default: true, description: 'Skip Git repository validation check' },
+    CODEX_APPROVAL_POLICY: { type: 'string', default: 'never', description: 'Approval policy (never | untrusted | on-failure | on-request)' },
+    CODEX_DEFAULT_MODEL: { type: 'string', default: 'gpt-5-codex', description: 'Default Codex model' }
   },
 
 
@@ -289,9 +295,31 @@ export async function loadConfig() {
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.providers)) {
       try {
         const value = validateEnvVar(key, process.env[key], schema);
-        if (value) {
+        // CRITICAL: Use !== undefined to preserve boolean false values
+        // Without this, CODEX_SKIP_GIT_CHECK=false would be dropped
+        if (value !== undefined) {
           const configKey = key.toLowerCase().replace(/_/g, '');
           config.providers[configKey] = value;
+
+          // Validate Codex sandbox mode during loading
+          if (key === 'CODEX_SANDBOX_MODE') {
+            const validSandboxModes = ['read-only', 'workspace-write', 'danger-full-access'];
+            if (!validSandboxModes.includes(value)) {
+              errors.push(
+                `Invalid CODEX_SANDBOX_MODE: "${value}". Must be one of: ${validSandboxModes.join(', ')}`
+              );
+            }
+          }
+
+          // Validate Codex approval policy during loading
+          if (key === 'CODEX_APPROVAL_POLICY') {
+            const validPolicies = ['never', 'untrusted', 'on-failure', 'on-request'];
+            if (!validPolicies.includes(value)) {
+              errors.push(
+                `Invalid CODEX_APPROVAL_POLICY: "${value}". Must be one of: ${validPolicies.join(', ')}`
+              );
+            }
+          }
         }
       } catch (error) {
         errors.push(error.message);
@@ -493,6 +521,41 @@ export function getAvailableProviders(config) {
 }
 
 /**
+ * Validates Codex-specific configuration
+ * @param {object} config - Configuration object to validate
+ * @throws {ConfigurationError} If Codex configuration is invalid
+ */
+function validateCodexConfig(config) {
+  const sandbox = config.providers?.codexsandboxmode;
+  const approvalPolicy = config.providers?.codexapprovalpolicy;
+
+  // Validate sandbox mode
+  const validSandboxModes = ['read-only', 'workspace-write', 'danger-full-access'];
+  if (sandbox && !validSandboxModes.includes(sandbox)) {
+    throw new ConfigurationError(
+      `Invalid CODEX_SANDBOX_MODE: "${sandbox}". Must be one of: ${validSandboxModes.join(', ')}`
+    );
+  }
+
+  // Validate approval policy
+  const validPolicies = ['never', 'untrusted', 'on-failure', 'on-request'];
+  if (approvalPolicy && !validPolicies.includes(approvalPolicy)) {
+    throw new ConfigurationError(
+      `Invalid CODEX_APPROVAL_POLICY: "${approvalPolicy}". Must be one of: ${validPolicies.join(', ')}`
+    );
+  }
+
+  // Warn about dangerous configurations
+  if (sandbox === 'danger-full-access') {
+    logger.warn('[Codex] Warning: Running with danger-full-access sandbox mode - full filesystem access enabled');
+  }
+
+  if ((approvalPolicy === 'on-request' || approvalPolicy === 'untrusted') && config.transport.mcptransport !== 'stdio') {
+    logger.warn(`[Codex] Warning: approval policy '${approvalPolicy}' may cause hangs in headless/server mode`);
+  }
+}
+
+/**
  * Validates runtime configuration consistency
  * @param {object} config - Configuration object to validate
  * @returns {Promise<boolean>} True if configuration is valid
@@ -500,6 +563,9 @@ export function getAvailableProviders(config) {
  */
 export async function validateRuntimeConfig(config) {
   try {
+    // Validate Codex configuration
+    validateCodexConfig(config);
+
     // Validate server configuration
     if (config.server.port < 1 || config.server.port > 65535) {
       throw new ConfigurationError(`Invalid port number: ${config.server.port}`);

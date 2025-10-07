@@ -147,9 +147,22 @@ async function getThreadIdFromContinuation(continuationId, continuationStore) {
  * Create stream generator for Codex streaming responses
  * Yields raw Codex SDK events that will be normalized by ProviderStreamNormalizer
  */
-async function* createStreamingGenerator(thread, prompt, signal) {
+async function* createStreamingGenerator(thread, prompt, signal, runOptions = {}) {
   try {
-    const { events } = await thread.runStreamed(prompt);
+    // Try with runOptions, fallback without if SDK doesn't support them
+    let eventsPromise;
+    try {
+      eventsPromise = thread.runStreamed(prompt, runOptions);
+    } catch (error) {
+      if (runOptions.reasoningEffort && (error.message?.includes('reasoningEffort') || error.message?.includes('unknown option'))) {
+        debugLog('[Codex] reasoning_effort not supported by this SDK version for streaming, retrying without it');
+        eventsPromise = thread.runStreamed(prompt);
+      } else {
+        throw error;
+      }
+    }
+
+    const { events } = await eventsPromise;
 
     for await (const event of events) {
       // Check for cancellation
@@ -185,12 +198,23 @@ export const codexProvider = {
       stream = false,
       signal,
       continuation_id,
-      continuationStore
+      continuationStore,
+      reasoning_effort,
+      temperature,
+      use_websearch
     } = options;
 
     // Validate configuration
     if (!config) {
       throw new CodexProviderError('Configuration is required', ErrorCodes.MISSING_API_KEY);
+    }
+
+    // Log unsupported parameters at debug level
+    if (temperature !== undefined) {
+      debugLog('[Codex] Parameter "temperature" not supported by Codex (ignored)');
+    }
+    if (use_websearch) {
+      debugLog('[Codex] Parameter "use_websearch" not supported by Codex (ignored)');
     }
 
     // Get Codex SDK
@@ -207,16 +231,19 @@ export const codexProvider = {
     // Initialize Codex
     const codex = new Codex();
 
-    // Get configuration with secure defaults
-    const workingDirectory = config.providers?.codexworkingdirectory || config.server?.client_cwd || process.cwd();
+    // Read configuration values (with secure defaults)
+    // Note: Using CLIENT_CWD directly, no separate CODEX_WORKING_DIRECTORY
+    const workingDirectory = config.server?.client_cwd || process.cwd();
     const sandbox = config.providers?.codexsandboxmode || 'read-only';
     const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
+    const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
 
     debugLog(`[Codex] Starting ${threadId ? 'resumed' : 'new'} thread`, {
       model,
       workingDirectory,
       sandbox,
       skipGitRepoCheck,
+      approvalPolicy,
       threadId: threadId || 'new'
     });
 
@@ -227,18 +254,36 @@ export const codexProvider = {
         workingDirectory,
         sandbox,
         skipGitRepoCheck,
-        approvalPolicy: 'never' // Prevent interactive hangs in headless mode
+        approvalPolicy
       });
+
+    // Build run options with reasoning_effort if provided
+    const runOptions = {};
+    if (reasoning_effort) {
+      runOptions.reasoningEffort = reasoning_effort; // Best-effort mapping
+      debugLog('[Codex] Using reasoning_effort:', reasoning_effort);
+    }
 
     // Handle streaming
     if (stream) {
-      return createStreamingGenerator(thread, prompt, signal);
+      return createStreamingGenerator(thread, prompt, signal, runOptions);
     }
 
     // Non-streaming execution
     try {
       const startTime = Date.now();
-      const turn = await thread.run(prompt);
+      // Try with reasoning_effort, fallback without if SDK doesn't support it
+      let turn;
+      try {
+        turn = await thread.run(prompt, runOptions);
+      } catch (error) {
+        if (reasoning_effort && (error.message?.includes('reasoningEffort') || error.message?.includes('unknown option'))) {
+          debugLog('[Codex] reasoning_effort not supported by this SDK version, retrying without it');
+          turn = await thread.run(prompt);
+        } else {
+          throw error;
+        }
+      }
       const responseTime = Date.now() - startTime;
 
       debugLog('[Codex] Non-streaming execution completed', {
