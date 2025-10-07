@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0-beta.4] - 2025-10-07
+
+### Fixed
+- **Codex Provider**: Fixed API key handling to use SDK's native `apiKey` option instead of environment manipulation
+- **Codex Provider**: Added missing event handlers for `turn.failed`, `error`, `item.started`, `item.updated` events
+- **Codex Provider**: Enhanced debug logging with working directory type detection and execution timing
+
 ## [1.18.0] - 2025-10-07
 
 ### Added
