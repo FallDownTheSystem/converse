@@ -5,11 +5,32 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.18.0-beta.4] - 2025-10-07
+## [2.0.0] - 2025-10-07
+
+### Added
+- **Codex Provider**: OpenAI Codex integration for agentic coding assistance
+  - Thread-based conversation sessions with persistent context via `continuation_id`
+  - Local file system access with configurable sandbox modes
+  - Support for `model: 'codex'` in Chat tool
+  - Configuration options:
+    - `CODEX_SANDBOX_MODE`: read-only (default), workspace-write, danger-full-access
+    - `CODEX_WORKING_DIRECTORY`: Optional working directory (defaults to CLIENT_CWD)
+    - `CODEX_SKIP_GIT_CHECK`: Skip Git repository validation (default: true)
+    - `CODEX_APPROVAL_POLICY`: Command approval behavior (default: never)
+    - `CODEX_DEFAULT_MODEL`: Default Codex model (default: gpt-5-codex)
+  - Streaming support with full event handling (item.completed, turn.completed, errors)
+  - Requires ChatGPT login or `CODEX_API_KEY` environment variable
+  - See `.env.example` for configuration details
+
+### Changed
+- **BREAKING: Tool Parameter Order**: Moved `prompt` parameter to last position in both chat and consensus tools
+  - Makes it easier to parse tool calls in Claude Code when prompts are very long
+  - All other parameters maintain their relative order
+  - No functional changes, only schema ordering
 
 ### Fixed
 - **Codex Provider**: Fixed API key handling to use SDK's native `apiKey` option instead of environment manipulation
-- **Codex Provider**: Added missing event handlers for `turn.failed`, `error`, `item.started`, `item.updated` events
+- **Codex Provider**: Added comprehensive event handlers for `turn.failed`, `error`, `item.started`, `item.updated` events
 - **Codex Provider**: Enhanced debug logging with working directory type detection and execution timing
 
 ## [1.18.0] - 2025-10-07

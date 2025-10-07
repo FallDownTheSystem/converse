@@ -827,10 +827,6 @@ chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - Development assi
 chatTool.inputSchema = {
   type: 'object',
   properties: {
-    prompt: {
-      type: 'string',
-      description: 'Your question or topic with relevant context. More detail enables better responses. Example: "How should I structure the authentication module for this Express.js API?"',
-    },
     model: {
       type: 'string',
       description: 'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
@@ -877,6 +873,10 @@ chatTool.inputSchema = {
       type: 'boolean',
       description: 'Execute chat in background. When true, returns continuation_id immediately and processes request asynchronously. Default: false',
       default: false
+    },
+    prompt: {
+      type: 'string',
+      description: 'Your question or topic with relevant context. More detail enables better responses. Example: "How should I structure the authentication module for this Express.js API?"',
     },
   },
   required: ['prompt'],

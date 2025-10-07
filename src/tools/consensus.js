@@ -1340,10 +1340,6 @@ consensusTool.description = 'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Quer
 consensusTool.inputSchema = {
   type: 'object',
   properties: {
-    prompt: {
-      type: 'string',
-      description: 'The problem or proposal to gather consensus on. Include context and specific questions. Example: "Should we use microservices or monolith architecture for our e-commerce platform with 100k users?"',
-    },
     models: {
       type: 'array',
       items: { type: 'string' },
@@ -1395,6 +1391,10 @@ consensusTool.inputSchema = {
       type: 'boolean',
       description: 'Execute consensus in background with detailed progress tracking. When true, returns continuation_id immediately and processes request asynchronously with per-provider status updates. Default: false',
       default: false
+    },
+    prompt: {
+      type: 'string',
+      description: 'The problem or proposal to gather consensus on. Include context and specific questions. Example: "Should we use microservices or monolith architecture for our e-commerce platform with 100k users?"',
     },
   },
   required: ['prompt', 'models'],
