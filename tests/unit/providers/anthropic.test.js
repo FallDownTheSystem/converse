@@ -90,6 +90,7 @@ describe('Anthropic Provider', () => {
       // Check for some expected models
       expect(models['claude-3-5-sonnet-20241022']).toBeDefined();
       expect(models['claude-3-5-haiku-20241022']).toBeDefined();
+      expect(models['claude-haiku-4-5-20251001']).toBeDefined();
     });
 
     it('should get model config by exact name', () => {
@@ -102,11 +103,36 @@ describe('Anthropic Provider', () => {
       expect(config.supportsImages).toBe(true);
     });
 
+    it('should get Claude Haiku 4.5 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-haiku-4-5-20251001');
+
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('claude-haiku-4-5-20251001');
+      expect(config.friendlyName).toBe('Claude Haiku 4.5');
+      expect(config.contextWindow).toBe(200000);
+      expect(config.maxOutputTokens).toBe(64000);
+      expect(config.supportsImages).toBe(true);
+      expect(config.supportsStreaming).toBe(true);
+      expect(config.supportsThinking).toBe(true);
+      expect(config.minThinkingTokens).toBe(1024);
+      expect(config.maxThinkingTokens).toBe(64000);
+    });
+
     it('should get model config by alias', () => {
       const config = anthropicProvider.getModelConfig('sonnet');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('claude-sonnet-4-20250514');
+      expect(config.modelName).toBe('claude-sonnet-4-5-20250929');
+    });
+
+    it('should resolve Claude Haiku 4.5 by various aliases', () => {
+      const aliases = ['haiku-4.5', 'haiku-4-5', 'claude-haiku-4.5', 'claude-haiku-4-5', 'haiku4.5', 'haiku', 'claude-haiku'];
+
+      aliases.forEach(alias => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-haiku-4-5-20251001');
+      });
     });
 
     it('should handle case-insensitive model names', () => {

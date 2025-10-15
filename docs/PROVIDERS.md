@@ -40,6 +40,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `claude-opus-4-1-20250805` - Highest intelligence with extended thinking (32K output)
   - `claude-sonnet-4-20250514` - Balanced performance with extended thinking (64K output)
   - `claude-3-7-sonnet-20250219` - Enhanced 3.x generation with thinking (64K output)
+  - `claude-haiku-4-5-20251001` - Fast and intelligent with extended thinking (64K output)
   - `claude-3-5-sonnet-20241022` - Fast and intelligent model (8K output)
   - `claude-3-5-haiku-20241022` - Fastest Claude model (8K output)
   - `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, `claude-3-haiku-20240307` - Previous generation
@@ -165,7 +166,7 @@ CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 All providers support streaming responses for real-time output.
 
 ### Image Support
-- **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-3.5-Sonnet, Claude-3-Opus)
+- **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-4 series, Claude-3.5-Sonnet, Claude-3-Opus)
 - **Via OpenRouter**: Depends on the underlying model
 - **No Support**: DeepSeek, Mistral (except Large), Claude-3.5-Haiku, Codex
 

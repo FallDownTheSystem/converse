@@ -44,7 +44,7 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     supports1MContext: true, // Beta 1M context support
     description: 'Claude Sonnet 4.5 - Latest Sonnet with enhanced intelligence and optional 1M context',
-    aliases: ['claude-4.5-sonnet', 'sonnet-4.5', 'claude-sonnet-4.5', 'sonnet4.5', 'claude-sonnet-4-5']
+    aliases: ['claude-4.5-sonnet', 'sonnet-4.5', 'claude-sonnet-4.5', 'sonnet4.5', 'claude-sonnet-4-5', 'sonnet', 'claude-sonnet']
   },
   'claude-sonnet-4-20250514': {
     modelName: 'claude-sonnet-4-20250514',
@@ -61,7 +61,7 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     supports1MContext: true, // Beta 1M context support
     description: 'Claude Sonnet 4 - High intelligence and balanced performance with extended thinking',
-    aliases: ['claude-4-sonnet', 'sonnet-4', 'sonnet', 'claude-sonnet', 'claude-sonnet-4', 'sonnet4']
+    aliases: ['claude-4-sonnet', 'sonnet-4', 'claude-sonnet-4', 'sonnet4']
   },
   'claude-3-7-sonnet-20250219': {
     modelName: 'claude-3-7-sonnet-20250219',
@@ -78,6 +78,22 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     description: 'Claude 3.7 Sonnet - Enhanced 3.x generation with thinking',
     aliases: ['claude-3.7-sonnet', 'sonnet-3.7', 'claude-3-7-sonnet', 'claude 3.7 sonnet', 'sonnet 3.7']
+  },
+  'claude-haiku-4-5-20251001': {
+    modelName: 'claude-haiku-4-5-20251001',
+    friendlyName: 'Claude Haiku 4.5',
+    contextWindow: 200000,
+    maxOutputTokens: 64000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 64000,
+    timeout: 300000,
+    description: 'Claude Haiku 4.5 - Fast and intelligent model with extended thinking',
+    aliases: ['claude-haiku-4-5', 'claude-4.5-haiku', 'claude-4-5-haiku', 'haiku-4.5', 'haiku-4-5', 'claude-haiku-4.5', 'haiku4.5', 'claude-haiku-4', 'haiku', 'claude-haiku']
   },
   'claude-3-5-sonnet-20241022': {
     modelName: 'claude-3-5-sonnet-20241022',
@@ -105,7 +121,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: false,
     timeout: 180000,
     description: 'Claude 3.5 Haiku - Fastest model, best for simple queries',
-    aliases: ['claude-3.5-haiku', 'claude-3-5-haiku-latest', 'haiku', 'claude-haiku', 'haiku-3.5', 'claude 3.5 haiku', 'haiku 3.5']
+    aliases: ['claude-3.5-haiku', 'claude-3-5-haiku-latest', 'haiku-3.5', 'claude 3.5 haiku', 'haiku 3.5']
   }
 };
 
