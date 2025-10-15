@@ -5,6 +5,27 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-10-15
+
+### Added
+- **Anthropic Provider**: Added Claude Haiku 4.5 support
+  - `claude-haiku-4-5-20251001`: Fast and intelligent model with extended thinking
+  - 200K context window, 64K max output tokens (8x increase from Haiku 3.5)
+  - Full thinking support with configurable reasoning effort (1024-64K thinking tokens)
+  - Image/vision support and streaming capabilities
+  - Aliases: `haiku-4.5`, `haiku-4-5`, `claude-haiku-4.5`, `haiku4.5`, `haiku`, `claude-haiku`
+
+### Changed
+- **Anthropic Provider**: Updated simple model aliases to point to latest versions
+  - `haiku` and `claude-haiku` now resolve to Haiku 4.5 (previously Haiku 3.5)
+  - `sonnet` and `claude-sonnet` now resolve to Sonnet 4.5 (previously Sonnet 4.0)
+  - `opus` and `claude-opus` already pointed to Opus 4.1 (no change)
+  - Users can now use simple aliases to always get the latest model in each family
+
+### Documentation
+- Updated PROVIDERS.md with Claude Haiku 4.5 model specifications
+- Updated image support documentation to include Claude 4 series models
+
 ## [2.1.0] - 2025-10-07
 
 ### Fixed
