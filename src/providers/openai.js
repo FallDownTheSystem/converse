@@ -20,8 +20,9 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,  // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportsNoneReasoningEffort: true,  // GPT-5.1 supports "none" for faster responses
     timeout: 3600000, // 1 hour
-    description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis',
+    description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, analysis. Supports "none" reasoning for faster responses',
     aliases: ['gpt-5', 'gpt5', 'gpt 5', 'gpt-5.1-2025-11-13', 'gpt5.1', 'gpt 5.1']
   },
   'gpt-5-2025-08-07': {
@@ -34,6 +35,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false,  // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportsNoneReasoningEffort: false,  // GPT-5.0 does not support "none" reasoning
     timeout: 3600000, // 1 hour
     description: 'GPT-5.0 model (400K context, 128K output) - Previous version, accessible via fully qualified name',
     aliases: ['gpt-5.0', 'gpt5.0', 'gpt 5.0']

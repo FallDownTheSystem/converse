@@ -1378,8 +1378,8 @@ consensusTool.inputSchema = {
     },
     reasoning_effort: {
       type: 'string',
-      enum: ['minimal', 'low', 'medium', 'high', 'max'],
-      description: 'Reasoning depth for thinking models. Examples: "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+      enum: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+      description: 'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest - GPT-5.1+ only), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
       default: 'medium'
     },
     use_websearch: {
