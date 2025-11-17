@@ -5,6 +5,21 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-11-17
+
+### Added
+- **OpenAI Provider**: Added GPT-5.1 model support
+  - `gpt-5.1`: Latest flagship model with same capabilities as GPT-5 family
+  - `gpt-5.1-2025-11-13`: Fully qualified model name
+  - Aliases: `gpt-5`, `gpt5`, `gpt 5`, `gpt5.1`, `gpt 5.1`
+  - Same parameters and capabilities: 400K context, 128K output, web search, reasoning effort, verbosity control
+
+### Changed
+- **OpenAI Provider**: Updated simple model aliases to point to latest GPT-5 version
+  - `gpt-5`, `gpt5`, and `gpt 5` now resolve to GPT-5.1 (latest version)
+  - Previous GPT-5 (2025-08-07) now accessible as `gpt-5-2025-08-07` (fully qualified name) or via `gpt-5.0` aliases
+  - Aliases for old model: `gpt-5.0`, `gpt5.0`, `gpt 5.0`, `gpt-5-2025-08-07`
+
 ## [2.2.0] - 2025-10-15
 
 ### Added
