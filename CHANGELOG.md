@@ -5,6 +5,17 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-11-17
+
+### Added
+- **OpenAI Provider**: Added "none" reasoning effort support for GPT-5.1
+  - GPT-5.1 now supports `reasoning_effort: "none"` for faster responses with increased steerability
+  - Optimized for use cases requiring quick responses without extended reasoning
+  - Only available on GPT-5.1 and later models (not available on GPT-5.0)
+- **Chat & Consensus Tools**: Updated `reasoning_effort` parameter to include "none" option
+  - New enum values: `none`, `minimal`, `low`, `medium`, `high`, `max`
+  - "none" provides fastest responses for GPT-5.1+ models
+
 ## [2.3.0] - 2025-11-17
 
 ### Added
