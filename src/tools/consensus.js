@@ -655,7 +655,7 @@ function getDefaultModelForProvider(providerName) {
   const defaults = {
     openai: 'gpt-5',
     xai: 'grok-4-0709',
-    google: 'gemini-2.5-pro',
+    google: 'gemini-pro',
     anthropic: 'claude-sonnet-4-20250514',
     mistral: 'magistral-medium-2506',
     deepseek: 'deepseek-reasoner',
@@ -1500,7 +1500,7 @@ consensusTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'List of models to consult. Example: ["gpt-5", "gemini-2.5-pro", "grok-4-0709"]',
+        'List of models to consult. Example: ["gpt-5", "gemini-pro", "grok-4-0709"]',
     },
     files: {
       type: 'array',

@@ -17,7 +17,7 @@ const logger = createLogger('summarization');
 // Default fast models for summarization tasks (prioritize GPT-5-nano for speed)
 const FAST_MODELS = {
   openai: 'gpt-5-nano', // Fastest GPT-5 model with minimal reasoning
-  google: 'gemini-2.5-flash',
+  google: 'flash',
   xai: 'grok-4',
   anthropic: 'claude-3-5-haiku-latest',
   mistral: 'mistral-small-latest',

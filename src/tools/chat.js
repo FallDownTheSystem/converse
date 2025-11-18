@@ -418,7 +418,7 @@ function resolveAutoModel(model, providerName) {
   const defaults = {
     openai: 'gpt-5',
     xai: 'grok-4-0709',
-    google: 'gemini-2.5-pro',
+    google: 'gemini-pro',
     anthropic: 'claude-sonnet-4-20250514',
     mistral: 'magistral-medium-2506',
     deepseek: 'deepseek-reasoner',
@@ -934,7 +934,7 @@ chatTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
+        'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-pro", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

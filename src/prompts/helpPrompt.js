@@ -95,7 +95,7 @@ export function generateHelpContent(config = null) {
       return `\`\`\`json
 {
   "prompt": "Should we use microservices architecture for our new project?",
-  "models": ["gpt-5", "gemini-2.5-pro", "grok-4"],
+  "models": ["gpt-5", "gemini-pro", "grok-4"],
   "files": ["./requirements.md", "C:\\\\Users\\\\username\\\\architecture.md"],
   "enable_cross_feedback": true,
   "temperature": 0.3
@@ -138,12 +138,12 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 ## Model Selection Tips
 
 ### For Complex Reasoning Tasks
-- **Most Intelligent**: gpt-5, gpt-5-pro, gemini-2.5-pro, grok-4
-- **Fast & Smart**: gpt-5-mini, gpt-5-mini, o4-mini, gemini-2.5-flash
+- **Most Intelligent**: gpt-5, gpt-5-pro, gemini-pro, grok-4
+- **Fast & Smart**: gpt-5-mini, gpt-5-mini, o4-mini, flash
 - **Budget-Friendly**: gpt-5-nano, gpt-4o-mini, gemini-2.0-flash-lite
 
 ### For Quick Responses
-- **Ultra-Fast**: gpt-5-nano, gemini-2.5-flash, gemini-2.0-flash, gpt-4o-mini
+- **Ultra-Fast**: gpt-5-nano, flash, gemini-2.0-flash, gpt-4o-mini
 - **Good Balance**: gpt-5-mini, o4-mini, grok-code-fast-1
 
 ### For Large Context Windows
