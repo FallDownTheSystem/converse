@@ -33,7 +33,12 @@ export class ContextProcessorError extends Error {
  * Supported image extensions (everything else is treated as text)
  */
 const SUPPORTED_IMAGE_EXTENSIONS = [
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.bmp',
 ];
 
 /**
@@ -48,19 +53,24 @@ async function validateFilePath(filePath, options = {}) {
   if (!filePath || typeof filePath !== 'string') {
     throw new ContextProcessorError(
       'File path must be a non-empty string',
-      'INVALID_PATH'
+      'INVALID_PATH',
     );
   }
 
   // Convert to absolute path
   // For relative paths, resolve from the client's working directory if provided,
   // otherwise use process.cwd()
-  const absolutePath = isAbsolute(filePath) ? filePath : resolve(options.clientCwd || process.cwd(), filePath);
+  const absolutePath = isAbsolute(filePath)
+    ? filePath
+    : resolve(options.clientCwd || process.cwd(), filePath);
 
   // Security check is now optional and disabled by default
   if (options.enforceSecurityCheck) {
-    const allowedDirs = options.allowedDirectories || [process.cwd(), PROJECT_ROOT];
-    const isAllowed = allowedDirs.some(dir => {
+    const allowedDirs = options.allowedDirectories || [
+      process.cwd(),
+      PROJECT_ROOT,
+    ];
+    const isAllowed = allowedDirs.some((dir) => {
       const resolvedDir = resolve(dir);
       return absolutePath.startsWith(resolvedDir);
     });
@@ -69,7 +79,7 @@ async function validateFilePath(filePath, options = {}) {
       throw new ContextProcessorError(
         'File access denied: path outside allowed directories',
         'SECURITY_VIOLATION',
-        { path: absolutePath, allowedDirs }
+        { path: absolutePath, allowedDirs },
       );
     }
   }
@@ -81,7 +91,7 @@ async function validateFilePath(filePath, options = {}) {
     throw new ContextProcessorError(
       `File not accessible: ${error.message}`,
       'FILE_ACCESS_ERROR',
-      { path: absolutePath }
+      { path: absolutePath },
     );
   }
 
@@ -106,7 +116,7 @@ export async function processFileContent(filePath, options = {}) {
       if (!dataUrlMatch) {
         throw new ContextProcessorError(
           'Invalid data URL format',
-          'INVALID_DATA_URL'
+          'INVALID_DATA_URL',
         );
       }
 
@@ -123,7 +133,7 @@ export async function processFileContent(filePath, options = {}) {
         error: null,
         lastModified: new Date(),
         encoding: 'base64',
-        mimeType
+        mimeType,
       };
     }
 
@@ -135,11 +145,9 @@ export async function processFileContent(filePath, options = {}) {
 
     // Check if it's actually a file (not a directory)
     if (!fileStats.isFile()) {
-      throw new ContextProcessorError(
-        'Path is not a file',
-        'NOT_A_FILE',
-        { path: validatedPath }
-      );
+      throw new ContextProcessorError('Path is not a file', 'NOT_A_FILE', {
+        path: validatedPath,
+      });
     }
 
     const result = {
@@ -171,7 +179,6 @@ export async function processFileContent(filePath, options = {}) {
       result.content = buffer.toString('base64');
       result.mimeType = getMimeType(extension);
       result.encoding = 'base64';
-
     } else {
       // Read everything else as text
       result.type = 'text';
@@ -189,13 +196,15 @@ export async function processFileContent(filePath, options = {}) {
     }
 
     return result;
-
   } catch (error) {
     return {
       path: filePath,
       originalPath: filePath,
       type: 'error',
-      error: error instanceof ContextProcessorError ? error.message : `Unexpected error: ${error.message}`,
+      error:
+        error instanceof ContextProcessorError
+          ? error.message
+          : `Unexpected error: ${error.message}`,
       errorCode: error.code || 'UNKNOWN_ERROR',
       content: null,
       lastModified: null,
@@ -213,13 +222,13 @@ export async function processMultipleFiles(filePaths, options = {}) {
   if (!Array.isArray(filePaths)) {
     throw new ContextProcessorError(
       'filePaths must be an array',
-      'INVALID_INPUT'
+      'INVALID_INPUT',
     );
   }
 
   // Process files in parallel but isolate errors
   const results = await Promise.allSettled(
-    filePaths.map(path => processFileContent(path, options))
+    filePaths.map((path) => processFileContent(path, options)),
   );
 
   // Convert Promise.allSettled results to consistent format
@@ -260,7 +269,7 @@ export async function processWebSearchContext(query, options = {}) {
     // - DuckDuckGo API
     // - Custom search engines
     placeholder: true,
-    message: 'Web search integration placeholder - not yet implemented'
+    message: 'Web search integration placeholder - not yet implemented',
   };
 }
 
@@ -292,20 +301,25 @@ export async function processUnifiedContext(contextRequest, options = {}) {
     if (contextRequest.images && Array.isArray(contextRequest.images)) {
       result.images = await processMultipleFiles(contextRequest.images, {
         ...options,
-        imageProcessingMode: true // Placeholder for future image-specific processing
+        imageProcessingMode: true, // Placeholder for future image-specific processing
       });
     }
 
     // Process web search if provided
-    if (contextRequest.webSearch && typeof contextRequest.webSearch === 'string') {
-      result.webSearch = await processWebSearchContext(contextRequest.webSearch, options);
+    if (
+      contextRequest.webSearch &&
+      typeof contextRequest.webSearch === 'string'
+    ) {
+      result.webSearch = await processWebSearchContext(
+        contextRequest.webSearch,
+        options,
+      );
     }
-
   } catch (error) {
     result.errors.push({
       type: 'unified_processing_error',
       message: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
+      code: error.code || 'UNKNOWN_ERROR',
     });
   }
 
@@ -323,9 +337,11 @@ export function createFileContext(processedFiles, options = {}) {
     return null;
   }
 
-  const textFiles = processedFiles.filter(f => f.type === 'text' && !f.error);
-  const imageFiles = processedFiles.filter(f => f.type === 'image' && !f.error);
-  const errors = processedFiles.filter(f => f.error);
+  const textFiles = processedFiles.filter((f) => f.type === 'text' && !f.error);
+  const imageFiles = processedFiles.filter(
+    (f) => f.type === 'image' && !f.error,
+  );
+  const errors = processedFiles.filter((f) => f.error);
 
   const includeErrors = options.includeErrors !== false; // Default to true
 
@@ -377,11 +393,13 @@ export function createFileContext(processedFiles, options = {}) {
         data: image.content,
       },
       // Add metadata for debugging
-      metadata: options.includeMetadata ? {
-        path: image.originalPath || image.path,
-        size: image.size,
-        lastModified: image.lastModified
-      } : undefined
+      metadata: options.includeMetadata
+        ? {
+          path: image.originalPath || image.path,
+          size: image.size,
+          lastModified: image.lastModified,
+        }
+        : undefined,
     });
   }
 
@@ -428,7 +446,7 @@ export async function validateFilePaths(filePaths, options = {}) {
   if (!Array.isArray(filePaths)) {
     throw new ContextProcessorError(
       'filePaths must be an array',
-      'INVALID_INPUT'
+      'INVALID_INPUT',
     );
   }
 
@@ -444,13 +462,13 @@ export async function validateFilePaths(filePaths, options = {}) {
       results.valid.push({
         originalPath: path,
         validatedPath,
-        isValid: true
+        isValid: true,
       });
     } catch (error) {
       const errorInfo = {
         path,
         error: error.message,
-        code: error.code
+        code: error.code,
       };
 
       if (error.code === 'SECURITY_VIOLATION') {
@@ -463,4 +481,3 @@ export async function validateFilePaths(filePaths, options = {}) {
 
   return results;
 }
-

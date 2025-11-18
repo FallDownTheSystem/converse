@@ -17,22 +17,25 @@ describe('Async Support Tests', () => {
 
   beforeEach(() => {
     // Mock file validator
-    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] });
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
 
     // Mock configuration
     mockConfig = {
       apiKeys: {
         openai: 'sk-test-key',
         xai: 'xai-test-key',
-        google: 'google-test-key'
+        google: 'google-test-key',
       },
       providers: {
         googleLocation: 'us-central1',
-        xaiBaseUrl: 'https://api.x.ai/v1'
+        xaiBaseUrl: 'https://api.x.ai/v1',
       },
       environment: {
-        nodeEnv: 'test'
-      }
+        nodeEnv: 'test',
+      },
     };
 
     // Mock continuation store
@@ -41,47 +44,47 @@ describe('Async Support Tests', () => {
       set: vi.fn(),
       delete: vi.fn(),
       exists: vi.fn(),
-      getStats: vi.fn()
+      getStats: vi.fn(),
     };
 
     // Mock providers
     const mockOpenAIProvider = {
       invoke: vi.fn().mockResolvedValue({
         content: 'Test response from OpenAI',
-        metadata: { usage: { input_tokens: 10, output_tokens: 20 } }
+        metadata: { usage: { input_tokens: 10, output_tokens: 20 } },
       }),
       validateConfig: vi.fn(),
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     const mockXAIProvider = {
       invoke: vi.fn().mockResolvedValue({
         content: 'Test response from XAI',
-        metadata: { usage: { input_tokens: 12, output_tokens: 18 } }
+        metadata: { usage: { input_tokens: 12, output_tokens: 18 } },
       }),
       validateConfig: vi.fn(),
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     const mockGoogleProvider = {
       invoke: vi.fn().mockResolvedValue({
         content: 'Test response from Google',
-        metadata: { usage: { input_tokens: 8, output_tokens: 25 } }
+        metadata: { usage: { input_tokens: 8, output_tokens: 25 } },
       }),
       validateConfig: vi.fn(),
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     mockProviders = {
       openai: mockOpenAIProvider,
       xai: mockXAIProvider,
-      google: mockGoogleProvider
+      google: mockGoogleProvider,
     };
 
     // Mock context processor
@@ -92,18 +95,18 @@ describe('Async Support Tests', () => {
         files: [],
         processed: [],
         failed: [],
-        images: []
-      })
+        images: [],
+      }),
     };
 
     // Mock job runner
     mockJobRunner = {
-      submit: vi.fn().mockResolvedValue('test-job-id-123')
+      submit: vi.fn().mockResolvedValue('test-job-id-123'),
     };
 
     // Mock provider stream normalizer
     mockProviderStreamNormalizer = {
-      normalize: vi.fn()
+      normalize: vi.fn(),
     };
 
     // Create mock dependencies
@@ -113,7 +116,7 @@ describe('Async Support Tests', () => {
       providers: mockProviders,
       contextProcessor: mockContextProcessor,
       jobRunner: mockJobRunner,
-      providerStreamNormalizer: mockProviderStreamNormalizer
+      providerStreamNormalizer: mockProviderStreamNormalizer,
     };
 
     // Set up default mock return values
@@ -126,7 +129,7 @@ describe('Async Support Tests', () => {
     it('should execute synchronously when async=false (default)', async () => {
       const args = {
         prompt: 'Test sync chat',
-        async: false
+        async: false,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -139,7 +142,7 @@ describe('Async Support Tests', () => {
 
     it('should execute synchronously when async parameter is omitted', async () => {
       const args = {
-        prompt: 'Test sync chat default'
+        prompt: 'Test sync chat default',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -151,7 +154,7 @@ describe('Async Support Tests', () => {
     it('should submit async job when async=true', async () => {
       const args = {
         prompt: 'Test async chat',
-        async: true
+        async: true,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -170,7 +173,7 @@ describe('Async Support Tests', () => {
       const args = {
         prompt: 'Test async chat with continuation',
         async: true,
-        continuation_id: existingContinuationId
+        continuation_id: existingContinuationId,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -182,10 +185,10 @@ describe('Async Support Tests', () => {
           tool: 'chat',
           options: expect.objectContaining({
             ...args,
-            jobId: existingContinuationId
-          })
+            jobId: existingContinuationId,
+          }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -193,12 +196,12 @@ describe('Async Support Tests', () => {
       const depsWithoutAsync = {
         ...mockDependencies,
         jobRunner: null,
-        providerStreamNormalizer: null
+        providerStreamNormalizer: null,
       };
 
       const args = {
         prompt: 'Test async without deps',
-        async: true
+        async: true,
       };
 
       const result = await chatTool(args, depsWithoutAsync);
@@ -208,11 +211,13 @@ describe('Async Support Tests', () => {
     });
 
     it('should handle job submission errors gracefully', async () => {
-      mockJobRunner.submit.mockRejectedValue(new Error('Job submission failed'));
+      mockJobRunner.submit.mockRejectedValue(
+        new Error('Job submission failed'),
+      );
 
       const args = {
         prompt: 'Test async error',
-        async: true
+        async: true,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -227,7 +232,7 @@ describe('Async Support Tests', () => {
       const args = {
         prompt: 'Test sync consensus',
         models: ['gpt-5', 'gemini-2.5-pro'],
-        async: false
+        async: false,
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -240,7 +245,7 @@ describe('Async Support Tests', () => {
     it('should execute synchronously when async parameter is omitted', async () => {
       const args = {
         prompt: 'Test sync consensus default',
-        models: ['gpt-5']
+        models: ['gpt-5'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -253,7 +258,7 @@ describe('Async Support Tests', () => {
       const args = {
         prompt: 'Test async consensus',
         models: ['gpt-5', 'gemini-2.5-pro', 'grok-4-0709'],
-        async: true
+        async: true,
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -273,7 +278,7 @@ describe('Async Support Tests', () => {
         prompt: 'Test async consensus with continuation',
         models: ['gpt-5', 'gemini-2.5-pro'],
         async: true,
-        continuation_id: existingContinuationId
+        continuation_id: existingContinuationId,
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -285,10 +290,10 @@ describe('Async Support Tests', () => {
           tool: 'consensus',
           options: expect.objectContaining({
             ...args,
-            jobId: existingContinuationId
-          })
+            jobId: existingContinuationId,
+          }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -296,13 +301,13 @@ describe('Async Support Tests', () => {
       const depsWithoutAsync = {
         ...mockDependencies,
         jobRunner: null,
-        providerStreamNormalizer: null
+        providerStreamNormalizer: null,
       };
 
       const args = {
         prompt: 'Test async without deps',
         models: ['gpt-5'],
-        async: true
+        async: true,
       };
 
       const result = await consensusTool(args, depsWithoutAsync);
@@ -312,12 +317,14 @@ describe('Async Support Tests', () => {
     });
 
     it('should handle job submission errors gracefully', async () => {
-      mockJobRunner.submit.mockRejectedValue(new Error('Job submission failed'));
+      mockJobRunner.submit.mockRejectedValue(
+        new Error('Job submission failed'),
+      );
 
       const args = {
         prompt: 'Test async error',
         models: ['gpt-5'],
-        async: true
+        async: true,
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -331,7 +338,7 @@ describe('Async Support Tests', () => {
         prompt: 'Test async consensus with cross-feedback',
         models: ['gpt-5', 'gemini-2.5-pro'],
         enable_cross_feedback: true,
-        async: true
+        async: true,
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -341,10 +348,10 @@ describe('Async Support Tests', () => {
         expect.objectContaining({
           tool: 'consensus',
           options: expect.objectContaining({
-            enable_cross_feedback: true
-          })
+            enable_cross_feedback: true,
+          }),
         }),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -354,7 +361,7 @@ describe('Async Support Tests', () => {
       const args = {
         prompt: 'Test compatibility',
         model: 'gpt-5',
-        temperature: 0.7
+        temperature: 0.7,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -371,7 +378,7 @@ describe('Async Support Tests', () => {
         prompt: 'Test compatibility consensus',
         models: ['gpt-5', 'gemini-2.5-pro'],
         temperature: 0.3,
-        enable_cross_feedback: false
+        enable_cross_feedback: false,
       };
 
       const result = await consensusTool(args, mockDependencies);

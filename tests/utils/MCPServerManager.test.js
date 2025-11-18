@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { MCPServerManager, createTestServer, withTestServer } from './MCPServerManager.js';
+import {
+  MCPServerManager,
+  createTestServer,
+  withTestServer,
+} from './MCPServerManager.js';
 
 describe('MCPServerManager', () => {
   let manager;
@@ -7,7 +11,7 @@ describe('MCPServerManager', () => {
   beforeEach(() => {
     manager = new MCPServerManager({
       startupTimeout: 10000, // Shorter timeout for tests
-      shutdownTimeout: 3157
+      shutdownTimeout: 3157,
     });
   });
 
@@ -33,8 +37,8 @@ describe('MCPServerManager', () => {
         startupTimeout: 20000,
         env: {
           CUSTOM_VAR: 'test-value',
-          LOG_LEVEL: 'debug'
-        }
+          LOG_LEVEL: 'debug',
+        },
       });
 
       expect(customManager.options.startupTimeout).toBe(20000);
@@ -75,7 +79,9 @@ describe('MCPServerManager', () => {
     it('should throw error when starting already started server', async () => {
       await manager.startServer();
 
-      await expect(manager.startServer()).rejects.toThrow('Server is already started');
+      await expect(manager.startServer()).rejects.toThrow(
+        'Server is already started',
+      );
 
       await manager.stopServer();
     }, 20000);
@@ -89,7 +95,9 @@ describe('MCPServerManager', () => {
     }, 20000);
 
     it('should throw error when getting client from stopped server', async () => {
-      expect(() => manager.getClient()).toThrow('Server is not started or client is not available');
+      expect(() => manager.getClient()).toThrow(
+        'Server is not started or client is not available',
+      );
     });
   });
 
@@ -106,7 +114,7 @@ describe('MCPServerManager', () => {
       expect(Array.isArray(tools.tools)).toBe(true);
       expect(tools.tools.length).toBeGreaterThan(0);
 
-      const toolNames = tools.tools.map(tool => tool.name);
+      const toolNames = tools.tools.map((tool) => tool.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
     });
@@ -115,8 +123,8 @@ describe('MCPServerManager', () => {
       const result = await manager.executeToolCall({
         name: 'chat',
         arguments: {
-          prompt: 'Hello, test message'
-        }
+          prompt: 'Hello, test message',
+        },
       });
 
       expect(result).toBeDefined();
@@ -128,26 +136,31 @@ describe('MCPServerManager', () => {
 
     it('should handle tool call timeouts', async () => {
       await expect(
-        manager.executeToolCall({
-          name: 'chat',
-          arguments: {
-            prompt: 'Test timeout'
-          }
-        }, 1) // 1ms timeout - should fail
+        manager.executeToolCall(
+          {
+            name: 'chat',
+            arguments: {
+              prompt: 'Test timeout',
+            },
+          },
+          1,
+        ), // 1ms timeout - should fail
       ).rejects.toThrow('Tool call timeout after 1ms');
     });
 
     it('should handle invalid tool calls', async () => {
       const result = await manager.executeToolCall({
         name: 'nonexistent-tool',
-        arguments: {}
+        arguments: {},
       });
 
       // Check that error response is returned (not thrown)
       expect(result.isError).toBe(true);
       expect(result.error.code).toBe('UNKNOWN_TOOL');
       expect(result.error.toolName).toBe('nonexistent-tool');
-      expect(result.content[0].text).toContain('Unknown tool \'nonexistent-tool\'');
+      expect(result.content[0].text).toContain(
+        'Unknown tool \'nonexistent-tool\'',
+      );
     });
   });
 
@@ -155,7 +168,7 @@ describe('MCPServerManager', () => {
     it('should handle server startup failures gracefully', async () => {
       const badManager = new MCPServerManager({
         serverPath: '/nonexistent/server.js',
-        startupTimeout: 2000
+        startupTimeout: 2000,
       });
 
       await expect(badManager.startServer()).rejects.toThrow();
@@ -166,13 +179,15 @@ describe('MCPServerManager', () => {
       await expect(
         manager.executeToolCall({
           name: 'chat',
-          arguments: { prompt: 'test' }
-        })
+          arguments: { prompt: 'test' },
+        }),
       ).rejects.toThrow('Server is not started');
     });
 
     it('should throw error when listing tools on stopped server', async () => {
-      await expect(manager.listTools()).rejects.toThrow('Server is not started');
+      await expect(manager.listTools()).rejects.toThrow(
+        'Server is not started',
+      );
     });
   });
 
@@ -262,16 +277,16 @@ describe('MCPServerManager', () => {
           manager.executeToolCall({
             name: 'chat',
             arguments: {
-              prompt: `Concurrent test ${i}`
-            }
-          })
+              prompt: `Concurrent test ${i}`,
+            },
+          }),
         );
       }
 
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.content).toBeDefined();
         expect(result.content[0].type).toBe('text');
       });

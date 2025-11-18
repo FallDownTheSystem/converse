@@ -33,23 +33,19 @@ export default defineConfig({
     
     // Reduced parallelism for server stability and port management
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 1, // Single thread to avoid port conflicts
-        minThreads: 1
-      }
-    },
+    maxWorkers: 1, // Single thread to avoid port conflicts
     
     // Coverage configuration optimized for integration testing
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{js,ts}'],
       exclude: [
-        'node_modules/**',
         'tests/**',
         'dev-server.js',
         'scripts/**',
-        '**/*.config.js'
+        '**/*.config.{js,ts}',
+        'bin/**'
       ],
       thresholds: {
         lines: 60,   // Lower thresholds for integration tests

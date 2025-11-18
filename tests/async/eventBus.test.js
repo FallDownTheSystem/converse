@@ -89,7 +89,7 @@ describe('EventBus Unit Tests', () => {
     it('should initialize cleanup timer', () => {
       expect(mockSetInterval).toHaveBeenCalledWith(
         expect.any(Function),
-        600000  // 10 * 60 * 1000 = 600000ms
+        600000, // 10 * 60 * 1000 = 600000ms
       );
     });
 
@@ -155,10 +155,14 @@ describe('EventBus Unit Tests', () => {
         const updateData = {
           progress: 0.5,
           status: 'running',
-          providers: { openai: 'active' }
+          providers: { openai: 'active' },
         };
 
-        const result = eventBus.emitJobUpdated(testJobId, testSessionId, updateData);
+        const result = eventBus.emitJobUpdated(
+          testJobId,
+          testSessionId,
+          updateData,
+        );
 
         expect(result).toBe(true);
         expect(mockListener).toHaveBeenCalledWith({
@@ -181,7 +185,9 @@ describe('EventBus Unit Tests', () => {
         const mockListener = vi.fn();
         eventBus.on(EVENT_TYPES.JOB_COMPLETED, mockListener);
 
-        const result = eventBus.emitJobCompleted(testJobId, testSessionId, { content: 'response' });
+        const result = eventBus.emitJobCompleted(testJobId, testSessionId, {
+          content: 'response',
+        });
 
         expect(result).toBe(true);
         expect(mockListener).toHaveBeenCalledWith({
@@ -209,7 +215,7 @@ describe('EventBus Unit Tests', () => {
               result: 'null',
               hasResult: false,
             }),
-          })
+          }),
         );
       });
     });
@@ -253,7 +259,7 @@ describe('EventBus Unit Tests', () => {
             data: expect.objectContaining({
               error: { message: 'Custom error', code: 'CUSTOM_ERROR' },
             }),
-          })
+          }),
         );
       });
     });
@@ -263,7 +269,9 @@ describe('EventBus Unit Tests', () => {
         const mockListener = vi.fn();
         eventBus.on(EVENT_TYPES.JOB_CANCELLED, mockListener);
 
-        const result = eventBus.emitJobCancelled(testJobId, testSessionId, { reason: 'Timeout' });
+        const result = eventBus.emitJobCancelled(testJobId, testSessionId, {
+          reason: 'Timeout',
+        });
 
         expect(result).toBe(true);
         expect(mockListener).toHaveBeenCalledWith({
@@ -289,7 +297,7 @@ describe('EventBus Unit Tests', () => {
             data: expect.objectContaining({
               reason: 'User cancellation',
             }),
-          })
+          }),
         );
       });
     });
@@ -299,7 +307,9 @@ describe('EventBus Unit Tests', () => {
         const mockListener = vi.fn();
         eventBus.on(EVENT_TYPES.JOB_STARTED, mockListener);
 
-        const result = eventBus.emitJobStarted(testJobId, testSessionId, { tool: 'consensus' });
+        const result = eventBus.emitJobStarted(testJobId, testSessionId, {
+          tool: 'consensus',
+        });
 
         expect(result).toBe(true);
         expect(mockListener).toHaveBeenCalledWith({
@@ -325,8 +335,16 @@ describe('EventBus Unit Tests', () => {
       const session1Listener = vi.fn();
       const session2Listener = vi.fn();
 
-      eventBus.addSessionListener(session1, EVENT_TYPES.JOB_CREATED, session1Listener);
-      eventBus.addSessionListener(session2, EVENT_TYPES.JOB_CREATED, session2Listener);
+      eventBus.addSessionListener(
+        session1,
+        EVENT_TYPES.JOB_CREATED,
+        session1Listener,
+      );
+      eventBus.addSessionListener(
+        session2,
+        EVENT_TYPES.JOB_CREATED,
+        session2Listener,
+      );
 
       // Emit event for session1
       eventBus.emitJobCreated(testJobId, session1, { tool: 'chat' });
@@ -369,7 +387,11 @@ describe('EventBus Unit Tests', () => {
       eventBus.addSessionListener(session1, EVENT_TYPES.JOB_CREATED, listener1);
       eventBus.addSessionListener(session1, EVENT_TYPES.JOB_UPDATED, listener2);
 
-      const removed = eventBus.removeSessionListener(session1, EVENT_TYPES.JOB_CREATED, listener1);
+      const removed = eventBus.removeSessionListener(
+        session1,
+        EVENT_TYPES.JOB_CREATED,
+        listener1,
+      );
       expect(removed).toBe(true);
 
       eventBus.emitJobCreated(testJobId, session1, { tool: 'chat' });
@@ -398,7 +420,11 @@ describe('EventBus Unit Tests', () => {
     });
 
     it('should return false when trying to remove non-existent session listener', () => {
-      const removed = eventBus.removeSessionListener('non-existent', EVENT_TYPES.JOB_CREATED, () => {});
+      const removed = eventBus.removeSessionListener(
+        'non-existent',
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
       expect(removed).toBe(false);
     });
 
@@ -568,7 +594,7 @@ describe('EventBus Unit Tests', () => {
         password: 'secret123',
         apiKey: 'key_456',
         authToken: 'token_789',
-        normal: 'data'
+        normal: 'data',
       };
 
       eventBus.emitJobCreated(testJobId, testSessionId, sensitiveData);
@@ -589,10 +615,10 @@ describe('EventBus Unit Tests', () => {
         config: {
           credentials: {
             password: 'nested_secret',
-            token: 'nested_token'
+            token: 'nested_token',
           },
-          normal: 'value'
-        }
+          normal: 'value',
+        },
       };
 
       eventBus.emitJobCreated(testJobId, testSessionId, nestedData);
@@ -638,13 +664,17 @@ describe('EventBus Unit Tests', () => {
 
       it('should validate callbacks when adding session listeners', () => {
         expect(() => {
-          eventBus.addSessionListener(testSessionId, EVENT_TYPES.JOB_CREATED, 'not-a-function');
+          eventBus.addSessionListener(
+            testSessionId,
+            EVENT_TYPES.JOB_CREATED,
+            'not-a-function',
+          );
         }).toThrow(EventBusError);
       });
 
       it('should validate payload size', () => {
         const largePayload = {
-          data: 'x'.repeat(eventBus.maxPayloadSize + 1)
+          data: 'x'.repeat(eventBus.maxPayloadSize + 1),
         };
 
         expect(() => {
@@ -675,7 +705,11 @@ describe('EventBus Unit Tests', () => {
     it('should track session activity', () => {
       const testSession = 'session_activity';
 
-      eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
+      eventBus.addSessionListener(
+        testSession,
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
       expect(eventBus.sessionLastActivity.has(testSession)).toBe(true);
 
       eventBus.emitJobCreated('job_test', testSession, {});
@@ -687,11 +721,18 @@ describe('EventBus Unit Tests', () => {
       const testSession = 'session_cleanup';
 
       // Add listener
-      eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
+      eventBus.addSessionListener(
+        testSession,
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
       expect(eventBus.stats.sessionsActive).toBe(1);
 
       // Simulate expired session by setting old timestamp
-      eventBus.sessionLastActivity.set(testSession, Date.now() - eventBus.sessionTimeout - 1000);
+      eventBus.sessionLastActivity.set(
+        testSession,
+        Date.now() - eventBus.sessionTimeout - 1000,
+      );
 
       // Trigger cleanup
       eventBus._cleanupExpiredSessions();
@@ -720,7 +761,11 @@ describe('EventBus Unit Tests', () => {
     it('should not clean up active sessions', () => {
       const testSession = 'session_active';
 
-      eventBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
+      eventBus.addSessionListener(
+        testSession,
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
       eventBus.emitJobCreated('job_test', testSession, {});
 
       // Trigger cleanup (should not remove active session)
@@ -747,8 +792,16 @@ describe('EventBus Unit Tests', () => {
       const initialStats = eventBus.getStats();
       expect(initialStats.listenersAdded).toBe(0);
 
-      eventBus.addSessionListener('session_1', EVENT_TYPES.JOB_CREATED, () => {});
-      eventBus.addSessionListener('session_1', EVENT_TYPES.JOB_UPDATED, () => {});
+      eventBus.addSessionListener(
+        'session_1',
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
+      eventBus.addSessionListener(
+        'session_1',
+        EVENT_TYPES.JOB_UPDATED,
+        () => {},
+      );
 
       const afterAddStats = eventBus.getStats();
       expect(afterAddStats.listenersAdded).toBe(2);
@@ -783,7 +836,11 @@ describe('EventBus Unit Tests', () => {
       const shutdownSpy = vi.spyOn(testBus, 'shutdown');
 
       // Add some listeners and create events
-      testBus.addSessionListener(testSession, EVENT_TYPES.JOB_CREATED, () => {});
+      testBus.addSessionListener(
+        testSession,
+        EVENT_TYPES.JOB_CREATED,
+        () => {},
+      );
       testBus.emitJobCreated('job_shutdown', testSession, {});
 
       // Verify data exists
@@ -854,13 +911,15 @@ describe('EventBus Unit Tests', () => {
 
     it('should shutdown previous instance when setting new one', async () => {
       const firstBus = createEventBus();
-      const shutdownSpy = vi.spyOn(firstBus, 'shutdown').mockImplementation(() => Promise.resolve());
+      const shutdownSpy = vi
+        .spyOn(firstBus, 'shutdown')
+        .mockImplementation(() => Promise.resolve());
 
       setEventBus(firstBus);
       setEventBus(createEventBus());
 
       // Give a moment for async shutdown to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(shutdownSpy).toHaveBeenCalled();
     });

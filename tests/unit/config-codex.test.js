@@ -99,7 +99,9 @@ describe('Codex Configuration', () => {
     it('should throw error for invalid approval policy', async () => {
       process.env.CODEX_APPROVAL_POLICY = 'invalid-policy';
 
-      await expect(loadConfig()).rejects.toThrow(/Invalid CODEX_APPROVAL_POLICY/);
+      await expect(loadConfig()).rejects.toThrow(
+        /Invalid CODEX_APPROVAL_POLICY/,
+      );
     });
   });
 

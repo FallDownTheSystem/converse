@@ -9,14 +9,14 @@ import testUtils from '../index.js';
 const {
   mocks: { providers: mockProviders, tools: mockTools },
   helpers,
-  fixtures
+  fixtures,
 } = testUtils;
 
 // Get specific functions
 const {
   createMockProvider,
   createMockOpenAIProvider,
-  createMockProviderRegistry
+  createMockProviderRegistry,
 } = mockProviders;
 const { createMockChatTool } = mockTools;
 const { createMockResponse } = mockProviders;
@@ -32,7 +32,7 @@ describe('Shared Test Utilities Usage Examples', () => {
 
     // Create mock configuration
     mockConfig = helpers.config.createMockConfig({
-      server: { port: 3000 }
+      server: { port: 3000 },
     });
 
     // Create mock logger
@@ -40,7 +40,7 @@ describe('Shared Test Utilities Usage Examples', () => {
 
     // Setup test environment
     env = helpers.setup.setupTestEnvironment({
-      LOG_LEVEL: 'debug'
+      LOG_LEVEL: 'debug',
     });
   });
 
@@ -53,7 +53,7 @@ describe('Shared Test Utilities Usage Examples', () => {
   describe('Mock Provider Examples', () => {
     it('should create a basic mock provider', () => {
       const provider = createMockProvider({
-        name: 'test-provider'
+        name: 'test-provider',
       });
 
       expect(provider.name).toBe('test-provider');
@@ -91,7 +91,7 @@ describe('Shared Test Utilities Usage Examples', () => {
 
       const result = await chatTool.handler({
         prompt: 'Hello',
-        model: 'gpt-4'
+        model: 'gpt-4',
       });
 
       expect(result).toHaveProperty('result');
@@ -151,7 +151,7 @@ describe('Shared Test Utilities Usage Examples', () => {
       const matrix = fixtures.createTestMatrix({
         providers: ['openai', 'google'],
         models: ['gpt-4', 'gemini-2.5-pro'],
-        scenarios: ['success']
+        scenarios: ['success'],
       });
 
       expect(matrix).toHaveLength(4);
@@ -168,20 +168,20 @@ describe('Shared Test Utilities Usage Examples', () => {
         invoke: vi.fn().mockResolvedValue(
           createMockResponse({
             content: fixtures.prompts.simple,
-            model: 'gpt-4'
-          })
-        )
+            model: 'gpt-4',
+          }),
+        ),
       });
 
       // Use the provider
       const result = await provider.invoke({
-        prompt: fixtures.prompts.simple
+        prompt: fixtures.prompts.simple,
       });
 
       // Assert using helpers
       helpers.assertions.expectPartialMatch(result, {
         content: fixtures.prompts.simple,
-        model: 'gpt-4'
+        model: 'gpt-4',
       });
     });
   });

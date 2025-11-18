@@ -106,7 +106,7 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
       if (!continuationId || typeof continuationId !== 'string') {
         throw new ContinuationStoreError(
           'Invalid continuation ID: must be a non-empty string',
-          'INVALID_CONTINUATION_ID'
+          'INVALID_CONTINUATION_ID',
         );
       }
 
@@ -114,7 +114,7 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
       if (!state || typeof state !== 'object') {
         throw new ContinuationStoreError(
           'Invalid state: must be an object',
-          'INVALID_STATE'
+          'INVALID_STATE',
         );
       }
       // Cleanup old conversations if we hit the limit
@@ -125,8 +125,13 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
 
       // Limit messages per conversation to prevent memory issues
       const sanitizedState = { ...state };
-      if (sanitizedState.messages && sanitizedState.messages.length > this.maxMessagesPerConversation) {
-        sanitizedState.messages = sanitizedState.messages.slice(-this.maxMessagesPerConversation);
+      if (
+        sanitizedState.messages &&
+        sanitizedState.messages.length > this.maxMessagesPerConversation
+      ) {
+        sanitizedState.messages = sanitizedState.messages.slice(
+          -this.maxMessagesPerConversation,
+        );
       }
 
       // Store with metadata
@@ -137,14 +142,13 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
           ? this.conversations.get(continuationId).createdAt
           : Date.now(),
       });
-
     } catch (error) {
       if (error instanceof ContinuationStoreError) {
         throw error;
       }
       throw new ContinuationStoreError(
         `Failed to store continuation: ${error.message}`,
-        'STORAGE_ERROR'
+        'STORAGE_ERROR',
       );
     }
   }
@@ -161,7 +165,7 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
       if (!continuationId || typeof continuationId !== 'string') {
         throw new ContinuationStoreError(
           'Invalid continuation ID: must be a non-empty string',
-          'INVALID_CONTINUATION_ID'
+          'INVALID_CONTINUATION_ID',
         );
       }
 
@@ -173,18 +177,17 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
         const { createdAt, lastAccessed, ...cleanState } = state;
         return {
           ...cleanState,
-          _metadata: { createdAt, lastAccessed }
+          _metadata: { createdAt, lastAccessed },
         };
       }
       return null;
-
     } catch (error) {
       if (error instanceof ContinuationStoreError) {
         throw error;
       }
       throw new ContinuationStoreError(
         `Failed to retrieve continuation: ${error.message}`,
-        'RETRIEVAL_ERROR'
+        'RETRIEVAL_ERROR',
       );
     }
   }
@@ -201,21 +204,20 @@ class MemoryContinuationStore extends ContinuationStoreInterface {
       if (!continuationId || typeof continuationId !== 'string') {
         throw new ContinuationStoreError(
           'Invalid continuation ID: must be a non-empty string',
-          'INVALID_CONTINUATION_ID'
+          'INVALID_CONTINUATION_ID',
         );
       }
 
       const existed = this.conversations.has(continuationId);
       this.conversations.delete(continuationId);
       return existed;
-
     } catch (error) {
       if (error instanceof ContinuationStoreError) {
         throw error;
       }
       throw new ContinuationStoreError(
         `Failed to delete continuation: ${error.message}`,
-        'DELETION_ERROR'
+        'DELETION_ERROR',
       );
     }
   }
@@ -274,16 +276,21 @@ export function getContinuationStore() {
     continuationStore = new MemoryContinuationStore();
 
     // Set up periodic cleanup (runs every hour)
-    cleanupIntervalId = setInterval(async () => {
-      try {
-        const cleaned = await continuationStore.cleanup();
-        if (cleaned > 0) {
-          debugLog(`ContinuationStore: Cleaned up ${cleaned} old conversations`);
+    cleanupIntervalId = setInterval(
+      async () => {
+        try {
+          const cleaned = await continuationStore.cleanup();
+          if (cleaned > 0) {
+            debugLog(
+              `ContinuationStore: Cleaned up ${cleaned} old conversations`,
+            );
+          }
+        } catch (error) {
+          debugError('ContinuationStore cleanup failed:', error);
         }
-      } catch (error) {
-        debugError('ContinuationStore cleanup failed:', error);
-      }
-    }, 60 * 60 * 1000);
+      },
+      60 * 60 * 1000,
+    );
 
     // Unref the interval so it doesn't keep the process alive
     if (cleanupIntervalId && typeof cleanupIntervalId.unref === 'function') {
@@ -301,7 +308,7 @@ export function setContinuationStore(store) {
   if (!(store instanceof ContinuationStoreInterface)) {
     throw new ContinuationStoreError(
       'Store must extend ContinuationStoreInterface',
-      'INVALID_STORE'
+      'INVALID_STORE',
     );
   }
   continuationStore = store;
@@ -341,7 +348,8 @@ export function isValidContinuationId(continuationId) {
   const nanoidPattern = /^conv_[A-Za-z0-9_-]{10}$/;
 
   // Also accept legacy UUID format for backward compatibility
-  const uuidPattern = /^conv_[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidPattern =
+    /^conv_[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   return nanoidPattern.test(continuationId) || uuidPattern.test(continuationId);
 }

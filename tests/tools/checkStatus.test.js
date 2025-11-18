@@ -7,8 +7,17 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { checkStatusTool } from '../../src/tools/checkStatus.js';
-import { getAsyncJobStore, JOB_STATUS, setAsyncJobStore, AsyncJobStoreInterface } from '../../src/async/asyncJobStore.js';
-import { getFileCache, setFileCache, FileCacheInterface } from '../../src/async/fileCache.js';
+import {
+  getAsyncJobStore,
+  JOB_STATUS,
+  setAsyncJobStore,
+  AsyncJobStoreInterface,
+} from '../../src/async/asyncJobStore.js';
+import {
+  getFileCache,
+  setFileCache,
+  FileCacheInterface,
+} from '../../src/async/fileCache.js';
 import { parseStatusResponse } from '../utils/responseParser.js';
 
 describe('Check Status Tool', () => {
@@ -19,7 +28,7 @@ describe('Check Status Tool', () => {
 
   beforeEach(() => {
     // Mock AsyncJobStore that extends AsyncJobStoreInterface
-    mockAsyncJobStore = new class extends AsyncJobStoreInterface {
+    mockAsyncJobStore = new (class extends AsyncJobStoreInterface {
       get = vi.fn();
       getJobsBySession = vi.fn();
       getAllJobs = vi.fn().mockResolvedValue([]);
@@ -30,23 +39,23 @@ describe('Check Status Tool', () => {
       fail = vi.fn();
       exists = vi.fn();
       cleanup = vi.fn();
-    }();
+    })();
 
     // Mock FileCache that extends FileCacheInterface
-    mockFileCache = new class extends FileCacheInterface {
+    mockFileCache = new (class extends FileCacheInterface {
       readSnapshot = vi.fn();
       writeJournalEvent = vi.fn();
       writeSnapshot = vi.fn();
       cleanup = vi.fn();
       stopCleanupTimer = vi.fn();
-    }();
+    })();
 
     // Mock config and request
     mockConfig = {};
     mockRequest = {
       headers: {
-        'mcp-session-id': 'test-session-123'
-      }
+        'mcp-session-id': 'test-session-123',
+      },
     };
 
     // Set mock instances
@@ -63,10 +72,13 @@ describe('Check Status Tool', () => {
   describe('Input Validation', () => {
     // Session ID is no longer required - using 'local-user' for single-user local server
     it.skip('should require session ID (deprecated - now using local-user)', async () => {
-      const result = await checkStatusTool({}, {
-        config: mockConfig,
-        request: { headers: {} }
-      });
+      const result = await checkStatusTool(
+        {},
+        {
+          config: mockConfig,
+          request: { headers: {} },
+        },
+      );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Session ID is required');
@@ -75,11 +87,13 @@ describe('Check Status Tool', () => {
     it('should validate continuation_id type', async () => {
       const result = await checkStatusTool(
         { continuation_id: 123 },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('continuation_id must be a string');
+      expect(result.content[0].text).toContain(
+        'continuation_id must be a string',
+      );
     });
 
     // Tests for deprecated parameters removed - since_seq, max_results, include_events no longer supported
@@ -98,15 +112,20 @@ describe('Check Status Tool', () => {
         startedAt: Date.now() - 30000,
         endedAt: null,
         result: null,
-        error: null
+        error: null,
       },
       providers: new Map([
-        ['openai', { status: 'running', progress: 0.5, updatedAt: Date.now() }]
+        ['openai', { status: 'running', progress: 0.5, updatedAt: Date.now() }],
       ]),
       events: [
-        { seq: 1, timestamp: Date.now() - 30000, type: 'job_started', data: {} }
+        {
+          seq: 1,
+          timestamp: Date.now() - 30000,
+          type: 'job_started',
+          data: {},
+        },
       ],
-      seq: 1
+      seq: 1,
     };
 
     it('should query specific job from memory store', async () => {
@@ -114,7 +133,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
@@ -135,7 +154,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
@@ -156,7 +175,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       // Should return the job since we don't enforce session ownership
@@ -173,11 +192,13 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'nonexistent_job' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Job not found or access denied');
+      expect(result.content[0].text).toContain(
+        'Job not found or access denied',
+      );
     });
   });
 
@@ -193,7 +214,7 @@ describe('Check Status Tool', () => {
         overall: { progress: 0.3 },
         providers: new Map(),
         events: [],
-        seq: 0
+        seq: 0,
       },
       {
         jobId: 'job_2',
@@ -205,8 +226,8 @@ describe('Check Status Tool', () => {
         overall: { progress: 1.0 },
         providers: new Map(),
         events: [],
-        seq: 0
-      }
+        seq: 0,
+      },
     ];
 
     it('should list all jobs for session', async () => {
@@ -214,14 +235,14 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         {},
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
         limit: 10,
         sortBy: 'updatedAt',
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       });
 
       // Parse human-readable job list
@@ -237,14 +258,14 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         {},
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
       expect(mockAsyncJobStore.getAllJobs).toHaveBeenCalledWith({
         limit: 10,
         sortBy: 'updatedAt',
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       });
 
       // Parse human-readable job list
@@ -258,7 +279,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         {},
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
@@ -283,16 +304,24 @@ describe('Check Status Tool', () => {
         startedAt: Date.now() - 120000,
         endedAt: Date.now(),
         result: { content: 'Test response' },
-        error: null
+        error: null,
       },
       providers: new Map([
-        ['openai', { status: 'completed', progress: 1.0, updatedAt: Date.now() }]
+        [
+          'openai',
+          { status: 'completed', progress: 1.0, updatedAt: Date.now() },
+        ],
       ]),
       events: [
-        { seq: 1, timestamp: Date.now() - 120000, type: 'job_started', data: {} },
-        { seq: 2, timestamp: Date.now(), type: 'job_completed', data: {} }
+        {
+          seq: 1,
+          timestamp: Date.now() - 120000,
+          type: 'job_started',
+          data: {},
+        },
+        { seq: 2, timestamp: Date.now(), type: 'job_completed', data: {} },
       ],
-      seq: 2
+      seq: 2,
     };
 
     it('should always include result (output always enabled)', async () => {
@@ -300,7 +329,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
@@ -316,7 +345,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(false);
@@ -334,7 +363,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(true);
@@ -347,7 +376,7 @@ describe('Check Status Tool', () => {
 
       const result = await checkStatusTool(
         { continuation_id: 'job_test123' },
-        { config: mockConfig, request: mockRequest }
+        { config: mockConfig, request: mockRequest },
       );
 
       expect(result.isError).toBe(true);
@@ -357,7 +386,9 @@ describe('Check Status Tool', () => {
 
   describe('Tool Metadata', () => {
     it('should have correct tool description', () => {
-      expect(checkStatusTool.description).toContain('Check the status and progress of async jobs');
+      expect(checkStatusTool.description).toContain(
+        'Check the status and progress of async jobs',
+      );
     });
 
     it('should have valid input schema', () => {

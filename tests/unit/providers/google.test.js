@@ -11,8 +11,8 @@ describe('Google Provider', () => {
     it('should return true for valid Google API key', () => {
       const config = {
         apiKeys: {
-          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD'
-        }
+          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD',
+        },
       };
 
       expect(googleProvider.validateConfig(config)).toBe(true);
@@ -26,8 +26,8 @@ describe('Google Provider', () => {
     it('should return false for short API key', () => {
       const config = {
         apiKeys: {
-          google: 'short'
-        }
+          google: 'short',
+        },
       };
 
       expect(googleProvider.validateConfig(config)).toBe(false);
@@ -36,8 +36,8 @@ describe('Google Provider', () => {
     it('should return true for minimum length API key', () => {
       const config = {
         apiKeys: {
-          google: 'AIzaSy1234567890123456'
-        }
+          google: 'AIzaSy1234567890123456',
+        },
       };
 
       expect(googleProvider.validateConfig(config)).toBe(true);
@@ -48,8 +48,8 @@ describe('Google Provider', () => {
     it('should return true when config is valid', () => {
       const config = {
         apiKeys: {
-          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD'
-        }
+          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD',
+        },
       };
 
       expect(googleProvider.isAvailable(config)).toBe(true);
@@ -70,13 +70,14 @@ describe('Google Provider', () => {
       expect('gemini-2.0-flash-lite' in models).toBeTruthy();
       expect('gemini-2.5-flash' in models).toBeTruthy();
       expect('gemini-2.5-pro' in models).toBeTruthy();
+      expect('gemini-3-pro-preview' in models).toBeTruthy();
     });
 
     it('should include model configuration details', () => {
       const models = googleProvider.getSupportedModels();
       const flashModel = models['gemini-2.5-flash'];
 
-      expect(flashModel.modelName).toBe('gemini-2.5-flash');
+      expect(flashModel.modelName).toBe('gemini-flash-latest');
       expect(flashModel.friendlyName).toBe('Gemini (Flash 2.5)');
       expect(flashModel.contextWindow).toBe(1048576);
       expect(flashModel.supportsImages).toBe(true);
@@ -102,9 +103,24 @@ describe('Google Provider', () => {
       expect(models['gemini-2.0-flash'].supportsImages).toBe(true);
       expect(models['gemini-2.5-flash'].supportsImages).toBe(true);
       expect(models['gemini-2.5-pro'].supportsImages).toBe(true);
+      expect(models['gemini-3-pro-preview'].supportsImages).toBe(true);
 
       // Model that doesn't support images
       expect(models['gemini-2.0-flash-lite'].supportsImages).toBe(false);
+    });
+
+    it('should include Gemini 3.0 model with correct configuration', () => {
+      const models = googleProvider.getSupportedModels();
+      const gemini3Model = models['gemini-3-pro-preview'];
+
+      expect(gemini3Model.modelName).toBe('gemini-3-pro-preview');
+      expect(gemini3Model.friendlyName).toBe('Gemini (Pro 3.0)');
+      expect(gemini3Model.contextWindow).toBe(1048576);
+      expect(gemini3Model.maxOutputTokens).toBe(64000);
+      expect(gemini3Model.supportsThinking).toBe(true);
+      expect(gemini3Model.thinkingMode).toBe('level');
+      expect(gemini3Model.supportsImages).toBe(true);
+      expect(gemini3Model.supportsWebSearch).toBe(true);
     });
   });
 
@@ -113,7 +129,7 @@ describe('Google Provider', () => {
       const config = googleProvider.getModelConfig('gemini-2.5-flash');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gemini-2.5-flash');
+      expect(config.modelName).toBe('gemini-flash-latest');
       expect(config.friendlyName).toBe('Gemini (Flash 2.5)');
     });
 
@@ -121,7 +137,7 @@ describe('Google Provider', () => {
       const config = googleProvider.getModelConfig('flash');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gemini-2.5-flash');
+      expect(config.modelName).toBe('gemini-flash-latest');
     });
 
     it('should return config for various aliases', () => {
@@ -131,12 +147,32 @@ describe('Google Provider', () => {
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-2.5-flash');
+        expect(config.modelName).toBe('gemini-flash-latest');
       }
     });
 
-    it('should return config for pro model aliases', () => {
+    it('should return config for default aliases (now pointing to Gemini 3.0)', () => {
       const aliases = ['pro', 'gemini pro', 'gemini-pro', 'gemini'];
+
+      for (const alias of aliases) {
+        const config = googleProvider.getModelConfig(alias);
+        expect(config).toBeTruthy(); // Should find config for alias: ${alias}
+        expect(config.modelName).toBe('gemini-3-pro-preview');
+      }
+    });
+
+    it('should return config for Gemini 3.0 specific aliases', () => {
+      const aliases = ['gemini-3', 'gemini3', 'gemini-3-pro', '3-pro'];
+
+      for (const alias of aliases) {
+        const config = googleProvider.getModelConfig(alias);
+        expect(config).toBeTruthy(); // Should find config for alias: ${alias}
+        expect(config.modelName).toBe('gemini-3-pro-preview');
+      }
+    });
+
+    it('should still return config for explicit Gemini 2.5 Pro aliases', () => {
+      const aliases = ['pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
@@ -154,15 +190,15 @@ describe('Google Provider', () => {
       const config = googleProvider.getModelConfig('GEMINI-2.5-FLASH');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gemini-2.5-flash');
+      expect(config.modelName).toBe('gemini-flash-latest');
     });
   });
 
   describe('invoke - input validation', () => {
     const validConfig = {
       apiKeys: {
-        google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD'
-      }
+        google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD',
+      },
     };
 
     it('should throw error for missing API key', async () => {
@@ -172,8 +208,8 @@ describe('Google Provider', () => {
       await expect(googleProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
           name: 'GoogleProviderError',
-          code: 'MISSING_API_KEY'
-        })
+          code: 'MISSING_API_KEY',
+        }),
       );
     });
 
@@ -184,41 +220,47 @@ describe('Google Provider', () => {
       await expect(googleProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
           name: 'GoogleProviderError',
-          code: 'INVALID_API_KEY'
-        })
+          code: 'INVALID_API_KEY',
+        }),
       );
     });
 
     it('should throw error for non-array messages', async () => {
       const messages = 'not an array';
 
-      await expect(googleProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
+      await expect(
+        googleProvider.invoke(messages, { config: validConfig }),
+      ).rejects.toThrow(
         expect.objectContaining({
           name: 'GoogleProviderError',
-          code: 'INVALID_MESSAGES'
-        })
+          code: 'INVALID_MESSAGES',
+        }),
       );
     });
 
     it('should throw error for invalid message role', async () => {
       const messages = [{ role: 'invalid', content: 'Hello' }];
 
-      await expect(googleProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
+      await expect(
+        googleProvider.invoke(messages, { config: validConfig }),
+      ).rejects.toThrow(
         expect.objectContaining({
           name: 'GoogleProviderError',
-          code: 'INVALID_ROLE'
-        })
+          code: 'INVALID_ROLE',
+        }),
       );
     });
 
     it('should throw error for missing message content', async () => {
       const messages = [{ role: 'user' }];
 
-      await expect(googleProvider.invoke(messages, { config: validConfig })).rejects.toThrow(
+      await expect(
+        googleProvider.invoke(messages, { config: validConfig }),
+      ).rejects.toThrow(
         expect.objectContaining({
           name: 'GoogleProviderError',
-          code: 'MISSING_CONTENT'
-        })
+          code: 'MISSING_CONTENT',
+        }),
       );
     });
   });
@@ -290,13 +332,13 @@ describe('Google Provider', () => {
       // The implementation defaults to 'gemini-2.5-flash'
       const defaultConfig = googleProvider.getModelConfig('gemini-2.5-flash');
       expect(defaultConfig).toBeTruthy();
-      expect(defaultConfig.modelName).toBe('gemini-2.5-flash');
+      expect(defaultConfig.modelName).toBe('gemini-flash-latest');
     });
 
     it('should support flash as default alias', () => {
       const config = googleProvider.getModelConfig('flash');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gemini-2.5-flash');
+      expect(config.modelName).toBe('gemini-flash-latest');
     });
   });
 
@@ -341,8 +383,8 @@ describe('Google Provider', () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = {
         apiKeys: {
-          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD'
-        }
+          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD',
+        },
       };
 
       // Mock the _createStreamingGenerator method to avoid real API calls
@@ -356,7 +398,7 @@ describe('Google Provider', () => {
       try {
         const result = await googleProvider.invoke(messages, {
           config,
-          stream: true
+          stream: true,
         });
 
         // Should return an async generator
@@ -373,7 +415,6 @@ describe('Google Provider', () => {
         expect(events[0].type).toBe('start');
         expect(events[1].type).toBe('delta');
         expect(events[2].type).toBe('completion');
-
       } finally {
         // Restore original method
         googleProvider._createStreamingGenerator = originalMethod;
@@ -384,33 +425,34 @@ describe('Google Provider', () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const config = {
         apiKeys: {
-          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD'
-        }
+          google: 'AIzaSyDJKHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSDKJHGFSD',
+        },
       };
 
       // Temporarily modify a model to not support streaming
       const models = googleProvider.getSupportedModels();
-      const originalSupportsStreaming = models['gemini-2.5-flash'].supportsStreaming;
+      const originalSupportsStreaming =
+        models['gemini-2.5-flash'].supportsStreaming;
       models['gemini-2.5-flash'].supportsStreaming = false;
 
       try {
         const result = await googleProvider.invoke(messages, {
           config,
           stream: true,
-          model: 'gemini-2.5-flash'
+          model: 'gemini-2.5-flash',
         });
 
         // Should not return an async generator (fallback to non-streaming)
         // This would normally make an API call, so the test would fail with network error
         // But the important thing is that it doesn't return an AsyncGenerator
         expect(typeof result[Symbol.asyncIterator]).toBe('undefined');
-
       } catch (error) {
         // Expected to fail due to mocked API, but the important thing is we tested the fallback logic
         expect(error).toBeDefined();
       } finally {
         // Restore original streaming support
-        models['gemini-2.5-flash'].supportsStreaming = originalSupportsStreaming;
+        models['gemini-2.5-flash'].supportsStreaming =
+          originalSupportsStreaming;
       }
     });
 
@@ -429,7 +471,7 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       // All current models support both streaming and web search
-      Object.values(models).forEach(model => {
+      Object.values(models).forEach((model) => {
         expect(model.supportsStreaming).toBe(true);
         expect(model.supportsWebSearch).toBe(true);
       });

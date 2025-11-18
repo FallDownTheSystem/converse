@@ -27,8 +27,15 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsThinking: true,
     timeout: 300000,
-    description: 'Qwen3 235B Thinking model with enhanced reasoning capabilities',
-    aliases: ['qwen3-thinking', 'qwen-thinking', 'qwen3 thinking', 'qwen thinking', 'qwen3-235b-thinking']
+    description:
+      'Qwen3 235B Thinking model with enhanced reasoning capabilities',
+    aliases: [
+      'qwen3-thinking',
+      'qwen-thinking',
+      'qwen3 thinking',
+      'qwen thinking',
+      'qwen3-235b-thinking',
+    ],
   },
   'qwen/qwen3-coder': {
     modelName: 'qwen/qwen3-coder',
@@ -41,7 +48,13 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Qwen3 Coder specialized for programming tasks',
-    aliases: ['qwen3-coder', 'qwen-coder', 'qwen3 coder', 'qwen coder', 'qwen-3-coder']
+    aliases: [
+      'qwen3-coder',
+      'qwen-coder',
+      'qwen3 coder',
+      'qwen coder',
+      'qwen-3-coder',
+    ],
   },
   'moonshotai/kimi-k2': {
     modelName: 'moonshotai/kimi-k2',
@@ -54,7 +67,15 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Moonshot AI Kimi K2 with extended context window',
-    aliases: ['kimi-k2', 'moonshot-kimi', 'kimi k2', 'kimi', 'moonshot kimi', 'moonshot-k2', 'k2']
+    aliases: [
+      'kimi-k2',
+      'moonshot-kimi',
+      'kimi k2',
+      'kimi',
+      'moonshot kimi',
+      'moonshot-k2',
+      'k2',
+    ],
   },
   'openrouter/auto': {
     modelName: 'openrouter/auto',
@@ -66,8 +87,14 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
-    description: 'Auto-selects the best model for your prompt using NotDiamond routing',
-    aliases: ['openrouter auto', 'auto router', 'auto-router', 'openrouter-auto']
+    description:
+      'Auto-selects the best model for your prompt using NotDiamond routing',
+    aliases: [
+      'openrouter auto',
+      'auto router',
+      'auto-router',
+      'openrouter-auto',
+    ],
   },
   'z-ai/glm-4.6': {
     modelName: 'z-ai/glm-4.6',
@@ -79,9 +106,17 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
-    description: 'Z.AI GLM 4.6 with 200K context - improved coding, reasoning, and agent performance',
-    aliases: ['glm-4.6', 'glm4.6', 'glm 4.6', 'z-ai glm', 'z-ai-glm', 'zai-glm']
-  }
+    description:
+      'Z.AI GLM 4.6 with 200K context - improved coding, reasoning, and agent performance',
+    aliases: [
+      'glm-4.6',
+      'glm4.6',
+      'glm 4.6',
+      'z-ai glm',
+      'z-ai-glm',
+      'zai-glm',
+    ],
+  },
 };
 
 // OpenRouter error class
@@ -112,13 +147,15 @@ function getCustomHeaders(config) {
 
   // REQUIRED: HTTP-Referer header for compliance
   // Handle both camelCase (from tests) and lowercase (from config.js) keys
-  const referer = config?.providers?.openrouterreferer ||
-                  config?.providers?.openrouterReferer ||
-                  'https://github.com/FallDownTheSystem/converse';
+  const referer =
+    config?.providers?.openrouterreferer ||
+    config?.providers?.openrouterReferer ||
+    'https://github.com/FallDownTheSystem/converse';
   headers['HTTP-Referer'] = referer;
 
   // Optional: X-Title header for request tracking
-  const title = config?.providers?.openroutertitle || config?.providers?.openrouterTitle;
+  const title =
+    config?.providers?.openroutertitle || config?.providers?.openrouterTitle;
   if (title) {
     headers['X-Title'] = title;
   }
@@ -137,7 +174,9 @@ async function transformRequest(requestPayload, { modelConfig }) {
 
   // Ensure model name includes provider prefix if not already present
   if (!transformed.model.includes('/')) {
-    debugLog(`[OpenRouter] Warning: Model name '${transformed.model}' should include provider prefix (e.g., 'anthropic/claude-3.5-sonnet')`);
+    debugLog(
+      `[OpenRouter] Warning: Model name '${transformed.model}' should include provider prefix (e.g., 'anthropic/claude-3.5-sonnet')`,
+    );
   }
 
   // OpenRouter supports provider-specific parameters through 'provider' field
@@ -194,8 +233,8 @@ export const openrouterProvider = createOpenAICompatibleProvider({
     // OpenRouter default parameters
     top_p: 1,
     frequency_penalty: 0,
-    presence_penalty: 0
-  }
+    presence_penalty: 0,
+  },
 });
 
 /**
@@ -220,7 +259,7 @@ function createDynamicModelConfig(modelName) {
     supportsWebSearch: false,
     timeout: 300000,
     description: `Dynamic model: ${modelName}`,
-    isDynamic: true // Flag to identify dynamic models
+    isDynamic: true, // Flag to identify dynamic models
   };
 }
 
@@ -229,7 +268,7 @@ const dynamicModels = new Map();
 
 // Override methods to support dynamic models
 const originalGetSupportedModels = openrouterProvider.getSupportedModels;
-openrouterProvider.getSupportedModels = function() {
+openrouterProvider.getSupportedModels = function () {
   const staticModels = originalGetSupportedModels.call(this);
 
   // Merge dynamic models if any exist
@@ -245,7 +284,7 @@ openrouterProvider.getSupportedModels = function() {
 };
 
 // Create an async version of getModelConfig for API fetching
-openrouterProvider.getModelConfigAsync = async function(modelName) {
+openrouterProvider.getModelConfigAsync = async function (modelName) {
   // First check static models
   const staticConfig = this.getModelConfig(modelName);
   if (staticConfig && !staticConfig.isDynamic) {
@@ -259,8 +298,9 @@ openrouterProvider.getModelConfigAsync = async function(modelName) {
 
   // If dynamic models are enabled and model follows format, fetch from API
   const config = this._lastConfig || {};
-  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels ||
-                               config?.providers?.openrouterDynamicModels;
+  const dynamicModelsEnabled =
+    config?.providers?.openrouterdynamicmodels ||
+    config?.providers?.openrouterDynamicModels;
   if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
     debugLog(`[OpenRouter] Fetching dynamic model config for: ${modelName}`);
 
@@ -284,7 +324,7 @@ openrouterProvider.getModelConfigAsync = async function(modelName) {
 };
 
 const originalGetModelConfig = openrouterProvider.getModelConfig;
-openrouterProvider.getModelConfig = function(modelName) {
+openrouterProvider.getModelConfig = function (modelName) {
   // First check static models
   const staticConfig = originalGetModelConfig.call(this, modelName);
   if (staticConfig) {
@@ -298,8 +338,9 @@ openrouterProvider.getModelConfig = function(modelName) {
 
   // Check if dynamic models are enabled
   const config = this._lastConfig || {};
-  const dynamicModelsEnabled = config?.providers?.openrouterdynamicmodels ||
-                               config?.providers?.openrouterDynamicModels;
+  const dynamicModelsEnabled =
+    config?.providers?.openrouterdynamicmodels ||
+    config?.providers?.openrouterDynamicModels;
 
   // Only allow dynamic models if explicitly enabled AND model has slash format
   if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
@@ -317,16 +358,19 @@ openrouterProvider.getModelConfig = function(modelName) {
 
 // Override the invoke method to add dynamic headers and model support
 const originalInvoke = openrouterProvider.invoke;
-openrouterProvider.invoke = async function(messages, options = {}) {
+openrouterProvider.invoke = async function (messages, options = {}) {
   // Store config for use in getModelConfig
   this._lastConfig = options.config;
 
   // Validate referer configuration
   // Handle both camelCase (from tests) and lowercase (from config.js) keys
-  if (!options.config?.providers?.openrouterreferer && !options.config?.providers?.openrouterReferer) {
+  if (
+    !options.config?.providers?.openrouterreferer &&
+    !options.config?.providers?.openrouterReferer
+  ) {
     throw new OpenRouterProviderError(
       'OpenRouter requires HTTP-Referer header. Please set OPENROUTER_REFERER in your environment',
-      ErrorCodes.INVALID_REQUEST
+      ErrorCodes.INVALID_REQUEST,
     );
   }
 
@@ -337,20 +381,22 @@ openrouterProvider.invoke = async function(messages, options = {}) {
 
     // If model not found and has slash format, check if dynamic models are enabled
     if (!existingConfig && isOpenRouterModelFormat(modelName)) {
-      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels ||
-                                  options.config?.providers?.openrouterDynamicModels;
+      const dynamicModelsEnabled =
+        options.config?.providers?.openrouterdynamicmodels ||
+        options.config?.providers?.openrouterDynamicModels;
       if (!dynamicModelsEnabled) {
         throw new OpenRouterProviderError(
           `Model '${modelName}' requires OPENROUTER_DYNAMIC_MODELS=true to be set`,
-          ErrorCodes.MODEL_NOT_FOUND
+          ErrorCodes.MODEL_NOT_FOUND,
         );
       }
     }
 
     // If the model needs API update, fetch it now
     if (existingConfig?.needsApiUpdate) {
-      const dynamicModelsEnabled = options.config?.providers?.openrouterdynamicmodels ||
-                                  options.config?.providers?.openrouterDynamicModels;
+      const dynamicModelsEnabled =
+        options.config?.providers?.openrouterdynamicmodels ||
+        options.config?.providers?.openrouterDynamicModels;
       if (dynamicModelsEnabled) {
         debugLog(`[OpenRouter] Fetching API config for model: ${modelName}`);
         await this.getModelConfigAsync(modelName);
@@ -366,9 +412,9 @@ openrouterProvider.invoke = async function(messages, options = {}) {
       // Inject custom headers into the provider config
       providers: {
         ...options.config.providers,
-        _customHeaders: getCustomHeaders(options.config)
-      }
-    }
+        _customHeaders: getCustomHeaders(options.config),
+      },
+    },
   };
 
   // Call original invoke with modified options
@@ -378,4 +424,3 @@ openrouterProvider.invoke = async function(messages, options = {}) {
 // Note: The base module needs to be updated to use _customHeaders if present
 // This is a temporary workaround - in production, the openai-compatible.js
 // should be updated to accept a function for customHeaders
-

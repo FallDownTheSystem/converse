@@ -19,6 +19,7 @@ npm run test:performance
 ## Purpose
 
 These tests ensure:
+
 - Acceptable response times under load
 - Memory usage remains reasonable
 - Concurrent request handling

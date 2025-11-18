@@ -17,15 +17,15 @@ describe('MCP Protocol Workflow Tests', () => {
     server = new Server(
       {
         name: config.mcp.serverName,
-        version: config.mcp.serverVersion
+        version: config.mcp.serverVersion,
       },
       {
         capabilities: {
           tools: {},
           prompts: {},
-          resources: {}
-        }
-      }
+          resources: {},
+        },
+      },
     );
 
     // Create router with server and config
@@ -52,7 +52,7 @@ describe('MCP Protocol Workflow Tests', () => {
     it('should handle ListToolsRequest with proper schema', async () => {
       const request = {
         method: 'tools/list',
-        params: {}
+        params: {},
       };
 
       // Test that router can handle the request directly
@@ -63,7 +63,7 @@ describe('MCP Protocol Workflow Tests', () => {
       expect(Array.isArray(response.tools)).toBe(true);
 
       // Validate MCP protocol structure
-      response.tools.forEach(tool => {
+      response.tools.forEach((tool) => {
         expect(tool).toHaveProperty('name');
         expect(tool).toHaveProperty('description');
         expect(tool).toHaveProperty('inputSchema');
@@ -85,9 +85,9 @@ describe('MCP Protocol Workflow Tests', () => {
         params: {
           name: 'chat',
           arguments: {
-            prompt: 'Hello, this is a test message'
-          }
-        }
+            prompt: 'Hello, this is a test message',
+          },
+        },
       };
 
       const response = await router.callTool(validChatRequest.params);
@@ -97,7 +97,7 @@ describe('MCP Protocol Workflow Tests', () => {
       expect(Array.isArray(response.content)).toBe(true);
 
       // Each content item should follow MCP content schema
-      response.content.forEach(item => {
+      response.content.forEach((item) => {
         expect(item).toHaveProperty('type');
         expect(['text', 'image', 'resource'].includes(item.type)).toBe(true);
 
@@ -112,16 +112,16 @@ describe('MCP Protocol Workflow Tests', () => {
       const invalidRequests = [
         {
           name: 'nonexistent-tool',
-          arguments: { prompt: 'test' }
+          arguments: { prompt: 'test' },
         },
         {
           name: 'chat',
-          arguments: {} // Missing required prompt
+          arguments: {}, // Missing required prompt
         },
         {
           name: 'consensus',
-          arguments: { prompt: 'test' } // Missing required models
-        }
+          arguments: { prompt: 'test' }, // Missing required models
+        },
       ];
 
       for (const request of invalidRequests) {
@@ -154,7 +154,7 @@ describe('MCP Protocol Workflow Tests', () => {
         // Required fields validation
         if (schema.required) {
           expect(Array.isArray(schema.required)).toBe(true);
-          schema.required.forEach(field => {
+          schema.required.forEach((field) => {
             expect(schema.properties[field]).toBeDefined();
           });
         }
@@ -179,7 +179,7 @@ describe('MCP Protocol Workflow Tests', () => {
     it('should provide helpful descriptions for tools and parameters', async () => {
       const toolsList = await router.listTools();
 
-      toolsList.tools.forEach(tool => {
+      toolsList.tools.forEach((tool) => {
         expect(tool.description).toBeDefined();
         expect(tool.description.length).toBeGreaterThan(10);
 
@@ -206,8 +206,8 @@ describe('MCP Protocol Workflow Tests', () => {
       const response = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Return a simple greeting'
-        }
+          prompt: 'Return a simple greeting',
+        },
       });
 
       // Content should be an array
@@ -215,7 +215,7 @@ describe('MCP Protocol Workflow Tests', () => {
       expect(response.content.length).toBeGreaterThan(0);
 
       // Each content item should follow MCP specification
-      response.content.forEach(content => {
+      response.content.forEach((content) => {
         expect(content).toHaveProperty('type');
 
         if (content.type === 'text') {
@@ -230,8 +230,8 @@ describe('MCP Protocol Workflow Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'What is 1+1?',
-          models: ['auto']
-        }
+          models: ['auto'],
+        },
       });
 
       expect(response.content).toBeDefined();
@@ -255,7 +255,7 @@ describe('MCP Protocol Workflow Tests', () => {
     it('should return proper MCP error format', async () => {
       const response = await router.callTool({
         name: 'invalid-tool',
-        arguments: {}
+        arguments: {},
       });
 
       expect(response.isError).toBe(true);
@@ -278,7 +278,7 @@ describe('MCP Protocol Workflow Tests', () => {
         name: 'chat',
         arguments: {
           // Missing required prompt
-        }
+        },
       });
 
       expect(response.isError).toBe(true);
@@ -297,15 +297,15 @@ describe('MCP Protocol Workflow Tests', () => {
       expect(toolsList.tools.length).toBeGreaterThan(0);
 
       // 2. Find chat tool
-      const chatTool = toolsList.tools.find(t => t.name === 'chat');
+      const chatTool = toolsList.tools.find((t) => t.name === 'chat');
       expect(chatTool).toBeDefined();
 
       // 3. Execute chat tool
       const result = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Complete workflow test'
-        }
+          prompt: 'Complete workflow test',
+        },
       });
 
       // 4. Verify result
@@ -320,8 +320,8 @@ describe('MCP Protocol Workflow Tests', () => {
       const firstResult = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Start a conversation'
-        }
+          prompt: 'Start a conversation',
+        },
       });
 
       expect(firstResult.continuation).toBeDefined();
@@ -332,14 +332,16 @@ describe('MCP Protocol Workflow Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Continue the conversation',
-          continuation_id: continuationId
-        }
+          continuation_id: continuationId,
+        },
       });
 
       expect(secondResult.continuation.id).toBe(continuationId);
       expect(secondResult.continuation.messageCount).toBeGreaterThan(1);
 
-      logger.info('[mcp-protocol-test] Tool chaining with continuation completed');
+      logger.info(
+        '[mcp-protocol-test] Tool chaining with continuation completed',
+      );
     });
   });
 
@@ -354,7 +356,7 @@ describe('MCP Protocol Workflow Tests', () => {
       // 2. Tool execution
       const execution = await router.callTool({
         name: 'chat',
-        arguments: { prompt: 'MCP compliance test' }
+        arguments: { prompt: 'MCP compliance test' },
       });
       expect(execution.content).toBeDefined();
 
@@ -371,9 +373,9 @@ describe('MCP Protocol Workflow Tests', () => {
           router.callTool({
             name: 'chat',
             arguments: {
-              prompt: `Concurrent test ${i}`
-            }
-          })
+              prompt: `Concurrent test ${i}`,
+            },
+          }),
         );
       }
 
@@ -383,10 +385,14 @@ describe('MCP Protocol Workflow Tests', () => {
       results.forEach((result, index) => {
         expect(result.content).toBeDefined();
         expect(result.content[0].type).toBe('text');
-        logger.debug(`[mcp-protocol-test] Concurrent request ${index} completed`);
+        logger.debug(
+          `[mcp-protocol-test] Concurrent request ${index} completed`,
+        );
       });
 
-      logger.info(`[mcp-protocol-test] ${concurrency} concurrent MCP requests completed`);
+      logger.info(
+        `[mcp-protocol-test] ${concurrency} concurrent MCP requests completed`,
+      );
     });
   });
 });

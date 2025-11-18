@@ -11,7 +11,10 @@ import { dirname, join } from 'path';
 import { randomUUID } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { createHTTPTransport, HTTPTransportServer } from '../../src/transport/httpTransport.js';
+import {
+  createHTTPTransport,
+  HTTPTransportServer,
+} from '../../src/transport/httpTransport.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRouter } from '../../src/router.js';
 
@@ -33,14 +36,14 @@ export class HTTPMCPServerManager {
       env: {
         NODE_ENV: 'test',
         LOG_LEVEL: 'error',
-        ...options.env
+        ...options.env,
       },
       clientConfig: {
         name: 'http-test-client',
         version: '1.0.0',
-        ...options.clientConfig
+        ...options.clientConfig,
       },
-      ...options
+      ...options,
     };
 
     this.httpTransport = null;
@@ -65,7 +68,11 @@ export class HTTPMCPServerManager {
     return new Promise(async (resolve, reject) => {
       const timeoutId = setTimeout(() => {
         this.cleanup();
-        reject(new Error(`Server startup timeout after ${this.options.startupTimeout}ms`));
+        reject(
+          new Error(
+            `Server startup timeout after ${this.options.startupTimeout}ms`,
+          ),
+        );
       }, this.options.startupTimeout);
 
       try {
@@ -75,7 +82,12 @@ export class HTTPMCPServerManager {
         }
 
         // Dynamic import config module AFTER setting env vars
-        const { loadConfig, validateRuntimeConfig, getMcpClientConfig, getHttpTransportConfig } = await import('../../src/config.js');
+        const {
+          loadConfig,
+          validateRuntimeConfig,
+          getMcpClientConfig,
+          getHttpTransportConfig,
+        } = await import('../../src/config.js');
 
         // Load configuration
         this.config = await loadConfig();
@@ -88,7 +100,7 @@ export class HTTPMCPServerManager {
             name: mcpConfig.name,
             version: mcpConfig.version,
           },
-          mcpConfig
+          mcpConfig,
         );
 
         // Set up router with server and config
@@ -105,7 +117,10 @@ export class HTTPMCPServerManager {
         httpConfig.allowedHosts = ['127.0.0.1', 'localhost'];
 
         // Create HTTP transport
-        this.httpTransport = await createHTTPTransport(this.mcpServer, httpConfig);
+        this.httpTransport = await createHTTPTransport(
+          this.mcpServer,
+          httpConfig,
+        );
 
         // Start the HTTP server
         const address = await this.httpTransport.start();
@@ -114,7 +129,7 @@ export class HTTPMCPServerManager {
         // Create client transport and connect
         const mcpUrl = `http://${this.options.host}:${this.actualPort}/mcp`;
         this.clientTransport = new StreamableHTTPClientTransport(
-          new URL(mcpUrl)
+          new URL(mcpUrl),
         );
 
         // Create MCP client
@@ -124,12 +139,11 @@ export class HTTPMCPServerManager {
         await this.client.connect(this.clientTransport);
 
         // Small delay to ensure connection is fully established
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         clearTimeout(timeoutId);
         this.isStarted = true;
         resolve();
-
       } catch (error) {
         clearTimeout(timeoutId);
         this.cleanup();
@@ -160,7 +174,7 @@ export class HTTPMCPServerManager {
         }
 
         // Small delay to allow client cleanup
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         // Close client transport
         if (this.clientTransport) {
@@ -168,7 +182,7 @@ export class HTTPMCPServerManager {
         }
 
         // Small delay before server shutdown
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         // Stop HTTP transport server last
         if (this.httpTransport) {
@@ -218,7 +232,7 @@ export class HTTPMCPServerManager {
       port: this.actualPort,
       baseUrl: `http://${this.options.host}:${this.actualPort}`,
       mcpEndpoint: `http://${this.options.host}:${this.actualPort}/mcp`,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
   }
 
@@ -244,8 +258,11 @@ export class HTTPMCPServerManager {
     return Promise.race([
       this.client.callTool(toolCall),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Tool call timeout after ${timeout}ms`)), timeout)
-      )
+        setTimeout(
+          () => reject(new Error(`Tool call timeout after ${timeout}ms`)),
+          timeout,
+        ),
+      ),
     ]);
   }
 
@@ -271,7 +288,9 @@ export class HTTPMCPServerManager {
     }
 
     try {
-      const response = await fetch(`http://${this.options.host}:${this.actualPort}/health`);
+      const response = await fetch(
+        `http://${this.options.host}:${this.actualPort}/health`,
+      );
       return await response.json();
     } catch (error) {
       throw new Error(`Health check failed: ${error.message}`);
@@ -288,7 +307,9 @@ export class HTTPMCPServerManager {
     }
 
     try {
-      const response = await fetch(`http://${this.options.host}:${this.actualPort}/info`);
+      const response = await fetch(
+        `http://${this.options.host}:${this.actualPort}/info`,
+      );
       return await response.json();
     } catch (error) {
       throw new Error(`Info request failed: ${error.message}`);
@@ -384,7 +405,7 @@ export class HTTPMCPServerManager {
       hasTransport: !!this.httpTransport,
       hasClientTransport: !!this.clientTransport,
       connection: this.getConnectionInfo(),
-      transport: 'http'
+      transport: 'http',
     };
   }
 
@@ -407,8 +428,11 @@ export class HTTPMCPServerManager {
         const result = await Promise.race([
           operation(this.client),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Operation ${index} timeout`)), timeout)
-          )
+            setTimeout(
+              () => reject(new Error(`Operation ${index} timeout`)),
+              timeout,
+            ),
+          ),
         ]);
         return { index, success: true, result };
       } catch (error) {
@@ -445,13 +469,13 @@ export class HTTPMCPServerManager {
         duration: Date.now() - startTime,
         tools: tools.tools?.length || 0,
         health: health.status,
-        serverInfo: info.name
+        serverInfo: info.name,
       };
     } catch (error) {
       return {
         success: false,
         duration: Date.now() - startTime,
-        error: error.message
+        error: error.message,
       };
     }
   }

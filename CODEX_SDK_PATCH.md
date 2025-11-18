@@ -53,10 +53,12 @@ This bug affects **synchronous (non-async) usage** of the Codex provider when `D
 **✅ AUTOMATIC:** This patch is now managed by pnpm and will automatically reapply after any `pnpm install`.
 
 The patch is stored in:
+
 - `patches/@openai__codex-sdk@0.45.0.patch` - The patch file
 - `pnpm-lock.yaml` - Contains `patchedDependencies` registry
 
 **No manual intervention needed!** Future `pnpm install` commands will:
+
 1. Install `@openai/codex-sdk@0.45.0`
 2. Automatically apply the patch from `patches/`
 3. Package works with the fix included
@@ -74,6 +76,7 @@ pnpm patch-remove @openai/codex-sdk@0.45.0
 ```
 
 Or manually:
+
 ```bash
 rm patches/@openai__codex-sdk@0.45.0.patch
 pnpm install
@@ -95,6 +98,7 @@ pnpm install
 ### Future Action
 
 When updating the SDK:
+
 1. Check if OpenAI fixed this in their release notes
 2. Test without the patch first
 3. Reapply patch if still needed

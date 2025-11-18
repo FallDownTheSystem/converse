@@ -80,7 +80,7 @@ const utils = {
   deepClone(obj) {
     if (obj === null || typeof obj !== 'object') return obj;
     if (obj instanceof Date) return new Date(obj.getTime());
-    if (obj instanceof Array) return obj.map(item => this.deepClone(item));
+    if (obj instanceof Array) return obj.map((item) => this.deepClone(item));
     if (obj instanceof Object) {
       const clonedObj = {};
       for (const key in obj) {
@@ -112,11 +112,8 @@ const utils = {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
 
-    return format
-      .replace('YYYY', year)
-      .replace('MM', month)
-      .replace('DD', day);
-  }
+    return format.replace('YYYY', year).replace('MM', month).replace('DD', day);
+  },
 };
 
 // Example of closures
@@ -133,13 +130,13 @@ function createCounter() {
     },
     getCount() {
       return count;
-    }
+    },
   };
 }
 
 // Promise example
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Module exports (CommonJS style comment)
@@ -154,7 +151,7 @@ export {
   fibonacci,
   utils,
   createCounter,
-  delay
+  delay,
 };
 
 // Default export

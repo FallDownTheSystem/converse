@@ -100,7 +100,10 @@ describe('FileCache Unit Tests', () => {
 
     it('should start cleanup timer on initialization', () => {
       new _FileCache();
-      expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 10 * 60 * 1000);
+      expect(mockSetInterval).toHaveBeenCalledWith(
+        expect.any(Function),
+        10 * 60 * 1000,
+      );
     });
 
     it('should stop cleanup timer when requested', () => {
@@ -145,16 +148,16 @@ describe('FileCache Unit Tests', () => {
       const baseInterface = new FileCacheInterface();
 
       await expect(baseInterface.writeJournalEvent('job1', {})).rejects.toThrow(
-        'writeJournalEvent() method must be implemented'
+        'writeJournalEvent() method must be implemented',
       );
       await expect(baseInterface.writeSnapshot('job1', {})).rejects.toThrow(
-        'writeSnapshot() method must be implemented'
+        'writeSnapshot() method must be implemented',
       );
       await expect(baseInterface.readSnapshot('job1')).rejects.toThrow(
-        'readSnapshot() method must be implemented'
+        'readSnapshot() method must be implemented',
       );
       await expect(baseInterface.cleanup()).rejects.toThrow(
-        'cleanup() method must be implemented'
+        'cleanup() method must be implemented',
       );
     });
   });
@@ -162,28 +165,41 @@ describe('FileCache Unit Tests', () => {
   describe('Path Generation', () => {
     beforeEach(() => {
       // Mock date for consistent path generation
-      vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2023-08-23T12:00:00.000Z');
+      vi.spyOn(Date.prototype, 'toISOString').mockReturnValue(
+        '2023-08-23T12:00:00.000Z',
+      );
     });
 
     it('should generate correct job directory path', () => {
       const jobId = 'job_test123456';
       const jobDir = fileCache.getJobDir(jobId);
 
-      expect(jobDir).toBe(path.join('/test/cache', '2023-08-23', 'job_test123456'));
+      expect(jobDir).toBe(
+        path.join('/test/cache', '2023-08-23', 'job_test123456'),
+      );
     });
 
     it('should generate correct journal file path', () => {
       const jobId = 'job_test123456';
       const journalPath = fileCache.getJournalPath(jobId);
 
-      expect(journalPath).toBe(path.join('/test/cache', '2023-08-23', 'job_test123456', 'journal.ndjson'));
+      expect(journalPath).toBe(
+        path.join(
+          '/test/cache',
+          '2023-08-23',
+          'job_test123456',
+          'journal.ndjson',
+        ),
+      );
     });
 
     it('should generate correct snapshot file path', () => {
       const jobId = 'job_test123456';
       const snapshotPath = fileCache.getSnapshotPath(jobId);
 
-      expect(snapshotPath).toBe(path.join('/test/cache', '2023-08-23', 'job_test123456', 'result.json'));
+      expect(snapshotPath).toBe(
+        path.join('/test/cache', '2023-08-23', 'job_test123456', 'result.json'),
+      );
     });
   });
 
@@ -200,7 +216,9 @@ describe('FileCache Unit Tests', () => {
       const error = new Error('Permission denied');
       fs.mkdir.mockRejectedValue(error);
 
-      await expect(fileCache.ensureDir('/test/path')).rejects.toThrow(FileCacheError);
+      await expect(fileCache.ensureDir('/test/path')).rejects.toThrow(
+        FileCacheError,
+      );
       await expect(fileCache.ensureDir('/test/path')).rejects.toMatchObject({
         code: ERROR_CODES.CACHE_DIRECTORY_CREATION_FAILED,
         details: {
@@ -225,44 +243,58 @@ describe('FileCache Unit Tests', () => {
 
       expect(fs.mkdir).toHaveBeenCalledWith(
         expect.stringContaining('job_test123456'),
-        { recursive: true }
+        { recursive: true },
       );
 
-      const expectedNdjson = JSON.stringify({
-        ts: mockNow,
-        jobId,
-        ...event,
-      }) + '\n';
+      const expectedNdjson =
+        JSON.stringify({
+          ts: mockNow,
+          jobId,
+          ...event,
+        }) + '\n';
 
       expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('journal.ndjson'),
         expectedNdjson,
-        'utf8'
+        'utf8',
       );
     });
 
     it('should validate job ID parameter', async () => {
       const event = { type: 'test' };
 
-      await expect(fileCache.writeJournalEvent('', event)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeJournalEvent(null, event)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeJournalEvent(123, event)).rejects.toThrow(FileCacheError);
+      await expect(fileCache.writeJournalEvent('', event)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeJournalEvent(null, event)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeJournalEvent(123, event)).rejects.toThrow(
+        FileCacheError,
+      );
     });
 
     it('should validate event parameter', async () => {
       const jobId = 'job_test123456';
 
-      await expect(fileCache.writeJournalEvent(jobId, null)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeJournalEvent(jobId, 'string')).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeJournalEvent(jobId, 123)).rejects.toThrow(FileCacheError);
+      await expect(fileCache.writeJournalEvent(jobId, null)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(
+        fileCache.writeJournalEvent(jobId, 'string'),
+      ).rejects.toThrow(FileCacheError);
+      await expect(fileCache.writeJournalEvent(jobId, 123)).rejects.toThrow(
+        FileCacheError,
+      );
     });
 
     it('should handle directory creation failure gracefully', async () => {
       const directoryError = new Error('Disk full');
       fs.mkdir.mockRejectedValue(directoryError);
 
-      await expect(fileCache.writeJournalEvent('job_test', { type: 'test' }))
-        .rejects.toThrow(FileCacheError);
+      await expect(
+        fileCache.writeJournalEvent('job_test', { type: 'test' }),
+      ).rejects.toThrow(FileCacheError);
     });
 
     it('should handle file write failure gracefully', async () => {
@@ -270,14 +302,15 @@ describe('FileCache Unit Tests', () => {
       const writeError = new Error('Write failed');
       fs.appendFile.mockRejectedValue(writeError);
 
-      await expect(fileCache.writeJournalEvent('job_test', { type: 'test' }))
-        .rejects.toMatchObject({
-          code: ERROR_CODES.CACHE_WRITE_FAILED,
-          details: expect.objectContaining({
-            jobId: 'job_test',
-            originalError: 'Write failed',
-          }),
-        });
+      await expect(
+        fileCache.writeJournalEvent('job_test', { type: 'test' }),
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.CACHE_WRITE_FAILED,
+        details: expect.objectContaining({
+          jobId: 'job_test',
+          originalError: 'Write failed',
+        }),
+      });
     });
 
     it('should add metadata to events', async () => {
@@ -297,7 +330,7 @@ describe('FileCache Unit Tests', () => {
       expect(fs.appendFile).toHaveBeenCalledWith(
         expect.any(String),
         expectedNdjson,
-        'utf8'
+        'utf8',
       );
     });
   });
@@ -313,14 +346,14 @@ describe('FileCache Unit Tests', () => {
       const result = {
         status: 'completed',
         response: 'Test response',
-        metadata: { duration: 1000 }
+        metadata: { duration: 1000 },
       };
 
       await fileCache.writeSnapshot(jobId, result);
 
       expect(fs.mkdir).toHaveBeenCalledWith(
         expect.stringContaining('job_test123456'),
-        { recursive: true }
+        { recursive: true },
       );
 
       const expectedSnapshot = {
@@ -335,24 +368,36 @@ describe('FileCache Unit Tests', () => {
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('result.json'),
         expectedJson,
-        'utf8'
+        'utf8',
       );
     });
 
     it('should validate job ID parameter', async () => {
       const result = { status: 'completed' };
 
-      await expect(fileCache.writeSnapshot('', result)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeSnapshot(null, result)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeSnapshot(123, result)).rejects.toThrow(FileCacheError);
+      await expect(fileCache.writeSnapshot('', result)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeSnapshot(null, result)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeSnapshot(123, result)).rejects.toThrow(
+        FileCacheError,
+      );
     });
 
     it('should validate result parameter', async () => {
       const jobId = 'job_test123456';
 
-      await expect(fileCache.writeSnapshot(jobId, null)).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeSnapshot(jobId, 'string')).rejects.toThrow(FileCacheError);
-      await expect(fileCache.writeSnapshot(jobId, 123)).rejects.toThrow(FileCacheError);
+      await expect(fileCache.writeSnapshot(jobId, null)).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeSnapshot(jobId, 'string')).rejects.toThrow(
+        FileCacheError,
+      );
+      await expect(fileCache.writeSnapshot(jobId, 123)).rejects.toThrow(
+        FileCacheError,
+      );
     });
 
     it('should handle file write failure gracefully', async () => {
@@ -360,14 +405,15 @@ describe('FileCache Unit Tests', () => {
       const writeError = new Error('Disk full');
       fs.writeFile.mockRejectedValue(writeError);
 
-      await expect(fileCache.writeSnapshot('job_test', { status: 'completed' }))
-        .rejects.toMatchObject({
-          code: ERROR_CODES.CACHE_WRITE_FAILED,
-          details: expect.objectContaining({
-            jobId: 'job_test',
-            originalError: 'Disk full',
-          }),
-        });
+      await expect(
+        fileCache.writeSnapshot('job_test', { status: 'completed' }),
+      ).rejects.toMatchObject({
+        code: ERROR_CODES.CACHE_WRITE_FAILED,
+        details: expect.objectContaining({
+          jobId: 'job_test',
+          originalError: 'Disk full',
+        }),
+      });
     });
 
     it('should add metadata to snapshot', async () => {
@@ -387,7 +433,7 @@ describe('FileCache Unit Tests', () => {
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
         expectedJson,
-        'utf8'
+        'utf8',
       );
     });
   });
@@ -409,7 +455,7 @@ describe('FileCache Unit Tests', () => {
       expect(result).toEqual(snapshotData);
       expect(fs.readFile).toHaveBeenCalledWith(
         expect.stringContaining('result.json'),
-        'utf8'
+        'utf8',
       );
     });
 
@@ -432,7 +478,9 @@ describe('FileCache Unit Tests', () => {
       const result = await fileCache.readSnapshot(jobId);
 
       expect(result).toEqual(snapshotData);
-      expect(fs.readdir).toHaveBeenCalledWith(fileCache.baseDir, { withFileTypes: true });
+      expect(fs.readdir).toHaveBeenCalledWith(fileCache.baseDir, {
+        withFileTypes: true,
+      });
     });
 
     it('should return null if snapshot not found anywhere', async () => {
@@ -451,7 +499,9 @@ describe('FileCache Unit Tests', () => {
 
     it('should validate job ID parameter', async () => {
       await expect(fileCache.readSnapshot('')).rejects.toThrow(FileCacheError);
-      await expect(fileCache.readSnapshot(null)).rejects.toThrow(FileCacheError);
+      await expect(fileCache.readSnapshot(null)).rejects.toThrow(
+        FileCacheError,
+      );
       await expect(fileCache.readSnapshot(123)).rejects.toThrow(FileCacheError);
     });
 
@@ -501,7 +551,7 @@ describe('FileCache Unit Tests', () => {
       // Should try to read from most recent directories first
       expect(fs.readFile).toHaveBeenCalledWith(
         expect.stringContaining('2023-08-23'), // Most recent first
-        'utf8'
+        'utf8',
       );
     });
   });
@@ -509,8 +559,8 @@ describe('FileCache Unit Tests', () => {
   describe('Cleanup Operations', () => {
     it('should clean up old directories successfully', async () => {
       const maxAge = 3 * 24 * 60 * 60 * 1000; // 3 days
-      const oldTime = mockNow - (4 * 24 * 60 * 60 * 1000); // 4 days ago
-      const recentTime = mockNow - (2 * 24 * 60 * 60 * 1000); // 2 days ago
+      const oldTime = mockNow - 4 * 24 * 60 * 60 * 1000; // 4 days ago
+      const recentTime = mockNow - 2 * 24 * 60 * 60 * 1000; // 2 days ago
 
       fs.access.mockResolvedValue(); // Base directory exists
       fs.readdir.mockResolvedValue([
@@ -531,7 +581,7 @@ describe('FileCache Unit Tests', () => {
       expect(cleaned).toBe(1);
       expect(fs.rm).toHaveBeenCalledWith(
         path.join(fileCache.baseDir, '2023-08-19'),
-        { recursive: true, force: true }
+        { recursive: true, force: true },
       );
     });
 
@@ -546,7 +596,7 @@ describe('FileCache Unit Tests', () => {
 
     it('should continue cleanup even if individual directory removal fails', async () => {
       const maxAge = 3 * 24 * 60 * 60 * 1000;
-      const oldTime = mockNow - (4 * 24 * 60 * 60 * 1000);
+      const oldTime = mockNow - 4 * 24 * 60 * 60 * 1000;
 
       fs.access.mockResolvedValue();
       fs.readdir.mockResolvedValue([
@@ -613,7 +663,7 @@ describe('FileCache Unit Tests', () => {
       ]);
 
       const maxAge = 3 * 24 * 60 * 60 * 1000;
-      const oldTime = mockNow - (4 * 24 * 60 * 60 * 1000);
+      const oldTime = mockNow - 4 * 24 * 60 * 60 * 1000;
       fs.stat.mockResolvedValue({ mtime: new Date(oldTime) });
       fs.rm.mockResolvedValue();
 
@@ -622,7 +672,7 @@ describe('FileCache Unit Tests', () => {
       // Only the valid date directory should be processed
       expect(fs.stat).toHaveBeenCalledTimes(1);
       expect(fs.stat).toHaveBeenCalledWith(
-        path.join(fileCache.baseDir, '2023-08-19')
+        path.join(fileCache.baseDir, '2023-08-19'),
       );
     });
   });
@@ -649,14 +699,18 @@ describe('FileCache Unit Tests', () => {
     });
 
     it('should propagate existing FileCacheError without wrapping', async () => {
-      const originalError = new FileCacheError('Original error', ERROR_CODES.CACHE_READ_FAILED);
+      const originalError = new FileCacheError(
+        'Original error',
+        ERROR_CODES.CACHE_READ_FAILED,
+      );
 
       // Mock mkdir to succeed, but appendFile to fail with FileCacheError
       fs.mkdir.mockResolvedValue();
       fs.appendFile.mockRejectedValue(originalError);
 
-      await expect(fileCache.writeJournalEvent('job_test', { type: 'test' }))
-        .rejects.toBe(originalError); // Same instance, not wrapped
+      await expect(
+        fileCache.writeJournalEvent('job_test', { type: 'test' }),
+      ).rejects.toBe(originalError); // Same instance, not wrapped
     });
   });
 

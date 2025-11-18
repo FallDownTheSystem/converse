@@ -16,17 +16,17 @@ describe('Cancel Job Tool', () => {
   beforeEach(() => {
     // Mock JobRunner
     mockJobRunner = {
-      cancel: vi.fn()
+      cancel: vi.fn(),
     };
 
     // Mock AsyncJobStore
     mockAsyncJobStore = {
-      get: vi.fn()
+      get: vi.fn(),
     };
 
     dependencies = {
       jobRunner: mockJobRunner,
-      asyncJobStore: mockAsyncJobStore
+      asyncJobStore: mockAsyncJobStore,
     };
   });
 
@@ -39,7 +39,10 @@ describe('Cancel Job Tool', () => {
     });
 
     it('should return error for invalid continuation_id type', async () => {
-      const result = await cancelJobTool({ continuation_id: 123 }, dependencies);
+      const result = await cancelJobTool(
+        { continuation_id: 123 },
+        dependencies,
+      );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Invalid continuation_id');
@@ -59,7 +62,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'test-job-123' },
-        depsWithoutJobRunner
+        depsWithoutJobRunner,
       );
 
       expect(result.isError).toBe(true);
@@ -71,7 +74,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'test-job-123' },
-        depsWithoutStore
+        depsWithoutStore,
       );
 
       expect(result.isError).toBe(true);
@@ -85,7 +88,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'nonexistent-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -99,13 +102,13 @@ describe('Cancel Job Tool', () => {
     it('should not cancel completed job', async () => {
       const jobState = {
         status: 'completed',
-        result: { content: 'test result' }
+        result: { content: 'test result' },
       };
       mockAsyncJobStore.get.mockResolvedValue(jobState);
 
       const result = await cancelJobTool(
         { continuation_id: 'completed-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -118,13 +121,13 @@ describe('Cancel Job Tool', () => {
     it('should not cancel failed job', async () => {
       const jobState = {
         status: 'failed',
-        error: 'Test error'
+        error: 'Test error',
       };
       mockAsyncJobStore.get.mockResolvedValue(jobState);
 
       const result = await cancelJobTool(
         { continuation_id: 'failed-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -137,13 +140,13 @@ describe('Cancel Job Tool', () => {
     it('should handle already cancelled job', async () => {
       const jobState = {
         status: 'cancelled',
-        result: null
+        result: null,
       };
       mockAsyncJobStore.get.mockResolvedValue(jobState);
 
       const result = await cancelJobTool(
         { continuation_id: 'already-cancelled' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -158,7 +161,7 @@ describe('Cancel Job Tool', () => {
       const jobState = { status: 'queued' };
       const updatedJobState = {
         status: 'cancelled',
-        result: null
+        result: null,
       };
 
       mockAsyncJobStore.get
@@ -168,7 +171,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'queued-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -183,7 +186,7 @@ describe('Cancel Job Tool', () => {
       const jobState = { status: 'running' };
       const updatedJobState = {
         status: 'cancelled',
-        result: null
+        result: null,
       };
 
       mockAsyncJobStore.get
@@ -193,7 +196,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'running-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -210,13 +213,13 @@ describe('Cancel Job Tool', () => {
       const partialResult = {
         initial_responses: [
           { model: 'gpt-4', response: 'Partial response from GPT-4' },
-          { model: 'claude-3', response: 'Partial response from Claude' }
+          { model: 'claude-3', response: 'Partial response from Claude' },
         ],
-        consensus_status: 'partial'
+        consensus_status: 'partial',
       };
       const updatedJobState = {
         status: 'cancelled',
-        result: partialResult
+        result: partialResult,
       };
 
       mockAsyncJobStore.get
@@ -226,7 +229,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'job-with-partial-results' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -241,8 +244,9 @@ describe('Cancel Job Tool', () => {
         status: 'cancelled',
         tool: 'chat',
         createdAt: jobState.createdAt,
-        accumulated_content: 'This is the partial streamed response that was accumulated before cancellation...',
-        result: null
+        accumulated_content:
+          'This is the partial streamed response that was accumulated before cancellation...',
+        result: null,
       };
 
       mockAsyncJobStore.get
@@ -252,12 +256,14 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'job-with-accumulated-content' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('⛔ CANCELLED');
-      expect(result.content[0].text).toContain('Partial results available: "This is the partial streamed response');
+      expect(result.content[0].text).toContain(
+        'Partial results available: "This is the partial streamed response',
+      );
       expect(result.metadata.has_partial_results).toBe(true);
     });
 
@@ -265,7 +271,7 @@ describe('Cancel Job Tool', () => {
       const jobState = { status: 'running' };
       const updatedJobState = {
         status: 'cancelled',
-        result: null
+        result: null,
       };
 
       mockAsyncJobStore.get
@@ -275,7 +281,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'job-no-partial' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -296,11 +302,13 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'failed-cancel-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"status": "cancellation_failed"');
+      expect(result.content[0].text).toContain(
+        '"status": "cancellation_failed"',
+      );
       expect(result.content[0].text).toContain('could not be cancelled');
       expect(result.content[0].text).toContain('"current_status": "completed"');
 
@@ -309,7 +317,10 @@ describe('Cancel Job Tool', () => {
 
     it('should handle job completion during cancellation attempt', async () => {
       const jobState = { status: 'running' };
-      const currentJobState = { status: 'completed', result: { content: 'Final result' } };
+      const currentJobState = {
+        status: 'completed',
+        result: { content: 'Final result' },
+      };
 
       mockAsyncJobStore.get
         .mockResolvedValueOnce(jobState)
@@ -318,41 +329,51 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'race-condition-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('"status": "cancellation_failed"');
+      expect(result.content[0].text).toContain(
+        '"status": "cancellation_failed"',
+      );
       expect(result.content[0].text).toContain('may have completed');
     });
   });
 
   describe('Error Handling', () => {
     it('should handle job store errors', async () => {
-      mockAsyncJobStore.get.mockRejectedValue(new Error('Database connection failed'));
+      mockAsyncJobStore.get.mockRejectedValue(
+        new Error('Database connection failed'),
+      );
 
       const result = await cancelJobTool(
         { continuation_id: 'error-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Failed to cancel job error-job');
+      expect(result.content[0].text).toContain(
+        'Failed to cancel job error-job',
+      );
       expect(result.content[0].text).toContain('Database connection failed');
     });
 
     it('should handle job runner errors', async () => {
       const jobState = { status: 'running' };
       mockAsyncJobStore.get.mockResolvedValue(jobState);
-      mockJobRunner.cancel.mockRejectedValue(new Error('Job runner internal error'));
+      mockJobRunner.cancel.mockRejectedValue(
+        new Error('Job runner internal error'),
+      );
 
       const result = await cancelJobTool(
         { continuation_id: 'runner-error-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Failed to cancel job runner-error-job');
+      expect(result.content[0].text).toContain(
+        'Failed to cancel job runner-error-job',
+      );
     });
   });
 
@@ -368,7 +389,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'metadata-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result.isError).toBe(false);
@@ -389,7 +410,7 @@ describe('Cancel Job Tool', () => {
 
       const result = await cancelJobTool(
         { continuation_id: 'structure-job' },
-        dependencies
+        dependencies,
       );
 
       expect(result).toHaveProperty('content');
@@ -414,11 +435,11 @@ describe('Cancel Job Tool', () => {
         properties: {
           continuation_id: {
             type: 'string',
-            description: expect.stringContaining('continuation_id')
-          }
+            description: expect.stringContaining('continuation_id'),
+          },
         },
         required: ['continuation_id'],
-        additionalProperties: false
+        additionalProperties: false,
       });
     });
   });

@@ -22,7 +22,7 @@ const FAST_MODELS = {
   anthropic: 'claude-3-5-haiku-latest',
   mistral: 'mistral-small-latest',
   deepseek: 'deepseek-chat',
-  openrouter: 'qwen/qwen-2.5-32b-instruct'
+  openrouter: 'qwen/qwen-2.5-32b-instruct',
 };
 
 // Temperature for consistent summarization
@@ -37,7 +37,9 @@ export class SummarizationService {
     // Store configured model preference
     this.configuredModel = config.summarization?.model || null;
 
-    debugLog(`SummarizationService initialized - enabled: ${this.enabled}, model: ${this.configuredModel || 'auto-select'}`);
+    debugLog(
+      `SummarizationService initialized - enabled: ${this.enabled}, model: ${this.configuredModel || 'auto-select'}`,
+    );
   }
 
   /**
@@ -58,7 +60,9 @@ export class SummarizationService {
       const provider = this.providers[providerName];
 
       if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(`Summarization: Provider ${providerName} not available for title generation`);
+        debugLog(
+          `Summarization: Provider ${providerName} not available for title generation`,
+        );
         return this._fallbackTitle(prompt);
       }
 
@@ -66,12 +70,13 @@ export class SummarizationService {
       const messages = [
         {
           role: 'system',
-          content: 'Generate a concise title (max 50 characters) that captures the essence of the user\'s request. Return ONLY the title text, no quotes or formatting.'
+          content:
+            'Generate a concise title (max 50 characters) that captures the essence of the user\'s request. Return ONLY the title text, no quotes or formatting.',
         },
         {
           role: 'user',
-          content: prompt
-        }
+          content: prompt,
+        },
       ];
 
       // Invoke provider with minimal reasoning for speed
@@ -81,7 +86,7 @@ export class SummarizationService {
         maxTokens: 200, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
         verbosity: 'low', // Keep outputs concise
-        config: this.config
+        config: this.config,
       });
 
       if (response && response.content) {
@@ -118,7 +123,9 @@ export class SummarizationService {
       const provider = this.providers[providerName];
 
       if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(`Summarization: Provider ${providerName} not available for streaming summary`);
+        debugLog(
+          `Summarization: Provider ${providerName} not available for streaming summary`,
+        );
         return this._fallbackStreamingSummary(content, currentFocus);
       }
 
@@ -126,12 +133,13 @@ export class SummarizationService {
       const messages = [
         {
           role: 'system',
-          content: 'Generate a single continuous status description of what the AI is doing from the perspective of the AI. Start with the main task/topic, then use transition phrases like "Currently exploring", "Currently investigating", "Now examining", "Now writing about", "Now discussing" to describe the current focus. Return ONLY the status text in one flowing sentence, no labels or formatting. Example: "Writing a technical review of database architecture with focus on scalability and performance. Currently exploring connection pooling strategies and their impact on resource utilization."'
+          content:
+            'Generate a single continuous status description of what the AI is doing from the perspective of the AI. Start with the main task/topic, then use transition phrases like "Currently exploring", "Currently investigating", "Now examining", "Now writing about", "Now discussing" to describe the current focus. Return ONLY the status text in one flowing sentence, no labels or formatting. Example: "Writing a technical review of database architecture with focus on scalability and performance. Currently exploring connection pooling strategies and their impact on resource utilization."',
         },
         {
           role: 'user',
-          content: `Full content so far:\n${content}\n\n---\nLast section (current focus):\n${currentFocus}\n\nProvide a single status description from the perspective of the AI as if you were generating it, that flows naturally from the overall task to the current focus.`
-        }
+          content: `Full content so far:\n${content}\n\n---\nLast section (current focus):\n${currentFocus}\n\nProvide a single status description from the perspective of the AI as if you were generating it, that flows naturally from the overall task to the current focus.`,
+        },
       ];
 
       // Invoke provider with minimal reasoning for speed
@@ -141,12 +149,15 @@ export class SummarizationService {
         maxTokens: 300, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
         verbosity: 'low', // Keep outputs concise
-        config: this.config
+        config: this.config,
       });
 
       if (response && response.content) {
         // Remove any newlines and extra spaces from the summary
-        const summary = response.content.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+        const summary = response.content
+          .trim()
+          .replace(/\n+/g, ' ')
+          .replace(/\s+/g, ' ');
         debugLog('Summarization: Generated streaming summary');
         return summary;
       }
@@ -177,7 +188,9 @@ export class SummarizationService {
       const provider = this.providers[providerName];
 
       if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(`Summarization: Provider ${providerName} not available for final summary`);
+        debugLog(
+          `Summarization: Provider ${providerName} not available for final summary`,
+        );
         return this._fallbackFinalSummary(content);
       }
 
@@ -185,12 +198,13 @@ export class SummarizationService {
       const messages = [
         {
           role: 'system',
-          content: 'Generate a concise summary (1-2 sentences) that captures the key points and outcome of the content. Be direct and informative.'
+          content:
+            'Generate a concise summary (1-2 sentences) that captures the key points and outcome of the content. Be direct and informative.',
         },
         {
           role: 'user',
-          content
-        }
+          content,
+        },
       ];
 
       // Invoke provider with minimal reasoning for speed
@@ -200,7 +214,7 @@ export class SummarizationService {
         maxTokens: 250, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
         verbosity: 'low', // Keep outputs concise
-        config: this.config
+        config: this.config,
       });
 
       if (response && response.content) {
@@ -224,27 +238,38 @@ export class SummarizationService {
   _selectFastModel() {
     // If a model is configured, try to use it first
     if (this.configuredModel) {
-      const providerName = mapModelToProvider(this.configuredModel, this.providers);
+      const providerName = mapModelToProvider(
+        this.configuredModel,
+        this.providers,
+      );
       const provider = this.providers[providerName];
       if (provider && provider.isAvailable(this.config)) {
-        debugLog(`Summarization: Using configured model ${this.configuredModel} from ${providerName}`);
+        debugLog(
+          `Summarization: Using configured model ${this.configuredModel} from ${providerName}`,
+        );
         return this.configuredModel;
       }
-      debugLog(`Summarization: Configured model ${this.configuredModel} not available, falling back to auto-selection`);
+      debugLog(
+        `Summarization: Configured model ${this.configuredModel} not available, falling back to auto-selection`,
+      );
     }
 
     // Check which providers are available and return the first fast model
     for (const [providerName, fastModel] of Object.entries(FAST_MODELS)) {
       const provider = this.providers[providerName];
       if (provider && provider.isAvailable(this.config)) {
-        debugLog(`Summarization: Selected fast model ${fastModel} from ${providerName}`);
+        debugLog(
+          `Summarization: Selected fast model ${fastModel} from ${providerName}`,
+        );
         return fastModel;
       }
     }
 
     // Fallback to default or configured model (gpt-5-nano is fastest)
     const fallbackModel = this.configuredModel || 'gpt-5-nano';
-    debugLog(`Summarization: No fast model available, using ${fallbackModel} as fallback`);
+    debugLog(
+      `Summarization: No fast model available, using ${fallbackModel} as fallback`,
+    );
     return fallbackModel;
   }
 
@@ -268,7 +293,9 @@ export class SummarizationService {
     if (!content) return 'Processing...';
 
     const contentSnippet = content.substring(0, 100).trim();
-    const focusSnippet = currentFocus ? ` Currently: ${currentFocus.substring(0, 50)}` : '';
+    const focusSnippet = currentFocus
+      ? ` Currently: ${currentFocus.substring(0, 50)}`
+      : '';
 
     const summary = `${contentSnippet}...${focusSnippet}`;
     debugLog('Summarization: Using fallback streaming summary');

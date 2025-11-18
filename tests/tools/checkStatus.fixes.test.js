@@ -9,8 +9,17 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { checkStatusTool } from '../../src/tools/checkStatus.js';
-import { getAsyncJobStore, JOB_STATUS, setAsyncJobStore, AsyncJobStoreInterface } from '../../src/async/asyncJobStore.js';
-import { getFileCache, setFileCache, FileCacheInterface } from '../../src/async/fileCache.js';
+import {
+  getAsyncJobStore,
+  JOB_STATUS,
+  setAsyncJobStore,
+  AsyncJobStoreInterface,
+} from '../../src/async/asyncJobStore.js';
+import {
+  getFileCache,
+  setFileCache,
+  FileCacheInterface,
+} from '../../src/async/fileCache.js';
 
 describe('Check Status Tool - Fixes', () => {
   let mockAsyncJobStore;
@@ -23,7 +32,7 @@ describe('Check Status Tool - Fixes', () => {
     originalDateNow = Date.now;
 
     // Mock AsyncJobStore
-    mockAsyncJobStore = new class extends AsyncJobStoreInterface {
+    mockAsyncJobStore = new (class extends AsyncJobStoreInterface {
       get = vi.fn();
       getAllJobs = vi.fn().mockResolvedValue([]);
       getStats = vi.fn().mockResolvedValue({ totalJobs: 0 });
@@ -33,16 +42,16 @@ describe('Check Status Tool - Fixes', () => {
       fail = vi.fn();
       exists = vi.fn();
       cleanup = vi.fn();
-    }();
+    })();
 
     // Mock FileCache
-    mockFileCache = new class extends FileCacheInterface {
+    mockFileCache = new (class extends FileCacheInterface {
       readSnapshot = vi.fn();
       writeJournalEvent = vi.fn();
       writeSnapshot = vi.fn();
       cleanup = vi.fn();
       stopCleanupTimer = vi.fn();
-    }();
+    })();
 
     mockConfig = {};
 
@@ -71,25 +80,25 @@ describe('Check Status Tool - Fixes', () => {
         tool: 'chat',
         createdAt: jobCreatedAt,
         updatedAt: jobCreatedAt + 2000,
-        provider: 'openai',  // This should be set by the chat tool
+        provider: 'openai', // This should be set by the chat tool
         model: 'gpt-5',
         overall: {
           progress: 0.5,
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'chat-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -120,21 +129,21 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map([
           ['openai', { status: 'running', progress: 0.5 }],
-          ['google', { status: 'running', progress: 0.4 }]
+          ['google', { status: 'running', progress: 0.4 }],
         ]),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -169,18 +178,18 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'test-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -208,18 +217,18 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'long-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -249,18 +258,18 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 50,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'quick-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -292,18 +301,18 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'format-test-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -329,7 +338,8 @@ describe('Check Status Tool - Fixes', () => {
 
       Date.now = vi.fn().mockReturnValue(currentTime);
 
-      const longResponse = 'This is a very long response that should be truncated in the status display to avoid overwhelming the user with too much text content in a status check';
+      const longResponse =
+        'This is a very long response that should be truncated in the status display to avoid overwhelming the user with too much text content in a status check';
 
       const mockJob = {
         jobId: 'completed-job-123',
@@ -345,20 +355,20 @@ describe('Check Status Tool - Fixes', () => {
           endedAt: jobCreatedAt + 24000,
           result: {
             content: longResponse,
-            metadata: { tokens: 150 }
+            metadata: { tokens: 150 },
           },
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 5
+        seq: 5,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'completed-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -395,19 +405,19 @@ describe('Check Status Tool - Fixes', () => {
           result: null,
           error: {
             message: 'API rate limit exceeded',
-            code: 'RATE_LIMIT'
-          }
+            code: 'RATE_LIMIT',
+          },
         },
         providers: new Map(),
         events: [],
-        seq: 3
+        seq: 3,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'failed-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -438,22 +448,43 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map([
-          ['openai', { status: 'completed', progress: 1.0, updatedAt: jobCreatedAt + 20000 }],
-          ['google', { status: 'running', progress: 0.8, updatedAt: jobCreatedAt + 25000 }],
-          ['xai', { status: 'failed', progress: 0.0, updatedAt: jobCreatedAt + 15000 }]
+          [
+            'openai',
+            {
+              status: 'completed',
+              progress: 1.0,
+              updatedAt: jobCreatedAt + 20000,
+            },
+          ],
+          [
+            'google',
+            {
+              status: 'running',
+              progress: 0.8,
+              updatedAt: jobCreatedAt + 25000,
+            },
+          ],
+          [
+            'xai',
+            {
+              status: 'failed',
+              progress: 0.0,
+              updatedAt: jobCreatedAt + 15000,
+            },
+          ],
         ]),
         events: [],
-        seq: 10
+        seq: 10,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-format-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -489,18 +520,18 @@ describe('Check Status Tool - Fixes', () => {
           startedAt: jobCreatedAt + 50,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 8
+        seq: 8,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'real-chat-job' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);

@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validateFilePaths, validateAllPaths } from '../../src/utils/fileValidator.js';
+import {
+  validateFilePaths,
+  validateAllPaths,
+} from '../../src/utils/fileValidator.js';
 import { access, constants } from 'fs/promises';
 import { resolve } from 'path';
 import { getTestAbsolutePath } from '../../src/utils/pathUtils.js';
@@ -33,7 +36,10 @@ describe('File Validator Unit Tests', () => {
       const result = await validateFilePaths(['test.txt']);
       expect(result.valid).toBe(true);
       expect(result.missingPaths).toEqual([]);
-      expect(access).toHaveBeenCalledWith(resolve(process.cwd(), 'test.txt'), constants.R_OK);
+      expect(access).toHaveBeenCalledWith(
+        resolve(process.cwd(), 'test.txt'),
+        constants.R_OK,
+      );
     });
 
     it('should validate multiple existing files', async () => {
@@ -57,7 +63,9 @@ describe('File Validator Unit Tests', () => {
       const result = await validateFilePaths(['missing.txt'], 'file');
       expect(result.valid).toBe(false);
       expect(result.missingPaths).toEqual(['missing.txt']);
-      expect(result.error.content[0].text).toBe('The following file could not be found: missing.txt');
+      expect(result.error.content[0].text).toBe(
+        'The following file could not be found: missing.txt',
+      );
     });
 
     it('should report multiple missing files', async () => {
@@ -67,7 +75,9 @@ describe('File Validator Unit Tests', () => {
       const result = await validateFilePaths(files, 'file');
       expect(result.valid).toBe(false);
       expect(result.missingPaths).toEqual(files);
-      expect(result.error.content[0].text).toBe('The following files could not be found: missing1.txt, missing2.txt, missing3.txt');
+      expect(result.error.content[0].text).toBe(
+        'The following files could not be found: missing1.txt, missing2.txt, missing3.txt',
+      );
     });
 
     it('should handle mixed existing and missing files', async () => {
@@ -83,7 +93,12 @@ describe('File Validator Unit Tests', () => {
     });
 
     it('should handle invalid path types', async () => {
-      const result = await validateFilePaths([null, undefined, 123, 'valid.txt']);
+      const result = await validateFilePaths([
+        null,
+        undefined,
+        123,
+        'valid.txt',
+      ]);
       expect(result.valid).toBe(false);
       expect(result.missingPaths).toContain('Invalid path: null');
       expect(result.missingPaths).toContain('Invalid path: undefined');
@@ -94,7 +109,9 @@ describe('File Validator Unit Tests', () => {
       access.mockRejectedValue(new Error('ENOENT'));
 
       const result = await validateFilePaths(['missing.png'], 'image');
-      expect(result.error.content[0].text).toBe('The following image could not be found: missing.png');
+      expect(result.error.content[0].text).toBe(
+        'The following image could not be found: missing.png',
+      );
     });
   });
 
@@ -107,7 +124,7 @@ describe('File Validator Unit Tests', () => {
 
     it('should validate only files when no images provided', async () => {
       const result = await validateAllPaths({
-        files: ['file1.txt', 'file2.txt']
+        files: ['file1.txt', 'file2.txt'],
       });
       expect(result.valid).toBe(true);
       expect(access).toHaveBeenCalledTimes(2);
@@ -115,7 +132,7 @@ describe('File Validator Unit Tests', () => {
 
     it('should validate only images when no files provided', async () => {
       const result = await validateAllPaths({
-        images: ['image1.png', 'image2.jpg']
+        images: ['image1.png', 'image2.jpg'],
       });
       expect(result.valid).toBe(true);
       expect(access).toHaveBeenCalledTimes(2);
@@ -124,7 +141,7 @@ describe('File Validator Unit Tests', () => {
     it('should validate both files and images', async () => {
       const result = await validateAllPaths({
         files: ['file1.txt', 'file2.txt'],
-        images: ['image1.png', 'image2.jpg']
+        images: ['image1.png', 'image2.jpg'],
       });
       expect(result.valid).toBe(true);
       expect(access).toHaveBeenCalledTimes(4);
@@ -138,12 +155,14 @@ describe('File Validator Unit Tests', () => {
 
       const result = await validateAllPaths({
         files: ['missing1.txt', 'missing2.txt'],
-        images: ['exists.png', 'exists.jpg']
+        images: ['exists.png', 'exists.jpg'],
       });
 
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toBe('Files not found: missing1.txt, missing2.txt');
+      expect(result.errors[0]).toBe(
+        'Files not found: missing1.txt, missing2.txt',
+      );
     });
 
     it('should report both missing files and images', async () => {
@@ -151,14 +170,16 @@ describe('File Validator Unit Tests', () => {
 
       const result = await validateAllPaths({
         files: ['missing.txt'],
-        images: ['missing.png']
+        images: ['missing.png'],
       });
 
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(2);
       expect(result.errors[0]).toBe('Files not found: missing.txt');
       expect(result.errors[1]).toBe('Images not found: missing.png');
-      expect(result.errorResponse.content[0].text).toBe('Files not found: missing.txt. Images not found: missing.png');
+      expect(result.errorResponse.content[0].text).toBe(
+        'Files not found: missing.txt. Images not found: missing.png',
+      );
     });
 
     it('should handle mixed paths correctly', async () => {
@@ -166,13 +187,18 @@ describe('File Validator Unit Tests', () => {
         // Only .txt files missing
         if (path.includes('.txt')) return Promise.reject(new Error('ENOENT'));
         // Only missing.png is missing
-        if (path.includes('missing.png')) return Promise.reject(new Error('ENOENT'));
+        if (path.includes('missing.png'))
+          return Promise.reject(new Error('ENOENT'));
         return Promise.resolve();
       });
 
       const result = await validateAllPaths({
         files: ['missing.txt', '../relative/path.md'],
-        images: ['exists.jpg', 'missing.png', getTestAbsolutePath('absolute', 'path.gif')]
+        images: [
+          'exists.jpg',
+          'missing.png',
+          getTestAbsolutePath('absolute', 'path.gif'),
+        ],
       });
 
       expect(result.valid).toBe(false);
@@ -189,7 +215,7 @@ describe('File Validator Integration Tests', () => {
 
     const result = await validateAllPaths({
       files: ['nonexistent.txt'],
-      images: ['nonexistent.png']
+      images: ['nonexistent.png'],
     });
 
     expect(result.errorResponse).toBeDefined();
@@ -197,7 +223,7 @@ describe('File Validator Integration Tests', () => {
     expect(result.errorResponse.content).toBeInstanceOf(Array);
     expect(result.errorResponse.content[0]).toMatchObject({
       type: 'text',
-      text: expect.stringContaining('Files not found')
+      text: expect.stringContaining('Files not found'),
     });
   });
 });

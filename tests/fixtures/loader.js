@@ -114,7 +114,7 @@ export class FixtureLoader {
       content,
       size: Buffer.byteLength(content, 'utf-8'),
       lines: content.split('\n').length,
-      isEmpty: content.length === 0
+      isEmpty: content.length === 0,
     };
   }
 
@@ -152,7 +152,7 @@ export class FixtureLoader {
         request: this.getToolFixture('chat', 'basic').request,
         response: this.getToolFixture('chat', 'basic').response,
         provider: 'openai',
-        model: 'gpt-4o-mini'
+        model: 'gpt-4o-mini',
       },
       chatWithFiles: {
         tool: 'chat',
@@ -160,28 +160,30 @@ export class FixtureLoader {
         response: this.getToolFixture('chat', 'withFiles').response,
         files: ['sample.js'],
         provider: 'openai',
-        model: 'gpt-4'
+        model: 'gpt-4',
       },
       basicConsensus: {
         tool: 'consensus',
         request: this.getToolFixture('consensus', 'basic').request,
         response: this.getToolFixture('consensus', 'basic').response,
-        providers: ['openai', 'google', 'xai']
+        providers: ['openai', 'google', 'xai'],
       },
       errorHandling: {
         tool: 'chat',
         request: { prompt: 'Test error handling', model: 'gpt-4' },
         error: this.getErrorScenario('openai', 'rateLimit'),
-        expectError: true
+        expectError: true,
       },
       edgeCaseStrings: {
         tool: 'chat',
-        testCases: Object.entries(fixtures.edgeCases.strings).map(([name, value]) => ({
-          name,
-          value,
-          request: { prompt: value, model: 'gpt-3.5-turbo' }
-        }))
-      }
+        testCases: Object.entries(fixtures.edgeCases.strings).map(
+          ([name, value]) => ({
+            name,
+            value,
+            request: { prompt: value, model: 'gpt-3.5-turbo' },
+          }),
+        ),
+      },
     };
 
     if (!scenarios[type]) {
@@ -207,7 +209,9 @@ export class FixtureLoader {
     case 'edgeCases':
       return Object.keys(fixtures.edgeCases);
     case 'files':
-      return Object.keys(fixtures.FIXTURE_PATHS).filter(k => k !== 'responses');
+      return Object.keys(fixtures.FIXTURE_PATHS).filter(
+        (k) => k !== 'responses',
+      );
     default:
       throw new Error(`Unknown fixture type: ${type}`);
     }
@@ -245,11 +249,11 @@ export const {
   createStreamingChunks,
   getTestScenario,
   listFixtures,
-  generateTestMatrix
+  generateTestMatrix,
 } = Object.fromEntries(
   Object.getOwnPropertyNames(FixtureLoader.prototype)
-    .filter(name => name !== 'constructor' && name !== 'clearCache')
-    .map(name => [name, fixtureLoader[name].bind(fixtureLoader)])
+    .filter((name) => name !== 'constructor' && name !== 'clearCache')
+    .map((name) => [name, fixtureLoader[name].bind(fixtureLoader)]),
 );
 
 // Export the loader class for extension

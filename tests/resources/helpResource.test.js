@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { helpResourceHandler, helpResourceMetadata, listResources } from '../../src/resources/helpResource.js';
+import {
+  helpResourceHandler,
+  helpResourceMetadata,
+  listResources,
+} from '../../src/resources/helpResource.js';
 
 describe('Help Resource', () => {
   describe('helpResourceMetadata', () => {
@@ -11,8 +15,9 @@ describe('Help Resource', () => {
       expect(helpResourceMetadata).toEqual({
         uri: 'converse://help',
         name: 'Help Documentation',
-        description: 'Comprehensive guide for the Converse MCP Server including all tools, parameters, providers, and models',
-        mimeType: 'text/plain'
+        description:
+          'Comprehensive guide for the Converse MCP Server including all tools, parameters, providers, and models',
+        mimeType: 'text/plain',
       });
     });
   });

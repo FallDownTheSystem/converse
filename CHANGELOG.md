@@ -5,9 +5,35 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Google Provider**: Added Gemini 3.0 Pro model support
+  - `gemini-3-pro-preview`: Google's newest model with enhanced reasoning capabilities
+  - 1M context window, 64K max output tokens
+  - Level-based thinking mode (low/high) instead of token-based budget
+  - New `media_resolution` parameter for controlling image/PDF/video processing quality
+  - Values: `low` (faster, less detail), `medium` (balanced), `high` (maximum detail)
+  - Defaults to `high` for Gemini 3.0 models (automatically applied)
+  - Supports streaming, web search (grounding), and multimodal inputs
+  - Aliases: `gemini-3`, `gemini3`, `gemini-3-pro`, `3-pro`
+
+### Changed
+
+- **Google Provider**: Updated default model aliases to point to Gemini 3.0 Pro
+  - `gemini`, `pro`, `gemini-pro`, and `gemini pro` now resolve to `gemini-3-pro-preview` (latest version)
+  - Previous Gemini 2.5 Pro now accessible via explicit aliases: `pro 2.5`, `gemini pro 2.5`, `gemini-2.5-pro-latest`
+  - `reasoning_effort` parameter mapping for Gemini 3.0:
+    - `minimal`, `low` → thinking level: `low`
+    - `medium`, `high`, `max` → thinking level: `high`
+  - Gemini 2.5 models continue using token-based thinking budget (backward compatible)
+- **Chat Tool**: Added optional `media_resolution` parameter for Gemini 3.0 models
+
 ## [2.3.1] - 2025-11-17
 
 ### Added
+
 - **OpenAI Provider**: Added "none" reasoning effort support for GPT-5.1
   - GPT-5.1 now supports `reasoning_effort: "none"` for faster responses with increased steerability
   - Optimized for use cases requiring quick responses without extended reasoning
@@ -19,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.0] - 2025-11-17
 
 ### Added
+
 - **OpenAI Provider**: Added GPT-5.1 model support
   - `gpt-5.1`: Latest flagship model with same capabilities as GPT-5 family
   - `gpt-5.1-2025-11-13`: Fully qualified model name
@@ -26,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Same parameters and capabilities: 400K context, 128K output, web search, reasoning effort, verbosity control
 
 ### Changed
+
 - **OpenAI Provider**: Updated simple model aliases to point to latest GPT-5 version
   - `gpt-5`, `gpt5`, and `gpt 5` now resolve to GPT-5.1 (latest version)
   - Previous GPT-5 (2025-08-07) now accessible as `gpt-5-2025-08-07` (fully qualified name) or via `gpt-5.0` aliases
@@ -34,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2025-10-15
 
 ### Added
+
 - **Anthropic Provider**: Added Claude Haiku 4.5 support
   - `claude-haiku-4-5-20251001`: Fast and intelligent model with extended thinking
   - 200K context window, 64K max output tokens (8x increase from Haiku 3.5)
@@ -42,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Aliases: `haiku-4.5`, `haiku-4-5`, `claude-haiku-4.5`, `haiku4.5`, `haiku`, `claude-haiku`
 
 ### Changed
+
 - **Anthropic Provider**: Updated simple model aliases to point to latest versions
   - `haiku` and `claude-haiku` now resolve to Haiku 4.5 (previously Haiku 3.5)
   - `sonnet` and `claude-sonnet` now resolve to Sonnet 4.5 (previously Sonnet 4.0)
@@ -49,12 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Users can now use simple aliases to always get the latest model in each family
 
 ### Documentation
+
 - Updated PROVIDERS.md with Claude Haiku 4.5 model specifications
 - Updated image support documentation to include Claude 4 series models
 
 ## [2.1.0] - 2025-10-07
 
 ### Fixed
+
 - **Codex Provider**: Fixed SDK hang issue with cleaner workaround approach
   - Removed pnpm patch dependency (not published with npm packages)
   - Always use `thread.runStreamed()` internally, bypassing buggy `thread.run()`
@@ -64,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No more 5-minute hangs - responses return in ~10-15 seconds
 
 ### Changed
+
 - **Codex Provider**: Removed all debug logging added during investigation
 - **Codex Provider**: Simplified code by removing unreachable legacy `thread.run()` path
 - **Build**: Removed SDK patch file (workaround makes it unnecessary)
@@ -71,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.1] - 2025-10-07
 
 ### Fixed
+
 - **Codex Provider**: Fixed 5-minute timeout issue when Codex completes without emitting turn.completed event
   - Applied permanent pnpm patch to `@openai/codex-sdk@0.45.0` to fix SDK's `thread.run()` hanging bug
   - Updated stream normalizer to handle natural stream closure when CLI process exits
@@ -81,12 +115,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Codex responses now show clean paths instead of extended-length notation
 
 ### Documentation
+
 - Added `CODEX_SDK_PATCH.md` documenting SDK bug and permanent patch solution
 - Documented pnpm patch workflow for team sharing and future updates
 
 ## [2.0.0] - 2025-10-07
 
 ### Added
+
 - **Codex Provider**: OpenAI Codex integration for agentic coding assistance
   - Thread-based conversation sessions with persistent context via `continuation_id`
   - Local file system access with configurable sandbox modes
@@ -102,12 +138,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - See `.env.example` for configuration details
 
 ### Changed
+
 - **BREAKING: Tool Parameter Order**: Moved `prompt` parameter to last position in both chat and consensus tools
   - Makes it easier to parse tool calls in Claude Code when prompts are very long
   - All other parameters maintain their relative order
   - No functional changes, only schema ordering
 
 ### Fixed
+
 - **Codex Provider**: Fixed API key handling to use SDK's native `apiKey` option instead of environment manipulation
 - **Codex Provider**: Added comprehensive event handlers for `turn.failed`, `error`, `item.started`, `item.updated` events
 - **Codex Provider**: Enhanced debug logging with working directory type detection and execution timing
@@ -115,6 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.18.0] - 2025-10-07
 
 ### Added
+
 - **Codex Provider**: OpenAI Codex integration for agentic coding assistance
   - Thread-based conversation sessions with persistent context
   - Local file system access with configurable sandbox modes
@@ -130,11 +169,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.17.2] - 2025-10-06
 
 ### Changed
+
 - **OpenAI Provider**: Removed unused `reasoningEffort` property from GPT-5 Pro model config
 
 ## [1.17.1] - 2025-10-06
 
 ### Fixed
+
 - **OpenAI Provider**: Fixed GPT-5 Pro reasoning effort handling
   - Automatically enforces `reasoning_effort: 'high'` for GPT-5 Pro (only supported value)
   - Prevents API errors when users specify 'medium' or other unsupported values
@@ -142,6 +183,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.17.0] - 2025-10-06
 
 ### Added
+
 - **OpenAI Provider**: Added GPT-5 Pro support
   - `gpt-5-pro`: Most advanced reasoning model (400K context, 272K output)
   - Designed for the hardest problems requiring extended compute time
@@ -153,6 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.16.0] - 2025-10-03
 
 ### Added
+
 - **Anthropic Provider**: Added Claude Sonnet 4.5 support
   - `claude-sonnet-4-5-20250929`: Latest Sonnet with enhanced intelligence
   - 200K standard context / 1M beta context window support
@@ -165,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses modern SDK `betas` parameter API instead of deprecated `defaultHeaders`
 
 ### Changed
+
 - **Dependencies**: Updated to latest versions
   - `@anthropic-ai/sdk`: 0.57.0 → 0.65.0 (8 versions)
   - `openai`: 5.11.0 → 6.1.0 (major version upgrade)
@@ -179,6 +223,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved compatibility with latest Anthropic SDK
 
 ### Fixed
+
 - **Code Quality**: Fixed linting errors
   - Changed `let` to `const` for non-reassigned variables
   - Fixed string quote consistency
@@ -187,6 +232,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.1] - 2025-10-01
 
 ### Changed
+
 - **Tool Descriptions**: Shortened chat and consensus tool descriptions for better clarity
   - Removed implementation details (e.g., "handles partial failures gracefully")
   - Focus on tool behavior, use cases, and parameter usage
@@ -197,6 +243,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.0] - 2025-10-01
 
 ### Added
+
 - **Configuration**: New `DISABLE_ASYNC_TOOLS` environment variable to disable async execution features
   - When enabled, removes `check_status` and `cancel_job` tools completely
   - Removes `async` parameter from `chat` and `consensus` tool schemas
@@ -214,12 +261,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced writing quality and role-playing capabilities
 
 ### Changed
+
 - **Google Provider**: Updated Gemini Flash model references
   - `gemini-2.5-flash` now uses `gemini-flash-latest` endpoint
   - Added aliases for `gemini-2.5-flash-preview-09-2025` and `gemini-2.5-flash-latest`
   - Ensures automatic access to latest Flash model improvements
 
 ### Fixed
+
 - **Consensus Tool**: Fixed display showing incorrect model counts (e.g., "3/1" instead of "3/3")
   - Now correctly shows successful models vs total models in completion status
   - Applies to both synchronous and asynchronous consensus executions
@@ -228,6 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.4] - 2025-09-21
 
 ### Added
+
 - **XAI Provider**: Added support for new Grok 4 Fast models
   - `grok-4-fast-reasoning`: Cost-efficient reasoning model with 2M token context window
   - `grok-4-fast-non-reasoning`: Fast non-reasoning variant for quick responses
@@ -235,6 +285,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pricing: $0.20 input / $0.50 output per 1M tokens
 
 ### Changed
+
 - **Mistral Provider**: Updated all models to latest versions
   - `magistral-medium-2509` (v1.2): Now includes vision support and 128K context window
   - `magistral-small-2509` (v1.2): Now includes vision support and 128K context window
@@ -244,6 +295,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.3] - 2025-09-12
 
 ### Changed
+
 - **XAI Provider**: Removed discontinued `grok-3` and `grok-3-fast` models
   - These models are no longer available from X.AI
   - Added `grok-4` as an alias for `grok-4-0709` for cleaner model names
@@ -251,12 +303,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `grok-code-fast-1` remains available for fast, economical coding tasks
 
 ### Fixed
+
 - Updated consensus tool examples to use simplified `grok-4` model name instead of versioned `grok-4-0709`
 - Cleaned up test files to remove references to discontinued models
 
 ## [1.14.2] - 2025-09-10
 
 ### Changed
+
 - **OpenAI Provider**: Increased timeouts for GPT-5 and O3 models to handle longer processing times
   - `gpt-5`: 5 minutes → 1 hour
   - `gpt-5-mini`: 3 minutes → 30 minutes
@@ -268,17 +322,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.1] - 2025-09-02
 
 ### Added
+
 - **XAI Model Support**: Added support for `grok-code-fast-1` model
   - 256K context window, optimized for agentic coding tasks
-  - Economical pricing ($0.20 input / $1.50 output per 1M tokens) 
+  - Economical pricing ($0.20 input / $1.50 output per 1M tokens)
   - Full streaming support and OpenAI-compatible features
   - Includes aliases: `grok-code-fast`, `grok-code-fast-1-0825`
 
 ## [1.14.0] - 2025-08-26
 
 ### Added
+
 - **AI-Powered Summarization**: Intelligent title generation and content summarization for async operations
-  - Automatic title generation (up to 60 chars) from user prompts at request initiation  
+  - Automatic title generation (up to 60 chars) from user prompts at request initiation
   - Status check returns an up-to-date summary of the progress based on the partially streamed response
   - Final summaries (1-2 sentences) generated for completed responses
   - Smart summaries in check_status tool for better context understanding
@@ -296,12 +352,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Non-blocking implementation ensures main flow continues even if summarization fails
   - Temperature set to 0.3 for consistent, focused summaries
 
-- **FileCache Integration**: Persistent storage for async job results  
+- **FileCache Integration**: Persistent storage for async job results
   - Wire up FileCache to persist job state across server restarts
   - Comprehensive integration tests for cache recovery and TTL management
   - Improved memory management with proper cleanup
 
 ### Changed
+
 - **Check Status Tool**: Enhanced display with AI-generated summaries
   - Running jobs show AI-generated summaries based on accumulated content when checked
   - Job listings include titles for quick identification
@@ -313,12 +370,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Accumulates full content during streaming (replacing 200-char preview)
   - Creates final summary for responses over 100 characters
 
-- **Consensus Tool Integration**: Multi-provider summary aggregation  
+- **Consensus Tool Integration**: Multi-provider summary aggregation
   - Combined content accumulation from all providers
   - Handles both single-phase and two-phase (cross-feedback) flows
   - Provider-specific previews maintained alongside combined summaries
 
 ### Technical
+
 - New `formatStatus.js` utility for async status formatting
 - Configuration schema extended with summarization settings
 - Updated AsyncJobStore to accept arbitrary job fields
@@ -328,6 +386,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.13.0] - 2025-01-20
 
 ### Added
+
 - **Async Execution Support**: Run chat and consensus tools in background mode
   - Use `async: true` parameter for non-blocking execution
   - Monitor progress with check_status tool
@@ -348,6 +407,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.12.0] - 2025-01-19
 
 ### Added
+
 - **Execution Time Display**: Added smart execution time formatting to tool responses
   - Shows time in seconds with appropriate precision (0.05s, 1.2s, 15.3s, 1m6s)
   - Displays in metadata header for both chat and consensus tools
@@ -364,6 +424,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Helps users understand exactly what went wrong during consensus gathering
 
 ### Changed
+
 - **BREAKING: Shorter Continuation IDs**: Switched from UUID to nanoid format
   - **Before**: `conv_f47ac10b-58cc-4372-a567-0e02b2c3d479` (41 characters)
   - **After**: `conv_nTC5QoA-ml` (15 characters) - **63% shorter**
@@ -377,6 +438,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Properly accounts for refinement phase failures
 
 ### Technical
+
 - Migrated from Node.js `crypto.randomUUID()` to `nanoid` for ID generation
 - Enhanced validation regex to accept both UUID and nanoid formats
 - Updated all test patterns to match new continuation ID format
@@ -385,6 +447,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.2] - 2025-01-19
 
 ### Fixed
+
 - **Relative Path Support**: Fixed relative path handling in chat and consensus tools
   - File validation now uses the same working directory as context processing
   - Relative paths like `"./file.txt"` and `"file.txt"` now work correctly
@@ -394,6 +457,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.1] - 2025-01-19
 
 ### Fixed
+
 - **File Extension Support**: Removed arbitrary file type restrictions
   - All file types now supported for text processing (previously limited to specific extensions)
   - Fixed .cshtml, .razor, .php, .jsp and other web development files being blocked
@@ -403,12 +467,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.0] - 2025-01-15
 
 ### Added
+
 - **Automatic Client Working Directory Detection**: The server now automatically detects where it was invoked from
   - Uses `INIT_CWD`, `PWD`, or `npm_config_local_prefix` environment variables
   - Enables proper relative path resolution from the client's directory
   - Works seamlessly with npx and npm execution
 
 ### Changed
+
 - **File Access Security**: Made file path security restrictions optional (disabled by default)
   - Removed mandatory directory restrictions that prevented access to files outside the server directory
   - Security checks can be re-enabled with `enforceSecurityCheck: true` option
@@ -418,10 +484,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both absolute and relative paths are fully supported
 
 ### Fixed
+
 - Fixed file access issues where both absolute and relative paths were incorrectly rejected
 - Fixed "File access denied" errors when trying to access files outside the Converse directory
 
 ### Changed (Previous)
+
 - **BREAKING CHANGE: Consensus Tool Models Parameter**: Simplified model specification from object array to string array
   - Old format: `[{"model": "gpt-5"}, {"model": "gemini-2.5-pro"}]`
   - New format: `["gpt-5", "gemini-2.5-pro"]`
@@ -430,18 +498,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests, documentation, and examples updated to reflect new format
 
 ### Migration Guide
+
 - Update all consensus tool calls to use string arrays:
+
   ```javascript
   // Before
-  models: [{ model: "gpt-5" }, { model: "gemini-2.5-pro" }]
-  
+  models: [{ model: "gpt-5" }, { model: "gemini-2.5-pro" }];
+
   // After
-  models: ["gpt-5", "gemini-2.5-pro"]
+  models: ["gpt-5", "gemini-2.5-pro"];
   ```
 
 ## [1.10.1] - 2025-08-09
 
 ### Changed
+
 - **Consensus Tool Auto Model Selection**: Enhanced `"auto"` model behavior for consensus tool
   - Now expands to first 3 available providers instead of just one
   - Provider priority order: OpenAI → Google → XAI → Anthropic → Mistral → DeepSeek → OpenRouter
@@ -451,6 +522,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Updated README with comprehensive auto model selection behavior for both tools
 
 ### Technical Details
+
 - Consensus tool with `["auto"]` intelligently expands to multiple providers
 - Chat tool continues to use single provider selection for efficiency
 - Each provider uses its optimal default model when selected via auto
@@ -458,6 +530,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.0] - 2025-08-08
 
 ### Added
+
 - **Google Provider**: Added comprehensive Google API configuration options
   - **GEMINI_API_KEY support**: Primary API key for Google Gemini models (recommended)
   - **GOOGLE_API_KEY fallback**: Still supported, but GEMINI_API_KEY takes priority
@@ -470,10 +543,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support for both Gemini Developer API and Vertex AI API endpoints
 
 ### Changed
+
 - **Environment Configuration**: Updated .env files to use GEMINI_API_KEY for clarity
 - **Documentation**: Enhanced README with Google/Gemini API options and Vertex AI setup
 
 ### Technical Details
+
 - Google provider now supports three initialization modes:
   1. Gemini Developer API with GEMINI_API_KEY (simplest)
   2. Gemini Developer API with GOOGLE_API_KEY (backward compatible)
@@ -484,6 +559,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.0] - 2025-08-07
 
 ### Added
+
 - **OpenAI Provider**: Added support for GPT-5 family models, OpenAI's latest flagship series
   - **GPT-5**: Latest flagship model with 400K context window, 128K max output tokens
     - Superior reasoning, code generation, and analysis capabilities
@@ -512,6 +588,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.8.3] - 2025-08-07
 
 ### Changed
+
 - **Anthropic Provider**: Updated Claude Opus 4 to the new Opus 4.1 model
   - Model ID changed from `claude-opus-4-20250514` to `claude-opus-4-1-20250805`
   - Added new aliases: `claude-opus-4-1`, `opus-4.1`, `opus4.1`, `claude-opus-4.1`
@@ -521,6 +598,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.8.0] - 2025-08-04
 
 ### Added
+
 - **OpenAI Deep Research Models**: Added support for OpenAI's deep research models
   - Added `o3-deep-research-2025-06-26` model with 90-minute timeout for comprehensive research
   - Added `o4-mini-deep-research-2025-06-26` model with 60-minute timeout for faster research
@@ -529,12 +607,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Requires setting `MCP_TOOL_TIMEOUT` environment variable (e.g., `5400000` for 90 minutes)
 
 ### Changed
+
 - **Web Search Implementation**: Simplified web search to use only `web_search_preview` tool type
   - Removed unused `web_search` tool type references
   - All OpenAI models now consistently use `web_search_preview` when web search is enabled
   - Removed support for always-search models (`gpt-4o-search-preview`, `gpt-4o-mini-search-preview`)
 
 ### Technical Details
+
 - Deep research models work with existing chat tool - no separate research tool needed
 - Models are integrated into the standard OpenAI provider implementation
 - Supports all standard features: streaming, images, context, continuation
@@ -543,6 +623,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.3] - 2025-08-02
 
 ### Fixed
+
 - **Test Suite**: Fixed numerous test failures across the codebase
   - Fixed syntax errors in fixture files (duplicate `__dirname` declarations, invalid JSON)
   - Fixed JSON parsing errors in edge-cases.json (sparse arrays, JavaScript expressions, hex escape sequences)
@@ -556,10 +637,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Path Utilities**: Removed shebang line from pathUtils.js module
 
 ### Added
+
 - **Test Images**: Added test images (fruits.png, tulips.png, baboon.png) for image processing tests
 - **Dependencies**: Added vite as a dependency (was missing)
 
 ### Improved
+
 - **Test Coverage**: Enhanced test reliability and coverage
   - Updated image tests to use real images instead of invalid base64 strings
   - Added proper base64 encoding helper for XAI image tests
@@ -569,6 +652,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.2] - 2025-01-27
 
 ### Added
+
 - **Cross-Platform Support**: Comprehensive cross-platform compatibility improvements
   - Created `src/utils/pathUtils.js` utility module for platform-agnostic operations
   - Added `cross-env` and `rimraf` dependencies for cross-platform npm scripts
@@ -576,6 +660,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cross-platform timeout commands and process spawning
 
 ### Changed
+
 - **npm Scripts**: Updated all scripts to use cross-platform commands
   - Replaced Unix-specific `rm -rf` with `rimraf` package
   - All environment variable assignments now use `cross-env`
@@ -589,6 +674,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Proper spawn options for Windows compatibility
 
 ### Fixed
+
 - **Windows Compatibility**: Fixed multiple Windows-specific issues
   - Path separator handling in file operations
   - Process spawning in test files
@@ -600,6 +686,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests now use `readFileSync` and `JSON.parse` instead of import assertions
 
 ### Improved
+
 - **Code Quality**: Enhanced linting and code standards
   - Changed `no-unused-vars` to warning level for better DX
   - Added missing global variables to ESLint config
@@ -608,6 +695,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.1] - 2025-07-28
 
 ### Changed
+
 - **Test Organization**: Reorganized integration tests into provider-specific structure
   - Provider tests now in `tests/integration/providers/{provider}/` directories
   - Each provider has separate API, features, and image test files
@@ -621,6 +709,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `tests/integration/providers/README.md` for provider test guidance
 
 ### Added
+
 - **Provider Image Tests**: Added dedicated image processing tests
   - `xai/xai-image.test.js` - XAI Grok-4 image processing
   - `google/google-image.test.js` - Google Gemini image processing
@@ -632,6 +721,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `debug-tests.test.js` - Message format debugging
 
 ### Fixed
+
 - **Test Configuration**: Updated `suites.config.js` to use new test paths
   - Fixed real-api suite to use glob patterns for new structure
   - Properly excludes archived directory from test runs
@@ -639,6 +729,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.0] - 2025-07-28
 
 ### Changed
+
 - **Configuration**: Server name and version are now automatically read from package.json
   - Removed `MCP_SERVER_NAME` and `MCP_SERVER_VERSION` environment variables
   - Ensures version consistency across all parts of the application
@@ -655,12 +746,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No more manual updates needed when tool parameters change
 
 ### Added
+
 - **Environment Variables Documentation**: Added all missing environment variables to help prompt
   - All API keys (ANTHROPIC, MISTRAL, DEEPSEEK, OPENROUTER)
   - OpenRouter configuration options
   - HTTP server configuration options
 
 ### Removed
+
 - **Unused Build Script**: Removed unused `build.js` script and related npm scripts
   - Project doesn't require build step as it's pure Node.js
   - Removed `build` and `build:fast` npm scripts
@@ -669,6 +762,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed references to `XAI_BASE_URL` (not configurable via env)
 
 ### Fixed
+
 - **OpenRouter Dynamic Models**: Fixed behavior to require explicit enablement
   - Models with "/" format now properly require `OPENROUTER_DYNAMIC_MODELS=true`
   - Returns clear error message when dynamic models are disabled
@@ -676,6 +770,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2025-07-27
 
 ### Added
+
 - **OpenRouter Provider**: Dynamic model discovery support
   - Enable with `OPENROUTER_DYNAMIC_MODELS=true` environment variable
   - Automatically fetches model capabilities from OpenRouter's endpoints API
@@ -688,6 +783,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Maintains backward compatibility with keyword-based routing
 
 ### Changed
+
 - **OpenRouter Provider**: Added static configurations for Qwen3 and Kimi models
   - `qwen/qwen3-235b-a22b-thinking-2507` - 235B model with thinking capabilities
   - `qwen/qwen3-coder` - Specialized for coding tasks
@@ -696,6 +792,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.5] - 2025-07-26
 
 ### Fixed
+
 - **Anthropic Provider**: Increased SDK timeout to 20 minutes for thinking models
   - Prevents "Streaming is strongly recommended" errors for long-running requests
   - Claude 4 series models now work properly with thinking mode enabled
@@ -704,12 +801,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.4] - 2025-07-26
 
 ### Fixed
+
 - **Anthropic Provider**: Removed non-existent 'thinking-2025-01-27' beta header
   - Thinking mode is controlled through model selection, not beta headers
 
 ## [1.5.3] - 2025-07-26
 
 ### Fixed
+
 - **Google Provider**: Fixed gemini-2.0-flash configuration - model does not support thinking mode
 - **Anthropic Provider**: Fixed Claude 4 series models token handling
   - No longer set max_tokens for opus-4 and sonnet-4 models, letting SDK use defaults (32k/64k)
@@ -719,6 +818,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.1] - 2025-07-26
 
 ### Fixed
+
 - **Mistral Provider**: Fixed image handling by correcting the image URL field name from `image_url` to `imageUrl` to match Mistral API expectations
   - Models supporting images (mistral-medium-3) now properly process image content
   - Resolved validation errors when sending images to Mistral API
@@ -726,6 +826,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2025-07-26
 
 ### Changed
+
 - **BREAKING**: **Transport Default**: Changed default transport from HTTP to stdio for standard MCP compliance
   - Stdio transport is now the default (launched automatically by Claude)
   - HTTP transport available via `--transport=http` or `MCP_TRANSPORT=http` for development/debugging
@@ -733,10 +834,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No functionality lost - all transport methods still available
 
 ### Fixed
+
 - **Test Stability**: Fixed timeout issue in file context processing test
 - **Test Environment**: Added explicit `MCP_TRANSPORT=http` to test environment to maintain HTTP testing
 
 ### Documentation
+
 - Updated README.md to show stdio as default transport
 - Updated help text and examples to reflect new transport defaults
 - Clarified when to use HTTP transport (development/debugging scenarios)
@@ -744,6 +847,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.4] - 2025-07-26
 
 ### Added
+
 - **Anthropic Prompt Caching**: Implemented automatic prompt caching with 1-hour TTL for system prompts
   - Reduces latency and API costs for repeated requests
   - Minimum 1024 tokens required (2048 for Haiku models)
@@ -751,29 +855,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Provider Documentation**: Added comprehensive documentation for all new providers (Anthropic, DeepSeek, Mistral, OpenRouter)
 
 ### Fixed
+
 - **Anthropic Provider**: Fixed thinking budget calculation to properly account for token limits
 - **Anthropic Provider**: Force temperature to 1 when thinking is enabled (API requirement)
 - **Anthropic Provider**: Fixed context length issues with Claude Sonnet 4
 
 ### Improved
+
 - **Test Coverage**: Added comprehensive integration tests for all new providers
 - **Error Handling**: Better error messages for model availability and context limits
 
 ## [1.3.3] - 2025-07-26
 
 ### Fixed
+
 - **Anthropic Provider**: Fixed context length calculation for thinking models
 - **Mistral Provider**: Fixed SDK import order to resolve constructor errors
 
 ## [1.3.2] - 2025-07-26
 
 ### Fixed
+
 - **OpenRouter Provider**: Fixed HTTP-Referer header configuration issue by correcting config key casing
 - **Missing Dependencies**: Added `@anthropic-ai/sdk` and `@mistralai/mistralai` as dependencies to fix provider initialization errors
 
 ## [1.3.1] - 2025-07-26
 
 ### Improved
+
 - **Help System**: Updated help documentation and resources to display models from all 7 providers (previously only showed 3)
 - **Auto Model Selection**: Enhanced "auto" model selector to support all providers with intelligent defaults:
   - OpenAI: `o3` (powerful reasoning model)
@@ -787,12 +896,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Provider Detection**: Updated `mapModelToProvider` function to recognize models from all 7 providers
 
 ### Fixed
+
 - **Help Command**: Fixed issue where help command only displayed models from original 3 providers
 - **Model Resolution**: Fixed model name resolution to work with all provider models and their aliases
 
 ## [1.3.0] - 2025-07-26
 
 ### Added
+
 - **New Providers**: Added support for 5 new AI providers, expanding model options:
   - **Anthropic**: Support for Claude models including Opus 4, Sonnet 3.5, and Haiku 3.5
   - **Mistral AI**: Support for Magistral Medium, Magistral Small, and Mistral Medium 3
@@ -801,8 +912,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **OpenAI-Compatible Base Module**: Reusable factory for creating providers with OpenAI-compatible APIs
 
 ### Features
+
 - **Unified Provider Interface**: All providers implement consistent interface with error handling
-- **Advanced Model Capabilities**: 
+- **Advanced Model Capabilities**:
   - Thinking/reasoning models with configurable effort levels (Anthropic, OpenRouter)
   - Multimodal support for images (Anthropic, Mistral Medium 3)
   - Extended context windows (up to 200K tokens for Claude, 200K for Kimi K2)
@@ -811,6 +923,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dynamic SDK Loading**: Lazy loading of provider SDKs for better performance
 
 ### Improved
+
 - **Provider Architecture**: Refactored to use base modules for code reuse
 - **Model Configuration**: Rich metadata for each model including capabilities and limits
 - **Temperature Handling**: Fixed temperature parameter conflicts in OpenAI-compatible providers
@@ -818,6 +931,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Integration Tests**: Fixed MCP server initialization with required capabilities
 
 ### Fixed
+
 - **OpenAI-Compatible Providers**: Fixed temperature default parameter override issue
 - **Error Re-throwing**: Fixed error handling in Anthropic provider to avoid double-wrapping
 - **Mock Setup**: Fixed dynamic import mocking patterns in provider tests
@@ -826,21 +940,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2025-07-26
 
 ### Changed
+
 - **Dependencies**: Updated dotenv from v16.4.7 to v17.2.1
 - **Dependencies**: Updated eslint to latest version (9.17.0)
 - **Configuration**: Added `quiet: true` option to dotenv configuration to suppress verbose logging output
 
 ### Fixed
+
 - **Tests**: Fixed test failures caused by dotenv v17's verbose logging interfering with JSON parsing in MCP protocol tests
 - **Tests**: Updated tests to properly handle MCP protocol error responses instead of expecting thrown errors
 - **Tests**: Added missing prompts and resources capabilities to test server instances
 
 ### Improved
+
 - **Code Quality**: All code now passes latest eslint rules and formatting standards
 
 ## [1.2.0] - 2025-07-26
 
 ### Added
+
 - **Help Prompt**: Added comprehensive help prompt (`/converse:help`) that provides detailed documentation about all tools, parameters, providers, and models
   - Supports topic-specific help queries (tools, models, providers, parameters, examples)
   - Dynamically pulls real-time model information from provider files
@@ -851,82 +969,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP Capabilities**: Extended server capabilities to support both prompts and resources in addition to tools
 
 ### Improved
+
 - **Documentation**: Help content automatically stays up-to-date by fetching model details directly from provider implementations
 - **User Experience**: Both prompt and resource provide comprehensive guidance including model selection tips, configuration advice, and best practices
 
 ## [1.1.2] - 2025-07-26
 
 ### Fixed
+
 - **Binary Entry Point**: Fixed "startServer is not a function" error when running via npx/npm by properly exporting main function from index.js
 - **Module Structure**: Improved module architecture to support both CLI and programmatic usage
 - **Stdio Transport**: Removed console output from bin file to prevent JSON-RPC protocol corruption
 
 ### Changed
+
 - **Entry Point Pattern**: index.js now exports main function and only auto-executes when run directly, following Node.js best practices
 
 ## [1.1.1] - 2025-07-26
 
 ### Improved
+
 - **Consensus Tool Output**: Optimized output format by removing redundant `rawResponse` fields, reducing output size by ~70-80% while maintaining all essential information
 - **Performance**: Significantly reduced memory usage and network payload for consensus tool responses
 
 ### Changed
+
 - **Output Structure**: Removed `rawResponse` from both initial and refined consensus responses while maintaining backward compatibility
 
 ## [1.1.0] - 2025-07-26
 
 ### Fixed
+
 - **Image Processing**: Fixed image handling in chat and consensus tools where images were being sent in a separate message from the prompt, causing XAI (Grok) and Google (Gemini) providers to not receive images correctly
 - **Message Structure**: Both tools now properly merge context (including images) and prompt into a single user message with complex content array
 - **Provider Compatibility**: All three providers (OpenAI, XAI, Google) now correctly process images with their respective format requirements
 
 ### Added
+
 - **Integration Tests**: Added comprehensive image processing tests for consensus tool to verify all providers handle images correctly
 
 ### Improved
+
 - **Image Format Validation**: Enhanced image format conversion for XAI and Google providers with proper debugging output
 - **File Validation**: Added file existence validation before processing context to prevent errors
 
 ## [1.0.3] - 2025-07-26
 
 ### Fixed
+
 - **Stdio Transport**: Fixed configuration loading error (`Cannot convert undefined or null to object`) that prevented stdio transport from starting
 - **Console Suppression**: Fixed logger to properly suppress console output in stdio transport mode from startup
 - **Transport Detection**: Moved transport type detection to very early in startup process to prevent any console output interference
 
 ### Improved
+
 - **JSON-RPC Protocol**: Enhanced stdio transport reliability by eliminating all console output that could corrupt the protocol stream
 - **Logger Configuration**: Improved logger reconfiguration timing to respect transport mode from the beginning
 
 ### Changed
+
 - **Default Port**: Changed default HTTP server port from 3000 to 3157 to avoid common port conflicts
 
 ## [1.0.2] - 2025-07-26
 
 ### Fixed
+
 - **Console Logging**: Replaced remaining `console.log` and `console.error` calls with proper structured logger to prevent stdio transport corruption
 - **Configuration**: Fixed console output in config loading that could interfere with MCP JSON-RPC protocol
 
-### Changed  
+### Changed
+
 - **Documentation**: Updated model examples to use latest intelligent models (o3, grok-4, gemini-2.5-pro) and fast models (gemini-2.5-flash, o4-mini, gpt-4.1)
 - **File Paths**: Updated example file paths in documentation to use git-bash compatible paths (`/c/Users/username/...`)
 
 ### Removed
+
 - **Unused Configuration**: Removed unused `GOOGLE_LOCATION` and `XAI_BASE_URL` environment variables from configuration files
 - **Legacy Config**: Cleaned up unused Docker, DIAL, and OpenRouter configuration remnants from environment files
 
 ### Improved
+
 - **Logger Integration**: Enhanced error logging consistency across chat and consensus tools
 - **Transport Safety**: Strengthened stdio transport protection against console output interference
 
 ## [1.0.1] - 2025-07-25
 
 ### Fixed
+
 - **Binary Script**: Fixed Windows compatibility for bin script import path
 
 ## [1.0.0] - 2025-07-25
 
 ### Added
+
 - **Initial Release**: Complete Node.js implementation with functional architecture
 - **Chat Tool**: Single-provider conversational AI with context and continuation support
 - **Consensus Tool**: Multi-provider parallel execution with cross-model feedback
@@ -944,6 +1079,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Logging System**: Structured logging with configurable levels
 
 ### Features
+
 - **Parallel Consensus**: Simultaneous model execution for faster responses
 - **Cross-Model Feedback**: Models can refine responses based on other models' insights
 - **Auto Model Selection**: Intelligent model selection when using "auto" parameter

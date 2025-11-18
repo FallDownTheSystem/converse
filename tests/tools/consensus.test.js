@@ -19,13 +19,19 @@ describe('Consensus Tool Unit Tests', () => {
 
   beforeEach(() => {
     // Mock file validator
-    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] });
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
 
     // Mock createFileContext to return the expected format
     vi.mocked(contextProcessor.createFileContext).mockReturnValue({
       content: [
-        { type: 'text', text: '=== FILE CONTEXT ===\n\n--- test.txt ---\ntest content' }
-      ]
+        {
+          type: 'text',
+          text: '=== FILE CONTEXT ===\n\n--- test.txt ---\ntest content',
+        },
+      ],
     });
 
     // Mock configuration
@@ -33,15 +39,15 @@ describe('Consensus Tool Unit Tests', () => {
       apiKeys: {
         openai: 'sk-test-key',
         xai: 'xai-test-key',
-        google: 'google-test-key'
+        google: 'google-test-key',
       },
       providers: {
         googleLocation: 'us-central1',
-        xaiBaseUrl: 'https://api.x.ai/v1'
+        xaiBaseUrl: 'https://api.x.ai/v1',
       },
       environment: {
-        nodeEnv: 'test'
-      }
+        nodeEnv: 'test',
+      },
     };
 
     // Mock continuation store
@@ -50,7 +56,7 @@ describe('Consensus Tool Unit Tests', () => {
       set: vi.fn(),
       delete: vi.fn(),
       exists: vi.fn(),
-      getStats: vi.fn()
+      getStats: vi.fn(),
     };
 
     // Mock individual providers
@@ -59,23 +65,23 @@ describe('Consensus Tool Unit Tests', () => {
         content: 'OpenAI response',
         stop_reason: 'stop',
         rawResponse: { usage: { total_tokens: 50 } },
-        metadata: { provider: 'openai', model: 'gpt-4o-mini' }
+        metadata: { provider: 'openai', model: 'gpt-4o-mini' },
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn().mockReturnValue({
         'gpt-4o-mini': { contextWindow: 128000, maxOutputTokens: 16384 },
         'gpt-4': { contextWindow: 128000, maxOutputTokens: 8192 },
-        'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 }
+        'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 },
       }),
       getModelConfig: vi.fn((model) => {
         const configs = {
           'gpt-4o-mini': { contextWindow: 128000, maxOutputTokens: 16384 },
           'gpt-4': { contextWindow: 128000, maxOutputTokens: 8192 },
-          'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 }
+          'o3-mini': { contextWindow: 200000, maxOutputTokens: 100000 },
         };
         return configs[model] || { contextWindow: 128000 };
-      })
+      }),
     };
 
     const mockXAIProvider = {
@@ -83,23 +89,23 @@ describe('Consensus Tool Unit Tests', () => {
         content: 'XAI response',
         stop_reason: 'stop',
         rawResponse: { usage: { total_tokens: 45 } },
-        metadata: { provider: 'xai', model: 'grok' }
+        metadata: { provider: 'xai', model: 'grok' },
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
       getSupportedModels: vi.fn().mockReturnValue({
-        'grok': { contextWindow: 131000, maxOutputTokens: 32768 },
+        grok: { contextWindow: 131000, maxOutputTokens: 32768 },
         'grok-beta': { contextWindow: 131000, maxOutputTokens: 32768 },
-        'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 }
+        'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 },
       }),
       getModelConfig: vi.fn((model) => {
         const configs = {
-          'grok': { contextWindow: 131000, maxOutputTokens: 32768 },
+          grok: { contextWindow: 131000, maxOutputTokens: 32768 },
           'grok-beta': { contextWindow: 131000, maxOutputTokens: 32768 },
-          'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 }
+          'grok-4': { contextWindow: 256000, maxOutputTokens: 65536 },
         };
         return configs[model] || { contextWindow: 131000 };
-      })
+      }),
     };
 
     const mockGoogleProvider = {
@@ -107,7 +113,7 @@ describe('Consensus Tool Unit Tests', () => {
         content: 'Google response',
         stop_reason: 'stop',
         rawResponse: { usage: { total_tokens: 40 } },
-        metadata: { provider: 'google', model: 'gemini-2.5-flash' }
+        metadata: { provider: 'google', model: 'gemini-2.5-flash' },
       }),
       validateConfig: vi.fn().mockReturnValue(true),
       isAvailable: vi.fn().mockReturnValue(true),
@@ -115,29 +121,29 @@ describe('Consensus Tool Unit Tests', () => {
         'gemini-2.5-flash': { contextWindow: 1000000, maxOutputTokens: 8192 },
         'gemini-2.5-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
         'gemini-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
-        'flash': { contextWindow: 1000000, maxOutputTokens: 8192 }
+        flash: { contextWindow: 1000000, maxOutputTokens: 8192 },
       }),
       getModelConfig: vi.fn((model) => {
         const configs = {
           'gemini-2.5-flash': { contextWindow: 1000000, maxOutputTokens: 8192 },
           'gemini-2.5-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
           'gemini-pro': { contextWindow: 1000000, maxOutputTokens: 8192 },
-          'flash': { contextWindow: 1000000, maxOutputTokens: 8192 }
+          flash: { contextWindow: 1000000, maxOutputTokens: 8192 },
         };
         return configs[model] || { contextWindow: 1000000 };
-      })
+      }),
     };
 
     // Mock providers - consensus tool expects a plain object with provider names as keys
     mockProviders = {
       openai: mockOpenAIProvider,
       xai: mockXAIProvider,
-      google: mockGoogleProvider
+      google: mockGoogleProvider,
     };
 
     // Mock context processor
     mockContextProcessor = {
-      processUnifiedContext: vi.fn()
+      processUnifiedContext: vi.fn(),
     };
 
     // Create mock dependencies
@@ -145,7 +151,7 @@ describe('Consensus Tool Unit Tests', () => {
       config: mockConfig,
       continuationStore: mockContinuationStore,
       providers: mockProviders,
-      contextProcessor: mockContextProcessor
+      contextProcessor: mockContextProcessor,
     };
 
     // Set up default mock return values
@@ -158,7 +164,7 @@ describe('Consensus Tool Unit Tests', () => {
       contextMessages: [],
       files: [],
       processed: [],
-      failed: []
+      failed: [],
     });
   });
 
@@ -166,7 +172,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle basic consensus request with single model', async () => {
       const args = {
         prompt: 'What is 2+2?',
-        models: ['gpt-4o-mini']
+        models: ['gpt-4o-mini'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -187,14 +193,14 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle consensus with multiple models', async () => {
       const args = {
         prompt: 'Is AI beneficial for humanity?',
-        models: ['gpt-4o-mini', 'grok', 'flash']
+        models: ['gpt-4o-mini', 'grok', 'flash'],
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 
@@ -211,14 +217,14 @@ describe('Consensus Tool Unit Tests', () => {
     it('should enable cross-feedback by default', async () => {
       const args = {
         prompt: 'Test question',
-        models: ['gpt-4o-mini', 'grok']
+        models: ['gpt-4o-mini', 'grok'],
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 
@@ -234,14 +240,14 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test question',
         models: ['gpt-4o-mini'],
-        enable_cross_feedback: false
+        enable_cross_feedback: false,
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 
@@ -258,10 +264,10 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: [
-          'o3-mini',        // Should map to openai
-          'grok-4',         // Should map to xai
-          'gemini-pro'      // Should map to google
-        ]
+          'o3-mini', // Should map to openai
+          'grok-4', // Should map to xai
+          'gemini-pro', // Should map to google
+        ],
       };
 
       await consensusTool(args, mockDependencies);
@@ -275,7 +281,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle auto model selection', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: ['auto']
+        models: ['auto'],
       };
 
       await consensusTool(args, mockDependencies);
@@ -288,7 +294,7 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: ['gpt-4o-mini', 'gemini-pro'],
-        temperature: 0.7
+        temperature: 0.7,
       };
 
       await consensusTool(args, mockDependencies);
@@ -296,11 +302,11 @@ describe('Consensus Tool Unit Tests', () => {
       // Check that options are passed to providers
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.any(Array),
-        expect.objectContaining({ temperature: 0.7 })
+        expect.objectContaining({ temperature: 0.7 }),
       );
       expect(mockProviders.google.invoke).toHaveBeenCalledWith(
         expect.any(Array),
-        expect.objectContaining({ temperature: 0.7 })
+        expect.objectContaining({ temperature: 0.7 }),
       );
     });
   });
@@ -310,32 +316,34 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Complex question requiring multiple perspectives',
         models: ['gpt-4o-mini', 'grok'],
-        enable_cross_feedback: true
+        enable_cross_feedback: true,
       };
 
       await consensusTool(args, mockDependencies);
 
       // Check refinement calls include context from other models
       const refinementCalls = mockProviders.openai.invoke.mock.calls.filter(
-        call => call[0].some(msg => msg.content.includes('Other AI Responses:'))
+        (call) =>
+          call[0].some((msg) => msg.content.includes('Other AI Responses:')),
       );
       expect(refinementCalls.length).toBeGreaterThan(0);
     });
 
     it('should use custom cross-feedback prompt when provided', async () => {
-      const customPrompt = 'Please review and improve your response based on the other perspectives';
+      const customPrompt =
+        'Please review and improve your response based on the other perspectives';
       const args = {
         prompt: 'Test question',
         models: ['gpt-4o-mini', 'grok'],
-        cross_feedback_prompt: customPrompt
+        cross_feedback_prompt: customPrompt,
       };
 
       await consensusTool(args, mockDependencies);
 
       // Check that custom prompt is used in refinement
       const calls = mockProviders.openai.invoke.mock.calls;
-      const refinementCall = calls.find(call =>
-        call[0].some(msg => msg.content.includes(customPrompt))
+      const refinementCall = calls.find((call) =>
+        call[0].some((msg) => msg.content.includes(customPrompt)),
       );
       expect(refinementCall).toBeDefined();
     });
@@ -346,42 +354,44 @@ describe('Consensus Tool Unit Tests', () => {
         .mockResolvedValueOnce({
           content: 'I agree with this approach',
           stop_reason: 'stop',
-          metadata: { provider: 'openai' }
+          metadata: { provider: 'openai' },
         })
         .mockResolvedValueOnce({
           content: 'I still support this position strongly',
           stop_reason: 'stop',
-          metadata: { provider: 'openai' }
+          metadata: { provider: 'openai' },
         });
 
       mockProviders.xai.invoke
         .mockResolvedValueOnce({
           content: 'I disagree with this approach',
           stop_reason: 'stop',
-          metadata: { provider: 'xai' }
+          metadata: { provider: 'xai' },
         })
         .mockResolvedValueOnce({
           content: 'I maintain my disagreement',
           stop_reason: 'stop',
-          metadata: { provider: 'xai' }
+          metadata: { provider: 'xai' },
         });
 
       const args = {
         prompt: 'Should we implement this feature?',
-        models: ['gpt-4o-mini', 'grok']
+        models: ['gpt-4o-mini', 'grok'],
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 
       expect(consensusResult.phases.refined).toBeDefined();
       expect(consensusResult.phases.refined.length).toBeGreaterThan(0);
-      expect(consensusResult.phases.refined[0]).toHaveProperty('refined_response');
+      expect(consensusResult.phases.refined[0]).toHaveProperty(
+        'refined_response',
+      );
     });
   });
 
@@ -390,31 +400,33 @@ describe('Consensus Tool Unit Tests', () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
         success: true,
         contextMessages: [
-          { role: 'user', content: 'Context: File content here' }
+          { role: 'user', content: 'Context: File content here' },
         ],
-        files: [{
-          originalPath: 'test.txt',
-          path: 'test.txt',
-          type: 'text',
-          content: 'test content',
-          size: 100,
-          lineCount: 1
-        }],
+        files: [
+          {
+            originalPath: 'test.txt',
+            path: 'test.txt',
+            type: 'text',
+            content: 'test content',
+            size: 100,
+            lineCount: 1,
+          },
+        ],
         processed: [{ fileName: 'test.txt' }],
-        failed: []
+        failed: [],
       });
 
       const args = {
         prompt: 'Analyze this data',
         models: ['gpt-4o-mini'],
-        files: ['test.txt']
+        files: ['test.txt'],
       };
 
       await consensusTool(args, mockDependencies);
 
       expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
         files: ['test.txt'],
-        images: []
+        images: [],
       });
 
       // Check that context is included in provider calls
@@ -424,12 +436,12 @@ describe('Consensus Tool Unit Tests', () => {
             content: expect.arrayContaining([
               expect.objectContaining({
                 type: 'text',
-                text: expect.stringContaining('=== FILE CONTEXT ===')
-              })
-            ])
-          })
+                text: expect.stringContaining('=== FILE CONTEXT ==='),
+              }),
+            ]),
+          }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -439,13 +451,13 @@ describe('Consensus Tool Unit Tests', () => {
         contextMessages: [],
         files: [],
         processed: [],
-        failed: [{ file: 'missing.txt', error: 'File not found' }]
+        failed: [{ file: 'missing.txt', error: 'File not found' }],
       });
 
       const args = {
         prompt: 'Test prompt',
         models: ['gpt-4o-mini'],
-        files: ['missing.txt']
+        files: ['missing.txt'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -460,7 +472,7 @@ describe('Consensus Tool Unit Tests', () => {
   describe('Error Handling and Resilience', () => {
     it('should throw error for missing prompt', async () => {
       const args = {
-        models: ['gpt-4o-mini']
+        models: ['gpt-4o-mini'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -470,7 +482,7 @@ describe('Consensus Tool Unit Tests', () => {
 
     it('should throw error for missing models array', async () => {
       const args = {
-        prompt: 'Test prompt'
+        prompt: 'Test prompt',
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -481,7 +493,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should throw error for empty models array', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: []
+        models: [],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -497,9 +509,9 @@ describe('Consensus Tool Unit Tests', () => {
         prompt: 'Test prompt',
         models: [
           'gpt-4o-mini',
-          'grok',          // This will fail
-          'flash'
-        ]
+          'grok', // This will fail
+          'flash',
+        ],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -532,7 +544,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: ['gpt-4o-mini', 'grok', 'flash']
+        models: ['gpt-4o-mini', 'grok', 'flash'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -567,7 +579,7 @@ describe('Consensus Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        models: ['unknown-model']
+        models: ['unknown-model'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -582,7 +594,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should save consensus results to continuation store', async () => {
       const args = {
         prompt: 'Test consensus question',
-        models: ['gpt-4o-mini']
+        models: ['gpt-4o-mini'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -591,11 +603,14 @@ describe('Consensus Tool Unit Tests', () => {
         expect.stringMatching(/^conv_[A-Za-z0-9_-]{10}$/),
         expect.objectContaining({
           messages: expect.arrayContaining([
-            expect.objectContaining({ role: 'user', content: 'Test consensus question' })
+            expect.objectContaining({
+              role: 'user',
+              content: 'Test consensus question',
+            }),
           ]),
           type: 'consensus',
-          consensusData: expect.any(Object)
-        })
+          consensusData: expect.any(Object),
+        }),
       );
 
       expect(result.continuation).toBeDefined();
@@ -606,9 +621,9 @@ describe('Consensus Tool Unit Tests', () => {
       const existingConversation = {
         messages: [
           { role: 'user', content: 'Previous consensus question' },
-          { role: 'assistant', content: 'Previous consensus result' }
+          { role: 'assistant', content: 'Previous consensus result' },
         ],
-        toolType: 'consensus'
+        toolType: 'consensus',
       };
 
       mockContinuationStore.get.mockResolvedValue(existingConversation);
@@ -617,7 +632,7 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Follow-up consensus question',
         models: ['gpt-4o-mini'],
-        continuation_id: 'conv_existing'
+        continuation_id: 'conv_existing',
       };
 
       await consensusTool(args, mockDependencies);
@@ -628,9 +643,9 @@ describe('Consensus Tool Unit Tests', () => {
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ content: 'Previous consensus question' }),
-          expect.objectContaining({ content: 'Follow-up consensus question' })
+          expect.objectContaining({ content: 'Follow-up consensus question' }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -639,7 +654,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should return MCP-compliant response format', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: ['gpt-4o-mini']
+        models: ['gpt-4o-mini'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -660,7 +675,7 @@ describe('Consensus Tool Unit Tests', () => {
     it('should return valid JSON in response content', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: ['gpt-4o-mini']
+        models: ['gpt-4o-mini'],
       };
 
       const result = await consensusTool(args, mockDependencies);
@@ -681,14 +696,14 @@ describe('Consensus Tool Unit Tests', () => {
       const args = {
         prompt: 'Test prompt',
         models: ['gpt-4o-mini'],
-        temperature: 0.5
+        temperature: 0.5,
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 
@@ -708,14 +723,18 @@ describe('Consensus Tool Unit Tests', () => {
     it('should execute models in parallel', async () => {
       const args = {
         prompt: 'Test prompt',
-        models: ['gpt-4o-mini', 'grok', 'flash']
+        models: ['gpt-4o-mini', 'grok', 'flash'],
       };
 
       // Track when each provider is called
       const callTimes = [];
       mockProviders.openai.invoke.mockImplementation(async () => {
         callTimes.push(Date.now());
-        return { content: 'OpenAI response', stop_reason: 'stop', metadata: {} };
+        return {
+          content: 'OpenAI response',
+          stop_reason: 'stop',
+          metadata: {},
+        };
       });
       mockProviders.xai.invoke.mockImplementation(async () => {
         callTimes.push(Date.now());
@@ -723,7 +742,11 @@ describe('Consensus Tool Unit Tests', () => {
       });
       mockProviders.google.invoke.mockImplementation(async () => {
         callTimes.push(Date.now());
-        return { content: 'Google response', stop_reason: 'stop', metadata: {} };
+        return {
+          content: 'Google response',
+          stop_reason: 'stop',
+          metadata: {},
+        };
       });
 
       await consensusTool(args, mockDependencies);
@@ -737,23 +760,30 @@ describe('Consensus Tool Unit Tests', () => {
     it('should handle timeout scenarios gracefully', async () => {
       // Mock a slow provider
       mockProviders.xai.invoke.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({
-          content: 'Slow response',
-          stop_reason: 'stop',
-          metadata: {}
-        }), 100))
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  content: 'Slow response',
+                  stop_reason: 'stop',
+                  metadata: {},
+                }),
+              100,
+            ),
+          ),
       );
 
       const args = {
         prompt: 'Test prompt',
-        models: ['gpt-4o-mini', 'grok']  // grok is slow
+        models: ['gpt-4o-mini', 'grok'], // grok is slow
       };
 
       const result = await consensusTool(args, mockDependencies);
       // Skip status line if present
       const text = result.content[0].text;
       const lines = text.split('\n');
-      const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+      const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
       const jsonText = lines.slice(jsonStart).join('\n');
       const consensusResult = JSON.parse(jsonText);
 

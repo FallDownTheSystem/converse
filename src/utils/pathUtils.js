@@ -112,7 +112,7 @@ export function getSpawnOptions(additionalOptions = {}) {
   const options = {
     ...additionalOptions,
     // Ensure proper path resolution on Windows
-    windowsVerbatimArguments: false
+    windowsVerbatimArguments: false,
   };
 
   // On Windows, we might need shell for certain operations
@@ -193,7 +193,7 @@ export function getPlatformName() {
   const platformMap = {
     win32: 'Windows',
     darwin: 'macOS',
-    linux: 'Linux'
+    linux: 'Linux',
   };
   return platformMap[platform()] || platform();
 }

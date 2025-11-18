@@ -21,7 +21,7 @@ export class HTTPMCPTestClient {
       debugMode: false,
       host: 'localhost',
       port: 0, // Random port
-      ...options
+      ...options,
     };
 
     this.serverManager = new HTTPMCPServerManager({
@@ -31,14 +31,14 @@ export class HTTPMCPTestClient {
       env: {
         NODE_ENV: 'test',
         LOG_LEVEL: this.options.debugMode ? 'debug' : 'error',
-        ...options.env
+        ...options.env,
       },
       clientConfig: {
         name: 'http-test-client',
         version: '1.0.0',
-        ...options.clientConfig
+        ...options.clientConfig,
       },
-      ...options.serverOptions
+      ...options.serverOptions,
     });
 
     this.isReady = false;
@@ -64,7 +64,10 @@ export class HTTPMCPTestClient {
       await this.serverManager.startServer();
       this.connectionInfo = this.serverManager.getConnectionInfo();
       this.isReady = true;
-      this.log('HTTP test client started successfully on port', this.connectionInfo.port);
+      this.log(
+        'HTTP test client started successfully on port',
+        this.connectionInfo.port,
+      );
     } catch (error) {
       this.lastError = error;
       this.log('Failed to start HTTP test client:', error.message);
@@ -88,7 +91,9 @@ export class HTTPMCPTestClient {
       this.isReady = false;
 
       const duration = Date.now() - this.startTime;
-      this.log(`HTTP test client stopped after ${duration}ms, ${this.operationCount} operations`);
+      this.log(
+        `HTTP test client stopped after ${duration}ms, ${this.operationCount} operations`,
+      );
     } catch (error) {
       this.log('Error during stop:', error.message);
       // Still mark as stopped
@@ -121,10 +126,13 @@ export class HTTPMCPTestClient {
     const timeout = options.timeout || this.options.operationTimeout;
 
     return this.withRetry('callTool', async () => {
-      return await this.serverManager.executeToolCall({
-        name: toolName,
-        arguments: args
-      }, timeout);
+      return await this.serverManager.executeToolCall(
+        {
+          name: toolName,
+          arguments: args,
+        },
+        timeout,
+      );
     });
   }
 
@@ -137,7 +145,7 @@ export class HTTPMCPTestClient {
   async chat(prompt, options = {}) {
     return this.callTool('chat', {
       prompt,
-      ...options
+      ...options,
     });
   }
 
@@ -152,7 +160,7 @@ export class HTTPMCPTestClient {
     return this.callTool('consensus', {
       prompt,
       models,
-      ...options
+      ...options,
     });
   }
 
@@ -184,7 +192,7 @@ export class HTTPMCPTestClient {
       const chatStartTime = Date.now();
       const chatResult = await this.chat('Health check test', {
         model: 'auto',
-        temperature: 0
+        temperature: 0,
       });
       const chatTime = Date.now() - chatStartTime;
 
@@ -196,22 +204,22 @@ export class HTTPMCPTestClient {
         connection: this.connectionInfo,
         httpEndpoints: {
           health: httpHealth,
-          info: serverInfo
+          info: serverInfo,
         },
         performance: {
           listToolsMs: listTime,
           httpHealthMs: httpHealthTime,
           serverInfoMs: infoTime,
           chatCallMs: chatTime,
-          totalMs: totalTime
+          totalMs: totalTime,
         },
         tools: {
           count: tools.tools?.length || 0,
-          available: tools.tools?.map(t => t.name) || []
+          available: tools.tools?.map((t) => t.name) || [],
         },
         chatWorking: !chatResult.isError,
         transport: 'http',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       return {
@@ -220,7 +228,7 @@ export class HTTPMCPTestClient {
         server: this.serverManager.getHealthStatus(),
         connection: this.connectionInfo,
         transport: 'http',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -237,9 +245,14 @@ export class HTTPMCPTestClient {
     const maxConcurrency = options.maxConcurrency || operations.length;
     const timeout = options.timeout || this.options.operationTimeout;
 
-    this.log(`Executing ${operations.length} operations with max concurrency ${maxConcurrency}`);
+    this.log(
+      `Executing ${operations.length} operations with max concurrency ${maxConcurrency}`,
+    );
 
-    return await this.serverManager.executeConcurrent(operations, { maxConcurrency, timeout });
+    return await this.serverManager.executeConcurrent(operations, {
+      maxConcurrency,
+      timeout,
+    });
   }
 
   /**
@@ -254,21 +267,22 @@ export class HTTPMCPTestClient {
     this.log(`Testing session isolation with ${sessionCount} sessions`);
 
     try {
-      const operations = Array.from({ length: sessionCount }, (_, index) =>
-        async (client) => {
+      const operations = Array.from(
+        { length: sessionCount },
+        (_, index) => async (client) => {
           const sessionResult = await client.callTool({
             name: 'chat',
             arguments: {
               prompt: `Session test ${index + 1}`,
-              model: 'auto'
-            }
+              model: 'auto',
+            },
           });
           return { sessionIndex: index, result: sessionResult };
-        }
+        },
       );
 
       const results = await this.executeConcurrent(operations);
-      const successCount = results.filter(r => r.success).length;
+      const successCount = results.filter((r) => r.success).length;
 
       return {
         success: successCount === sessionCount,
@@ -276,13 +290,13 @@ export class HTTPMCPTestClient {
         successCount,
         failedCount: sessionCount - successCount,
         duration: Date.now() - startTime,
-        results
+        results,
       };
     } catch (error) {
       return {
         success: false,
         error: error.message,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
@@ -303,8 +317,8 @@ export class HTTPMCPTestClient {
       options: {
         ...this.options,
         serverOptions: undefined, // Don't expose server options
-        env: undefined // Don't expose environment
-      }
+        env: undefined, // Don't expose environment
+      },
     };
   }
 
@@ -331,14 +345,14 @@ export class HTTPMCPTestClient {
       const healthResponse = await fetch(`${baseUrl}/health`);
       results.health = {
         status: healthResponse.status,
-        data: await healthResponse.json()
+        data: await healthResponse.json(),
       };
 
       // Test info endpoint
       const infoResponse = await fetch(`${baseUrl}/info`);
       results.info = {
         status: infoResponse.status,
-        data: await infoResponse.json()
+        data: await infoResponse.json(),
       };
 
       results.success = true;
@@ -381,7 +395,9 @@ export class HTTPMCPTestClient {
       }
     }
 
-    throw new Error(`${operationName} failed after ${this.options.maxRetries} attempts: ${this.lastError?.message}`);
+    throw new Error(
+      `${operationName} failed after ${this.options.maxRetries} attempts: ${this.lastError?.message}`,
+    );
   }
 
   /**
@@ -421,7 +437,7 @@ export class HTTPMCPTestClient {
    * @private
    */
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -482,8 +498,8 @@ export async function createMultipleHTTPTestClients(count, options = {}) {
         port: 0, // Always use random ports for multiple clients
         serverOptions: {
           ...options.serverOptions,
-          port: 0 // Ensure unique ports
-        }
+          port: 0, // Ensure unique ports
+        },
       });
       await client.start();
       clients.push(client);
@@ -492,7 +508,7 @@ export async function createMultipleHTTPTestClients(count, options = {}) {
     return clients;
   } catch (error) {
     // Cleanup any clients that were created
-    await Promise.all(clients.map(client => client.stop().catch(() => {})));
+    await Promise.all(clients.map((client) => client.stop().catch(() => {})));
     throw error;
   }
 }
@@ -503,7 +519,7 @@ export async function createMultipleHTTPTestClients(count, options = {}) {
  * @returns {Promise<void>}
  */
 export async function stopMultipleHTTPTestClients(clients) {
-  await Promise.all(clients.map(client => client.stop().catch(() => {})));
+  await Promise.all(clients.map((client) => client.stop().catch(() => {})));
 }
 
 /**
@@ -513,7 +529,11 @@ export async function stopMultipleHTTPTestClients(clients) {
  * @param {object} options - Test options
  * @returns {Promise<object>}
  */
-export async function testHTTPConcurrency(clientCount = 3, operationsPerClient = 5, options = {}) {
+export async function testHTTPConcurrency(
+  clientCount = 3,
+  operationsPerClient = 5,
+  options = {},
+) {
   const startTime = Date.now();
 
   try {
@@ -526,18 +546,20 @@ export async function testHTTPConcurrency(clientCount = 3, operationsPerClient =
       const client = clients[clientIndex];
       for (let opIndex = 0; opIndex < operationsPerClient; opIndex++) {
         allOperations.push(async () => {
-          return client.chat(`Client ${clientIndex} operation ${opIndex}`, { model: 'auto' });
+          return client.chat(`Client ${clientIndex} operation ${opIndex}`, {
+            model: 'auto',
+          });
         });
       }
     }
 
     // Execute all operations concurrently
-    const results = await Promise.allSettled(allOperations.map(op => op()));
+    const results = await Promise.allSettled(allOperations.map((op) => op()));
 
     // Stop all clients
     await stopMultipleHTTPTestClients(clients);
 
-    const successCount = results.filter(r => r.status === 'fulfilled').length;
+    const successCount = results.filter((r) => r.status === 'fulfilled').length;
 
     return {
       success: successCount === allOperations.length,
@@ -550,14 +572,14 @@ export async function testHTTPConcurrency(clientCount = 3, operationsPerClient =
       results: results.map((r, i) => ({
         index: i,
         success: r.status === 'fulfilled',
-        error: r.status === 'rejected' ? r.reason?.message : null
-      }))
+        error: r.status === 'rejected' ? r.reason?.message : null,
+      })),
     };
   } catch (error) {
     return {
       success: false,
       error: error.message,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 }

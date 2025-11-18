@@ -16,7 +16,11 @@ import { createToolError } from '../tools/index.js';
  * @param {object} options - Validation options including clientCwd
  * @returns {Promise<{valid: boolean, missingPaths: string[], error?: object}>}
  */
-export async function validateFilePaths(filePaths, fileType = 'file', options = {}) {
+export async function validateFilePaths(
+  filePaths,
+  fileType = 'file',
+  options = {},
+) {
   if (!Array.isArray(filePaths) || filePaths.length === 0) {
     return { valid: true, missingPaths: [] };
   }
@@ -54,7 +58,7 @@ export async function validateFilePaths(filePaths, fileType = 'file', options = 
     return {
       valid: false,
       missingPaths,
-      error: createToolError(errorMessage)
+      error: createToolError(errorMessage),
     };
   }
 
@@ -67,7 +71,10 @@ export async function validateFilePaths(filePaths, fileType = 'file', options = 
  * @param {object} options - Validation options including clientCwd
  * @returns {Promise<{valid: boolean, errors: string[], errorResponse?: object}>}
  */
-export async function validateAllPaths({ files = [], images = [] }, options = {}) {
+export async function validateAllPaths(
+  { files = [], images = [] },
+  options = {},
+) {
   const errors = [];
 
   // Validate regular files
@@ -82,7 +89,9 @@ export async function validateAllPaths({ files = [], images = [] }, options = {}
   if (images.length > 0) {
     const imageValidation = await validateFilePaths(images, 'image', options);
     if (!imageValidation.valid) {
-      errors.push(`Images not found: ${imageValidation.missingPaths.join(', ')}`);
+      errors.push(
+        `Images not found: ${imageValidation.missingPaths.join(', ')}`,
+      );
     }
   }
 
@@ -90,7 +99,7 @@ export async function validateAllPaths({ files = [], images = [] }, options = {}
     return {
       valid: false,
       errors,
-      errorResponse: createToolError(errors.join('. '))
+      errorResponse: createToolError(errors.join('. ')),
     };
   }
 

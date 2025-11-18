@@ -9,7 +9,7 @@ import {
   hasAnyApiKey,
   hasAllApiKeys,
   getSkipMessage,
-  API_KEY_CONFIGS
+  API_KEY_CONFIGS,
 } from './apiKeyDetection.js';
 
 /**
@@ -27,7 +27,7 @@ export function testWithApiKeys({ requiredProviders, requireAll = false }) {
   const skipMessage = getSkipMessage(requiredProviders, requireAll);
 
   // Return the appropriate test function
-  return function(description, testFn, timeout) {
+  return function (description, testFn, timeout) {
     if (shouldSkip) {
       // Log skip message with color for better visibility
       if (skipMessage) {
@@ -54,7 +54,7 @@ export {
   hasAnyApiKey,
   hasAllApiKeys,
   getSkipMessage,
-  API_KEY_CONFIGS
+  API_KEY_CONFIGS,
 };
 
 // Export individual provider checks

@@ -44,7 +44,7 @@ export class JobRunner extends EventEmitter {
     if (!dependencies || !dependencies.asyncJobStore) {
       throw new JobRunnerError(
         'AsyncJobStore is required',
-        'MISSING_DEPENDENCIES'
+        'MISSING_DEPENDENCIES',
       );
     }
 
@@ -72,7 +72,9 @@ export class JobRunner extends EventEmitter {
       activeCount: 0,
     };
 
-    debugLog(`JobRunner: Initialized with concurrency limit ${this.concurrency}`);
+    debugLog(
+      `JobRunner: Initialized with concurrency limit ${this.concurrency}`,
+    );
   }
 
   /**
@@ -96,27 +98,24 @@ export class JobRunner extends EventEmitter {
       if (!jobSpec || !jobSpec.tool) {
         throw new JobRunnerError(
           'Invalid job specification: tool is required',
-          'INVALID_JOB_SPEC'
+          'INVALID_JOB_SPEC',
         );
       }
 
       if (typeof runFunction !== 'function') {
         throw new JobRunnerError(
           'runFunction must be a callable function',
-          'INVALID_RUN_FUNCTION'
+          'INVALID_RUN_FUNCTION',
         );
       }
 
       // Create job in store
-      const jobId = await this.asyncJobStore.create(
-        jobSpec.tool,
-        {
-          sessionId: jobSpec.sessionId,
-          timeout: options.timeout || this.defaultTimeout,
-          priority: options.priority || false,
-          ...jobSpec.options,
-        }
-      );
+      const jobId = await this.asyncJobStore.create(jobSpec.tool, {
+        sessionId: jobSpec.sessionId,
+        timeout: options.timeout || this.defaultTimeout,
+        priority: options.priority || false,
+        ...jobSpec.options,
+      });
 
       // Set up abort controller for timeout and cancellation
       const abortController = new globalThis.AbortController();
@@ -138,13 +137,16 @@ export class JobRunner extends EventEmitter {
 
       // Submit to limiter queue for background execution
       const limitedExecution = this.limiter(() =>
-        this._executeJob(jobId, runFunction, options, abortController.signal)
+        this._executeJob(jobId, runFunction, options, abortController.signal),
       );
 
       // Don't await - execute in background
       globalThis.setImmediate(() => {
         limitedExecution.catch((error) => {
-          debugError(`JobRunner: Background execution failed for ${jobId}:`, error);
+          debugError(
+            `JobRunner: Background execution failed for ${jobId}:`,
+            error,
+          );
         });
       });
 
@@ -154,14 +156,13 @@ export class JobRunner extends EventEmitter {
 
       debugLog(`JobRunner: Submitted job ${jobId} for background execution`);
       return jobId;
-
     } catch (error) {
       if (error instanceof JobRunnerError) {
         throw error;
       }
       throw new JobRunnerError(
         `Failed to submit job: ${error.message}`,
-        'SUBMISSION_ERROR'
+        'SUBMISSION_ERROR',
       );
     }
   }
@@ -215,7 +216,6 @@ export class JobRunner extends EventEmitter {
 
       debugLog(`JobRunner: Cancelled job ${jobId}`);
       return true;
-
     } catch (error) {
       debugError(`JobRunner: Failed to cancel job ${jobId}:`, error);
       return false;
@@ -251,7 +251,10 @@ export class JobRunner extends EventEmitter {
       // Get current job state
       jobState = await this.asyncJobStore.get(jobId);
       if (!jobState) {
-        throw new JobRunnerError(`Job ${jobId} not found in store`, 'JOB_NOT_FOUND');
+        throw new JobRunnerError(
+          `Job ${jobId} not found in store`,
+          'JOB_NOT_FOUND',
+        );
       }
 
       // Check if already cancelled or aborted
@@ -269,7 +272,7 @@ export class JobRunner extends EventEmitter {
 
       this.activeJobs.set(jobId, {
         startedAt: Date.now(),
-        tool: jobState.tool
+        tool: jobState.tool,
       });
 
       // Emit job started event through EventBus
@@ -289,7 +292,9 @@ export class JobRunner extends EventEmitter {
       const timeoutHandle = setTimeout(() => {
         if (!signal.aborted) {
           debugLog(`JobRunner: Job ${jobId} timed out after ${timeout}ms`);
-          this.abortControllers.get(jobId)?.abort(`Job timed out after ${timeout}ms`);
+          this.abortControllers
+            .get(jobId)
+            ?.abort(`Job timed out after ${timeout}ms`);
         }
       }, timeout);
 
@@ -300,7 +305,8 @@ export class JobRunner extends EventEmitter {
           tool: jobState.tool,
           signal,
           updateJob: (updates) => this.asyncJobStore.update(jobId, updates),
-          emitEvent: (eventType, data) => this.emit(eventType, { jobId, ...data }),
+          emitEvent: (eventType, data) =>
+            this.emit(eventType, { jobId, ...data }),
         };
 
         // Execute the job function
@@ -337,11 +343,16 @@ export class JobRunner extends EventEmitter {
               provider: finalJobState.provider,
               model: finalJobState.model,
               title: finalJobState.title,
-              final_summary: finalJobState.final_summary
+              final_summary: finalJobState.final_summary,
             });
-            debugLog(`JobRunner: Written snapshot to FileCache for completed job ${jobId}`);
+            debugLog(
+              `JobRunner: Written snapshot to FileCache for completed job ${jobId}`,
+            );
           } catch (cacheError) {
-            debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+            debugError(
+              `JobRunner: Failed to write to FileCache for job ${jobId}:`,
+              cacheError,
+            );
             // Continue even if cache write fails
           }
         }
@@ -359,7 +370,6 @@ export class JobRunner extends EventEmitter {
 
         this.stats.completed++;
         debugLog(`JobRunner: Completed job ${jobId}`);
-
       } catch (executionError) {
         // Clear timeout
         clearTimeout(timeoutHandle);
@@ -392,11 +402,16 @@ export class JobRunner extends EventEmitter {
                 startedAt: cancelledJobState.startedAt,
                 provider: cancelledJobState.provider,
                 model: cancelledJobState.model,
-                title: cancelledJobState.title
+                title: cancelledJobState.title,
               });
-              debugLog(`JobRunner: Written snapshot to FileCache for cancelled job ${jobId}`);
+              debugLog(
+                `JobRunner: Written snapshot to FileCache for cancelled job ${jobId}`,
+              );
             } catch (cacheError) {
-              debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+              debugError(
+                `JobRunner: Failed to write to FileCache for job ${jobId}:`,
+                cacheError,
+              );
               // Continue even if cache write fails
             }
           }
@@ -437,11 +452,16 @@ export class JobRunner extends EventEmitter {
               startedAt: failedJobState.startedAt,
               provider: failedJobState.provider,
               model: failedJobState.model,
-              title: failedJobState.title
+              title: failedJobState.title,
             });
-            debugLog(`JobRunner: Written snapshot to FileCache for failed job ${jobId}`);
+            debugLog(
+              `JobRunner: Written snapshot to FileCache for failed job ${jobId}`,
+            );
           } catch (cacheError) {
-            debugError(`JobRunner: Failed to write to FileCache for job ${jobId}:`, cacheError);
+            debugError(
+              `JobRunner: Failed to write to FileCache for job ${jobId}:`,
+              cacheError,
+            );
             // Continue even if cache write fails
           }
         }
@@ -460,7 +480,6 @@ export class JobRunner extends EventEmitter {
         this.stats.failed++;
         debugError(`JobRunner: Job ${jobId} failed:`, executionError);
       }
-
     } catch (error) {
       // Handle system-level errors
       debugError('JobRunner: System error during job execution:', error);
@@ -481,12 +500,14 @@ export class JobRunner extends EventEmitter {
             timestamp: Date.now(),
           });
         } catch (updateError) {
-          debugError(`JobRunner: Failed to update job ${jobId} after system error:`, updateError);
+          debugError(
+            `JobRunner: Failed to update job ${jobId} after system error:`,
+            updateError,
+          );
         }
       }
 
       this.stats.failed++;
-
     } finally {
       // Clean up tracking
       this.activeJobs.delete(jobId);
@@ -510,12 +531,17 @@ export class JobRunner extends EventEmitter {
 
     // Wait for active jobs to complete or timeout
     const shutdownStart = Date.now();
-    while (this.stats.activeCount > 0 && (Date.now() - shutdownStart) < timeoutMs) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    while (
+      this.stats.activeCount > 0 &&
+      Date.now() - shutdownStart < timeoutMs
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     if (this.stats.activeCount > 0) {
-      debugLog(`JobRunner: Forced shutdown - ${this.stats.activeCount} jobs still active`);
+      debugLog(
+        `JobRunner: Forced shutdown - ${this.stats.activeCount} jobs still active`,
+      );
     }
 
     // Clear all tracking
@@ -561,7 +587,7 @@ export function setJobRunner(runner) {
   if (runner !== null && !(runner instanceof JobRunner)) {
     throw new JobRunnerError(
       'Runner must be a JobRunner instance',
-      'INVALID_RUNNER'
+      'INVALID_RUNNER',
     );
   }
   globalJobRunner = runner;

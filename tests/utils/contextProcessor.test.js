@@ -5,7 +5,7 @@ import {
   processUnifiedContext,
   createFileContext,
   validateFilePath,
-  ContextProcessorError
+  ContextProcessorError,
 } from '../../src/utils/contextProcessor.js';
 import { readFile, stat, access } from 'fs/promises';
 import { constants } from 'fs';
@@ -29,7 +29,7 @@ describe('Context Processor Unit Tests', () => {
     stat.mockResolvedValue({
       isFile: () => true,
       size: 1000,
-      mtime: new Date('2024-01-01')
+      mtime: new Date('2024-01-01'),
     });
     readFile.mockImplementation((path, encoding) => {
       if (encoding === 'utf8') {
@@ -45,7 +45,7 @@ describe('Context Processor Unit Tests', () => {
       const expectedAbsolutePath = resolve(process.cwd(), relativePath);
 
       const result = await processFileContent(relativePath, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.path).toBe(expectedAbsolutePath);
@@ -66,24 +66,28 @@ describe('Context Processor Unit Tests', () => {
       });
 
       const result = await processFileContent(relativePath, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.path).toBe(expectedAbsolutePath);
       expect(result.originalPath).toBe(relativePath);
       expect(result.type).toBe('image');
       expect(result.mimeType).toBe('image/png');
-      expect(result.content).toBe(Buffer.from('fake-png-data').toString('base64'));
+      expect(result.content).toBe(
+        Buffer.from('fake-png-data').toString('base64'),
+      );
     });
 
     it('should handle nested relative paths', async () => {
       const relativePath = '../sibling-dir/image.jpg';
       const expectedAbsolutePath = resolve(process.cwd(), relativePath);
 
-      readFile.mockImplementation(() => Promise.resolve(Buffer.from('fake-jpg-data')));
+      readFile.mockImplementation(() =>
+        Promise.resolve(Buffer.from('fake-jpg-data')),
+      );
 
       const result = await processFileContent(relativePath, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.path).toBe(expectedAbsolutePath);
@@ -96,10 +100,12 @@ describe('Context Processor Unit Tests', () => {
       const relativePath = 'test.png';
       const expectedAbsolutePath = resolve(process.cwd(), relativePath);
 
-      readFile.mockImplementation(() => Promise.resolve(Buffer.from('fake-png-data')));
+      readFile.mockImplementation(() =>
+        Promise.resolve(Buffer.from('fake-png-data')),
+      );
 
       const result = await processFileContent(relativePath, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.path).toBe(expectedAbsolutePath);
@@ -111,7 +117,7 @@ describe('Context Processor Unit Tests', () => {
       const files = [
         'relative-text.txt',
         './relative-dir/image.png',
-        resolve(process.cwd(), 'absolute-file.json')
+        resolve(process.cwd(), 'absolute-file.json'),
       ];
 
       readFile.mockImplementation((path, encoding) => {
@@ -126,16 +132,22 @@ describe('Context Processor Unit Tests', () => {
       });
 
       const results = await processMultipleFiles(files, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(results).toHaveLength(3);
       expect(results[0].path).toBe(resolve(process.cwd(), 'relative-text.txt'));
       expect(results[0].originalPath).toBe('relative-text.txt');
-      expect(results[1].path).toBe(resolve(process.cwd(), './relative-dir/image.png'));
+      expect(results[1].path).toBe(
+        resolve(process.cwd(), './relative-dir/image.png'),
+      );
       expect(results[1].originalPath).toBe('./relative-dir/image.png');
-      expect(results[2].path).toBe(resolve(process.cwd(), 'absolute-file.json'));
-      expect(results[2].originalPath).toBe(resolve(process.cwd(), 'absolute-file.json'));
+      expect(results[2].path).toBe(
+        resolve(process.cwd(), 'absolute-file.json'),
+      );
+      expect(results[2].originalPath).toBe(
+        resolve(process.cwd(), 'absolute-file.json'),
+      );
     });
   });
 
@@ -144,7 +156,7 @@ describe('Context Processor Unit Tests', () => {
       const contextRequest = {
         images: ['test.png', './images/photo.jpg'],
         files: [],
-        webSearch: null
+        webSearch: null,
       };
 
       readFile.mockImplementation((path) => {
@@ -155,13 +167,15 @@ describe('Context Processor Unit Tests', () => {
       });
 
       const result = await processUnifiedContext(contextRequest, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.images).toHaveLength(2);
       expect(result.images[0].path).toBe(resolve(process.cwd(), 'test.png'));
       expect(result.images[0].type).toBe('image');
-      expect(result.images[1].path).toBe(resolve(process.cwd(), './images/photo.jpg'));
+      expect(result.images[1].path).toBe(
+        resolve(process.cwd(), './images/photo.jpg'),
+      );
       expect(result.images[1].type).toBe('image');
     });
 
@@ -169,7 +183,7 @@ describe('Context Processor Unit Tests', () => {
       const contextRequest = {
         files: ['docs/readme.md', '../config.json'],
         images: ['screenshots/ui.png', './assets/logo.gif'],
-        webSearch: null
+        webSearch: null,
       };
 
       readFile.mockImplementation((path, encoding) => {
@@ -180,7 +194,7 @@ describe('Context Processor Unit Tests', () => {
       });
 
       const result = await processUnifiedContext(contextRequest, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.files).toHaveLength(2);
@@ -188,15 +202,23 @@ describe('Context Processor Unit Tests', () => {
 
       // Check files
       expect(result.files[0].originalPath).toBe('docs/readme.md');
-      expect(result.files[0].path).toBe(resolve(process.cwd(), 'docs/readme.md'));
+      expect(result.files[0].path).toBe(
+        resolve(process.cwd(), 'docs/readme.md'),
+      );
       expect(result.files[1].originalPath).toBe('../config.json');
-      expect(result.files[1].path).toBe(resolve(process.cwd(), '../config.json'));
+      expect(result.files[1].path).toBe(
+        resolve(process.cwd(), '../config.json'),
+      );
 
       // Check images
       expect(result.images[0].originalPath).toBe('screenshots/ui.png');
-      expect(result.images[0].path).toBe(resolve(process.cwd(), 'screenshots/ui.png'));
+      expect(result.images[0].path).toBe(
+        resolve(process.cwd(), 'screenshots/ui.png'),
+      );
       expect(result.images[1].originalPath).toBe('./assets/logo.gif');
-      expect(result.images[1].path).toBe(resolve(process.cwd(), './assets/logo.gif'));
+      expect(result.images[1].path).toBe(
+        resolve(process.cwd(), './assets/logo.gif'),
+      );
     });
   });
 
@@ -205,7 +227,7 @@ describe('Context Processor Unit Tests', () => {
       access.mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
       const result = await processFileContent('./non-existent.png', {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.type).toBe('error');
@@ -218,7 +240,7 @@ describe('Context Processor Unit Tests', () => {
 
       const relativePath = '../protected/secret.txt';
       const result = await processFileContent(relativePath, {
-        skipSecurityCheck: true
+        skipSecurityCheck: true,
       });
 
       expect(result.type).toBe('error');
@@ -234,7 +256,7 @@ describe('Context Processor Unit Tests', () => {
 
       const result = await processFileContent(relativePath, {
         allowedDirectories: allowedDirs,
-        skipSecurityCheck: false
+        skipSecurityCheck: false,
       });
 
       expect(result.type).toBe('text');
@@ -247,7 +269,7 @@ describe('Context Processor Unit Tests', () => {
 
       const result = await processFileContent(relativePath, {
         allowedDirectories: allowedDirs,
-        enforceSecurityCheck: true  // Changed to use the new flag
+        enforceSecurityCheck: true, // Changed to use the new flag
       });
 
       expect(result.type).toBe('error');
@@ -277,7 +299,7 @@ describe('Context Processor Unit Tests', () => {
           content: 'Hello from relative path',
           size: 100,
           lineCount: 1,
-          lastModified: new Date('2024-01-01')
+          lastModified: new Date('2024-01-01'),
         },
         {
           path: resolve(process.cwd(), 'images/test.png'),
@@ -286,12 +308,12 @@ describe('Context Processor Unit Tests', () => {
           content: 'base64-image-data',
           mimeType: 'image/png',
           size: 500,
-          lastModified: new Date('2024-01-01')
-        }
+          lastModified: new Date('2024-01-01'),
+        },
       ];
 
       const context = createFileContext(processedFiles, {
-        includeMetadata: true
+        includeMetadata: true,
       });
 
       expect(context).toBeDefined();

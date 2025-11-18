@@ -6,12 +6,23 @@
  * Follows functional architecture with comprehensive error handling.
  */
 
-import { CallToolRequestSchema, ListToolsRequestSchema, ListPromptsRequestSchema, GetPromptRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { getContinuationStore } from './continuationStore.js';
 import { getTools } from './tools/index.js';
 import { getProviders } from './providers/index.js';
 import { helpPromptHandler, helpPromptMetadata } from './prompts/helpPrompt.js';
-import { helpResourceHandler, helpResourceMetadata, listResources } from './resources/helpResource.js';
+import {
+  helpResourceHandler,
+  helpResourceMetadata,
+  listResources,
+} from './resources/helpResource.js';
 import { processUnifiedContext } from './utils/contextProcessor.js';
 import { getAsyncJobStore } from './async/asyncJobStore.js';
 import { getJobRunner } from './async/jobRunner.js';
@@ -25,7 +36,7 @@ import {
   ValidationError,
   createMCPErrorResponse,
   withErrorHandler,
-  ERROR_CODES
+  ERROR_CODES,
 } from './utils/errorHandler.js';
 
 const logger = createLogger('router');
@@ -61,7 +72,7 @@ function validateTool(toolName, tools) {
   if (!toolName || typeof toolName !== 'string') {
     throw new RouterError(
       'Tool name must be a non-empty string',
-      'INVALID_TOOL_NAME'
+      'INVALID_TOOL_NAME',
     );
   }
 
@@ -70,7 +81,7 @@ function validateTool(toolName, tools) {
     throw new RouterError(
       `Tool error: Unknown tool '${toolName}'. Available tools: ${availableTools.join(', ')}`,
       'UNKNOWN_TOOL',
-      { requestedTool: toolName, availableTools }
+      { requestedTool: toolName, availableTools },
     );
   }
 
@@ -78,13 +89,13 @@ function validateTool(toolName, tools) {
     throw new RouterError(
       `Tool ${toolName} is not callable`,
       'INVALID_TOOL_HANDLER',
-      { toolName, toolType: typeof tools[toolName] }
+      { toolName, toolType: typeof tools[toolName] },
     );
   }
 
   return {
     isValid: true,
-    tool: tools[toolName]
+    tool: tools[toolName],
   };
 }
 
@@ -105,42 +116,42 @@ async function createDependencies(config, context = {}) {
     const fileCache = getFileCache(); // Initialize FileCache
     const jobRunner = getJobRunner({
       asyncJobStore,
-      fileCache // Pass FileCache to JobRunner
+      fileCache, // Pass FileCache to JobRunner
     });
 
     // Validate that we have the necessary dependencies
     if (!continuationStore) {
       throw new RouterError(
         'Failed to initialize continuation store',
-        'DEPENDENCY_ERROR'
+        'DEPENDENCY_ERROR',
       );
     }
 
     if (!tools || Object.keys(tools).length === 0) {
       throw new RouterError(
         'No tools available - tools registry is empty',
-        'NO_TOOLS_AVAILABLE'
+        'NO_TOOLS_AVAILABLE',
       );
     }
 
     if (!providers || Object.keys(providers).length === 0) {
       throw new RouterError(
         'No providers available - providers registry is empty',
-        'NO_PROVIDERS_AVAILABLE'
+        'NO_PROVIDERS_AVAILABLE',
       );
     }
 
     if (!asyncJobStore) {
       throw new RouterError(
         'Failed to initialize async job store',
-        'DEPENDENCY_ERROR'
+        'DEPENDENCY_ERROR',
       );
     }
 
     if (!jobRunner) {
       throw new RouterError(
         'Failed to initialize job runner',
-        'DEPENDENCY_ERROR'
+        'DEPENDENCY_ERROR',
       );
     }
 
@@ -159,7 +170,6 @@ async function createDependencies(config, context = {}) {
         validateToolArguments,
       },
     };
-
   } catch (error) {
     debugError('Failed to create dependencies:', error);
     throw error;
@@ -183,7 +193,9 @@ export async function createRouter(server, config) {
     const dependencies = await createDependencies(config);
     const tools = getTools(config);
 
-    createRouterLogger.info(`Router initialized with ${Object.keys(tools).length} tools`);
+    createRouterLogger.info(
+      `Router initialized with ${Object.keys(tools).length} tools`,
+    );
 
     // Register unified tool call handler with enhanced error handling
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -194,7 +206,7 @@ export async function createRouter(server, config) {
 
       try {
         requestLogger.info('Tool execution started', {
-          data: { toolName, argCount: Object.keys(toolArgs).length }
+          data: { toolName, argCount: Object.keys(toolArgs).length },
         });
 
         // Validate tool existence and callability
@@ -209,8 +221,8 @@ export async function createRouter(server, config) {
               ERROR_CODES.INVALID_TOOL_ARGS,
               {
                 providedArgs: Object.keys(toolArgs),
-                expectedSchema: tool.inputSchema
-              }
+                expectedSchema: tool.inputSchema,
+              },
             );
           }
         }
@@ -220,7 +232,7 @@ export async function createRouter(server, config) {
 
         const executionTime = toolTimer('completed');
         requestLogger.info('Tool execution completed', {
-          data: { executionTime: `${executionTime}ms` }
+          data: { executionTime: `${executionTime}ms` },
         });
 
         // Ensure result has proper format
@@ -229,23 +241,25 @@ export async function createRouter(server, config) {
             `Tool ${toolName} returned invalid result format`,
             ERROR_CODES.TOOL_EXECUTION_FAILED,
             { result },
-            toolName
+            toolName,
           );
         }
 
         return result;
-
       } catch (error) {
         const executionTime = toolTimer('failed');
         requestLogger.error('Tool execution failed', {
           error,
-          data: { executionTime: `${executionTime}ms`, argCount: Object.keys(toolArgs).length }
+          data: {
+            executionTime: `${executionTime}ms`,
+            argCount: Object.keys(toolArgs).length,
+          },
         });
 
         return createErrorResponse(error, toolName, {
           executionTime,
           arguments: Object.keys(toolArgs),
-          requestId: request.id || 'unknown'
+          requestId: request.id || 'unknown',
         });
       }
     });
@@ -256,11 +270,12 @@ export async function createRouter(server, config) {
         const toolList = Object.entries(tools).map(([name, handler]) => {
           const toolInfo = {
             name,
-            description: handler.description || `${name} tool - no description provided`,
+            description:
+              handler.description || `${name} tool - no description provided`,
             inputSchema: handler.inputSchema || {
               type: 'object',
               properties: {},
-              description: 'No input schema defined'
+              description: 'No input schema defined',
             },
           };
 
@@ -280,16 +295,15 @@ export async function createRouter(server, config) {
           metadata: {
             totalTools: toolList.length,
             timestamp: new Date().toISOString(),
-            routerVersion: '1.0.0'
-          }
+            routerVersion: '1.0.0',
+          },
         };
-
       } catch (error) {
         debugError('Error listing tools:', error);
         throw new RouterError(
           'Failed to list available tools',
           'TOOLS_LIST_ERROR',
-          { error: error.message }
+          { error: error.message },
         );
       }
     });
@@ -297,7 +311,7 @@ export async function createRouter(server, config) {
     // Register list_prompts handler
     server.setRequestHandler(ListPromptsRequestSchema, async () => {
       return {
-        prompts: [helpPromptMetadata]
+        prompts: [helpPromptMetadata],
       };
     });
 
@@ -311,14 +325,14 @@ export async function createRouter(server, config) {
 
         return {
           description: helpPromptMetadata.description,
-          ...result
+          ...result,
         };
       }
 
       throw new RouterError(
         `Prompt '${promptName}' not found`,
         'PROMPT_NOT_FOUND',
-        { requestedPrompt: promptName }
+        { requestedPrompt: promptName },
       );
     });
 
@@ -326,7 +340,7 @@ export async function createRouter(server, config) {
     server.setRequestHandler(ListResourcesRequestSchema, async () => {
       const resources = listResources();
       return {
-        resources
+        resources,
       };
     });
 
@@ -341,7 +355,7 @@ export async function createRouter(server, config) {
       throw new RouterError(
         `Resource '${resourceUri}' not found`,
         'RESOURCE_NOT_FOUND',
-        { requestedResource: resourceUri }
+        { requestedResource: resourceUri },
       );
     });
 
@@ -353,8 +367,8 @@ export async function createRouter(server, config) {
         tools: Object.keys(tools).length,
         providers: Object.keys(dependencies.providers).length,
         continuationStore: dependencies.continuationStore.constructor.name,
-        environment: config.environment.nodeEnv
-      }
+        environment: config.environment.nodeEnv,
+      },
     });
 
     // Return router interface for testing purposes
@@ -365,7 +379,7 @@ export async function createRouter(server, config) {
           tools: Object.entries(tools).map(([name, tool]) => {
             const toolSchema = {
               name,
-              description: tool.description || 'No description available'
+              description: tool.description || 'No description available',
             };
 
             if (tool.inputSchema) {
@@ -373,7 +387,7 @@ export async function createRouter(server, config) {
             }
 
             return toolSchema;
-          })
+          }),
         };
       },
 
@@ -387,15 +401,18 @@ export async function createRouter(server, config) {
 
           // Validate tool arguments if schema is provided
           if (tool.inputSchema) {
-            const isValidArgs = validateToolArguments(toolArgs, tool.inputSchema);
+            const isValidArgs = validateToolArguments(
+              toolArgs,
+              tool.inputSchema,
+            );
             if (!isValidArgs) {
               throw new ValidationError(
                 `Invalid arguments for tool ${toolName}`,
                 ERROR_CODES.INVALID_TOOL_ARGS,
                 {
                   providedArgs: Object.keys(toolArgs),
-                  expectedSchema: tool.inputSchema
-                }
+                  expectedSchema: tool.inputSchema,
+                },
               );
             }
           }
@@ -406,19 +423,18 @@ export async function createRouter(server, config) {
           return createErrorResponse(error, toolName, {
             arguments: toolArgs,
             executionTime: 0,
-            requestId: 'test'
+            requestId: 'test',
           });
         }
-      }
+      },
     };
-
   } catch (error) {
     timer('failed');
     createRouterLogger.error('Router initialization failed', { error });
     throw new RouterError(
       'Router initialization failed',
       ERROR_CODES.ROUTER_ERROR,
-      { originalError: error.message }
+      { originalError: error.message },
     );
   }
 }
@@ -446,11 +462,13 @@ function getJsonSchemaType(value) {
 function isValidJsonSchemaType(value, schemaType) {
   if (schemaType === 'null') return value === null;
   if (schemaType === 'array') return Array.isArray(value);
-  if (schemaType === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (schemaType === 'object')
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
   if (schemaType === 'boolean') return typeof value === 'boolean';
   if (schemaType === 'string') return typeof value === 'string';
   if (schemaType === 'number') return typeof value === 'number';
-  if (schemaType === 'integer') return typeof value === 'number' && Number.isInteger(value);
+  if (schemaType === 'integer')
+    return typeof value === 'number' && Number.isInteger(value);
 
   // For unknown types, fall back to JavaScript typeof
   return typeof value === schemaType;
@@ -471,22 +489,25 @@ export function validateToolArguments(args, schema) {
     }
 
     // Basic type checking
-    if (schema.type === 'object' && (typeof args !== 'object' || args === null)) {
+    if (
+      schema.type === 'object' &&
+      (typeof args !== 'object' || args === null)
+    ) {
       throw new RouterError(
         'Arguments must be an object',
         'INVALID_ARGUMENT_TYPE',
-        { expected: 'object', received: typeof args }
+        { expected: 'object', received: typeof args },
       );
     }
 
     // Check required properties
     if (schema.required && Array.isArray(schema.required)) {
-      const missing = schema.required.filter(key => !(key in args));
+      const missing = schema.required.filter((key) => !(key in args));
       if (missing.length > 0) {
         throw new RouterError(
           `Validation error: Missing required arguments: ${missing.join(', ')}`,
           'MISSING_REQUIRED_ARGS',
-          { missing, provided: Object.keys(args) }
+          { missing, provided: Object.keys(args) },
         );
       }
     }
@@ -498,7 +519,10 @@ export function validateToolArguments(args, schema) {
           const value = args[key];
 
           // Basic type validation using JSON Schema type semantics
-          if (propSchema.type && !isValidJsonSchemaType(value, propSchema.type)) {
+          if (
+            propSchema.type &&
+            !isValidJsonSchemaType(value, propSchema.type)
+          ) {
             const actualType = getJsonSchemaType(value);
             throw new RouterError(
               `Argument '${key}' must be of type ${propSchema.type}`,
@@ -506,8 +530,8 @@ export function validateToolArguments(args, schema) {
               {
                 argument: key,
                 expected: propSchema.type,
-                received: actualType
-              }
+                received: actualType,
+              },
             );
           }
 
@@ -517,14 +541,22 @@ export function validateToolArguments(args, schema) {
               throw new RouterError(
                 `Argument '${key}' must be at least ${propSchema.minLength} characters`,
                 'ARGUMENT_TOO_SHORT',
-                { argument: key, minLength: propSchema.minLength, actual: value.length }
+                {
+                  argument: key,
+                  minLength: propSchema.minLength,
+                  actual: value.length,
+                },
               );
             }
             if (propSchema.maxLength && value.length > propSchema.maxLength) {
               throw new RouterError(
                 `Argument '${key}' must be at most ${propSchema.maxLength} characters`,
                 'ARGUMENT_TOO_LONG',
-                { argument: key, maxLength: propSchema.maxLength, actual: value.length }
+                {
+                  argument: key,
+                  maxLength: propSchema.maxLength,
+                  actual: value.length,
+                },
               );
             }
           }
@@ -533,7 +565,6 @@ export function validateToolArguments(args, schema) {
     }
 
     return true;
-
   } catch (error) {
     if (error instanceof RouterError) {
       throw error;
@@ -541,7 +572,7 @@ export function validateToolArguments(args, schema) {
     throw new RouterError(
       `Argument validation failed: ${error.message}`,
       'VALIDATION_ERROR',
-      { originalError: error.message }
+      { originalError: error.message },
     );
   }
 }
@@ -561,22 +592,19 @@ export async function getRouterStats(dependencies) {
       uptime: process.uptime(),
       tools: {
         count: Object.keys(tools).length,
-        available: Object.keys(tools)
+        available: Object.keys(tools),
       },
       providers: {
         count: Object.keys(dependencies.providers).length,
-        available: Object.keys(dependencies.providers)
+        available: Object.keys(dependencies.providers),
       },
       continuationStore: storeStats,
       memory: process.memoryUsage(),
-      environment: dependencies.config.environment.nodeEnv
+      environment: dependencies.config.environment.nodeEnv,
     };
-
   } catch (error) {
-    throw new RouterError(
-      'Failed to get router statistics',
-      'STATS_ERROR',
-      { error: error.message }
-    );
+    throw new RouterError('Failed to get router statistics', 'STATS_ERROR', {
+      error: error.message,
+    });
   }
 }

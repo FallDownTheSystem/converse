@@ -10,35 +10,37 @@ export function createMockContextProcessor() {
       {
         path: '/test/file.txt',
         content: 'Test file content',
-        mimeType: 'text/plain'
-      }
+        mimeType: 'text/plain',
+      },
     ]),
 
     processImages: vi.fn().mockResolvedValue([
       {
         path: '/test/image.png',
         content: 'base64-image-data',
-        mimeType: 'image/png'
-      }
+        mimeType: 'image/png',
+      },
     ]),
 
-    processCombined: vi.fn().mockImplementation(async ({ files = [], images = [] }) => {
-      const processedFiles = files.map(f => ({
-        path: f,
-        content: `Content of ${f}`,
-        mimeType: 'text/plain'
-      }));
+    processCombined: vi
+      .fn()
+      .mockImplementation(async ({ files = [], images = [] }) => {
+        const processedFiles = files.map((f) => ({
+          path: f,
+          content: `Content of ${f}`,
+          mimeType: 'text/plain',
+        }));
 
-      const processedImages = images.map(i => ({
-        path: i,
-        content: 'base64-image-data',
-        mimeType: 'image/png'
-      }));
+        const processedImages = images.map((i) => ({
+          path: i,
+          content: 'base64-image-data',
+          mimeType: 'image/png',
+        }));
 
-      return {
-        files: processedFiles,
-        images: processedImages
-      };
-    })
+        return {
+          files: processedFiles,
+          images: processedImages,
+        };
+      }),
   };
 }

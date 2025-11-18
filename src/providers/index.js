@@ -70,7 +70,7 @@ export function registerProvider(name, provider) {
  * @returns {string[]} Array of available provider names
  */
 export function getAvailableProviders(config) {
-  return Object.keys(providers).filter(name => {
+  return Object.keys(providers).filter((name) => {
     const provider = providers[name];
     return provider.isAvailable && provider.isAvailable(config);
   });

@@ -61,14 +61,19 @@ export const ERROR_CODES = {
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   TIMEOUT_ERROR: 'TIMEOUT_ERROR',
-  NETWORK_ERROR: 'NETWORK_ERROR'
+  NETWORK_ERROR: 'NETWORK_ERROR',
 };
 
 /**
  * Base error class for structured error handling
  */
 export class ConverseMCPError extends Error {
-  constructor(message, code = ERROR_CODES.UNKNOWN_ERROR, details = {}, statusCode = 500) {
+  constructor(
+    message,
+    code = ERROR_CODES.UNKNOWN_ERROR,
+    details = {},
+    statusCode = 500,
+  ) {
     super(message);
     this.name = 'ConverseMCPError';
     this.code = code;
@@ -94,7 +99,7 @@ export class ConverseMCPError extends Error {
       details: this.details,
       statusCode: this.statusCode,
       timestamp: this.timestamp,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 
@@ -107,8 +112,8 @@ export class ConverseMCPError extends Error {
       content: [
         {
           type: 'text',
-          text: this.message
-        }
+          text: this.message,
+        },
       ],
       isError: true,
       error: {
@@ -116,8 +121,8 @@ export class ConverseMCPError extends Error {
         code: this.code,
         message: this.message,
         details: this.details,
-        timestamp: this.timestamp
-      }
+        timestamp: this.timestamp,
+      },
     };
   }
 }
@@ -126,7 +131,12 @@ export class ConverseMCPError extends Error {
  * Provider-specific error class
  */
 export class ProviderError extends ConverseMCPError {
-  constructor(message, code = ERROR_CODES.PROVIDER_ERROR, details = {}, provider = 'unknown') {
+  constructor(
+    message,
+    code = ERROR_CODES.PROVIDER_ERROR,
+    details = {},
+    provider = 'unknown',
+  ) {
     super(message, code, { ...details, provider }, 503);
     this.name = 'ProviderError';
     this.provider = provider;
@@ -137,7 +147,12 @@ export class ProviderError extends ConverseMCPError {
  * Tool-specific error class
  */
 export class ToolError extends ConverseMCPError {
-  constructor(message, code = ERROR_CODES.TOOL_ERROR, details = {}, toolName = 'unknown') {
+  constructor(
+    message,
+    code = ERROR_CODES.TOOL_ERROR,
+    details = {},
+    toolName = 'unknown',
+  ) {
     super(message, code, { ...details, toolName }, 400);
     this.name = 'ToolError';
     this.toolName = toolName;
@@ -182,15 +197,20 @@ export class ContextError extends ConverseMCPError {
  * @param {object} details - Additional details
  * @returns {ConverseMCPError} Enhanced error
  */
-export function wrapError(originalError, message, code = ERROR_CODES.UNKNOWN_ERROR, details = {}) {
+export function wrapError(
+  originalError,
+  message,
+  code = ERROR_CODES.UNKNOWN_ERROR,
+  details = {},
+) {
   const enhancedDetails = {
     ...details,
     originalError: {
       name: originalError.name,
       message: originalError.message,
       code: originalError.code,
-      stack: originalError.stack
-    }
+      stack: originalError.stack,
+    },
   };
 
   const wrappedError = new ConverseMCPError(message, code, enhancedDetails);
@@ -218,7 +238,7 @@ export function withErrorHandler(fn, operation = 'unknown', context = {}) {
     } catch (error) {
       operationLogger.error('Operation failed', {
         error,
-        data: { args: args.length, context }
+        data: { args: args.length, context },
       });
 
       // Re-throw enhanced error if it's already structured
@@ -227,7 +247,12 @@ export function withErrorHandler(fn, operation = 'unknown', context = {}) {
       }
 
       // Wrap unknown errors
-      throw wrapError(error, `${operation} failed: ${error.message}`, ERROR_CODES.INTERNAL_ERROR, context);
+      throw wrapError(
+        error,
+        `${operation} failed: ${error.message}`,
+        ERROR_CODES.INTERNAL_ERROR,
+        context,
+      );
     }
   };
 }
@@ -252,14 +277,16 @@ export function createMCPErrorResponse(error, toolName = null, context = {}) {
 
   // Create structured response for unknown errors
   const errorCode = error.code || ERROR_CODES.UNKNOWN_ERROR;
-  const message = toolName ? `Error in ${toolName}: ${error.message}` : error.message;
+  const message = toolName
+    ? `Error in ${toolName}: ${error.message}`
+    : error.message;
 
   return {
     content: [
       {
         type: 'text',
-        text: message
-      }
+        text: message,
+      },
     ],
     isError: true,
     error: {
@@ -269,8 +296,9 @@ export function createMCPErrorResponse(error, toolName = null, context = {}) {
       toolName,
       context,
       timestamp: new Date().toISOString(),
-      ...(process.env.NODE_ENV === 'development' && error.stack && { stack: error.stack })
-    }
+      ...(process.env.NODE_ENV === 'development' &&
+        error.stack && { stack: error.stack }),
+    },
   };
 }
 
@@ -290,10 +318,10 @@ export function isRecoverableError(error) {
     /timeout/i,
     /rate limit/i,
     /quota/i,
-    /temporary/i
+    /temporary/i,
   ];
 
-  return recoverablePatterns.some(pattern => pattern.test(error.message));
+  return recoverablePatterns.some((pattern) => pattern.test(error.message));
 }
 
 /**
@@ -307,14 +335,20 @@ export function logError(error, operation = 'unknown', metadata = {}) {
 
   if (error instanceof ConverseMCPError) {
     if (error.statusCode >= 500) {
-      operationLogger.error('Internal error occurred', { error, data: metadata });
+      operationLogger.error('Internal error occurred', {
+        error,
+        data: metadata,
+      });
     } else if (error.statusCode >= 400) {
       operationLogger.warn('Client error occurred', { error, data: metadata });
     } else {
       operationLogger.info('Handled error occurred', { error, data: metadata });
     }
   } else {
-    operationLogger.error('Unhandled error occurred', { error, data: metadata });
+    operationLogger.error('Unhandled error occurred', {
+      error,
+      data: metadata,
+    });
   }
 }
 
@@ -335,7 +369,11 @@ export class ErrorAggregator {
    * @param {string} identifier - Result identifier
    */
   addSuccess(result, identifier = null) {
-    this.successes.push({ result, identifier, timestamp: new Date().toISOString() });
+    this.successes.push({
+      result,
+      identifier,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**
@@ -344,10 +382,14 @@ export class ErrorAggregator {
    * @param {string} identifier - Error identifier
    */
   addError(error, identifier = null) {
-    this.errors.push({ error, identifier, timestamp: new Date().toISOString() });
+    this.errors.push({
+      error,
+      identifier,
+      timestamp: new Date().toISOString(),
+    });
     this.logger.warn('Batch operation error', {
       error,
-      data: { identifier, totalErrors: this.errors.length }
+      data: { identifier, totalErrors: this.errors.length },
     });
   }
 
@@ -362,7 +404,8 @@ export class ErrorAggregator {
       successes: this.successes.length,
       errors: this.errors.length,
       hasErrors: this.errors.length > 0,
-      successRate: this.successes.length / (this.errors.length + this.successes.length)
+      successRate:
+        this.successes.length / (this.errors.length + this.successes.length),
     };
   }
 
@@ -380,12 +423,12 @@ export class ErrorAggregator {
         ERROR_CODES.INTERNAL_ERROR,
         {
           summary: this.getSummary(),
-          errors: this.errors.map(e => ({
+          errors: this.errors.map((e) => ({
             identifier: e.identifier,
             error: e.error.message,
-            code: e.error.code
-          }))
-        }
+            code: e.error.code,
+          })),
+        },
       );
 
       throw aggregatedError;
@@ -399,9 +442,13 @@ export class ErrorAggregator {
     const summary = this.getSummary();
 
     if (summary.hasErrors) {
-      this.logger.warn('Batch operation completed with errors', { data: summary });
+      this.logger.warn('Batch operation completed with errors', {
+        data: summary,
+      });
     } else {
-      this.logger.info('Batch operation completed successfully', { data: summary });
+      this.logger.info('Batch operation completed successfully', {
+        data: summary,
+      });
     }
   }
 }
@@ -418,7 +465,7 @@ export async function retryWithBackoff(fn, options = {}) {
     delay = 1000,
     backoffFactor = 2,
     maxDelay = 10000,
-    operation = 'retry-operation'
+    operation = 'retry-operation',
   } = options;
 
   const operationLogger = logger.operation(operation);
@@ -431,30 +478,34 @@ export async function retryWithBackoff(fn, options = {}) {
       }
 
       return await fn();
-
     } catch (error) {
       lastError = error;
 
       if (attempt === retries) {
         operationLogger.error('All retry attempts failed', {
           error,
-          data: { attempts: attempt + 1, maxRetries: retries }
+          data: { attempts: attempt + 1, maxRetries: retries },
         });
         break;
       }
 
       if (!isRecoverableError(error)) {
-        operationLogger.warn('Non-recoverable error, stopping retries', { error });
+        operationLogger.warn('Non-recoverable error, stopping retries', {
+          error,
+        });
         break;
       }
 
-      const currentDelay = Math.min(delay * Math.pow(backoffFactor, attempt), maxDelay);
+      const currentDelay = Math.min(
+        delay * Math.pow(backoffFactor, attempt),
+        maxDelay,
+      );
       operationLogger.debug(`Retrying in ${currentDelay}ms`, {
         error: error.message,
-        data: { attempt: attempt + 1, delay: currentDelay }
+        data: { attempt: attempt + 1, delay: currentDelay },
       });
 
-      await new Promise(resolve => setTimeout(resolve, currentDelay));
+      await new Promise((resolve) => setTimeout(resolve, currentDelay));
     }
   }
 
@@ -490,7 +541,7 @@ export class CircuitBreaker {
         throw new ConverseMCPError(
           `Circuit breaker is OPEN for ${this.operation}`,
           ERROR_CODES.PROVIDER_UNAVAILABLE,
-          { state: this.state, nextAttempt: this.nextAttempt }
+          { state: this.state, nextAttempt: this.nextAttempt },
         );
       }
 
@@ -506,7 +557,6 @@ export class CircuitBreaker {
       }
 
       return result;
-
     } catch (error) {
       this.recordFailure();
       throw error;
@@ -528,8 +578,8 @@ export class CircuitBreaker {
         data: {
           failures: this.failures,
           threshold: this.failureThreshold,
-          resetTime: new Date(this.nextAttempt).toISOString()
-        }
+          resetTime: new Date(this.nextAttempt).toISOString(),
+        },
       });
     }
   }
@@ -556,7 +606,7 @@ export class CircuitBreaker {
       state: this.state,
       failures: this.failures,
       lastFailureTime: this.lastFailureTime,
-      nextAttempt: this.nextAttempt
+      nextAttempt: this.nextAttempt,
     };
   }
 }

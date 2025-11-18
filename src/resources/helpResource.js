@@ -33,8 +33,9 @@ function getServerVersion() {
 export const helpResourceMetadata = {
   uri: 'converse://help',
   name: 'Help Documentation',
-  description: 'Comprehensive guide for the Converse MCP Server including all tools, parameters, providers, and models',
-  mimeType: 'text/plain'
+  description:
+    'Comprehensive guide for the Converse MCP Server including all tools, parameters, providers, and models',
+  mimeType: 'text/plain',
 };
 
 /**
@@ -50,11 +51,13 @@ export async function helpResourceHandler(config = null) {
   const contentWithVersion = `${helpContent}\n\n## Server Information\n\n- **Version**: ${version}\n- **Protocol**: MCP (Model Context Protocol)\n- **Server Type**: HTTP Transport\n- **Default Port**: 3157\n`;
 
   return {
-    contents: [{
-      uri: helpResourceMetadata.uri,
-      mimeType: helpResourceMetadata.mimeType,
-      text: contentWithVersion
-    }]
+    contents: [
+      {
+        uri: helpResourceMetadata.uri,
+        mimeType: helpResourceMetadata.mimeType,
+        text: contentWithVersion,
+      },
+    ],
   };
 }
 

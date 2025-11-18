@@ -16,7 +16,9 @@ async function runTests() {
     // Load configuration
     console.log('📋 Loading configuration...');
     const config = await loadConfig();
-    console.log(`✅ Config loaded: ${config.providers?.available?.join(', ') || 'unknown'} providers available\n`);
+    console.log(
+      `✅ Config loaded: ${config.providers?.available?.join(', ') || 'unknown'} providers available\n`,
+    );
 
     // Create dependencies
     const providers = { getProvider, getProviders };
@@ -25,7 +27,7 @@ async function runTests() {
     const dependencies = {
       config,
       providers,
-      continuationStore
+      continuationStore,
     };
 
     // Test 1: Basic Chat Tool
@@ -34,7 +36,7 @@ async function runTests() {
       const chatArgs = {
         prompt: 'What is 2+2? Please respond briefly.',
         model: 'gpt-4o-mini', // Use a specific model that works
-        temperature: 0.2
+        temperature: 0.2,
         // Don't include reasoning_effort for non-O3 models
       };
 
@@ -44,15 +46,21 @@ async function runTests() {
       if (chatResult.content) {
         try {
           const content = JSON.parse(chatResult.content);
-          console.log(`💬 Content preview: ${content.content.substring(0, 100)}...`);
+          console.log(
+            `💬 Content preview: ${content.content.substring(0, 100)}...`,
+          );
           console.log(`🔗 Continuation ID: ${content.continuation?.id}`);
         } catch (parseError) {
           console.log(`⚠️ Response content type: ${typeof chatResult.content}`);
           if (typeof chatResult.content === 'object') {
             console.log(`🔍 Content keys: ${Object.keys(chatResult.content)}`);
-            console.log(`📝 Response preview: ${JSON.stringify(chatResult.content, null, 2).substring(0, 200)}...`);
+            console.log(
+              `📝 Response preview: ${JSON.stringify(chatResult.content, null, 2).substring(0, 200)}...`,
+            );
           } else {
-            console.log(`⚠️ Raw content preview: ${String(chatResult.content).substring(0, 100)}...`);
+            console.log(
+              `⚠️ Raw content preview: ${String(chatResult.content).substring(0, 100)}...`,
+            );
           }
         }
       }
@@ -65,10 +73,16 @@ async function runTests() {
     // Test 2: System Prompts Verification
     console.log('📝 Test 2: System Prompts Integration');
     try {
-      const { CHAT_PROMPT, CONSENSUS_PROMPT } = await import('../../src/systemPrompts.js');
+      const { CHAT_PROMPT, CONSENSUS_PROMPT } = await import(
+        '../../src/systemPrompts.js'
+      );
       console.log(`✅ Chat prompt loaded: ${CHAT_PROMPT.length} characters`);
-      console.log(`✅ Consensus prompt loaded: ${CONSENSUS_PROMPT.length} characters`);
-      console.log(`📄 Chat prompt preview: "${CHAT_PROMPT.substring(0, 80)}..."`);
+      console.log(
+        `✅ Consensus prompt loaded: ${CONSENSUS_PROMPT.length} characters`,
+      );
+      console.log(
+        `📄 Chat prompt preview: "${CHAT_PROMPT.substring(0, 80)}..."`,
+      );
       console.log('');
     } catch (error) {
       console.error('❌ System prompts test failed:', error.message);
@@ -93,8 +107,12 @@ async function runTests() {
       const consensusHasImages = consensusSchema.properties.images;
       const consensusHasReasoning = consensusSchema.properties.reasoning_effort;
 
-      console.log(`✅ Consensus tool has images support: ${!!consensusHasImages}`);
-      console.log(`✅ Consensus tool has reasoning_effort: ${!!consensusHasReasoning}`);
+      console.log(
+        `✅ Consensus tool has images support: ${!!consensusHasImages}`,
+      );
+      console.log(
+        `✅ Consensus tool has reasoning_effort: ${!!consensusHasReasoning}`,
+      );
       console.log('');
     } catch (error) {
       console.error('❌ Parameter validation test failed:', error.message);
@@ -113,13 +131,17 @@ async function runTests() {
       console.log(`✅ Google provider loaded: ${!!googleProvider}`);
 
       if (openaiProvider) {
-        console.log(`🔑 OpenAI available: ${openaiProvider.isAvailable(config)}`);
+        console.log(
+          `🔑 OpenAI available: ${openaiProvider.isAvailable(config)}`,
+        );
       }
       if (xaiProvider) {
         console.log(`🔑 XAI available: ${xaiProvider.isAvailable(config)}`);
       }
       if (googleProvider) {
-        console.log(`🔑 Google available: ${googleProvider.isAvailable(config)}`);
+        console.log(
+          `🔑 Google available: ${googleProvider.isAvailable(config)}`,
+        );
       }
       console.log('');
     } catch (error) {
@@ -130,12 +152,14 @@ async function runTests() {
     // Test 5: Context Processor
     console.log('📁 Test 5: Context Processor');
     try {
-      const { processUnifiedContext } = await import('../../src/utils/contextProcessor.js');
+      const { processUnifiedContext } = await import(
+        '../../src/utils/contextProcessor.js'
+      );
 
       const contextRequest = {
         files: ['./package.json'],
         images: [],
-        webSearch: null
+        webSearch: null,
       };
 
       const contextResult = await processUnifiedContext(contextRequest);
@@ -143,7 +167,9 @@ async function runTests() {
       console.log(`📄 Files processed: ${contextResult.files.length}`);
       console.log(`🖼️  Images processed: ${contextResult.images.length}`);
       if (contextResult.files.length > 0) {
-        console.log(`📊 First file status: ${contextResult.files[0].type || 'error'}`);
+        console.log(
+          `📊 First file status: ${contextResult.files[0].type || 'error'}`,
+        );
       }
       console.log('');
     } catch (error) {
@@ -159,19 +185,25 @@ async function runTests() {
         console.log('🎯 Multiple providers available, testing consensus...');
 
         const consensusArgs = {
-          prompt: 'What is the best programming language for web development? Give a brief answer.',
+          prompt:
+            'What is the best programming language for web development? Give a brief answer.',
           models: ['auto', 'auto'],
           enable_cross_feedback: false, // Disable for faster testing
-          temperature: 0.1
+          temperature: 0.1,
         };
 
-        const consensusResult = await consensusTool(consensusArgs, dependencies);
+        const consensusResult = await consensusTool(
+          consensusArgs,
+          dependencies,
+        );
         console.log('✅ Consensus tool executed successfully');
         console.log(`📊 Response type: ${consensusResult.type}`);
         if (consensusResult.content) {
           const content = JSON.parse(consensusResult.content);
           console.log(`🤖 Models consulted: ${content.models_consulted}`);
-          console.log(`✅ Successful responses: ${content.successful_initial_responses}`);
+          console.log(
+            `✅ Successful responses: ${content.successful_initial_responses}`,
+          );
         }
       } else {
         console.log('⚠️  Only one provider available, skipping consensus test');
@@ -183,7 +215,6 @@ async function runTests() {
     }
 
     console.log('🎉 Manual integration tests completed!');
-
   } catch (error) {
     console.error('💥 Critical test failure:', error);
     process.exit(1);
@@ -197,7 +228,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Run tests
-runTests().catch(error => {
+runTests().catch((error) => {
   console.error('Test runner failed:', error);
   process.exit(1);
 });

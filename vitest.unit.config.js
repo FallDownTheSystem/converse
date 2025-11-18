@@ -20,12 +20,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{js,ts}'],
       exclude: [
-        'node_modules/**',
         'tests/**',
         'dev-server.js',
         'scripts/**',
-        '**/*.config.js'
+        '**/*.config.{js,ts}',
+        'bin/**'
       ],
       thresholds: {
         lines: 80,
@@ -41,12 +42,7 @@ export default defineConfig({
     
     // Parallel execution
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 4,
-        minThreads: 1
-      }
-    },
+    maxWorkers: 4,
     
     // Reporter configuration
     reporters: ['verbose'],

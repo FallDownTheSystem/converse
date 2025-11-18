@@ -39,16 +39,20 @@ class HTTPTestSuite {
 
       try {
         // Start server process with HTTP transport
-        this.serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
-          env: {
-            ...process.env,
-            NODE_ENV: 'test',
-            LOG_LEVEL: 'info',
-            PORT: this.serverPort.toString(),
-            MCP_TRANSPORT: 'http'
-          },
-          stdio: ['pipe', 'pipe', 'pipe']
-        }));
+        this.serverProcess = spawn(
+          getNodeCommand(),
+          ['src/index.js'],
+          getSpawnOptions({
+            env: {
+              ...process.env,
+              NODE_ENV: 'test',
+              LOG_LEVEL: 'info',
+              PORT: this.serverPort.toString(),
+              MCP_TRANSPORT: 'http',
+            },
+            stdio: ['pipe', 'pipe', 'pipe'],
+          }),
+        );
 
         let serverReady = false;
 
@@ -64,9 +68,7 @@ class HTTPTestSuite {
             // Give server a moment to be fully ready
             setTimeout(() => {
               this.log('Server is ready, connecting client...');
-              this.connectClient()
-                .then(resolve)
-                .catch(reject);
+              this.connectClient().then(resolve).catch(reject);
             }, 1000);
           }
         });
@@ -83,10 +85,13 @@ class HTTPTestSuite {
         this.serverProcess.on('exit', (code, signal) => {
           if (!serverReady) {
             clearTimeout(timeout);
-            reject(new Error(`Server exited early with code ${code} signal ${signal}`));
+            reject(
+              new Error(
+                `Server exited early with code ${code} signal ${signal}`,
+              ),
+            );
           }
         });
-
       } catch (error) {
         clearTimeout(timeout);
         reject(error);
@@ -98,25 +103,27 @@ class HTTPTestSuite {
     try {
       // Create HTTP transport
       this.transport = new StreamableHTTPClientTransport(
-        `http://localhost:${this.serverPort}/mcp`
+        `http://localhost:${this.serverPort}/mcp`,
       );
 
       // Create MCP client
-      this.client = new Client({
-        name: 'http-test-client',
-        version: '1.0.0'
-      }, {
-        capabilities: {
-          tools: {},
-          prompts: {},
-          resources: {}
-        }
-      });
+      this.client = new Client(
+        {
+          name: 'http-test-client',
+          version: '1.0.0',
+        },
+        {
+          capabilities: {
+            tools: {},
+            prompts: {},
+            resources: {},
+          },
+        },
+      );
 
       // Connect to server
       await this.client.connect(this.transport);
       this.log('MCP client connected successfully via HTTP');
-
     } catch (error) {
       throw new Error(`HTTP client connection failed: ${error.message}`);
     }
@@ -167,7 +174,12 @@ class HTTPTestSuite {
     } catch (error) {
       const duration = Date.now() - startTime;
       this.log(`✗ ${name} (${duration}ms): ${error.message}`, 'FAIL');
-      this.results.push({ name, success: false, duration, error: error.message });
+      this.results.push({
+        name,
+        success: false,
+        duration,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -180,7 +192,7 @@ class HTTPTestSuite {
       throw new Error('Invalid tools response');
     }
 
-    const toolNames = response.tools.map(t => t.name);
+    const toolNames = response.tools.map((t) => t.name);
     const expectedTools = ['chat', 'consensus'];
 
     for (const tool of expectedTools) {
@@ -198,8 +210,8 @@ class HTTPTestSuite {
       name: 'chat',
       arguments: {
         prompt: 'Say exactly: "HTTP transport test successful"',
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     if (!response.content?.[0]?.text) {
@@ -208,7 +220,7 @@ class HTTPTestSuite {
 
     return {
       responseLength: response.content[0].text.length,
-      hasContent: true
+      hasContent: true,
     };
   }
 
@@ -219,8 +231,8 @@ class HTTPTestSuite {
       name: 'chat',
       arguments: {
         prompt: 'Remember this word: BANANA. Say "I remember BANANA"',
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     if (!first.continuation?.id) {
@@ -233,13 +245,13 @@ class HTTPTestSuite {
       arguments: {
         prompt: 'What word did I ask you to remember?',
         continuation: first.continuation.id,
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     return {
       conversationId: first.continuation.id,
-      conversationMaintained: second.continuation.id === first.continuation.id
+      conversationMaintained: second.continuation.id === first.continuation.id,
     };
   }
 
@@ -249,11 +261,8 @@ class HTTPTestSuite {
       name: 'consensus',
       arguments: {
         prompt: 'What is 5 + 5? Answer with just the number.',
-        models: [
-          { model: 'openai:gpt-4o-mini' },
-          { model: 'google:flash' }
-        ]
-      }
+        models: [{ model: 'openai:gpt-4o-mini' }, { model: 'google:flash' }],
+      },
     });
 
     if (!response.content?.[0]?.text) {
@@ -274,9 +283,10 @@ class HTTPTestSuite {
       // Core tests
       await this.runTest('Server Connectivity', () => this.testConnectivity());
       await this.runTest('Chat Basic', () => this.testChatBasic());
-      await this.runTest('Chat Continuation', () => this.testChatContinuation());
+      await this.runTest('Chat Continuation', () =>
+        this.testChatContinuation(),
+      );
       await this.runTest('Consensus Basic', () => this.testConsensusBasic());
-
     } catch (error) {
       this.log(`Test suite failed: ${error.message}`, 'ERROR');
       throw error;
@@ -285,26 +295,30 @@ class HTTPTestSuite {
     }
 
     // Print results
-    const passed = this.results.filter(r => r.success).length;
+    const passed = this.results.filter((r) => r.success).length;
     const total = this.results.length;
 
     console.log('\n' + '='.repeat(50));
     console.log('HTTP TRANSPORT TEST RESULTS');
     console.log('='.repeat(50));
     console.log(`Passed: ${passed}/${total}`);
-    console.log(`Success Rate: ${Math.round((passed/total)*100)}%`);
+    console.log(`Success Rate: ${Math.round((passed / total) * 100)}%`);
 
     if (passed < total) {
       console.log('\nFailed Tests:');
-      this.results.filter(r => !r.success).forEach(r => {
-        console.log(`  ✗ ${r.name}: ${r.error}`);
-      });
+      this.results
+        .filter((r) => !r.success)
+        .forEach((r) => {
+          console.log(`  ✗ ${r.name}: ${r.error}`);
+        });
     }
 
     console.log('\nPassed Tests:');
-    this.results.filter(r => r.success).forEach(r => {
-      console.log(`  ✓ ${r.name} (${r.duration}ms)`);
-    });
+    this.results
+      .filter((r) => r.success)
+      .forEach((r) => {
+        console.log(`  ✓ ${r.name} (${r.duration}ms)`);
+      });
 
     return { passed, total, results: this.results };
   }
@@ -314,7 +328,8 @@ class HTTPTestSuite {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new HTTPTestSuite();
 
-  testSuite.runAllTests()
+  testSuite
+    .runAllTests()
     .then((report) => {
       process.exit(report.passed === report.total ? 0 : 1);
     })

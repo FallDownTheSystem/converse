@@ -5,7 +5,11 @@
  */
 
 import { vi } from 'vitest';
-import { ProviderError, ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
+import {
+  ProviderError,
+  ErrorCodes,
+  StopReasons,
+} from '../../../src/providers/interface.js';
 
 /**
  * Mock response builder for creating consistent provider responses
@@ -21,12 +25,12 @@ export class MockResponseBuilder {
         usage: {
           input_tokens: 10,
           output_tokens: 20,
-          total_tokens: 30
+          total_tokens: 30,
         },
         response_time_ms: 100,
         finish_reason: 'stop',
-        provider: 'mock'
-      }
+        provider: 'mock',
+      },
     };
   }
 
@@ -49,7 +53,7 @@ export class MockResponseBuilder {
   withUsage(usage) {
     this.response.metadata.usage = {
       ...this.response.metadata.usage,
-      ...usage
+      ...usage,
     };
     return this;
   }
@@ -114,7 +118,9 @@ export class MockProviderBehavior {
    */
   async getBehaviorForCall(callNumber) {
     // Check for errors
-    const error = this.errors.find(e => e.onCall === null || e.onCall === callNumber);
+    const error = this.errors.find(
+      (e) => e.onCall === null || e.onCall === callNumber,
+    );
     if (error) {
       throw error.error;
     }
@@ -122,11 +128,13 @@ export class MockProviderBehavior {
     // Apply delay
     const delay = this.delays[callNumber % this.delays.length];
     if (delay) {
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
     // Get response
-    const customResponse = this.responses.find(r => r.onCall === null || r.onCall === callNumber);
+    const customResponse = this.responses.find(
+      (r) => r.onCall === null || r.onCall === callNumber,
+    );
     return customResponse ? customResponse.response : null;
   }
 }
@@ -143,7 +151,7 @@ export class CallTracker {
     const call = {
       method,
       args,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     this.calls.push(call);
     return call;
@@ -151,7 +159,7 @@ export class CallTracker {
 
   getCalls(method = null) {
     if (method) {
-      return this.calls.filter(c => c.method === method);
+      return this.calls.filter((c) => c.method === method);
     }
     return this.calls;
   }
@@ -191,7 +199,9 @@ export function createMockProvider(overrides = {}) {
       call.callNumber = tracker.getCallCount('invoke');
 
       // Apply configured behavior
-      const customResponse = await behavior.getBehaviorForCall(call.callNumber - 1);
+      const customResponse = await behavior.getBehaviorForCall(
+        call.callNumber - 1,
+      );
       if (customResponse) {
         return customResponse;
       }
@@ -226,7 +236,7 @@ export function createMockProvider(overrides = {}) {
           supportsImages: true,
           supportsTemperature: true,
           timeout: 30000,
-          description: 'A mock model for testing'
+          description: 'A mock model for testing',
         },
         'mock-model-2': {
           modelName: 'mock-model-2',
@@ -237,8 +247,8 @@ export function createMockProvider(overrides = {}) {
           supportsImages: false,
           supportsTemperature: true,
           timeout: 60000,
-          description: 'Another mock model for testing'
-        }
+          description: 'Another mock model for testing',
+        },
       };
     }),
 
@@ -249,7 +259,7 @@ export function createMockProvider(overrides = {}) {
     }),
 
     // Apply any overrides
-    ...overrides
+    ...overrides,
   };
 
   return mockProvider;
@@ -259,21 +269,26 @@ export function createMockProvider(overrides = {}) {
  * Create a mock provider that throws errors
  */
 export function createMockProviderWithError(error) {
-  const errorToThrow = error instanceof Error ? error : new ProviderError(
-    error.message || 'Mock error',
-    error.code || ErrorCodes.API_ERROR,
-    error.originalError
-  );
+  const errorToThrow =
+    error instanceof Error
+      ? error
+      : new ProviderError(
+        error.message || 'Mock error',
+        error.code || ErrorCodes.API_ERROR,
+        error.originalError,
+      );
 
   return createMockProvider({
-    invoke: vi.fn().mockRejectedValue(errorToThrow)
+    invoke: vi.fn().mockRejectedValue(errorToThrow),
   });
 }
 
 /**
  * Create a mock provider with streaming support
  */
-export function createMockProviderWithStreaming(chunks = ['Hello', ' world', '!']) {
+export function createMockProviderWithStreaming(
+  chunks = ['Hello', ' world', '!'],
+) {
   return createMockProvider({
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       if (options.stream) {
@@ -283,21 +298,20 @@ export function createMockProviderWithStreaming(chunks = ['Hello', ' world', '!'
             yield {
               content: chunk,
               delta: true,
-              stop_reason: index === chunks.length - 1 ? StopReasons.STOP : null,
+              stop_reason:
+                index === chunks.length - 1 ? StopReasons.STOP : null,
               metadata: {
                 model: options.model || 'mock-model',
-                provider: 'mock'
-              }
+                provider: 'mock',
+              },
             };
           }
         })();
       }
 
       // Non-streaming response
-      return new MockResponseBuilder()
-        .withContent(chunks.join(''))
-        .build();
-    })
+      return new MockResponseBuilder().withContent(chunks.join('')).build();
+    }),
   });
 }
 
@@ -313,11 +327,11 @@ export function createMockProviderWithRateLimit(requestsBeforeLimit = 3) {
       if (requestCount > requestsBeforeLimit) {
         throw new ProviderError(
           'Rate limit exceeded',
-          ErrorCodes.RATE_LIMIT_EXCEEDED
+          ErrorCodes.RATE_LIMIT_EXCEEDED,
         );
       }
       return new MockResponseBuilder().build();
-    })
+    }),
   });
 }
 
@@ -328,12 +342,10 @@ export function createMockProviderWithLatency(minMs = 100, maxMs = 500) {
   return createMockProvider({
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const latency = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-      await new Promise(resolve => setTimeout(resolve, latency));
+      await new Promise((resolve) => setTimeout(resolve, latency));
 
-      return new MockResponseBuilder()
-        .withResponseTime(latency)
-        .build();
-    })
+      return new MockResponseBuilder().withResponseTime(latency).build();
+    }),
   });
 }
 
@@ -341,11 +353,11 @@ export function createMockProviderWithLatency(minMs = 100, maxMs = 500) {
  * Reset all mock providers (useful in test cleanup)
  */
 export function resetAllMocks(...providers) {
-  providers.forEach(provider => {
+  providers.forEach((provider) => {
     if (provider.tracker) {
       provider.tracker.reset();
     }
-    Object.values(provider).forEach(value => {
+    Object.values(provider).forEach((value) => {
       if (typeof value === 'function' && value.mockClear) {
         value.mockClear();
       }

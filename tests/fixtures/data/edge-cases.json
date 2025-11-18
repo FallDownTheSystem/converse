@@ -35,11 +35,18 @@
   "arrays": {
     "empty": [],
     "single": [1],
-    "mixed_types": [1, "two", true, null, {"key": "value"}],
-    "nested": [[1, 2], [3, 4], [[5, 6], [7, 8]]],
+    "mixed_types": [1, "two", true, null, { "key": "value" }],
+    "nested": [
+      [1, 2],
+      [3, 4],
+      [
+        [5, 6],
+        [7, 8]
+      ]
+    ],
     "sparse": [1, null, null, 4],
     "circular_reference_note": "Cannot be represented in JSON - would cause circular reference",
-    "very_large": [0,0,0,0,0,0,0,0,0,0],
+    "very_large": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     "with_undefined": [1, 2, null, 4]
   },
   "objects": {
@@ -66,8 +73,8 @@
       "with\"quotes": "key with quotes"
     },
     "prototype_pollution": {
-      "__proto__": {"polluted": true},
-      "constructor": {"prototype": {"polluted": true}}
+      "__proto__": { "polluted": true },
+      "constructor": { "prototype": { "polluted": true } }
     },
     "very_wide": {
       "key1": "value1",
@@ -140,10 +147,10 @@
         "height": 10000
       },
       "aspect_ratios": {
-        "square": {"width": 100, "height": 100},
-        "wide": {"width": 1920, "height": 1080},
-        "tall": {"width": 1080, "height": 1920},
-        "extreme": {"width": 10000, "height": 1}
+        "square": { "width": 100, "height": 100 },
+        "wide": { "width": 1920, "height": 1080 },
+        "tall": { "width": 1080, "height": 1920 },
+        "extreme": { "width": 10000, "height": 1 }
       }
     }
   },
@@ -198,32 +205,40 @@
   },
   "responses": {
     "empty_content": {
-      "choices": [{
-        "message": {
-          "content": ""
+      "choices": [
+        {
+          "message": {
+            "content": ""
+          }
         }
-      }]
+      ]
     },
     "null_content": {
-      "choices": [{
-        "message": {
-          "content": null
+      "choices": [
+        {
+          "message": {
+            "content": null
+          }
         }
-      }]
+      ]
     },
     "missing_fields": {
-      "choices": [{
-        "message": {}
-      }]
+      "choices": [
+        {
+          "message": {}
+        }
+      ]
     },
     "extra_fields": {
-      "choices": [{
-        "message": {
-          "content": "Response",
-          "extra_field": "unexpected",
-          "another_field": 123
+      "choices": [
+        {
+          "message": {
+            "content": "Response",
+            "extra_field": "unexpected",
+            "another_field": 123
+          }
         }
-      }],
+      ],
       "unexpected_array": [1, 2, 3]
     },
     "wrong_types": {
@@ -232,23 +247,25 @@
     },
     "multiple_choices": {
       "choices": [
-        {"message": {"content": "First choice"}},
-        {"message": {"content": "Second choice"}},
-        {"message": {"content": "Third choice"}}
+        { "message": { "content": "First choice" } },
+        { "message": { "content": "Second choice" } },
+        { "message": { "content": "Third choice" } }
       ]
     },
     "streaming_edge_cases": {
       "empty_delta": {
-        "choices": [{"delta": {}}]
+        "choices": [{ "delta": {} }]
       },
       "multiple_stop_reasons": {
-        "choices": [{"delta": {"content": "Hello"}, "finish_reason": "stop"}]
+        "choices": [
+          { "delta": { "content": "Hello" }, "finish_reason": "stop" }
+        ]
       },
       "out_of_order": {
         "chunks": [
-          {"choices": [{"index": 2, "delta": {"content": "Third"}}]},
-          {"choices": [{"index": 0, "delta": {"content": "First"}}]},
-          {"choices": [{"index": 1, "delta": {"content": "Second"}}]}
+          { "choices": [{ "index": 2, "delta": { "content": "Third" } }] },
+          { "choices": [{ "index": 0, "delta": { "content": "First" } }] },
+          { "choices": [{ "index": 1, "delta": { "content": "Second" } }] }
         ]
       }
     }

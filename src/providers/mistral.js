@@ -21,8 +21,15 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 300000,
-    description: 'Magistral Medium 1.2 - Frontier-class reasoning model with vision support (September 2025)',
-    aliases: ['magistral-medium', 'magistral-medium-latest', 'magistral', 'magistral medium', 'magistral-medium-1.2']
+    description:
+      'Magistral Medium 1.2 - Frontier-class reasoning model with vision support (September 2025)',
+    aliases: [
+      'magistral-medium',
+      'magistral-medium-latest',
+      'magistral',
+      'magistral medium',
+      'magistral-medium-1.2',
+    ],
   },
   'magistral-small-2509': {
     modelName: 'magistral-small-2509',
@@ -35,8 +42,14 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 180000,
-    description: 'Magistral Small 1.2 - Small reasoning model with vision support (September 2025)',
-    aliases: ['magistral-small', 'magistral-small-latest', 'magistral small', 'magistral-small-1.2']
+    description:
+      'Magistral Small 1.2 - Small reasoning model with vision support (September 2025)',
+    aliases: [
+      'magistral-small',
+      'magistral-small-latest',
+      'magistral small',
+      'magistral-small-1.2',
+    ],
   },
   'mistral-medium-2508': {
     modelName: 'mistral-medium-2508',
@@ -48,20 +61,29 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
-    description: 'Mistral Medium 3.1 - Frontier-class multimodal model with improved tone and performance (August 2025)',
-    aliases: ['mistral-medium-3.1', 'mistral-medium-latest', 'mistral-medium', 'mistral medium 3.1', 'mistral', 'medium-3.1', 'mistral-medium-3']
-  }
+    description:
+      'Mistral Medium 3.1 - Frontier-class multimodal model with improved tone and performance (August 2025)',
+    aliases: [
+      'mistral-medium-3.1',
+      'mistral-medium-latest',
+      'mistral-medium',
+      'mistral medium 3.1',
+      'mistral',
+      'medium-3.1',
+      'mistral-medium-3',
+    ],
+  },
 };
 
 /**
  * Map Mistral finish reasons to unified format
  */
 const STOP_REASON_MAP = {
-  'stop': StopReasons.STOP,
-  'length': StopReasons.LENGTH,
-  'model_length': StopReasons.LENGTH,
-  'tool_calls': StopReasons.TOOL_USE,
-  'error': StopReasons.ERROR
+  stop: StopReasons.STOP,
+  length: StopReasons.LENGTH,
+  model_length: StopReasons.LENGTH,
+  tool_calls: StopReasons.TOOL_USE,
+  error: StopReasons.ERROR,
 };
 
 /**
@@ -119,22 +141,34 @@ function validateApiKey(apiKey) {
  */
 function convertMessagesToMistral(messages) {
   if (!Array.isArray(messages)) {
-    throw new MistralProviderError('Messages must be an array', ErrorCodes.INVALID_MESSAGES);
+    throw new MistralProviderError(
+      'Messages must be an array',
+      ErrorCodes.INVALID_MESSAGES,
+    );
   }
 
   return messages.map((msg, index) => {
     if (!msg || typeof msg !== 'object') {
-      throw new MistralProviderError(`Message at index ${index} must be an object`, ErrorCodes.INVALID_MESSAGE);
+      throw new MistralProviderError(
+        `Message at index ${index} must be an object`,
+        ErrorCodes.INVALID_MESSAGE,
+      );
     }
 
     const { role, content } = msg;
 
     if (!role || !['system', 'user', 'assistant'].includes(role)) {
-      throw new MistralProviderError(`Invalid role "${role}" at message index ${index}`, ErrorCodes.INVALID_ROLE);
+      throw new MistralProviderError(
+        `Invalid role "${role}" at message index ${index}`,
+        ErrorCodes.INVALID_ROLE,
+      );
     }
 
     if (!content) {
-      throw new MistralProviderError(`Message content is required at index ${index}`, ErrorCodes.MISSING_CONTENT);
+      throw new MistralProviderError(
+        `Message content is required at index ${index}`,
+        ErrorCodes.MISSING_CONTENT,
+      );
     }
 
     // Handle complex content structure (array with text and images)
@@ -145,15 +179,17 @@ function convertMessagesToMistral(messages) {
         if (item.type === 'text') {
           mistralContent.push({
             type: 'text',
-            text: item.text
+            text: item.text,
           });
         } else if (item.type === 'image' && item.source) {
           // Convert Anthropic/Claude format to Mistral format
           mistralContent.push({
             type: 'image_url',
-            imageUrl: `data:${item.source.media_type};base64,${item.source.data}`
+            imageUrl: `data:${item.source.media_type};base64,${item.source.data}`,
           });
-          debugLog(`[Mistral] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+          debugLog(
+            `[Mistral] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`,
+          );
         }
       }
 
@@ -177,7 +213,7 @@ async function getMistralSDK() {
       throw new MistralProviderError(
         'Failed to load Mistral SDK. Please install @mistralai/mistralai',
         ErrorCodes.API_ERROR,
-        error
+        error,
       );
     }
   }
@@ -200,7 +236,9 @@ function extractRateLimitInfo(headers) {
     rateLimitInfo.remaining = parseInt(headers['x-ratelimit-remaining']);
   }
   if (headers['x-ratelimit-reset']) {
-    rateLimitInfo.reset = new Date(parseInt(headers['x-ratelimit-reset']) * 1000);
+    rateLimitInfo.reset = new Date(
+      parseInt(headers['x-ratelimit-reset']) * 1000,
+    );
   }
 
   return Object.keys(rateLimitInfo).length > 0 ? rateLimitInfo : null;
@@ -232,11 +270,17 @@ export const mistralProvider = {
 
     // Validate API key
     if (!config?.apiKeys?.mistral) {
-      throw new MistralProviderError('Mistral API key not configured', ErrorCodes.MISSING_API_KEY);
+      throw new MistralProviderError(
+        'Mistral API key not configured',
+        ErrorCodes.MISSING_API_KEY,
+      );
     }
 
     if (!validateApiKey(config.apiKeys.mistral)) {
-      throw new MistralProviderError('Invalid Mistral API key format', ErrorCodes.INVALID_API_KEY);
+      throw new MistralProviderError(
+        'Invalid Mistral API key format',
+        ErrorCodes.INVALID_API_KEY,
+      );
     }
 
     // Get Mistral SDK
@@ -255,15 +299,16 @@ export const mistralProvider = {
     const mistralMessages = convertMessagesToMistral(messages);
 
     // Check if messages contain images and if model supports them
-    const hasImages = messages.some(msg =>
-      Array.isArray(msg.content) &&
-      msg.content.some(item => item.type === 'image')
+    const hasImages = messages.some(
+      (msg) =>
+        Array.isArray(msg.content) &&
+        msg.content.some((item) => item.type === 'image'),
     );
 
     if (hasImages && !modelConfig.supportsImages) {
       throw new MistralProviderError(
         `Model ${resolvedModel} does not support images`,
-        ErrorCodes.INVALID_REQUEST
+        ErrorCodes.INVALID_REQUEST,
       );
     }
 
@@ -272,7 +317,7 @@ export const mistralProvider = {
       model: resolvedModel,
       messages: mistralMessages,
       stream,
-      ...otherOptions
+      ...otherOptions,
     };
 
     // Add temperature if specified
@@ -282,18 +327,28 @@ export const mistralProvider = {
 
     // Add max tokens if specified
     if (maxTokens) {
-      const tokenLimit = Math.min(maxTokens, modelConfig.maxOutputTokens || 32768);
-      requestPayload.max_tokens = tokenLimit;  // Standard parameter name
-      requestPayload.maxTokens = tokenLimit;   // Alternative parameter name
+      const tokenLimit = Math.min(
+        maxTokens,
+        modelConfig.maxOutputTokens || 32768,
+      );
+      requestPayload.max_tokens = tokenLimit; // Standard parameter name
+      requestPayload.maxTokens = tokenLimit; // Alternative parameter name
     }
 
     // Handle streaming requests
     if (stream && modelConfig.supportsStreaming !== false) {
-      return this._createStreamingGenerator(mistral, requestPayload, resolvedModel, modelConfig);
+      return this._createStreamingGenerator(
+        mistral,
+        requestPayload,
+        resolvedModel,
+        modelConfig,
+      );
     }
 
     try {
-      debugLog(`[Mistral] Calling ${resolvedModel} with ${mistralMessages.length} messages`);
+      debugLog(
+        `[Mistral] Calling ${resolvedModel} with ${mistralMessages.length} messages`,
+      );
 
       const startTime = Date.now();
 
@@ -306,12 +361,18 @@ export const mistralProvider = {
       // Extract response data
       const choice = response.choices?.[0];
       if (!choice) {
-        throw new MistralProviderError('No response choice received from Mistral', ErrorCodes.NO_RESPONSE_CHOICE);
+        throw new MistralProviderError(
+          'No response choice received from Mistral',
+          ErrorCodes.NO_RESPONSE_CHOICE,
+        );
       }
 
       const content = choice.message?.content;
       if (!content) {
-        throw new MistralProviderError('No content in response from Mistral', ErrorCodes.NO_RESPONSE_CONTENT);
+        throw new MistralProviderError(
+          'No content in response from Mistral',
+          ErrorCodes.NO_RESPONSE_CONTENT,
+        );
       }
 
       // Map finish reason
@@ -334,15 +395,14 @@ export const mistralProvider = {
           usage: {
             input_tokens: usage.prompt_tokens || 0,
             output_tokens: usage.completion_tokens || 0,
-            total_tokens: usage.total_tokens || 0
+            total_tokens: usage.total_tokens || 0,
           },
           response_time_ms: responseTime,
           finish_reason: finishReason,
           provider: 'mistral',
-          rate_limit: rateLimitInfo
-        }
+          rate_limit: rateLimitInfo,
+        },
       };
-
     } catch (error) {
       debugError('[Mistral] Error during API call:', error);
 
@@ -353,24 +413,57 @@ export const mistralProvider = {
 
       // Handle specific Mistral errors
       if (error.status === 401 || error.message?.includes('Unauthorized')) {
-        throw new MistralProviderError('Invalid Mistral API key', ErrorCodes.INVALID_API_KEY, error);
-      } else if (error.status === 429 || error.message?.includes('rate limit')) {
-        throw new MistralProviderError('Mistral rate limit exceeded', ErrorCodes.RATE_LIMIT_EXCEEDED, error);
+        throw new MistralProviderError(
+          'Invalid Mistral API key',
+          ErrorCodes.INVALID_API_KEY,
+          error,
+        );
+      } else if (
+        error.status === 429 ||
+        error.message?.includes('rate limit')
+      ) {
+        throw new MistralProviderError(
+          'Mistral rate limit exceeded',
+          ErrorCodes.RATE_LIMIT_EXCEEDED,
+          error,
+        );
       } else if (error.status === 403 || error.message?.includes('quota')) {
-        throw new MistralProviderError('Mistral API quota exceeded', ErrorCodes.QUOTA_EXCEEDED, error);
+        throw new MistralProviderError(
+          'Mistral API quota exceeded',
+          ErrorCodes.QUOTA_EXCEEDED,
+          error,
+        );
       } else if (error.status === 404 || error.message?.includes('model')) {
-        throw new MistralProviderError(`Model ${resolvedModel} not found`, ErrorCodes.MODEL_NOT_FOUND, error);
-      } else if (error.status === 400 || error.message?.includes('Invalid request')) {
-        throw new MistralProviderError(`Invalid request: ${error.message}`, ErrorCodes.INVALID_REQUEST, error);
-      } else if (error.message?.includes('Context length exceeded') || error.message?.includes('context')) {
-        throw new MistralProviderError('Context length exceeded for model', ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
+        throw new MistralProviderError(
+          `Model ${resolvedModel} not found`,
+          ErrorCodes.MODEL_NOT_FOUND,
+          error,
+        );
+      } else if (
+        error.status === 400 ||
+        error.message?.includes('Invalid request')
+      ) {
+        throw new MistralProviderError(
+          `Invalid request: ${error.message}`,
+          ErrorCodes.INVALID_REQUEST,
+          error,
+        );
+      } else if (
+        error.message?.includes('Context length exceeded') ||
+        error.message?.includes('context')
+      ) {
+        throw new MistralProviderError(
+          'Context length exceeded for model',
+          ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
+          error,
+        );
       }
 
       // Generic error handling
       throw new MistralProviderError(
         `Mistral API error: ${error.message || 'Unknown error'}`,
         ErrorCodes.API_ERROR,
-        error
+        error,
       );
     }
   },
@@ -383,8 +476,15 @@ export const mistralProvider = {
    * @param {Object} modelConfig - Model configuration
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
-  async *_createStreamingGenerator(mistral, requestPayload, resolvedModel, modelConfig) {
-    debugLog(`[Mistral] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
+  async *_createStreamingGenerator(
+    mistral,
+    requestPayload,
+    resolvedModel,
+    modelConfig,
+  ) {
+    debugLog(
+      `[Mistral] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`,
+    );
 
     const startTime = Date.now();
     let totalContent = '';
@@ -397,7 +497,7 @@ export const mistralProvider = {
         type: 'start',
         timestamp: new Date().toISOString(),
         model: resolvedModel,
-        provider: 'mistral'
+        provider: 'mistral',
       };
 
       // Create stream using Mistral SDK's streaming API
@@ -418,7 +518,7 @@ export const mistralProvider = {
               yield {
                 type: 'delta',
                 content,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
               };
             }
 
@@ -434,7 +534,11 @@ export const mistralProvider = {
           }
 
           // Break if we have a finish reason indicating completion
-          if (finishReason && finishReason !== null && finishReason !== 'null') {
+          if (
+            finishReason &&
+            finishReason !== null &&
+            finishReason !== 'null'
+          ) {
             break;
           }
         } catch (chunkError) {
@@ -444,9 +548,9 @@ export const mistralProvider = {
             error: {
               message: `Chunk processing error: ${chunkError.message}`,
               code: 'CHUNK_PROCESSING_ERROR',
-              recoverable: true
+              recoverable: true,
             },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
       }
@@ -461,9 +565,9 @@ export const mistralProvider = {
           usage: {
             input_tokens: finalUsage.prompt_tokens || 0,
             output_tokens: finalUsage.completion_tokens || 0,
-            total_tokens: finalUsage.total_tokens || 0
+            total_tokens: finalUsage.total_tokens || 0,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -477,15 +581,14 @@ export const mistralProvider = {
           usage: {
             input_tokens: finalUsage?.prompt_tokens || 0,
             output_tokens: finalUsage?.completion_tokens || 0,
-            total_tokens: finalUsage?.total_tokens || 0
+            total_tokens: finalUsage?.total_tokens || 0,
           },
           response_time_ms: responseTime,
           finish_reason: finishReason || 'stop',
-          provider: 'mistral'
+          provider: 'mistral',
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       debugError('[Mistral] Streaming error:', error);
 
@@ -497,7 +600,10 @@ export const mistralProvider = {
       if (error.status === 401 || error.message?.includes('Unauthorized')) {
         errorCode = ErrorCodes.INVALID_API_KEY;
         errorMessage = 'Invalid Mistral API key';
-      } else if (error.status === 429 || error.message?.includes('rate limit')) {
+      } else if (
+        error.status === 429 ||
+        error.message?.includes('rate limit')
+      ) {
         errorCode = ErrorCodes.RATE_LIMIT_EXCEEDED;
         errorMessage = 'Mistral rate limit exceeded';
         recoverable = true;
@@ -507,7 +613,10 @@ export const mistralProvider = {
       } else if (error.status === 404 || error.message?.includes('model')) {
         errorCode = ErrorCodes.MODEL_NOT_FOUND;
         errorMessage = `Model ${resolvedModel} not found`;
-      } else if (error.message?.includes('Context length exceeded') || error.message?.includes('context')) {
+      } else if (
+        error.message?.includes('Context length exceeded') ||
+        error.message?.includes('context')
+      ) {
         errorCode = ErrorCodes.CONTEXT_LENGTH_EXCEEDED;
         errorMessage = 'Context length exceeded for model';
       }
@@ -517,9 +626,9 @@ export const mistralProvider = {
         error: {
           message: errorMessage,
           code: errorCode,
-          recoverable
+          recoverable,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // Re-throw as MistralProviderError for consistency
@@ -533,7 +642,9 @@ export const mistralProvider = {
    * @returns {boolean} - True if configuration is valid
    */
   validateConfig(config) {
-    return !!(config?.apiKeys?.mistral && validateApiKey(config.apiKeys.mistral));
+    return !!(
+      config?.apiKeys?.mistral && validateApiKey(config.apiKeys.mistral)
+    );
   },
 
   /**
@@ -561,6 +672,5 @@ export const mistralProvider = {
   getModelConfig(modelName) {
     const resolved = resolveModelName(modelName);
     return SUPPORTED_MODELS[resolved] || null;
-  }
+  },
 };
-

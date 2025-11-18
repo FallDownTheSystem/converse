@@ -52,7 +52,7 @@ beforeEach(async () => {
   const testId = expect.getState().currentTestName || 'unknown';
   testSessions.set(testId, {
     startTime: Date.now(),
-    resources: []
+    resources: [],
   });
 });
 
@@ -101,17 +101,25 @@ export function getTestSession() {
  */
 process.on('unhandledRejection', (reason, promise) => {
   if (process.env.NODE_ENV === 'test') {
-    console.warn('[mcp-client-setup] Unhandled promise rejection in test:', reason);
+    console.warn(
+      '[mcp-client-setup] Unhandled promise rejection in test:',
+      reason,
+    );
     // Don't exit in test environment, let vitest handle it
   }
 });
 
 process.on('uncaughtException', (error) => {
   if (process.env.NODE_ENV === 'test') {
-    console.warn('[mcp-client-setup] Uncaught exception in test:', error.message);
+    console.warn(
+      '[mcp-client-setup] Uncaught exception in test:',
+      error.message,
+    );
     // Don't exit in test environment for stack overflow issues
     if (error.message.includes('Maximum call stack size exceeded')) {
-      console.warn('[mcp-client-setup] Stack overflow detected - continuing test execution');
+      console.warn(
+        '[mcp-client-setup] Stack overflow detected - continuing test execution',
+      );
       return;
     }
   }
@@ -121,5 +129,5 @@ process.on('uncaughtException', (error) => {
 export default {
   registerTestServerPort,
   unregisterTestServerPort,
-  getTestSession
+  getTestSession,
 };

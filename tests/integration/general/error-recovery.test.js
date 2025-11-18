@@ -24,15 +24,15 @@ describe('Error Scenario and Recovery Tests', () => {
       server = new Server(
         {
           name: config.mcp.name,
-          version: config.mcp.version
+          version: config.mcp.version,
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       // Set up dependencies like tools-integration test
@@ -42,7 +42,7 @@ describe('Error Scenario and Recovery Tests', () => {
         config,
         providers,
         continuationStore,
-        contextProcessor: { processUnifiedContext }
+        contextProcessor: { processUnifiedContext },
       };
 
       // Get tools
@@ -62,7 +62,9 @@ describe('Error Scenario and Recovery Tests', () => {
     // Cleanup test data
     try {
       await continuationStore.cleanup(0);
-      logger.info('[error-recovery-test] Error recovery test cleanup completed');
+      logger.info(
+        '[error-recovery-test] Error recovery test cleanup completed',
+      );
     } catch (error) {
       logger.error('[error-recovery-test] Cleanup failed:', error);
     }
@@ -76,67 +78,81 @@ describe('Error Scenario and Recovery Tests', () => {
         apiKeys: {
           openai: 'sk-invalid-key',
           xai: 'xai-invalid-key',
-          google: 'invalid-google-key'
-        }
+          google: 'invalid-google-key',
+        },
       };
 
       // Create temporary server for invalid config test
       const tempServer = new Server(
         {
           name: 'test-server',
-          version: '1.0.0'
+          version: '1.0.0',
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       const invalidRouter = await createRouter(tempServer, invalidConfig);
 
-      const result = await tools.chat({
-        prompt: 'Test with invalid API keys'
-      }, { ...dependencies, config: invalidConfig });
+      const result = await tools.chat(
+        {
+          prompt: 'Test with invalid API keys',
+        },
+        { ...dependencies, config: invalidConfig },
+      );
 
       expect(result.isError).toBe(true);
       expect(result.error).toBeDefined();
-      expect(result.error.message).toMatch(/(API key|authentication|invalid|not available)/i);
+      expect(result.error.message).toMatch(
+        /(API key|authentication|invalid|not available)/i,
+      );
 
       // Should still return proper MCP format
       expect(result.content).toBeDefined();
       expect(Array.isArray(result.content)).toBe(true);
       expect(result.content[0].type).toBe('text');
 
-      logger.info('[error-recovery-test] Provider API key error handled gracefully');
+      logger.info(
+        '[error-recovery-test] Provider API key error handled gracefully',
+      );
     });
 
     it('should recover from temporary provider failures', async () => {
       // Mock provider to simulate temporary failure
       const originalProviders = await import('../../../src/providers/index.js');
       const mockProvider = {
-        invoke: vi.fn()
+        invoke: vi
+          .fn()
           .mockRejectedValueOnce(new Error('Temporary network error'))
           .mockResolvedValue({
             content: 'Success after retry',
             stop_reason: 'stop',
             rawResponse: {},
-            metadata: { tokenUsage: { inputTokens: 10, outputTokens: 15, totalTokens: 25 } }
+            metadata: {
+              tokenUsage: {
+                inputTokens: 10,
+                outputTokens: 15,
+                totalTokens: 25,
+              },
+            },
           }),
         validateConfig: vi.fn().mockReturnValue(true),
         isAvailable: vi.fn().mockReturnValue(true),
         getSupportedModels: vi.fn().mockReturnValue({ 'test-model': {} }),
-        getModelConfig: vi.fn().mockReturnValue({ contextWindow: 1000 })
+        getModelConfig: vi.fn().mockReturnValue({ contextWindow: 1000 }),
       };
 
       // Test resilience with retry logic (if implemented)
       const result = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Test provider recovery'
-        }
+          prompt: 'Test provider recovery',
+        },
       });
 
       // Should either succeed or fail gracefully
@@ -158,8 +174,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test timeout scenario',
-          model: 'auto'
-        }
+          model: 'auto',
+        },
       });
 
       // Should complete within reasonable time or handle timeout gracefully
@@ -167,7 +183,9 @@ describe('Error Scenario and Recovery Tests', () => {
       expect(result.content).toBeDefined();
 
       if (result.isError) {
-        expect(result.error.message).toMatch(/(timeout|time|provider|network)/i);
+        expect(result.error.message).toMatch(
+          /(timeout|time|provider|network)/i,
+        );
       }
 
       logger.info('[error-recovery-test] Provider timeout scenario tested');
@@ -180,19 +198,22 @@ describe('Error Scenario and Recovery Tests', () => {
       const initialResult = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Test conversation for corruption recovery'
-        }
+          prompt: 'Test conversation for corruption recovery',
+        },
       });
 
       const conversationId = initialResult.continuation.id;
 
       // Manually corrupt the conversation data
       try {
-        await continuationStore.set({
-          corrupted: true,
-          messages: 'invalid-data-structure',
-          invalidField: { nested: 'corruption' }
-        }, conversationId.replace('conv_', ''));
+        await continuationStore.set(
+          {
+            corrupted: true,
+            messages: 'invalid-data-structure',
+            invalidField: { nested: 'corruption' },
+          },
+          conversationId.replace('conv_', ''),
+        );
       } catch (error) {
         // Store might reject invalid data, that's fine
       }
@@ -202,8 +223,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Continue corrupted conversation',
-          continuation: conversationId
-        }
+          continuation: conversationId,
+        },
       });
 
       // Should handle gracefully - either fix corruption or start new conversation
@@ -211,7 +232,9 @@ describe('Error Scenario and Recovery Tests', () => {
       expect(continuationResult.content).toBeDefined();
       expect(continuationResult.continuation).toBeDefined();
 
-      logger.info('[error-recovery-test] Continuation store corruption handled');
+      logger.info(
+        '[error-recovery-test] Continuation store corruption handled',
+      );
     });
 
     it('should handle missing continuation IDs gracefully', async () => {
@@ -219,8 +242,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test with nonexistent continuation',
-          continuation_id: 'conv_nonexistent_12345'
-        }
+          continuation_id: 'conv_nonexistent_12345',
+        },
       });
 
       // Should create new conversation instead of failing
@@ -235,13 +258,15 @@ describe('Error Scenario and Recovery Tests', () => {
     it('should handle continuation store failures during save', async () => {
       // Mock continuation store to fail on save
       const originalSet = continuationStore.set;
-      continuationStore.set = vi.fn().mockRejectedValue(new Error('Storage failure'));
+      continuationStore.set = vi
+        .fn()
+        .mockRejectedValue(new Error('Storage failure'));
 
       const result = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Test storage failure during save'
-        }
+          prompt: 'Test storage failure during save',
+        },
       });
 
       // Should handle storage failure gracefully
@@ -269,23 +294,23 @@ describe('Error Scenario and Recovery Tests', () => {
         ...config,
         providers: {
           ...config.providers,
-          xaiBaseUrl: 'https://nonexistent-domain-12345.invalid'
-        }
+          xaiBaseUrl: 'https://nonexistent-domain-12345.invalid',
+        },
       };
 
       // Create temporary server for invalid config test
       const tempServer2 = new Server(
         {
           name: 'test-server-2',
-          version: '1.0.0'
+          version: '1.0.0',
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       const invalidRouter = await createRouter(tempServer2, invalidConfig);
@@ -294,8 +319,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test DNS failure',
-          model: 'auto'
-        }
+          model: 'auto',
+        },
       });
 
       // Should handle DNS failure gracefully
@@ -303,7 +328,9 @@ describe('Error Scenario and Recovery Tests', () => {
       expect(result.content).toBeDefined();
 
       if (result.isError) {
-        expect(result.error.message).toMatch(/(network|DNS|connection|not available)/i);
+        expect(result.error.message).toMatch(
+          /(network|DNS|connection|not available)/i,
+        );
       }
 
       logger.info('[error-recovery-test] DNS resolution failure handled');
@@ -318,10 +345,10 @@ describe('Error Scenario and Recovery Tests', () => {
           models: [
             { model: 'gpt-4o-mini' },
             { model: 'gemini-2.5-flash' },
-            { model: 'grok-4-0709' }
+            { model: 'grok-4-0709' },
           ],
-          enable_cross_feedback: false
-        }
+          enable_cross_feedback: false,
+        },
       });
 
       // Should handle partial failures gracefully
@@ -350,12 +377,13 @@ describe('Error Scenario and Recovery Tests', () => {
           name: 'chat',
           arguments: {
             prompt: 'Valid prompt',
-            malformed: { circular: null }
-          }
+            malformed: { circular: null },
+          },
         });
 
         // Create circular reference
-        result.arguments?.malformed && (result.arguments.malformed.circular = result.arguments.malformed);
+        result.arguments?.malformed &&
+          (result.arguments.malformed.circular = result.arguments.malformed);
 
         expect(result).toBeDefined();
         expect(result.content).toBeDefined();
@@ -374,8 +402,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: largePrompt,
-          model: 'auto'
-        }
+          model: 'auto',
+        },
       });
 
       // Should either truncate or reject gracefully
@@ -396,7 +424,7 @@ describe('Error Scenario and Recovery Tests', () => {
         'Test with quotes: "nested \'quotes\' here"',
         'Test with newlines:\nLine 1\nLine 2\nLine 3',
         'Test with HTML: <script>alert("test")</script>',
-        'Test with SQL: DROP TABLE users; --'
+        'Test with SQL: DROP TABLE users; --',
       ];
 
       for (const prompt of specialPrompts) {
@@ -404,8 +432,8 @@ describe('Error Scenario and Recovery Tests', () => {
           name: 'chat',
           arguments: {
             prompt,
-            model: 'auto'
-          }
+            model: 'auto',
+          },
         });
 
         expect(result).toBeDefined();
@@ -415,7 +443,9 @@ describe('Error Scenario and Recovery Tests', () => {
         expect(result.content[0].type).toBe('text');
       }
 
-      logger.info('[error-recovery-test] Special characters and encoding handled');
+      logger.info(
+        '[error-recovery-test] Special characters and encoding handled',
+      );
     }, 120000);
   });
 
@@ -430,8 +460,8 @@ describe('Error Scenario and Recovery Tests', () => {
           const result = await router.callTool({
             name: 'chat',
             arguments: {
-              prompt: `Memory pressure test conversation ${i}`
-            }
+              prompt: `Memory pressure test conversation ${i}`,
+            },
           });
 
           if (!result.isError) {
@@ -443,7 +473,9 @@ describe('Error Scenario and Recovery Tests', () => {
         const memUsage = process.memoryUsage();
         expect(memUsage.heapUsed).toBeLessThan(500 * 1024 * 1024); // 500MB limit
 
-        logger.info(`[error-recovery-test] Memory pressure test: ${conversations.length} conversations, ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB used`);
+        logger.info(
+          `[error-recovery-test] Memory pressure test: ${conversations.length} conversations, ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB used`,
+        );
       } finally {
         // Cleanup
         for (const id of conversations) {
@@ -467,25 +499,31 @@ describe('Error Scenario and Recovery Tests', () => {
             name: 'chat',
             arguments: {
               prompt: `Burst test ${i}`,
-              model: 'auto'
-            }
-          })
+              model: 'auto',
+            },
+          }),
         );
       }
 
       const results = await Promise.allSettled(requests);
 
       // Count successes and failures
-      const successful = results.filter(r => r.status === 'fulfilled' && !r.value.isError);
+      const successful = results.filter(
+        (r) => r.status === 'fulfilled' && !r.value.isError,
+      );
       const failed = results.length - successful.length;
 
       // Should handle at least 50% of burst requests
       expect(successful.length).toBeGreaterThan(burstSize * 0.5);
 
       if (failed > 0) {
-        logger.info(`[error-recovery-test] Burst test: ${successful.length}/${burstSize} successful, ${failed} failed/rate-limited`);
+        logger.info(
+          `[error-recovery-test] Burst test: ${successful.length}/${burstSize} successful, ${failed} failed/rate-limited`,
+        );
       } else {
-        logger.info(`[error-recovery-test] Burst test: all ${burstSize} requests successful`);
+        logger.info(
+          `[error-recovery-test] Burst test: all ${burstSize} requests successful`,
+        );
       }
     }, 90000);
   });
@@ -495,8 +533,8 @@ describe('Error Scenario and Recovery Tests', () => {
       const result = await router.callTool({
         name: 'nonexistent-tool',
         arguments: {
-          prompt: 'Test detailed error reporting'
-        }
+          prompt: 'Test detailed error reporting',
+        },
       });
 
       expect(result.isError).toBe(true);
@@ -520,8 +558,8 @@ describe('Error Scenario and Recovery Tests', () => {
       const initialResult = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Start error correlation test'
-        }
+          prompt: 'Start error correlation test',
+        },
       });
 
       const conversationId = initialResult.continuation.id;
@@ -531,17 +569,18 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'invalid-tool',
         arguments: {
           prompt: 'This should fail',
-          continuation: conversationId
-        }
+          continuation: conversationId,
+        },
       });
 
       expect(errorResult.isError).toBe(true);
 
       // Error should include conversation context
       if (errorResult.error.context) {
-        const contextString = typeof errorResult.error.context === 'string'
-          ? errorResult.error.context
-          : JSON.stringify(errorResult.error.context);
+        const contextString =
+          typeof errorResult.error.context === 'string'
+            ? errorResult.error.context
+            : JSON.stringify(errorResult.error.context);
         expect(contextString).toMatch(/(conversation|continuation)/i);
       }
 
@@ -562,8 +601,8 @@ describe('Error Scenario and Recovery Tests', () => {
           name: 'chat',
           arguments: {
             prompt: `Circuit breaker test ${i}`,
-            model: 'nonexistent-provider'
-          }
+            model: 'nonexistent-provider',
+          },
         });
 
         results.push(result);
@@ -574,11 +613,15 @@ describe('Error Scenario and Recovery Tests', () => {
       }
 
       // All should fail gracefully
-      const allFailed = results.every(r => r.isError);
+      const allFailed = results.every((r) => r.isError);
       if (allFailed) {
-        logger.info('[error-recovery-test] Circuit breaker pattern: consistent failures handled');
+        logger.info(
+          '[error-recovery-test] Circuit breaker pattern: consistent failures handled',
+        );
       } else {
-        logger.info('[error-recovery-test] Circuit breaker pattern: some requests succeeded with fallback');
+        logger.info(
+          '[error-recovery-test] Circuit breaker pattern: some requests succeeded with fallback',
+        );
       }
     }, 60000);
 
@@ -588,8 +631,8 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test retry logic for transient failures',
-          model: 'auto'
-        }
+          model: 'auto',
+        },
       });
 
       // Should either succeed or fail with final error after retries
@@ -598,7 +641,9 @@ describe('Error Scenario and Recovery Tests', () => {
 
       if (result.isError) {
         // Error message should indicate final failure after retries
-        logger.info(`[error-recovery-test] Retry logic resulted in: ${result.error.message}`);
+        logger.info(
+          `[error-recovery-test] Retry logic resulted in: ${result.error.message}`,
+        );
       } else {
         logger.info('[error-recovery-test] Retry logic succeeded');
       }
@@ -613,10 +658,10 @@ describe('Error Scenario and Recovery Tests', () => {
           models: [
             { model: 'auto' },
             { model: 'nonexistent-model' },
-            { model: 'auto' }
+            { model: 'auto' },
           ],
-          enable_cross_feedback: false
-        }
+          enable_cross_feedback: false,
+        },
       });
 
       if (!result.isError) {
@@ -629,14 +674,20 @@ describe('Error Scenario and Recovery Tests', () => {
         if (consensusData.successful_initial_responses > 0) {
           expect(consensusData.failed_responses).toBeGreaterThan(0); // At least nonexistent-model should fail
           expect(consensusData.failed_responses).toBeLessThan(3); // But not all should fail
-          logger.info(`[error-recovery-test] Graceful degradation: ${consensusData.successful_initial_responses}/${consensusData.models_consulted} providers succeeded`);
+          logger.info(
+            `[error-recovery-test] Graceful degradation: ${consensusData.successful_initial_responses}/${consensusData.models_consulted} providers succeeded`,
+          );
         } else {
           // All failed - likely no API keys configured, which is acceptable in test environment
           expect(consensusData.failed_responses).toBe(3);
-          logger.info('[error-recovery-test] Graceful degradation: all providers failed (likely no API keys)');
+          logger.info(
+            '[error-recovery-test] Graceful degradation: all providers failed (likely no API keys)',
+          );
         }
       } else {
-        logger.info('[error-recovery-test] Graceful degradation: complete tool failure');
+        logger.info(
+          '[error-recovery-test] Graceful degradation: complete tool failure',
+        );
       }
     }, 60000);
   });

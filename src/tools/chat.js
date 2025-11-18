@@ -6,8 +6,14 @@
  */
 
 import { createToolResponse, createToolError } from './index.js';
-import { processUnifiedContext, createFileContext } from '../utils/contextProcessor.js';
-import { generateContinuationId, addMessageToHistory } from '../continuationStore.js';
+import {
+  processUnifiedContext,
+  createFileContext,
+} from '../utils/contextProcessor.js';
+import {
+  generateContinuationId,
+  addMessageToHistory,
+} from '../continuationStore.js';
 import { debugLog, debugError } from '../utils/console.js';
 import { createLogger } from '../utils/logger.js';
 import { CHAT_PROMPT } from '../systemPrompts.js';
@@ -25,7 +31,14 @@ const logger = createLogger('chat');
  */
 export async function chatTool(args, dependencies) {
   try {
-    const { config, providers, continuationStore, contextProcessor, jobRunner, providerStreamNormalizer } = dependencies;
+    const {
+      config,
+      providers,
+      continuationStore,
+      contextProcessor,
+      jobRunner,
+      providerStreamNormalizer,
+    } = dependencies;
 
     // Validate required arguments
     if (!args.prompt || typeof args.prompt !== 'string') {
@@ -43,22 +56,28 @@ export async function chatTool(args, dependencies) {
       images = [],
       reasoning_effort = 'medium',
       verbosity = 'medium',
-      async = false
+      async = false,
     } = args;
 
     // Handle async execution mode
     if (async) {
       // Validate async dependencies are available
       if (!jobRunner || !providerStreamNormalizer) {
-        return createToolError('Async execution not available - missing async dependencies');
+        return createToolError(
+          'Async execution not available - missing async dependencies',
+        );
       }
 
       // Generate or use existing continuation ID for the conversation
-      const conversationContinuationId = continuation_id || generateContinuationId();
+      const conversationContinuationId =
+        continuation_id || generateContinuationId();
 
       // Get provider and model info for the job
       const providerName = mapModelToProvider(args.model || 'auto', providers);
-      const resolvedModel = providers[providerName]?.resolveModel?.(args.model) || args.model || 'auto';
+      const resolvedModel =
+        providers[providerName]?.resolveModel?.(args.model) ||
+        args.model ||
+        'auto';
 
       // Generate title early for initial response
       const summarizationService = new SummarizationService(providers, config);
@@ -67,7 +86,10 @@ export async function chatTool(args, dependencies) {
         title = await summarizationService.generateTitle(prompt);
         debugLog(`Chat: Generated title for initial response - "${title}"`);
       } catch (error) {
-        debugError('Chat: Failed to generate title for initial response', error);
+        debugError(
+          'Chat: Failed to generate title for initial response',
+          error,
+        );
         title = prompt.substring(0, 50);
       }
 
@@ -83,8 +105,8 @@ export async function chatTool(args, dependencies) {
               continuation_id: conversationContinuationId, // Pass the conversation continuation ID
               provider: providerName, // Add provider info for status display
               model: resolvedModel, // Add resolved model info for status display
-              title // Pass the generated title
-            }
+              title, // Pass the generated title
+            },
           },
           async (context) => {
             // Execute chat in background using stream normalizer
@@ -93,23 +115,25 @@ export async function chatTool(args, dependencies) {
               {
                 ...dependencies,
                 continuationId: conversationContinuationId,
-                title // Pass title to execution context
+                title, // Pass title to execution context
               },
-              context
+              context,
             );
-          }
+          },
         );
 
         // Format initial response like check_status output
-        const startTime = new Date().toLocaleString('en-GB', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        }).replace(',', '');
+        const startTime = new Date()
+          .toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+          .replace(',', '');
 
         const statusLine = `⏳ SUBMITTED | CHAT | ${conversationContinuationId} | 1/1 | Started: ${startTime} | "${title || 'Processing...'}" | ${providerName}/${resolvedModel}`;
 
@@ -117,12 +141,11 @@ export async function chatTool(args, dependencies) {
         return createToolResponse({
           content: `${statusLine}\ncontinuation_id: ${conversationContinuationId}`,
           continuation: {
-            id: conversationContinuationId,  // Use continuation_id as the primary ID
-            status: 'processing'
+            id: conversationContinuationId, // Use continuation_id as the primary ID
+            status: 'processing',
           },
-          async_execution: true
+          async_execution: true,
         });
-
       } catch (error) {
         logger.error('Failed to submit async chat job', { error });
         return createToolError(`Async execution failed: ${error.message}`);
@@ -154,7 +177,10 @@ export async function chatTool(args, dependencies) {
 
     // Validate file paths before processing
     if (files.length > 0 || images.length > 0) {
-      const validation = await validateAllPaths({ files, images }, { clientCwd: config.server?.client_cwd });
+      const validation = await validateAllPaths(
+        { files, images },
+        { clientCwd: config.server?.client_cwd },
+      );
       if (!validation.valid) {
         logger.error('File validation failed', { errors: validation.errors });
         return validation.errorResponse;
@@ -168,21 +194,27 @@ export async function chatTool(args, dependencies) {
         const contextRequest = {
           files: Array.isArray(files) ? files : [],
           images: Array.isArray(images) ? images : [],
-          webSearch: use_websearch ? prompt : null
+          webSearch: use_websearch ? prompt : null,
         };
 
-        const contextResult = await contextProcessor.processUnifiedContext(contextRequest, {
-          enforceSecurityCheck: false,  // Allow files from any location
-          skipSecurityCheck: true,       // Legacy flag for backward compatibility
-          clientCwd: config.server?.client_cwd  // Use auto-detected client working directory
-        });
+        const contextResult = await contextProcessor.processUnifiedContext(
+          contextRequest,
+          {
+            enforceSecurityCheck: false, // Allow files from any location
+            skipSecurityCheck: true, // Legacy flag for backward compatibility
+            clientCwd: config.server?.client_cwd, // Use auto-detected client working directory
+          },
+        );
 
         // Create context message from files and images
-        const allProcessedFiles = [...contextResult.files, ...contextResult.images];
+        const allProcessedFiles = [
+          ...contextResult.files,
+          ...contextResult.images,
+        ];
         if (allProcessedFiles.length > 0) {
           contextMessage = createFileContext(allProcessedFiles, {
             includeMetadata: true,
-            includeErrors: true
+            includeErrors: true,
           });
         }
 
@@ -191,7 +223,6 @@ export async function chatTool(args, dependencies) {
           // Future implementation: add web search results to context
           logger.debug('Web search results available but not yet implemented');
         }
-
       } catch (error) {
         logger.error('Error processing context', { error });
         // Continue without context if processing fails
@@ -202,10 +233,13 @@ export async function chatTool(args, dependencies) {
     const messages = [];
 
     // Add system prompt only if not already in conversation history
-    if (conversationHistory.length === 0 || conversationHistory[0].role !== 'system') {
+    if (
+      conversationHistory.length === 0 ||
+      conversationHistory[0].role !== 'system'
+    ) {
       messages.push({
         role: 'system',
-        content: CHAT_PROMPT
+        content: CHAT_PROMPT,
       });
     }
 
@@ -215,7 +249,7 @@ export async function chatTool(args, dependencies) {
     // Add user prompt with context
     const userMessage = {
       role: 'user',
-      content: prompt // default to simple string content
+      content: prompt, // default to simple string content
     };
 
     // If we have context (files/images), create complex content array
@@ -223,7 +257,7 @@ export async function chatTool(args, dependencies) {
       // Create complex content array
       userMessage.content = [
         ...contextMessage.content, // Include all file/image parts
-        { type: 'text', text: prompt } // Add the user prompt as text
+        { type: 'text', text: prompt }, // Add the user prompt as text
       ];
     }
 
@@ -235,13 +269,15 @@ export async function chatTool(args, dependencies) {
 
     if (model === 'auto') {
       // Auto-select first available provider
-      const availableProviders = Object.keys(providers).filter(name => {
+      const availableProviders = Object.keys(providers).filter((name) => {
         const provider = providers[name];
         return provider && provider.isAvailable && provider.isAvailable(config);
       });
 
       if (availableProviders.length === 0) {
-        return createToolError('No providers available. Please configure at least one API key.');
+        return createToolError(
+          'No providers available. Please configure at least one API key.',
+        );
       }
 
       providerName = availableProviders[0];
@@ -257,7 +293,9 @@ export async function chatTool(args, dependencies) {
       }
 
       if (!selectedProvider.isAvailable(config)) {
-        return createToolError(`Provider ${providerName} is not available. Check API key configuration.`);
+        return createToolError(
+          `Provider ${providerName} is not available. Check API key configuration.`,
+        );
       }
     }
 
@@ -271,7 +309,7 @@ export async function chatTool(args, dependencies) {
       use_websearch,
       config,
       continuation_id, // Pass for thread resumption
-      continuationStore // Pass store for state management
+      continuationStore, // Pass store for state management
     };
 
     // Call provider
@@ -280,7 +318,10 @@ export async function chatTool(args, dependencies) {
     try {
       response = await selectedProvider.invoke(messages, providerOptions);
     } catch (error) {
-      logger.error('Provider error', { error, data: { provider: providerName } });
+      logger.error('Provider error', {
+        error,
+        data: { provider: providerName },
+      });
       return createToolError(`Provider error: ${error.message}`);
     }
     const executionTime = (Date.now() - startTime) / 1000; // Convert to seconds
@@ -293,7 +334,7 @@ export async function chatTool(args, dependencies) {
     // Add assistant response to conversation history
     const assistantMessage = {
       role: 'assistant',
-      content: response.content
+      content: response.content,
     };
 
     const updatedMessages = [...messages, assistantMessage];
@@ -306,7 +347,7 @@ export async function chatTool(args, dependencies) {
         model,
         lastUpdated: Date.now(),
         // Store Codex thread ID if available (for thread resumption)
-        codexThreadId: response.metadata?.threadId
+        codexThreadId: response.metadata?.threadId,
       };
 
       await continuationStore.set(continuationId, conversationState);
@@ -315,11 +356,11 @@ export async function chatTool(args, dependencies) {
       // Continue even if save fails
     }
 
-
     // Create unified status line (similar to async status display)
-    const statusLine = config.environment?.nodeEnv !== 'test'
-      ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n`
-      : '';
+    const statusLine =
+      config.environment?.nodeEnv !== 'test'
+        ? `✅ COMPLETED | CHAT | ${continuationId} | ${executionTime.toFixed(1)}s elapsed | ${providerName}/${resolvedModel}\n`
+        : '';
 
     // Always include continuation_id line for clarity
     const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
@@ -330,8 +371,9 @@ export async function chatTool(args, dependencies) {
         id: continuationId,
         provider: providerName,
         model,
-        messageCount: updatedMessages.filter(msg => msg.role !== 'system').length
-      }
+        messageCount: updatedMessages.filter((msg) => msg.role !== 'system')
+          .length,
+      },
     };
 
     // Add metadata if available
@@ -354,7 +396,6 @@ export async function chatTool(args, dependencies) {
     }
 
     return createToolResponse(finalResult);
-
   } catch (error) {
     logger.error('Chat tool error', { error });
     return createToolError('Chat tool failed', error);
@@ -375,13 +416,13 @@ function resolveAutoModel(model, providerName) {
   }
 
   const defaults = {
-    'openai': 'gpt-5',
-    'xai': 'grok-4-0709',
-    'google': 'gemini-2.5-pro',
-    'anthropic': 'claude-sonnet-4-20250514',
-    'mistral': 'magistral-medium-2506',
-    'deepseek': 'deepseek-reasoner',
-    'openrouter': 'qwen/qwen3-coder'
+    openai: 'gpt-5',
+    xai: 'grok-4-0709',
+    google: 'gemini-2.5-pro',
+    anthropic: 'claude-sonnet-4-20250514',
+    mistral: 'magistral-medium-2506',
+    deepseek: 'deepseek-reasoner',
+    openrouter: 'qwen/qwen3-coder',
   };
 
   return defaults[providerName] || 'gpt-5';
@@ -401,8 +442,12 @@ export function mapModelToProvider(model, providers) {
   }
 
   // Check OpenRouter-specific patterns first
-  if (modelLower === 'openrouter auto' || modelLower === 'auto router' ||
-      modelLower === 'auto-router' || modelLower === 'openrouter-auto') {
+  if (
+    modelLower === 'openrouter auto' ||
+    modelLower === 'auto router' ||
+    modelLower === 'auto-router' ||
+    modelLower === 'openrouter-auto'
+  ) {
     return 'openrouter';
   }
 
@@ -412,7 +457,11 @@ export function mapModelToProvider(model, providers) {
     for (const [providerName, provider] of Object.entries(providers)) {
       if (provider && provider.getModelConfig) {
         const modelConfig = provider.getModelConfig(model);
-        if (modelConfig && !modelConfig.isDynamic && !modelConfig.needsApiUpdate) {
+        if (
+          modelConfig &&
+          !modelConfig.isDynamic &&
+          !modelConfig.needsApiUpdate
+        ) {
           // Model exists in this provider's static list
           return providerName;
         }
@@ -425,8 +474,12 @@ export function mapModelToProvider(model, providers) {
   // For non-slash models, use keyword matching as before
 
   // OpenAI models
-  if (modelLower.includes('gpt') || modelLower.includes('o1') ||
-      modelLower.includes('o3') || modelLower.includes('o4')) {
+  if (
+    modelLower.includes('gpt') ||
+    modelLower.includes('o1') ||
+    modelLower.includes('o3') ||
+    modelLower.includes('o4')
+  ) {
     return 'openai';
   }
 
@@ -436,14 +489,22 @@ export function mapModelToProvider(model, providers) {
   }
 
   // Google models
-  if (modelLower.includes('gemini') || modelLower.includes('flash') ||
-      modelLower.includes('pro') || modelLower === 'google') {
+  if (
+    modelLower.includes('gemini') ||
+    modelLower.includes('flash') ||
+    modelLower.includes('pro') ||
+    modelLower === 'google'
+  ) {
     return 'google';
   }
 
   // Anthropic models
-  if (modelLower.includes('claude') || modelLower.includes('opus') ||
-      modelLower.includes('sonnet') || modelLower.includes('haiku')) {
+  if (
+    modelLower.includes('claude') ||
+    modelLower.includes('opus') ||
+    modelLower.includes('sonnet') ||
+    modelLower.includes('haiku')
+  ) {
     return 'anthropic';
   }
 
@@ -453,14 +514,22 @@ export function mapModelToProvider(model, providers) {
   }
 
   // DeepSeek models
-  if (modelLower.includes('deepseek') || modelLower === 'reasoner' ||
-      modelLower === 'r1' || modelLower === 'chat') {
+  if (
+    modelLower.includes('deepseek') ||
+    modelLower === 'reasoner' ||
+    modelLower === 'r1' ||
+    modelLower === 'chat'
+  ) {
     return 'deepseek';
   }
 
   // OpenRouter models (specific model patterns)
-  if (modelLower.includes('qwen') || modelLower.includes('kimi') ||
-      modelLower.includes('moonshot') || modelLower === 'k2') {
+  if (
+    modelLower.includes('qwen') ||
+    modelLower.includes('kimi') ||
+    modelLower.includes('moonshot') ||
+    modelLower === 'k2'
+  ) {
     return 'openrouter';
   }
 
@@ -483,7 +552,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     contextProcessor,
     providerStreamNormalizer,
     continuationId,
-    title: passedTitle // Title passed from initial submission
+    title: passedTitle, // Title passed from initial submission
   } = dependencies;
 
   const {
@@ -494,7 +563,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     use_websearch = false,
     images = [],
     reasoning_effort = 'medium',
-    verbosity = 'medium'
+    verbosity = 'medium',
   } = args;
 
   // Initialize SummarizationService
@@ -531,10 +600,15 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
   // Validate file paths before processing
   if (files.length > 0 || images.length > 0) {
-    const validation = await validateAllPaths({ files, images }, { clientCwd: config.server?.client_cwd });
+    const validation = await validateAllPaths(
+      { files, images },
+      { clientCwd: config.server?.client_cwd },
+    );
     if (!validation.valid) {
       logger.error('File validation failed', { errors: validation.errors });
-      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+      throw new Error(
+        `File validation failed: ${validation.errors.join(', ')}`,
+      );
     }
   }
 
@@ -545,21 +619,27 @@ async function executeChatWithStreaming(args, dependencies, context) {
       const contextRequest = {
         files: Array.isArray(files) ? files : [],
         images: Array.isArray(images) ? images : [],
-        webSearch: use_websearch ? prompt : null
+        webSearch: use_websearch ? prompt : null,
       };
 
-      const contextResult = await contextProcessor.processUnifiedContext(contextRequest, {
-        enforceSecurityCheck: false,
-        skipSecurityCheck: true,
-        clientCwd: config.server?.client_cwd
-      });
+      const contextResult = await contextProcessor.processUnifiedContext(
+        contextRequest,
+        {
+          enforceSecurityCheck: false,
+          skipSecurityCheck: true,
+          clientCwd: config.server?.client_cwd,
+        },
+      );
 
       // Create context message from files and images
-      const allProcessedFiles = [...contextResult.files, ...contextResult.images];
+      const allProcessedFiles = [
+        ...contextResult.files,
+        ...contextResult.images,
+      ];
       if (allProcessedFiles.length > 0) {
         contextMessage = createFileContext(allProcessedFiles, {
           includeMetadata: true,
-          includeErrors: true
+          includeErrors: true,
         });
       }
     } catch (error) {
@@ -572,10 +652,13 @@ async function executeChatWithStreaming(args, dependencies, context) {
   const messages = [];
 
   // Add system prompt only if not already in conversation history
-  if (conversationHistory.length === 0 || conversationHistory[0].role !== 'system') {
+  if (
+    conversationHistory.length === 0 ||
+    conversationHistory[0].role !== 'system'
+  ) {
     messages.push({
       role: 'system',
-      content: CHAT_PROMPT
+      content: CHAT_PROMPT,
     });
   }
 
@@ -585,14 +668,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
   // Add user prompt with context
   const userMessage = {
     role: 'user',
-    content: prompt
+    content: prompt,
   };
 
   // If we have context (files/images), create complex content array
   if (contextMessage && contextMessage.content) {
     userMessage.content = [
       ...contextMessage.content,
-      { type: 'text', text: prompt }
+      { type: 'text', text: prompt },
     ];
   }
 
@@ -604,13 +687,15 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
   if (model === 'auto') {
     // Auto-select first available provider
-    const availableProviders = Object.keys(providers).filter(name => {
+    const availableProviders = Object.keys(providers).filter((name) => {
       const provider = providers[name];
       return provider && provider.isAvailable && provider.isAvailable(config);
     });
 
     if (availableProviders.length === 0) {
-      throw new Error('No providers available. Please configure at least one API key.');
+      throw new Error(
+        'No providers available. Please configure at least one API key.',
+      );
     }
 
     providerName = availableProviders[0];
@@ -625,7 +710,9 @@ async function executeChatWithStreaming(args, dependencies, context) {
     }
 
     if (!selectedProvider.isAvailable(config)) {
-      throw new Error(`Provider ${providerName} is not available. Check API key configuration.`);
+      throw new Error(
+        `Provider ${providerName} is not available. Check API key configuration.`,
+      );
     }
   }
 
@@ -639,14 +726,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
     use_websearch,
     config,
     continuation_id: continuationId, // Pass for thread resumption
-    continuationStore // Pass store for state management
+    continuationStore, // Pass store for state management
   };
 
   // For streaming, add the stream flag and signal separately
   const streamingOptions = {
     ...providerOptions,
     stream: true,
-    signal: context?.signal // Pass AbortSignal for cancellation support
+    signal: context?.signal, // Pass AbortSignal for cancellation support
   };
 
   // Check if provider supports streaming (by checking if invoke can return a stream)
@@ -659,10 +746,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
     debugLog(`Chat: Using streaming for provider ${providerName}`);
 
     const stream = await selectedProvider.invoke(messages, streamingOptions);
-    const normalizedStream = providerStreamNormalizer.normalize(providerName, stream, {
-      model: resolvedModel,
-      requestId: context.jobId
-    });
+    const normalizedStream = providerStreamNormalizer.normalize(
+      providerName,
+      stream,
+      {
+        model: resolvedModel,
+        requestId: context.jobId,
+      },
+    );
 
     // Process normalized stream and build final response
     let accumulatedContent = '';
@@ -683,7 +774,11 @@ async function executeChatWithStreaming(args, dependencies, context) {
           provider: providerName,
           model: resolvedModel,
           title: title || undefined, // Include title if generated
-          progress: { phase: 'streaming_started', provider: providerName, model: resolvedModel }
+          progress: {
+            phase: 'streaming_started',
+            provider: providerName,
+            model: resolvedModel,
+          },
         });
         break;
 
@@ -696,16 +791,18 @@ async function executeChatWithStreaming(args, dependencies, context) {
             phase: 'streaming',
             provider: providerName,
             model: resolvedModel,
-            content_length: accumulatedContent.length
-          }
+            content_length: accumulatedContent.length,
+          },
         });
         break;
 
       case 'reasoning_summary':
         // Update job with reasoning summary
-        debugLog(`[Chat] *** UPDATING JOB WITH REASONING: "${event.data.content?.substring(0, 100)}..."`);
+        debugLog(
+          `[Chat] *** UPDATING JOB WITH REASONING: "${event.data.content?.substring(0, 100)}..."`,
+        );
         await context.updateJob({
-          reasoning_summary: event.data.content
+          reasoning_summary: event.data.content,
         });
         break;
 
@@ -729,10 +826,9 @@ async function executeChatWithStreaming(args, dependencies, context) {
       metadata: {
         ...finalMetadata,
         usage: finalUsage,
-        streaming: true
-      }
+        streaming: true,
+      },
     };
-
   } else {
     // Fall back to regular invoke
     debugLog(`Chat: Using regular invoke for provider ${providerName}`);
@@ -747,10 +843,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
   }
 
   // Store reasoning summary from OpenAI if available
-  if (response.metadata?.usage?.reasoning_summary && context && context.updateJob) {
+  if (
+    response.metadata?.usage?.reasoning_summary &&
+    context &&
+    context.updateJob
+  ) {
     try {
       await context.updateJob({
-        reasoning_summary: response.metadata.usage.reasoning_summary
+        reasoning_summary: response.metadata.usage.reasoning_summary,
       });
       debugLog('Chat: Stored reasoning summary');
     } catch (error) {
@@ -762,12 +862,14 @@ async function executeChatWithStreaming(args, dependencies, context) {
   let finalSummary = null;
   if (response.content && response.content.length > 100) {
     try {
-      finalSummary = await summarizationService.generateFinalSummary(response.content);
+      finalSummary = await summarizationService.generateFinalSummary(
+        response.content,
+      );
       debugLog(`Chat: Generated final summary - "${finalSummary}"`);
       // Store final summary in job
       if (finalSummary && context && context.updateJob) {
         await context.updateJob({
-          final_summary: finalSummary
+          final_summary: finalSummary,
         });
       }
     } catch (error) {
@@ -779,7 +881,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
   // Add assistant response to conversation history
   const assistantMessage = {
     role: 'assistant',
-    content: response.content
+    content: response.content,
   };
 
   const updatedMessages = [...messages, assistantMessage];
@@ -792,7 +894,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
       model,
       lastUpdated: Date.now(),
       // Store Codex thread ID if available (for thread resumption)
-      codexThreadId: response.metadata?.threadId
+      codexThreadId: response.metadata?.threadId,
     };
 
     await continuationStore.set(continuationId, conversationState);
@@ -810,73 +912,85 @@ async function executeChatWithStreaming(args, dependencies, context) {
       id: continuationId,
       provider: providerName,
       model,
-      messageCount: updatedMessages.filter(msg => msg.role !== 'system').length
+      messageCount: updatedMessages.filter((msg) => msg.role !== 'system')
+        .length,
     },
     metadata: {
       provider: providerName,
       model: resolvedModel,
       execution_time: executionTime,
       async_execution: true,
-      ...response.metadata
-    }
+      ...response.metadata,
+    },
   };
 }
 
 // Tool metadata
-chatTool.description = 'GENERAL CHAT & COLLABORATIVE THINKING - Development assistance, brainstorming, code analysis. Supports files, images, continuation_id for multi-turn conversations. Use model: "auto" for automatic selection.';
+chatTool.description =
+  'GENERAL CHAT & COLLABORATIVE THINKING - Development assistance, brainstorming, code analysis. Supports files, images, continuation_id for multi-turn conversations. Use model: "auto" for automatic selection.';
 chatTool.inputSchema = {
   type: 'object',
   properties: {
     model: {
       type: 'string',
-      description: 'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
+      description:
+        'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-2.5-pro", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',
       items: { type: 'string' },
-      description: 'File paths to include as context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\src\\auth.js", "./config.json"]',
+      description:
+        'File paths to include as context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\src\\auth.js", "./config.json"]',
     },
     images: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Image paths for visual context (absolute or relative paths, or base64 data). Example: ["C:\\Users\\username\\diagram.png", "./screenshot.jpg", "data:image/jpeg;base64,/9j/4AAQ..."]',
+      description:
+        'Image paths for visual context (absolute or relative paths, or base64 data). Example: ["C:\\Users\\username\\diagram.png", "./screenshot.jpg", "data:image/jpeg;base64,/9j/4AAQ..."]',
     },
     continuation_id: {
       type: 'string',
-      description: 'Continuation ID for persistent conversation. Example: "chat_1703123456789_abc123"',
+      description:
+        'Continuation ID for persistent conversation. Example: "chat_1703123456789_abc123"',
     },
     temperature: {
       type: 'number',
-      description: 'Response randomness (0.0-1.0). Examples: 0.2 (focused), 0.5 (balanced), 0.8 (creative). Default: 0.5',
+      description:
+        'Response randomness (0.0-1.0). Examples: 0.2 (focused), 0.5 (balanced), 0.8 (creative). Default: 0.5',
       minimum: 0.0,
       maximum: 1.0,
-      default: 0.5
+      default: 0.5,
     },
     reasoning_effort: {
       type: 'string',
       enum: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
-      description: 'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest - GPT-5.1+ only), "minimal" (few reasoning tokens), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
-      default: 'medium'
+      description:
+        'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest - GPT-5.1+ only), "minimal" (few reasoning tokens), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+      default: 'medium',
     },
     verbosity: {
       type: 'string',
       enum: ['low', 'medium', 'high'],
-      description: 'Output verbosity for GPT-5 models. Examples: "low" (concise answers), "medium" (balanced), "high" (thorough explanations). Default: "medium"',
-      default: 'medium'
+      description:
+        'Output verbosity for GPT-5 models. Examples: "low" (concise answers), "medium" (balanced), "high" (thorough explanations). Default: "medium"',
+      default: 'medium',
     },
     use_websearch: {
       type: 'boolean',
-      description: 'Enable web search for current information. Example: true for recent developments or up to date documentation. Default: false',
-      default: false
+      description:
+        'Enable web search for current information. Example: true for recent developments or up to date documentation. Default: false',
+      default: false,
     },
     async: {
       type: 'boolean',
-      description: 'Execute chat in background. When true, returns continuation_id immediately and processes request asynchronously. Default: false',
-      default: false
+      description:
+        'Execute chat in background. When true, returns continuation_id immediately and processes request asynchronously. Default: false',
+      default: false,
     },
     prompt: {
       type: 'string',
-      description: 'Your question or topic with relevant context. More detail enables better responses. Example: "How should I structure the authentication module for this Express.js API?"',
+      description:
+        'Your question or topic with relevant context. More detail enables better responses. Example: "How should I structure the authentication module for this Express.js API?"',
     },
   },
   required: ['prompt'],

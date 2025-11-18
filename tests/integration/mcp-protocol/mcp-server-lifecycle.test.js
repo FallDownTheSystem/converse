@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig, getMcpClientConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { logger } from '../../../src/utils/logger.js';
@@ -28,11 +31,11 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       server = new Server(
         {
           name: config.mcp.name,
-          version: config.mcp.version
+          version: config.mcp.version,
         },
         {
-          capabilities: { tools: {}, prompts: {}, resources: {} }
-        }
+          capabilities: { tools: {}, prompts: {}, resources: {} },
+        },
       );
 
       // Create router with server and config (createRouter doesn't return anything)
@@ -41,7 +44,7 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Mock transport for testing (we don't actually connect stdio)
       transport = {
         start: vi.fn(),
-        close: vi.fn()
+        close: vi.fn(),
       };
 
       // Create mock router interface for testing
@@ -51,8 +54,11 @@ describe('MCP Server Lifecycle Integration Tests', () => {
           return await server.request({ method: 'tools/list', params: {} }, {});
         },
         callTool: async (request) => {
-          return await server.request({ method: 'tools/call', params: request }, {});
-        }
+          return await server.request(
+            { method: 'tools/call', params: request },
+            {},
+          );
+        },
       };
 
       logger.info('[mcp-lifecycle-test] Server lifecycle test setup completed');
@@ -67,7 +73,9 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       if (transport && transport.close) {
         await transport.close();
       }
-      logger.info('[mcp-lifecycle-test] Server lifecycle test cleanup completed');
+      logger.info(
+        '[mcp-lifecycle-test] Server lifecycle test cleanup completed',
+      );
     } catch (error) {
       logger.error('[mcp-lifecycle-test] Cleanup failed:', error);
     }
@@ -97,8 +105,14 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Test that required configuration is present
       expect(config.server.port).toBeGreaterThan(0);
       expect(config.server.port).toBeLessThanOrEqual(65535);
-      expect(['development', 'test', 'production'].includes(config.server.node_env)).toBe(true);
-      expect(['error', 'warn', 'info', 'debug', 'trace'].includes(config.server.log_level)).toBe(true);
+      expect(
+        ['development', 'test', 'production'].includes(config.server.node_env),
+      ).toBe(true);
+      expect(
+        ['error', 'warn', 'info', 'debug', 'trace'].includes(
+          config.server.log_level,
+        ),
+      ).toBe(true);
     });
 
     it('should have MCP client configuration', () => {
@@ -138,20 +152,26 @@ describe('MCP Server Lifecycle Integration Tests', () => {
 
   describe('Provider Availability', () => {
     it('should detect available providers correctly', async () => {
-      const { getAvailableProviders } = await import('../../../src/providers/index.js');
+      const { getAvailableProviders } = await import(
+        '../../../src/providers/index.js'
+      );
       const availableProviders = getAvailableProviders(config);
 
       expect(Array.isArray(availableProviders)).toBe(true);
 
       // Should have at least one provider if API keys are configured
-      if (config.apiKeys.openai || config.apiKeys.xai || config.apiKeys.google) {
+      if (
+        config.apiKeys.openai ||
+        config.apiKeys.xai ||
+        config.apiKeys.google
+      ) {
         expect(availableProviders.length).toBeGreaterThan(0);
       }
 
       // Check provider structure - getAvailableProviders returns array of provider names
       const { getProvider } = await import('../../../src/providers/index.js');
 
-      availableProviders.forEach(providerName => {
+      availableProviders.forEach((providerName) => {
         expect(providerName).toBeTypeOf('string');
 
         // Get the actual provider instance to validate its interface
@@ -200,7 +220,9 @@ describe('MCP Server Lifecycle Integration Tests', () => {
           return await router.callTool(request.params);
         });
 
-        logger.info('[mcp-lifecycle-test] Startup sequence simulation completed successfully');
+        logger.info(
+          '[mcp-lifecycle-test] Startup sequence simulation completed successfully',
+        );
       } catch (error) {
         startupSuccess = false;
         startupError = error;
@@ -219,24 +241,28 @@ describe('MCP Server Lifecycle Integration Tests', () => {
         server: {
           port: -1, // Invalid port
           nodeEnv: 'invalid-env',
-          logLevel: 'invalid-level'
+          logLevel: 'invalid-level',
         },
         apiKeys: {},
         providers: {},
         mcp: {
           serverName: '',
-          serverVersion: ''
-        }
+          serverVersion: '',
+        },
       };
 
       // Configuration validation should catch these issues
       try {
-        const { validateRuntimeConfig } = await import('../../../src/config.js');
+        const { validateRuntimeConfig } = await import(
+          '../../../src/config.js'
+        );
         await validateRuntimeConfig(invalidConfig);
         expect(true).toBe(false); // Should not reach here
       } catch (error) {
         expect(error).toBeDefined();
-        expect(error.message).toMatch(/(port|environment|log level|server name|configuration|invalid)/i);
+        expect(error.message).toMatch(
+          /(port|environment|log level|server name|configuration|invalid)/i,
+        );
       }
     });
   });
@@ -267,7 +293,9 @@ describe('MCP Server Lifecycle Integration Tests', () => {
         // 4. Cleanup resources
         logger.info('[mcp-lifecycle-test] Cleaning up resources...');
 
-        logger.info('[mcp-lifecycle-test] Graceful shutdown simulation completed');
+        logger.info(
+          '[mcp-lifecycle-test] Graceful shutdown simulation completed',
+        );
       } catch (error) {
         shutdownSuccess = false;
         shutdownError = error;
@@ -281,16 +309,20 @@ describe('MCP Server Lifecycle Integration Tests', () => {
     });
 
     it('should cleanup continuation store on shutdown', async () => {
-      const { getContinuationStore } = await import('../../../src/continuationStore.js');
+      const { getContinuationStore } = await import(
+        '../../../src/continuationStore.js'
+      );
       const store = getContinuationStore();
 
       // Add some test data
-      const { generateContinuationId } = await import('../../../src/continuationStore.js');
+      const { generateContinuationId } = await import(
+        '../../../src/continuationStore.js'
+      );
       const conversationId = generateContinuationId();
       const testConversation = {
         messages: [{ role: 'user', content: 'test' }],
         provider: 'openai',
-        model: 'gpt-4o-mini'
+        model: 'gpt-4o-mini',
       };
 
       await store.set(conversationId, testConversation);
@@ -325,8 +357,8 @@ describe('MCP Server Lifecycle Integration Tests', () => {
           env: {
             ...process.env,
             NODE_ENV: 'development',
-            LOG_LEVEL: 'info'
-          }
+            LOG_LEVEL: 'info',
+          },
         });
 
         let output = '';
@@ -334,15 +366,19 @@ describe('MCP Server Lifecycle Integration Tests', () => {
 
         function checkForStartupIndicators() {
           const combinedOutput = output + errorOutput;
-          if (combinedOutput.includes('converse-mcp-server v1.0.0') ||
-              combinedOutput.includes('Converse MCP Server started successfully')) {
+          if (
+            combinedOutput.includes('converse-mcp-server v1.0.0') ||
+            combinedOutput.includes('Converse MCP Server started successfully')
+          ) {
             clearTimeout(timeout);
             child.kill('SIGTERM');
 
             // Give it a moment to shutdown
             setTimeout(() => {
               expect(combinedOutput).toContain('converse-mcp-server');
-              logger.info('[mcp-lifecycle-test] Process spawn test completed successfully');
+              logger.info(
+                '[mcp-lifecycle-test] Process spawn test completed successfully',
+              );
               resolve();
             }, 1000);
           }
@@ -370,7 +406,11 @@ describe('MCP Server Lifecycle Integration Tests', () => {
             // Expected termination
             resolve();
           } else if (code !== 0) {
-            reject(new Error(`Server process exited with code ${code}\nStdout: ${output}\nStderr: ${errorOutput}`));
+            reject(
+              new Error(
+                `Server process exited with code ${code}\nStdout: ${output}\nStderr: ${errorOutput}`,
+              ),
+            );
           } else {
             resolve();
           }
@@ -387,7 +427,9 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       expect(memUsage.heapUsed).toBeLessThan(200 * 1024 * 1024); // 200MB for heap
       expect(memUsage.rss).toBeLessThan(400 * 1024 * 1024); // 400MB for RSS in test environment
 
-      logger.debug(`[mcp-lifecycle-test] Memory usage - Heap: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB, RSS: ${Math.round(memUsage.rss / 1024 / 1024)}MB`);
+      logger.debug(
+        `[mcp-lifecycle-test] Memory usage - Heap: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB, RSS: ${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+      );
     });
 
     it('should start up quickly', async () => {
@@ -398,15 +440,15 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       const testServer = new Server(
         {
           name: config.mcp.serverName,
-          version: config.mcp.serverVersion
+          version: config.mcp.serverVersion,
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       const testRouter = await createRouter(testServer, config);

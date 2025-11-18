@@ -12,7 +12,7 @@ const mockCreate = vi.fn();
 const mockOpenAIInstances = [];
 
 vi.mock('openai', () => {
-  const mockOpenAI = vi.fn((config) => {
+  const mockOpenAI = vi.fn(function (config) {
     const instance = {
       apiKey: config.apiKey,
       baseURL: config.baseURL,
@@ -20,21 +20,24 @@ vi.mock('openai', () => {
       timeout: config.timeout,
       chat: {
         completions: {
-          create: mockCreate
-        }
-      }
+          create: mockCreate,
+        },
+      },
     };
     mockOpenAIInstances.push({ config, instance });
     return instance;
   });
 
   return {
-    default: mockOpenAI
+    default: mockOpenAI,
   };
 });
 
 // Import after mocking
-import { createOpenAICompatibleProvider, retryWithBackoff } from '../../../src/providers/openai-compatible.js';
+import {
+  createOpenAICompatibleProvider,
+  retryWithBackoff,
+} from '../../../src/providers/openai-compatible.js';
 
 describe('OpenAI-Compatible Provider Base Module', () => {
   let provider;
@@ -59,7 +62,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
           supportsTemperature: true,
           timeout: 60000,
           description: 'Test model 1',
-          aliases: ['test-1', 'model-1']
+          aliases: ['test-1', 'model-1'],
         },
         'test-model-2': {
           modelName: 'test-model-2',
@@ -70,9 +73,9 @@ describe('OpenAI-Compatible Provider Base Module', () => {
           supportsImages: false,
           supportsTemperature: false,
           timeout: 120000,
-          description: 'Test model 2'
-        }
-      }
+          description: 'Test model 2',
+        },
+      },
     };
 
     provider = createOpenAICompatibleProvider(mockConfig);
@@ -91,7 +94,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     it('should accept custom headers in configuration', () => {
       const customProvider = createOpenAICompatibleProvider({
         ...mockConfig,
-        customHeaders: { 'X-Custom-Header': 'value' }
+        customHeaders: { 'X-Custom-Header': 'value' },
       });
       expect(customProvider).toBeDefined();
     });
@@ -100,7 +103,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       const customValidator = vi.fn().mockReturnValue(true);
       const customProvider = createOpenAICompatibleProvider({
         ...mockConfig,
-        validateApiKey: customValidator
+        validateApiKey: customValidator,
       });
 
       const config = { apiKeys: { testprovider: 'custom-key' } };
@@ -129,7 +132,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     it('should use default API key if provider-specific key not found', () => {
       const customProvider = createOpenAICompatibleProvider({
         ...mockConfig,
-        apiKey: 'default-key'
+        apiKey: 'default-key',
       });
       expect(customProvider.validateConfig({})).toBe(true);
     });
@@ -173,28 +176,28 @@ describe('OpenAI-Compatible Provider Base Module', () => {
 
     beforeEach(() => {
       mockResponse = {
-        choices: [{
-          message: { content: 'Test response' },
-          finish_reason: 'stop'
-        }],
+        choices: [
+          {
+            message: { content: 'Test response' },
+            finish_reason: 'stop',
+          },
+        ],
         usage: {
           prompt_tokens: 10,
           completion_tokens: 20,
-          total_tokens: 30
+          total_tokens: 30,
         },
-        model: 'test-model-1'
+        model: 'test-model-1',
       };
 
       mockCreate.mockResolvedValue(mockResponse);
     });
 
     it('should invoke with basic messages', async () => {
-      const messages = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages = [{ role: 'user', content: 'Hello' }];
 
       const result = await provider.invoke(messages, {
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       expect(mockCreate).toHaveBeenCalled();
@@ -210,10 +213,10 @@ describe('OpenAI-Compatible Provider Base Module', () => {
           usage: {
             input_tokens: 10,
             output_tokens: 20,
-            total_tokens: 30
+            total_tokens: 30,
           },
-          provider: 'testprovider'
-        }
+          provider: 'testprovider',
+        },
       });
     });
 
@@ -225,7 +228,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
         temperature: 0.5,
         maxTokens: 2000,
         custom_param: 'value',
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -236,22 +239,24 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     });
 
     it('should handle image content', async () => {
-      const messages = [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What is this?' },
-          {
-            type: 'image',
-            source: {
-              media_type: 'image/jpeg',
-              data: 'base64data'
-            }
-          }
-        ]
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is this?' },
+            {
+              type: 'image',
+              source: {
+                media_type: 'image/jpeg',
+                data: 'base64data',
+              },
+            },
+          ],
+        },
+      ];
 
       await provider.invoke(messages, {
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -261,9 +266,9 @@ describe('OpenAI-Compatible Provider Base Module', () => {
           type: 'image_url',
           image_url: {
             url: 'data:image/jpeg;base64,base64data',
-            detail: 'auto'
-          }
-        }
+            detail: 'auto',
+          },
+        },
       ]);
     });
 
@@ -272,13 +277,13 @@ describe('OpenAI-Compatible Provider Base Module', () => {
         ...mockConfig,
         defaultParams: {
           temperature: 0.3,
-          top_p: 0.9
-        }
+          top_p: 0.9,
+        },
       });
 
       const messages = [{ role: 'user', content: 'Hello' }];
       await customProvider.invoke(messages, {
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -289,17 +294,17 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     it('should apply request transformation', async () => {
       const transformRequest = vi.fn().mockImplementation((payload) => ({
         ...payload,
-        transformed: true
+        transformed: true,
       }));
 
       const customProvider = createOpenAICompatibleProvider({
         ...mockConfig,
-        transformRequest
+        transformRequest,
       });
 
       const messages = [{ role: 'user', content: 'Hello' }];
       await customProvider.invoke(messages, {
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       expect(transformRequest).toHaveBeenCalled();
@@ -310,17 +315,17 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     it('should apply response transformation', async () => {
       const transformResponse = vi.fn().mockImplementation((result) => ({
         ...result,
-        transformed: true
+        transformed: true,
       }));
 
       const customProvider = createOpenAICompatibleProvider({
         ...mockConfig,
-        transformResponse
+        transformResponse,
       });
 
       const messages = [{ role: 'user', content: 'Hello' }];
       const result = await customProvider.invoke(messages, {
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       expect(transformResponse).toHaveBeenCalled();
@@ -332,14 +337,14 @@ describe('OpenAI-Compatible Provider Base Module', () => {
 
       await provider.invoke(messages, {
         model: 'test-model-1',
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       // Check that OpenAI client was created with timeout
       expect(mockCreate).toHaveBeenCalled();
       expect(mockOpenAIInstances).toHaveLength(1);
       expect(mockOpenAIInstances[0].config).toMatchObject({
-        timeout: 60000
+        timeout: 60000,
       });
     });
 
@@ -349,7 +354,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       await provider.invoke(messages, {
         model: 'test-model-2',
         temperature: 0.8,
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -362,7 +367,7 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       await provider.invoke(messages, {
         model: 'test-model-1',
         maxTokens: 10000,
-        config: { apiKeys: { testprovider: 'test-key' } }
+        config: { apiKeys: { testprovider: 'test-key' } },
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -380,22 +385,24 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       ['safety', StopReasons.SAFETY],
       ['unknown_reason', StopReasons.OTHER],
       [null, StopReasons.STOP],
-      [undefined, StopReasons.STOP]
+      [undefined, StopReasons.STOP],
     ];
 
     testCases.forEach(([finishReason, expectedStopReason]) => {
       it(`should map finish_reason "${finishReason}" to "${expectedStopReason}"`, async () => {
         mockCreate.mockResolvedValue({
-          choices: [{
-            message: { content: 'Test' },
-            finish_reason: finishReason
-          }],
-          usage: {}
+          choices: [
+            {
+              message: { content: 'Test' },
+              finish_reason: finishReason,
+            },
+          ],
+          usage: {},
         });
 
         const result = await provider.invoke(
           [{ role: 'user', content: 'Hello' }],
-          { config: { apiKeys: { testprovider: 'test-key' } } }
+          { config: { apiKeys: { testprovider: 'test-key' } } },
         );
 
         expect(result.stop_reason).toBe(expectedStopReason);
@@ -406,71 +413,71 @@ describe('OpenAI-Compatible Provider Base Module', () => {
   describe('Error Handling', () => {
     it('should handle missing API key', async () => {
       await expect(
-        provider.invoke([{ role: 'user', content: 'Hello' }], {})
+        provider.invoke([{ role: 'user', content: 'Hello' }], {}),
       ).rejects.toThrow('TestProvider API key not configured');
     });
 
     it('should handle invalid API key error', async () => {
       mockCreate.mockRejectedValue({
         code: 'invalid_api_key',
-        message: 'Invalid API key provided'
+        message: 'Invalid API key provided',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_API_KEY,
-        message: expect.stringContaining('Invalid TestProvider API key')
+        message: expect.stringContaining('Invalid TestProvider API key'),
       });
     });
 
     it('should handle quota exceeded error', async () => {
       mockCreate.mockRejectedValue({
         code: 'insufficient_quota',
-        message: 'Quota exceeded'
+        message: 'Quota exceeded',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.QUOTA_EXCEEDED,
-        message: expect.stringContaining('quota exceeded')
+        message: expect.stringContaining('quota exceeded'),
       });
     });
 
     it('should handle rate limit error', async () => {
       mockCreate.mockRejectedValue({
         type: 'rate_limit_error',
-        message: 'Rate limit exceeded'
+        message: 'Rate limit exceeded',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.RATE_LIMIT_EXCEEDED,
-        message: expect.stringContaining('rate limit exceeded')
+        message: expect.stringContaining('rate limit exceeded'),
       });
     });
 
     it('should handle model not found error', async () => {
       mockCreate.mockRejectedValue({
         code: 'model_not_found',
-        message: 'Model not found'
+        message: 'Model not found',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining('Model test-model-1 not found')
+        message: expect.stringContaining('Model test-model-1 not found'),
       });
     });
 
@@ -478,136 +485,143 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       mockCreate.mockRejectedValue({
         response: {
           status: 400,
-          data: { error: { message: 'Context length exceeded for this model' } }
+          data: {
+            error: { message: 'Context length exceeded for this model' },
+          },
         },
-        message: 'Context length exceeded for this model'
+        message: 'Context length exceeded for this model',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
-        message: expect.stringContaining('Context length exceeded')
+        message: expect.stringContaining('Context length exceeded'),
       });
     });
 
     it('should handle timeout error', async () => {
       mockCreate.mockRejectedValue({
         code: 'ETIMEDOUT',
-        message: 'Request timeout'
+        message: 'Request timeout',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.TIMEOUT_ERROR,
-        message: expect.stringContaining('request timeout')
+        message: expect.stringContaining('request timeout'),
       });
     });
 
     it('should handle network error', async () => {
       mockCreate.mockRejectedValue({
         code: 'ECONNREFUSED',
-        message: 'Connection refused'
+        message: 'Connection refused',
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NETWORK_ERROR,
-        message: expect.stringContaining('network error')
+        message: expect.stringContaining('network error'),
       });
     });
 
     it('should handle no response choice', async () => {
       mockCreate.mockResolvedValue({
         choices: [],
-        usage: {}
+        usage: {},
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NO_RESPONSE_CHOICE,
-        message: 'No response choice received'
+        message: 'No response choice received',
       });
     });
 
     it('should handle no response content', async () => {
       mockCreate.mockResolvedValue({
-        choices: [{
-          message: {},
-          finish_reason: 'stop'
-        }],
-        usage: {}
+        choices: [
+          {
+            message: {},
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
       });
 
       await expect(
         provider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NO_RESPONSE_CONTENT,
-        message: 'No content in response'
+        message: 'No content in response',
       });
     });
 
     it('should validate message format', async () => {
       await expect(
         provider.invoke('not an array', {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGES,
-        message: 'Messages must be an array'
+        message: 'Messages must be an array',
       });
     });
 
     it('should validate individual messages', async () => {
       await expect(
         provider.invoke([null], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGE,
-        message: expect.stringContaining('Message at index 0 must be an object')
+        message: expect.stringContaining(
+          'Message at index 0 must be an object',
+        ),
       });
     });
 
     it('should validate message roles', async () => {
       await expect(
         provider.invoke([{ role: 'invalid', content: 'test' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_ROLE,
-        message: expect.stringContaining('Invalid role "invalid"')
+        message: expect.stringContaining('Invalid role "invalid"'),
       });
     });
 
     it('should validate message content', async () => {
       await expect(
         provider.invoke([{ role: 'user' }], {
-          config: { apiKeys: { testprovider: 'test-key' } }
-        })
+          config: { apiKeys: { testprovider: 'test-key' } },
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MISSING_CONTENT,
-        message: expect.stringContaining('Message content is required')
+        message: expect.stringContaining('Message content is required'),
       });
     });
   });
 
   describe('Retry Helper', () => {
     it('should retry on rate limit errors', async () => {
-      const fn = vi.fn()
+      const fn = vi
+        .fn()
         .mockRejectedValueOnce({ code: ErrorCodes.RATE_LIMIT_EXCEEDED })
         .mockResolvedValueOnce('success');
 
@@ -618,7 +632,8 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     });
 
     it('should retry on timeout errors', async () => {
-      const fn = vi.fn()
+      const fn = vi
+        .fn()
         .mockRejectedValueOnce({ code: ErrorCodes.TIMEOUT_ERROR })
         .mockRejectedValueOnce({ code: ErrorCodes.TIMEOUT_ERROR })
         .mockResolvedValueOnce('success');
@@ -630,27 +645,32 @@ describe('OpenAI-Compatible Provider Base Module', () => {
     });
 
     it('should not retry on non-retryable errors', async () => {
-      const fn = vi.fn()
+      const fn = vi
+        .fn()
         .mockRejectedValueOnce({ code: ErrorCodes.INVALID_API_KEY });
 
-      await expect(retryWithBackoff(fn, 3, 10))
-        .rejects.toMatchObject({ code: ErrorCodes.INVALID_API_KEY });
+      await expect(retryWithBackoff(fn, 3, 10)).rejects.toMatchObject({
+        code: ErrorCodes.INVALID_API_KEY,
+      });
 
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
     it('should throw last error after max retries', async () => {
-      const error = { code: ErrorCodes.RATE_LIMIT_EXCEEDED, message: 'Rate limited' };
+      const error = {
+        code: ErrorCodes.RATE_LIMIT_EXCEEDED,
+        message: 'Rate limited',
+      };
       const fn = vi.fn().mockRejectedValue(error);
 
-      await expect(retryWithBackoff(fn, 2, 10))
-        .rejects.toMatchObject(error);
+      await expect(retryWithBackoff(fn, 2, 10)).rejects.toMatchObject(error);
 
       expect(fn).toHaveBeenCalledTimes(2);
     });
 
     it('should use exponential backoff', async () => {
-      const fn = vi.fn()
+      const fn = vi
+        .fn()
         .mockRejectedValueOnce({ code: ErrorCodes.TIMEOUT_ERROR })
         .mockRejectedValueOnce({ code: ErrorCodes.TIMEOUT_ERROR })
         .mockResolvedValueOnce('success');

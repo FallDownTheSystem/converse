@@ -19,7 +19,7 @@ import { normalizeExtendedPath } from '../utils/pathUtils.js';
 
 // Supported Codex models with their configurations
 const SUPPORTED_MODELS = {
-  'codex': {
+  codex: {
     modelName: 'codex',
     friendlyName: 'OpenAI Codex (GPT-5)',
     contextWindow: 400000,
@@ -29,9 +29,10 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false, // Codex manages temperature internally
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 60000, // 60 seconds (Codex can take 5-20s for responses)
-    description: 'OpenAI Codex agentic coding assistant with local file access and tool execution',
-    aliases: ['gpt-5-codex', 'gpt5-codex']
-  }
+    description:
+      'OpenAI Codex agentic coding assistant with local file access and tool execution',
+    aliases: ['gpt-5-codex', 'gpt5-codex'],
+  },
 };
 
 /**
@@ -66,7 +67,7 @@ async function getCodexSDK() {
   if (!isCodexAvailable()) {
     throw new CodexProviderError(
       'Codex SDK not installed. Install with: npm install @openai/codex-sdk',
-      'CODEX_NOT_INSTALLED'
+      'CODEX_NOT_INSTALLED',
     );
   }
 
@@ -78,7 +79,7 @@ async function getCodexSDK() {
     throw new CodexProviderError(
       'Failed to load Codex SDK',
       'CODEX_LOAD_ERROR',
-      error
+      error,
     );
   }
 }
@@ -93,18 +94,27 @@ async function getCodexSDK() {
  */
 function convertMessagesToPrompt(messages) {
   if (!Array.isArray(messages)) {
-    throw new CodexProviderError('Messages must be an array', ErrorCodes.INVALID_MESSAGES);
+    throw new CodexProviderError(
+      'Messages must be an array',
+      ErrorCodes.INVALID_MESSAGES,
+    );
   }
 
   if (messages.length === 0) {
-    throw new CodexProviderError('Messages array cannot be empty', ErrorCodes.INVALID_MESSAGES);
+    throw new CodexProviderError(
+      'Messages array cannot be empty',
+      ErrorCodes.INVALID_MESSAGES,
+    );
   }
 
   // Find last user message
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+  const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
 
   if (!lastUserMessage) {
-    throw new CodexProviderError('No user message found in messages array', ErrorCodes.INVALID_MESSAGES);
+    throw new CodexProviderError(
+      'No user message found in messages array',
+      ErrorCodes.INVALID_MESSAGES,
+    );
   }
 
   // Extract text content from message
@@ -115,19 +125,26 @@ function convertMessagesToPrompt(messages) {
   // Handle array content (multimodal format)
   if (Array.isArray(lastUserMessage.content)) {
     const textParts = lastUserMessage.content
-      .filter(item => item.type === 'text')
-      .map(item => item.text);
+      .filter((item) => item.type === 'text')
+      .map((item) => item.text);
 
     // Log warning if images present (Codex doesn't support images)
-    const hasImages = lastUserMessage.content.some(item => item.type === 'image');
+    const hasImages = lastUserMessage.content.some(
+      (item) => item.type === 'image',
+    );
     if (hasImages) {
-      debugLog('[Codex] Warning: Images in message will be ignored (Codex does not support multimodal input)');
+      debugLog(
+        '[Codex] Warning: Images in message will be ignored (Codex does not support multimodal input)',
+      );
     }
 
     return textParts.join('\n');
   }
 
-  throw new CodexProviderError('Invalid message content format', ErrorCodes.INVALID_MESSAGES);
+  throw new CodexProviderError(
+    'Invalid message content format',
+    ErrorCodes.INVALID_MESSAGES,
+  );
 }
 
 /**
@@ -148,15 +165,26 @@ async function getThreadIdFromContinuation(continuationId, continuationStore) {
  * Create stream generator for Codex streaming responses
  * Yields raw Codex SDK events that will be normalized by ProviderStreamNormalizer
  */
-async function* createStreamingGenerator(thread, prompt, signal, runOptions = {}) {
+async function* createStreamingGenerator(
+  thread,
+  prompt,
+  signal,
+  runOptions = {},
+) {
   try {
     // Try with runOptions, fallback without if SDK doesn't support them
     let eventsPromise;
     try {
       eventsPromise = thread.runStreamed(prompt, runOptions);
     } catch (error) {
-      if (runOptions.reasoningEffort && (error.message?.includes('reasoningEffort') || error.message?.includes('unknown option'))) {
-        debugLog('[Codex] reasoning_effort not supported by this SDK version for streaming, retrying without it');
+      if (
+        runOptions.reasoningEffort &&
+        (error.message?.includes('reasoningEffort') ||
+          error.message?.includes('unknown option'))
+      ) {
+        debugLog(
+          '[Codex] reasoning_effort not supported by this SDK version for streaming, retrying without it',
+        );
         eventsPromise = thread.runStreamed(prompt);
       } else {
         throw error;
@@ -202,20 +230,27 @@ export const codexProvider = {
       continuationStore,
       reasoning_effort,
       temperature,
-      use_websearch
+      use_websearch,
     } = options;
 
     // Validate configuration
     if (!config) {
-      throw new CodexProviderError('Configuration is required', ErrorCodes.MISSING_API_KEY);
+      throw new CodexProviderError(
+        'Configuration is required',
+        ErrorCodes.MISSING_API_KEY,
+      );
     }
 
     // Log unsupported parameters at debug level
     if (temperature !== undefined) {
-      debugLog('[Codex] Parameter "temperature" not supported by Codex (ignored)');
+      debugLog(
+        '[Codex] Parameter "temperature" not supported by Codex (ignored)',
+      );
     }
     if (use_websearch) {
-      debugLog('[Codex] Parameter "use_websearch" not supported by Codex (ignored)');
+      debugLog(
+        '[Codex] Parameter "use_websearch" not supported by Codex (ignored)',
+      );
     }
 
     try {
@@ -226,9 +261,13 @@ export const codexProvider = {
       const prompt = convertMessagesToPrompt(messages);
 
       // Get thread ID if resuming conversation
-      const threadId = continuation_id && continuationStore
-        ? await getThreadIdFromContinuation(continuation_id, continuationStore)
-        : null;
+      const threadId =
+        continuation_id && continuationStore
+          ? await getThreadIdFromContinuation(
+            continuation_id,
+            continuationStore,
+          )
+          : null;
 
       // Initialize Codex with API key if provided
       const codexApiKey = config.providers?.codexapikey;
@@ -246,7 +285,10 @@ export const codexProvider = {
       // Normalize Windows extended-length paths (\\?\C:\...) to regular paths
       const workingDirectory = normalizeExtendedPath(rawWorkingDirectory);
       const sandbox = config.providers?.codexsandboxmode || 'read-only';
-      const skipGitRepoCheck = config.providers?.codexskipgitcheck !== undefined ? config.providers.codexskipgitcheck : true;
+      const skipGitRepoCheck =
+        config.providers?.codexskipgitcheck !== undefined
+          ? config.providers.codexskipgitcheck
+          : true;
       const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
 
       // Create or resume thread
@@ -254,7 +296,7 @@ export const codexProvider = {
         workingDirectory,
         sandbox,
         skipGitRepoCheck,
-        approvalPolicy
+        approvalPolicy,
       };
       const thread = threadId
         ? codex.resumeThread(threadId, threadOptions)
@@ -274,7 +316,12 @@ export const codexProvider = {
 
       // Synchronous mode: consume streaming internally and return complete response
       const startTime = Date.now();
-      const generator = createStreamingGenerator(thread, prompt, signal, runOptions);
+      const generator = createStreamingGenerator(
+        thread,
+        prompt,
+        signal,
+        runOptions,
+      );
 
       let content = '';
       let usage = null;
@@ -283,13 +330,19 @@ export const codexProvider = {
       for await (const event of generator) {
         if (event?.type === 'thread.started') {
           threadIdFromStream = event.thread_id;
-        } else if (event?.type === 'item.completed' && event.item?.type === 'agent_message') {
+        } else if (
+          event?.type === 'item.completed' &&
+          event.item?.type === 'agent_message'
+        ) {
           content += event.item.text || '';
         } else if (event?.type === 'turn.completed') {
           usage = event.usage;
           break; // Exit after turn.completed
         } else if (event?.type === 'turn.failed') {
-          throw new CodexProviderError(event.error?.message || 'Turn failed', 'TURN_FAILED');
+          throw new CodexProviderError(
+            event.error?.message || 'Turn failed',
+            'TURN_FAILED',
+          );
         }
       }
 
@@ -303,17 +356,19 @@ export const codexProvider = {
           provider: 'codex',
           model,
           threadId: threadIdFromStream || thread.id,
-          usage: usage ? {
-            input_tokens: usage.input_tokens || 0,
-            output_tokens: usage.output_tokens || 0,
-            total_tokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
-            cached_input_tokens: usage.cached_input_tokens || 0
-          } : null,
+          usage: usage
+            ? {
+              input_tokens: usage.input_tokens || 0,
+              output_tokens: usage.output_tokens || 0,
+              total_tokens:
+                  (usage.input_tokens || 0) + (usage.output_tokens || 0),
+              cached_input_tokens: usage.cached_input_tokens || 0,
+            }
+            : null,
           response_time_ms: responseTime,
-          finish_reason: 'stop'
-        }
+          finish_reason: 'stop',
+        },
       };
-
     } catch (error) {
       debugError('[Codex] Execution error', error);
 
@@ -322,7 +377,7 @@ export const codexProvider = {
         throw new CodexProviderError(
           'Codex authentication failed. Ensure ChatGPT login or CODEX_API_KEY is set.',
           ErrorCodes.INVALID_API_KEY,
-          error
+          error,
         );
       }
 
@@ -330,7 +385,7 @@ export const codexProvider = {
         throw new CodexProviderError(
           'Not a Git repository. Use CODEX_SKIP_GIT_CHECK=true or run \'git init\'',
           'CONFIGURATION_ERROR',
-          error
+          error,
         );
       }
 
@@ -338,7 +393,7 @@ export const codexProvider = {
         throw new CodexProviderError(
           'Codex execution timeout',
           ErrorCodes.TIMEOUT_ERROR,
-          error
+          error,
         );
       }
 
@@ -346,7 +401,7 @@ export const codexProvider = {
       throw new CodexProviderError(
         error.message || 'Codex execution failed',
         ErrorCodes.API_ERROR,
-        error
+        error,
       );
     }
   },
@@ -389,11 +444,14 @@ export const codexProvider = {
 
     // Check aliases
     for (const [_name, config] of Object.entries(SUPPORTED_MODELS)) {
-      if (config.aliases && config.aliases.some(alias => alias.toLowerCase() === modelNameLower)) {
+      if (
+        config.aliases &&
+        config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
+      ) {
         return config;
       }
     }
 
     return null;
-  }
+  },
 };

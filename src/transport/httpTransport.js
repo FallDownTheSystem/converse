@@ -11,7 +11,10 @@ import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createLogger } from '../utils/logger.js';
-import { registerTransportSession, clearTransportSession } from '../utils/sessionManager.js';
+import {
+  registerTransportSession,
+  clearTransportSession,
+} from '../utils/sessionManager.js';
 
 const logger = createLogger('http-transport');
 
@@ -44,13 +47,14 @@ export class HTTPTransportServer {
       },
 
       // Security settings
-      enableDnsRebindingProtection: config.enableDnsRebindingProtection || false,
+      enableDnsRebindingProtection:
+        config.enableDnsRebindingProtection || false,
       allowedHosts: config.allowedHosts || ['127.0.0.1', 'localhost'],
       rateLimitEnabled: config.rateLimitEnabled || false,
       rateLimitWindow: config.rateLimitWindow || 900000,
       rateLimitMaxRequests: config.rateLimitMaxRequests || 1000,
 
-      ...config
+      ...config,
     };
 
     this.app = express();
@@ -78,10 +82,12 @@ export class HTTPTransportServer {
    */
   setupMiddleware() {
     // JSON parsing with size limit
-    this.app.use(express.json({
-      limit: this.config.maxRequestSize,
-      strict: true
-    }));
+    this.app.use(
+      express.json({
+        limit: this.config.maxRequestSize,
+        strict: true,
+      }),
+    );
 
     // Request timeout middleware
     this.app.use((req, res, next) => {
@@ -90,8 +96,8 @@ export class HTTPTransportServer {
           data: {
             method: req.method,
             path: req.path,
-            timeout: this.config.requestTimeout
-          }
+            timeout: this.config.requestTimeout,
+          },
         });
         if (!res.headersSent) {
           res.status(408).json({
@@ -118,15 +124,17 @@ export class HTTPTransportServer {
 
         // Clean old entries
         const clientRequests = rateLimitMap.get(clientId) || [];
-        const validRequests = clientRequests.filter(time => time > windowStart);
+        const validRequests = clientRequests.filter(
+          (time) => time > windowStart,
+        );
 
         if (validRequests.length >= this.config.rateLimitMaxRequests) {
           logger.warn('Rate limit exceeded', {
             data: {
               clientId,
               requests: validRequests.length,
-              limit: this.config.rateLimitMaxRequests
-            }
+              limit: this.config.rateLimitMaxRequests,
+            },
           });
           res.status(429).json({
             jsonrpc: '2.0',
@@ -147,8 +155,8 @@ export class HTTPTransportServer {
       logger.debug('Rate limiting enabled', {
         data: {
           window: this.config.rateLimitWindow,
-          maxRequests: this.config.rateLimitMaxRequests
-        }
+          maxRequests: this.config.rateLimitMaxRequests,
+        },
       });
     }
 
@@ -156,7 +164,7 @@ export class HTTPTransportServer {
     if (this.config.enableCors) {
       this.app.use(cors(this.config.corsOptions));
       logger.debug('CORS enabled for HTTP transport', {
-        data: { corsOptions: this.config.corsOptions }
+        data: { corsOptions: this.config.corsOptions },
       });
     }
 
@@ -166,8 +174,8 @@ export class HTTPTransportServer {
         data: {
           method: req.method,
           path: req.path,
-          sessionId: req.headers['mcp-session-id']
-        }
+          sessionId: req.headers['mcp-session-id'],
+        },
       });
       next();
     });
@@ -199,7 +207,7 @@ export class HTTPTransportServer {
         transport: 'http',
         server: this.mcpServer ? 'connected' : 'disconnected',
         sessions: this.transports.size,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -212,9 +220,9 @@ export class HTTPTransportServer {
         endpoints: {
           mcp: '/mcp',
           health: '/health',
-          info: '/info'
+          info: '/info',
         },
-        sessions: this.transports.size
+        sessions: this.transports.size,
       });
     });
   }
@@ -238,14 +246,15 @@ export class HTTPTransportServer {
           logger.warn('Maximum concurrent sessions reached', {
             data: {
               currentSessions: this.transports.size,
-              maxSessions: this.config.maxConcurrentSessions
-            }
+              maxSessions: this.config.maxConcurrentSessions,
+            },
           });
           res.status(503).json({
             jsonrpc: '2.0',
             error: {
               code: -32000,
-              message: 'Maximum concurrent sessions reached. Please try again later.',
+              message:
+                'Maximum concurrent sessions reached. Please try again later.',
             },
             id: null,
           });
@@ -257,9 +266,12 @@ export class HTTPTransportServer {
         logger.info('Created new MCP transport', {});
       } else {
         // Invalid request
-        logger.warn('Invalid MCP request - no session ID or not initialize request', {
-          data: { sessionId, hasInitialize: isInitializeRequest(req.body) }
-        });
+        logger.warn(
+          'Invalid MCP request - no session ID or not initialize request',
+          {
+            data: { sessionId, hasInitialize: isInitializeRequest(req.body) },
+          },
+        );
         res.status(400).json({
           jsonrpc: '2.0',
           error: {
@@ -273,7 +285,6 @@ export class HTTPTransportServer {
 
       // Handle the request through the transport
       await transport.handleRequest(req, res, req.body);
-
     } catch (error) {
       logger.error('Error handling MCP request', { error });
       if (!res.headersSent) {
@@ -296,7 +307,9 @@ export class HTTPTransportServer {
     const sessionId = req.headers['mcp-session-id'];
 
     if (!sessionId || !this.transports.has(sessionId)) {
-      logger.warn('SSE request with invalid session ID', { data: { sessionId } });
+      logger.warn('SSE request with invalid session ID', {
+        data: { sessionId },
+      });
       res.status(400).send('Invalid or missing session ID');
       return;
     }
@@ -307,7 +320,10 @@ export class HTTPTransportServer {
       await transport.handleRequest(req, res);
       logger.debug('SSE connection established', { data: { sessionId } });
     } catch (error) {
-      logger.error('Error handling SSE request', { error, data: { sessionId } });
+      logger.error('Error handling SSE request', {
+        error,
+        data: { sessionId },
+      });
       if (!res.headersSent) {
         res.status(500).send('Internal server error');
       }
@@ -321,7 +337,9 @@ export class HTTPTransportServer {
     const sessionId = req.headers['mcp-session-id'];
 
     if (!sessionId || !this.transports.has(sessionId)) {
-      logger.warn('Session termination with invalid session ID', { data: { sessionId } });
+      logger.warn('Session termination with invalid session ID', {
+        data: { sessionId },
+      });
       res.status(400).send('Invalid or missing session ID');
       return;
     }
@@ -364,7 +382,7 @@ export class HTTPTransportServer {
         this.cleanupSession(transport.sessionId);
         clearTransportSession(transport);
         logger.debug('Transport session closed', {
-          data: { sessionId: transport.sessionId }
+          data: { sessionId: transport.sessionId },
         });
       }
     };
@@ -431,7 +449,7 @@ export class HTTPTransportServer {
 
     this.cleanupInterval = setInterval(() => {
       logger.debug('Running session cleanup', {
-        data: { activeSessions: this.transports.size }
+        data: { activeSessions: this.transports.size },
       });
 
       // The timeout mechanism handles cleanup automatically,
@@ -439,7 +457,10 @@ export class HTTPTransportServer {
     }, this.config.sessionCleanupInterval);
 
     // Unref the interval so it doesn't keep the process alive
-    if (this.cleanupInterval && typeof this.cleanupInterval.unref === 'function') {
+    if (
+      this.cleanupInterval &&
+      typeof this.cleanupInterval.unref === 'function'
+    ) {
       this.cleanupInterval.unref();
     }
   }
@@ -453,28 +474,34 @@ export class HTTPTransportServer {
     }
 
     return new Promise((resolve, reject) => {
-      this.server = this.app.listen(this.config.port, this.config.host, (err) => {
-        if (err) {
-          logger.error('Failed to start HTTP transport server', { error: err });
-          reject(err);
-          return;
-        }
-
-        this.isStarted = true;
-        this.startSessionCleanup();
-
-        const address = this.server.address();
-        logger.info('HTTP transport server started', {
-          data: {
-            host: address.address,
-            port: address.port,
-            endpoint: `http://${this.config.host}:${address.port}/mcp`,
-            sessionTimeout: this.config.sessionTimeout,
-            maxSessions: this.config.maxConcurrentSessions
+      this.server = this.app.listen(
+        this.config.port,
+        this.config.host,
+        (err) => {
+          if (err) {
+            logger.error('Failed to start HTTP transport server', {
+              error: err,
+            });
+            reject(err);
+            return;
           }
-        });
-        resolve(address);
-      });
+
+          this.isStarted = true;
+          this.startSessionCleanup();
+
+          const address = this.server.address();
+          logger.info('HTTP transport server started', {
+            data: {
+              host: address.address,
+              port: address.port,
+              endpoint: `http://${this.config.host}:${address.port}/mcp`,
+              sessionTimeout: this.config.sessionTimeout,
+              maxSessions: this.config.maxConcurrentSessions,
+            },
+          });
+          resolve(address);
+        },
+      );
     });
   }
 
@@ -538,8 +565,8 @@ export class HTTPTransportServer {
         maxRequestSize: this.config.maxRequestSize,
         corsEnabled: this.config.enableCors,
         rateLimitEnabled: this.config.rateLimitEnabled,
-        dnsRebindingProtection: this.config.enableDnsRebindingProtection
-      }
+        dnsRebindingProtection: this.config.enableDnsRebindingProtection,
+      },
     };
   }
 }

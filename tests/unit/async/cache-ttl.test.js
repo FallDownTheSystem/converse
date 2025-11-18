@@ -52,13 +52,15 @@ describe('Cache TTL Configuration', () => {
       vi.stubEnv('ASYNC_MEMORY_TTL_MS', '5000'); // 5 seconds
 
       // Import module after setting environment
-      const { getAsyncJobStore } = await import('../../../src/async/asyncJobStore.js');
+      const { getAsyncJobStore } = await import(
+        '../../../src/async/asyncJobStore.js'
+      );
       const store = getAsyncJobStore();
 
       // Create a job
       const jobId = await store.create('chat', {
         sessionId: 'test-session',
-        arguments: { prompt: 'test' }
+        arguments: { prompt: 'test' },
       });
 
       // Job should exist initially
@@ -85,13 +87,15 @@ describe('Cache TTL Configuration', () => {
       // Don't set environment variable
 
       // Import module
-      const { getAsyncJobStore } = await import('../../../src/async/asyncJobStore.js');
+      const { getAsyncJobStore } = await import(
+        '../../../src/async/asyncJobStore.js'
+      );
       const store = getAsyncJobStore();
 
       // Create a job
       const jobId = await store.create('chat', {
         sessionId: 'test-session',
-        arguments: { prompt: 'test' }
+        arguments: { prompt: 'test' },
       });
 
       // Job should exist initially
@@ -117,12 +121,14 @@ describe('Cache TTL Configuration', () => {
       // Test with first TTL value
       vi.stubEnv('ASYNC_MEMORY_TTL_MS', '2000'); // 2 seconds
 
-      const { getAsyncJobStore: getStore1 } = await import('../../../src/async/asyncJobStore.js');
+      const { getAsyncJobStore: getStore1 } = await import(
+        '../../../src/async/asyncJobStore.js'
+      );
       const store1 = getStore1();
 
       const jobId1 = await store1.create('chat', {
         sessionId: 'session1',
-        arguments: { prompt: 'test1' }
+        arguments: { prompt: 'test1' },
       });
 
       // Advance time past first TTL
@@ -135,12 +141,14 @@ describe('Cache TTL Configuration', () => {
       vi.resetModules();
       vi.stubEnv('ASYNC_MEMORY_TTL_MS', '8000'); // 8 seconds
 
-      const { getAsyncJobStore: getStore2 } = await import('../../../src/async/asyncJobStore.js');
+      const { getAsyncJobStore: getStore2 } = await import(
+        '../../../src/async/asyncJobStore.js'
+      );
       const store2 = getStore2();
 
       const jobId2 = await store2.create('chat', {
         sessionId: 'session2',
-        arguments: { prompt: 'test2' }
+        arguments: { prompt: 'test2' },
       });
 
       // Reset timers for clean test
@@ -178,7 +186,7 @@ describe('Cache TTL Configuration', () => {
         jobId,
         status: 'completed',
         result: { content: 'test result' },
-        metadata: { timestamp: Date.now() }
+        metadata: { timestamp: Date.now() },
       };
 
       await cache.set(jobId, result);
@@ -217,7 +225,7 @@ describe('Cache TTL Configuration', () => {
         jobId,
         status: 'completed',
         result: { content: 'test result' },
-        metadata: { timestamp: Date.now() }
+        metadata: { timestamp: Date.now() },
       };
 
       await cache.set(jobId, result);
@@ -245,12 +253,14 @@ describe('Cache TTL Configuration', () => {
   describe('Memory to Disk Transition with TTL', () => {
     it('should handle job transition from memory to disk with different TTLs', async () => {
       // Set different TTLs for memory and disk
-      vi.stubEnv('ASYNC_MEMORY_TTL_MS', '3000');  // 3 seconds
-      vi.stubEnv('ASYNC_DISK_TTL_MS', '10000');   // 10 seconds
+      vi.stubEnv('ASYNC_MEMORY_TTL_MS', '3000'); // 3 seconds
+      vi.stubEnv('ASYNC_DISK_TTL_MS', '10000'); // 10 seconds
       vi.stubEnv('ASYNC_CACHE_DIR', cacheDir);
 
       // Import modules
-      const { getAsyncJobStore } = await import('../../../src/async/asyncJobStore.js');
+      const { getAsyncJobStore } = await import(
+        '../../../src/async/asyncJobStore.js'
+      );
       const { getFileCache } = await import('../../../src/async/fileCache.js');
 
       const memoryStore = getAsyncJobStore();
@@ -259,14 +269,14 @@ describe('Cache TTL Configuration', () => {
       // Create a job in memory
       const jobId = await memoryStore.create('chat', {
         sessionId: 'test-session',
-        arguments: { prompt: 'test' }
+        arguments: { prompt: 'test' },
       });
 
       // Complete the job
       await memoryStore.update(jobId, {
         status: 'completed',
         result: { content: 'test complete' },
-        completedAt: Date.now()
+        completedAt: Date.now(),
       });
 
       // Job should be in memory

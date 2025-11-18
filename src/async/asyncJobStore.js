@@ -92,7 +92,9 @@ export class AsyncJobStoreInterface {
    * @returns {Promise<Array>} Array of all jobs
    */
   async getAllJobs(_options = {}) {
-    throw new Error('getAllJobs() method must be implemented by storage backend');
+    throw new Error(
+      'getAllJobs() method must be implemented by storage backend',
+    );
   }
 
   /**
@@ -133,7 +135,9 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     super();
 
     // Check environment variable for memory TTL
-    const envMemoryTTL = process.env.ASYNC_MEMORY_TTL_MS ? parseInt(process.env.ASYNC_MEMORY_TTL_MS, 10) : null;
+    const envMemoryTTL = process.env.ASYNC_MEMORY_TTL_MS
+      ? parseInt(process.env.ASYNC_MEMORY_TTL_MS, 10)
+      : null;
     const ttl = envMemoryTTL || 24 * 60 * 60 * 1000; // Default 24 hours
 
     // Configure LRU cache with configurable TTL and 10k job capacity
@@ -166,7 +170,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       if (!tool || !['chat', 'consensus'].includes(tool)) {
         throw new AsyncJobStoreError(
           'Invalid tool: must be "chat" or "consensus"',
-          'INVALID_TOOL'
+          'INVALID_TOOL',
         );
       }
 
@@ -175,7 +179,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       if (!jobId) {
         throw new AsyncJobStoreError(
           'jobId is required in options',
-          'MISSING_JOB_ID'
+          'MISSING_JOB_ID',
         );
       }
       const now = Date.now();
@@ -211,19 +215,18 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Log event
       this._addEvent(jobState, 'job_created', {
-        tool
+        tool,
       });
 
       debugLog(`AsyncJobStore: Created job ${jobId} for ${tool}`);
       return jobId;
-
     } catch (error) {
       if (error instanceof AsyncJobStoreError) {
         throw error;
       }
       throw new AsyncJobStoreError(
         `Failed to create job: ${error.message}`,
-        'CREATION_ERROR'
+        'CREATION_ERROR',
       );
     }
   }
@@ -240,7 +243,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       if (!jobId || typeof jobId !== 'string') {
         throw new AsyncJobStoreError(
           'Invalid job ID: must be a non-empty string',
-          'INVALID_JOB_ID'
+          'INVALID_JOB_ID',
         );
       }
 
@@ -254,14 +257,13 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Return deep copy to prevent external mutations
       return this._deepClone(job);
-
     } catch (error) {
       if (error instanceof AsyncJobStoreError) {
         throw error;
       }
       throw new AsyncJobStoreError(
         `Failed to retrieve job: ${error.message}`,
-        'RETRIEVAL_ERROR'
+        'RETRIEVAL_ERROR',
       );
     }
   }
@@ -279,14 +281,14 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       if (!jobId || typeof jobId !== 'string') {
         throw new AsyncJobStoreError(
           'Invalid job ID: must be a non-empty string',
-          'INVALID_JOB_ID'
+          'INVALID_JOB_ID',
         );
       }
 
       if (!updates || typeof updates !== 'object') {
         throw new AsyncJobStoreError(
           'Invalid updates: must be an object',
-          'INVALID_UPDATES'
+          'INVALID_UPDATES',
         );
       }
 
@@ -298,7 +300,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       const now = Date.now();
 
       // Apply updates
-      if (updates.status && Object.values(JOB_STATUS).includes(updates.status)) {
+      if (
+        updates.status &&
+        Object.values(JOB_STATUS).includes(updates.status)
+      ) {
         job.status = updates.status;
 
         // Set startedAt when status changes to running
@@ -314,7 +319,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       if (updates.providers) {
         // Update provider states
         Object.entries(updates.providers).forEach(([provider, state]) => {
-          job.providers.set(provider, { ...job.providers.get(provider), ...state });
+          job.providers.set(provider, {
+            ...job.providers.get(provider),
+            ...state,
+          });
         });
       }
 
@@ -336,7 +344,22 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       }
 
       // Apply any other updates as direct properties on the job
-      const reservedFields = ['status', 'progress', 'providers', 'overall', 'jobId', 'sessionId', 'createdAt', 'updatedAt', 'events', 'seq', 'accumulated_content', 'title', 'final_summary', 'reasoning_summary'];
+      const reservedFields = [
+        'status',
+        'progress',
+        'providers',
+        'overall',
+        'jobId',
+        'sessionId',
+        'createdAt',
+        'updatedAt',
+        'events',
+        'seq',
+        'accumulated_content',
+        'title',
+        'final_summary',
+        'reasoning_summary',
+      ];
       Object.entries(updates).forEach(([key, value]) => {
         if (!reservedFields.includes(key)) {
           job[key] = value;
@@ -350,14 +373,13 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       this._addEvent(job, 'job_updated', updates);
 
       return true;
-
     } catch (error) {
       if (error instanceof AsyncJobStoreError) {
         throw error;
       }
       throw new AsyncJobStoreError(
         `Failed to update job: ${error.message}`,
-        'UPDATE_ERROR'
+        'UPDATE_ERROR',
       );
     }
   }
@@ -392,11 +414,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       debugLog(`AsyncJobStore: Completed job ${jobId}`);
       return true;
-
     } catch (error) {
       throw new AsyncJobStoreError(
         `Failed to complete job: ${error.message}`,
-        'COMPLETION_ERROR'
+        'COMPLETION_ERROR',
       );
     }
   }
@@ -418,9 +439,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       const now = Date.now();
 
       // Serialize error information
-      const errorInfo = error instanceof Error
-        ? { message: error.message, name: error.name, stack: error.stack }
-        : error;
+      const errorInfo =
+        error instanceof Error
+          ? { message: error.message, name: error.name, stack: error.stack }
+          : error;
 
       // Update job state
       job.status = JOB_STATUS.FAILED;
@@ -435,11 +457,10 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       debugError(`AsyncJobStore: Failed job ${jobId}:`, errorInfo);
       return true;
-
     } catch (err) {
       throw new AsyncJobStoreError(
         `Failed to fail job: ${err.message}`,
-        'FAILURE_ERROR'
+        'FAILURE_ERROR',
       );
     }
   }
@@ -453,7 +474,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     let totalEvents = 0;
 
     // Count jobs by status
-    Object.values(JOB_STATUS).forEach(status => {
+    Object.values(JOB_STATUS).forEach((status) => {
       statusCounts[status] = 0;
     });
 
@@ -512,26 +533,25 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
    */
   async getAllJobs(options = {}) {
     try {
-
       const {
         limit = 50,
         status,
         sortBy = 'updatedAt',
-        sortOrder = 'desc'
+        sortOrder = 'desc',
       } = options;
 
       // Validate options
       if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
         throw new AsyncJobStoreError(
           'Limit must be an integer between 1 and 1000',
-          'INVALID_LIMIT'
+          'INVALID_LIMIT',
         );
       }
 
       if (status && !Object.values(JOB_STATUS).includes(status)) {
         throw new AsyncJobStoreError(
           `Invalid status: must be one of ${Object.values(JOB_STATUS).join(', ')}`,
-          'INVALID_STATUS'
+          'INVALID_STATUS',
         );
       }
 
@@ -557,14 +577,13 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       debugLog(`AsyncJobStore: Found ${limitedJobs.length} jobs`);
       return limitedJobs;
-
     } catch (error) {
       if (error instanceof AsyncJobStoreError) {
         throw error;
       }
       throw new AsyncJobStoreError(
         `Failed to get all jobs: ${error.message}`,
-        'QUERY_ERROR'
+        'QUERY_ERROR',
       );
     }
   }
@@ -584,13 +603,15 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
       EVENT_TYPES.JOB_CANCELLED,
     ];
 
-    eventTypes.forEach(eventType => {
+    eventTypes.forEach((eventType) => {
       this.eventBus.on(eventType, (eventData) => {
         this._storeEventInJob(eventData);
       });
     });
 
-    debugLog('AsyncJobStore: Set up EventBus listeners for job lifecycle events');
+    debugLog(
+      'AsyncJobStore: Set up EventBus listeners for job lifecycle events',
+    );
   }
 
   /**
@@ -625,9 +646,11 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Update job's last activity
       job.updatedAt = Date.now();
-
     } catch (error) {
-      debugError('AsyncJobStore: Failed to store EventBus event in job:', error);
+      debugError(
+        'AsyncJobStore: Failed to store EventBus event in job:',
+        error,
+      );
     }
   }
 
@@ -651,11 +674,11 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Apply filters
       if (options.eventType) {
-        events = events.filter(event => event.type === options.eventType);
+        events = events.filter((event) => event.type === options.eventType);
       }
 
       if (options.afterSeq !== undefined) {
-        events = events.filter(event => event.seq > options.afterSeq);
+        events = events.filter((event) => event.seq > options.afterSeq);
       }
 
       // Apply limit
@@ -665,9 +688,11 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       // Return deep copy to prevent mutations
       return this._deepClone(events);
-
     } catch (error) {
-      debugError(`AsyncJobStore: Failed to get events for job ${jobId}:`, error);
+      debugError(
+        `AsyncJobStore: Failed to get events for job ${jobId}:`,
+        error,
+      );
       return [];
     }
   }
@@ -686,9 +711,11 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
 
       const latestEvent = job.events[job.events.length - 1];
       return this._deepClone(latestEvent);
-
     } catch (error) {
-      debugError(`AsyncJobStore: Failed to get latest event for job ${jobId}:`, error);
+      debugError(
+        `AsyncJobStore: Failed to get latest event for job ${jobId}:`,
+        error,
+      );
       return null;
     }
   }
@@ -750,7 +777,7 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this._deepClone(item));
+      return obj.map((item) => this._deepClone(item));
     }
 
     const cloned = {};
@@ -774,16 +801,19 @@ export function getAsyncJobStore() {
     asyncJobStore = new LRUAsyncJobStore();
 
     // Set up periodic cleanup (runs every 10 minutes, same as continuation store)
-    cleanupIntervalId = setInterval(async () => {
-      try {
-        const cleaned = await asyncJobStore.cleanup();
-        if (cleaned > 0) {
-          debugLog(`AsyncJobStore: Cleaned up ${cleaned} old jobs`);
+    cleanupIntervalId = setInterval(
+      async () => {
+        try {
+          const cleaned = await asyncJobStore.cleanup();
+          if (cleaned > 0) {
+            debugLog(`AsyncJobStore: Cleaned up ${cleaned} old jobs`);
+          }
+        } catch (error) {
+          debugError('AsyncJobStore cleanup failed:', error);
         }
-      } catch (error) {
-        debugError('AsyncJobStore cleanup failed:', error);
-      }
-    }, 10 * 60 * 1000);
+      },
+      10 * 60 * 1000,
+    );
 
     // Unref the interval so it doesn't keep the process alive
     if (cleanupIntervalId && typeof cleanupIntervalId.unref === 'function') {
@@ -801,7 +831,7 @@ export function setAsyncJobStore(store) {
   if (store !== null && !(store instanceof AsyncJobStoreInterface)) {
     throw new AsyncJobStoreError(
       'Store must extend AsyncJobStoreInterface',
-      'INVALID_STORE'
+      'INVALID_STORE',
     );
   }
   asyncJobStore = store;

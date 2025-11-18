@@ -17,7 +17,7 @@ describe('Fixture Validation', () => {
   describe('Provider Response Fixtures', () => {
     const providers = Object.keys(fixtures.providerResponses);
 
-    providers.forEach(provider => {
+    providers.forEach((provider) => {
       describe(`${provider} provider`, () => {
         it('should have a default response', () => {
           const defaultResponse = fixtures.providerResponses[provider].default;
@@ -28,7 +28,11 @@ describe('Fixture Validation', () => {
           const response = fixtureLoader.getProviderResponse(provider);
 
           // Check common fields based on provider type
-          if (['openai', 'xai', 'openrouter', 'deepseek', 'mistral'].includes(provider)) {
+          if (
+            ['openai', 'xai', 'openrouter', 'deepseek', 'mistral'].includes(
+              provider,
+            )
+          ) {
             expect(response).toHaveProperty('id');
             expect(response).toHaveProperty('choices');
             expect(Array.isArray(response.choices)).toBe(true);
@@ -47,11 +51,16 @@ describe('Fixture Validation', () => {
         });
 
         if (fixtures.providerResponses[provider].models) {
-          const models = Object.keys(fixtures.providerResponses[provider].models);
+          const models = Object.keys(
+            fixtures.providerResponses[provider].models,
+          );
 
-          models.forEach(model => {
+          models.forEach((model) => {
             it(`should have valid response for ${model}`, () => {
-              const response = fixtureLoader.getProviderResponse(provider, model);
+              const response = fixtureLoader.getProviderResponse(
+                provider,
+                model,
+              );
               expect(response).toBeDefined();
 
               // Basic structure validation
@@ -64,7 +73,9 @@ describe('Fixture Validation', () => {
 
         if (fixtures.providerResponses[provider].streaming) {
           it('should have valid streaming response structure', () => {
-            const chunks = fixtureLoader.createStreamingChunks(provider, ['test']);
+            const chunks = fixtureLoader.createStreamingChunks(provider, [
+              'test',
+            ]);
             expect(Array.isArray(chunks)).toBe(true);
             expect(chunks.length).toBeGreaterThan(0);
           });
@@ -76,10 +87,10 @@ describe('Fixture Validation', () => {
   describe('Tool Fixtures', () => {
     const tools = Object.keys(fixtures.toolFixtures);
 
-    tools.forEach(tool => {
+    tools.forEach((tool) => {
       const scenarios = Object.keys(fixtures.toolFixtures[tool]);
 
-      scenarios.forEach(scenario => {
+      scenarios.forEach((scenario) => {
         it(`${tool}/${scenario} should have valid structure`, () => {
           const fixture = fixtureLoader.getToolFixture(tool, scenario);
 
@@ -105,10 +116,10 @@ describe('Fixture Validation', () => {
   describe('Error Scenarios', () => {
     const categories = Object.keys(fixtures.errorScenarios);
 
-    categories.forEach(category => {
+    categories.forEach((category) => {
       const errorTypes = Object.keys(fixtures.errorScenarios[category]);
 
-      errorTypes.forEach(errorType => {
+      errorTypes.forEach((errorType) => {
         it(`${category}/${errorType} should have valid error structure`, () => {
           const error = fixtureLoader.getErrorScenario(category, errorType);
           expect(error).toBeDefined();
@@ -130,7 +141,7 @@ describe('Fixture Validation', () => {
   describe('Edge Cases', () => {
     const categories = Object.keys(fixtures.edgeCases);
 
-    categories.forEach(category => {
+    categories.forEach((category) => {
       it(`${category} edge cases should be defined`, () => {
         const cases = fixtures.edgeCases[category];
         expect(cases).toBeDefined();
@@ -168,10 +179,10 @@ describe('Fixture Validation', () => {
       'large-text.txt',
       'unicode-text.txt',
       'special-chars.txt',
-      'empty.txt'
+      'empty.txt',
     ];
 
-    fileFixtures.forEach(filename => {
+    fileFixtures.forEach((filename) => {
       it(`${filename} should exist and be loadable`, () => {
         const filePath = join(__dirname, 'files', filename);
         expect(existsSync(filePath)).toBe(true);
@@ -195,7 +206,7 @@ describe('Fixture Validation', () => {
     it('should load JSON files as valid JSON', () => {
       const jsonFiles = ['sample.json', 'nested.json', 'large.json'];
 
-      jsonFiles.forEach(filename => {
+      jsonFiles.forEach((filename) => {
         const content = fixtureLoader.loadFile(filename);
         expect(() => JSON.parse(content)).not.toThrow();
       });
@@ -206,11 +217,17 @@ describe('Fixture Validation', () => {
     it('should create valid mock responses', () => {
       const providers = ['openai', 'google', 'xai', 'anthropic'];
 
-      providers.forEach(provider => {
+      providers.forEach((provider) => {
         const response = fixtureLoader.createMockResponse(
           provider,
-          provider === 'openai' ? 'gpt-4' : provider === 'google' ? 'gemini-2.5-pro' : provider === 'xai' ? 'grok-4' : 'claude-3-5-sonnet-20241022',
-          'Test content'
+          provider === 'openai'
+            ? 'gpt-4'
+            : provider === 'google'
+              ? 'gemini-2.5-pro'
+              : provider === 'xai'
+                ? 'grok-4'
+                : 'claude-3-5-sonnet-20241022',
+          'Test content',
         );
 
         expect(response).toBeDefined();
@@ -234,15 +251,15 @@ describe('Fixture Validation', () => {
         providers: ['openai', 'google'],
         models: {
           openai: ['gpt-4'],
-          google: ['gemini-2.5-pro']
+          google: ['gemini-2.5-pro'],
         },
-        scenarios: ['success', 'error']
+        scenarios: ['success', 'error'],
       });
 
       expect(Array.isArray(matrix)).toBe(true);
       expect(matrix.length).toBe(4); // 2 providers * 1 model each * 2 scenarios
 
-      matrix.forEach(item => {
+      matrix.forEach((item) => {
         expect(item).toHaveProperty('provider');
         expect(item).toHaveProperty('model');
         expect(item).toHaveProperty('scenario');
@@ -287,10 +304,10 @@ describe('Fixture Validation', () => {
       'basicChat',
       'chatWithFiles',
       'basicConsensus',
-      'errorHandling'
+      'errorHandling',
     ];
 
-    scenarios.forEach(scenario => {
+    scenarios.forEach((scenario) => {
       it(`should provide valid ${scenario} test scenario`, () => {
         const testScenario = fixtureLoader.getTestScenario(scenario);
         expect(testScenario).toBeDefined();
@@ -314,7 +331,7 @@ describe('Fixture Consistency', () => {
   it('all provider responses should have consistent usage fields', () => {
     const providers = Object.keys(fixtures.providerResponses);
 
-    providers.forEach(provider => {
+    providers.forEach((provider) => {
       const response = fixtureLoader.getProviderResponse(provider);
 
       // Check for usage information
@@ -335,7 +352,7 @@ describe('Fixture Consistency', () => {
   it('all tool fixtures should have consistent metadata', () => {
     const chatFixtures = Object.keys(fixtures.toolFixtures.chat);
 
-    chatFixtures.forEach(scenario => {
+    chatFixtures.forEach((scenario) => {
       const fixture = fixtureLoader.getToolFixture('chat', scenario);
 
       if (fixture.response && fixture.response.metadata) {

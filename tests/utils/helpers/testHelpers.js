@@ -29,20 +29,20 @@ export function createMockConfig(overrides = {}) {
       mistral: 'test-mistral-key',
       deepseek: 'sk-test-deepseek',
       openrouter: 'sk-or-test-key',
-      ...overrides.apiKeys
+      ...overrides.apiKeys,
     },
     providers: {
       googleLocation: 'us-central1',
       xaiBaseUrl: 'https://api.x.ai/v1',
-      ...overrides.providers
+      ...overrides.providers,
     },
     server: {
       port: 3157,
       maxOutputTokens: 200000,
       logLevel: 'info',
-      ...overrides.server
+      ...overrides.server,
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -55,7 +55,7 @@ export function createMockLogger() {
     error: vi.fn(),
     warn: vi.fn(),
     debug: vi.fn(),
-    trace: vi.fn()
+    trace: vi.fn(),
   };
 }
 
@@ -69,7 +69,7 @@ export async function waitFor(condition, timeout = 5000, interval = 100) {
     if (await condition()) {
       return true;
     }
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
   throw new Error('Timeout waiting for condition');
@@ -112,6 +112,6 @@ export function mockFileSystem() {
       files.delete(path);
       return Promise.resolve();
     }),
-    files
+    files,
   };
 }

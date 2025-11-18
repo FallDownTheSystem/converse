@@ -34,6 +34,7 @@ pnpm test
 ```
 
 For detailed implementation guidance, see:
+
 - `docs/API.md` - Complete API reference
 - `docs/ARCHITECTURE.md` - System architecture and design principles
 - `docs/EXAMPLES.md` - Usage examples and patterns
@@ -76,6 +77,7 @@ pnpm run test:tools
 ### Server Management
 
 #### Setup/Update the Server
+
 ```bash
 # Install dependencies and start (use pnpm)
 pnpm install
@@ -83,6 +85,7 @@ pnpm start
 ```
 
 #### View Logs
+
 ```bash
 # Follow logs in real-time with debug logging
 LOG_LEVEL=debug pnpm run dev
@@ -97,6 +100,7 @@ ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug pnpm run dev
 ### Testing
 
 #### Run All Tests
+
 ```bash
 # Run full test suite
 pnpm test
@@ -109,6 +113,7 @@ pnpm run test:watch
 ```
 
 #### Run Specific Test Categories
+
 ```bash
 # Unit tests only
 pnpm run test:unit
@@ -144,17 +149,20 @@ pnpm run test:prompts
 ### Development Workflow
 
 #### Before Making Changes
+
 1. Install dependencies: `pnpm install`
 2. Run quality checks: `pnpm run validate`
 3. Start development server: `pnpm run dev`
 
 #### After Making Changes
+
 1. Run quality checks again: `pnpm run validate`
 2. Run tests: `pnpm test`
 3. Verify functionality: `pnpm start`
 4. Check logs for any issues
 
 #### Before Committing/PR
+
 1. Final quality check: `pnpm run validate`
 2. Verify all tests pass: `pnpm test`
 3. Check documentation is up to date
@@ -221,6 +229,7 @@ The consensus tool operates with parallel processing across multiple AI provider
 ```
 
 The tool will:
+
 1. Send your question to all models simultaneously (parallel execution)
 2. Collect initial responses from each model
 3. Share each model's response with the others for refinement
@@ -230,6 +239,7 @@ The tool will:
 ### Common Troubleshooting
 
 #### Server Issues
+
 ```bash
 # Check if environment is set up correctly
 pnpm run validate
@@ -242,6 +252,7 @@ pnpm install
 ```
 
 #### Test Failures
+
 ```bash
 # Run tests with verbose output
 pnpm test -- --verbose
@@ -254,6 +265,7 @@ pnpm run lint
 ```
 
 #### Configuration Issues
+
 ```bash
 # Verify API keys are configured
 cat .env
@@ -290,15 +302,16 @@ LOG_LEVEL=debug npm start
 When enabled, the server automatically generates intelligent titles and summaries for better context understanding:
 
 - **Automatic Title Generation**: Creates descriptive titles (up to 60 chars) for each request
-- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response  
+- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response
 - **Final Summaries**: Concise 1-2 sentence summaries of completed responses
 - **Smart Status Display**: Enhanced check_status tool shows titles and summaries in job listings
 - **Persistent Context**: Summaries are stored with async jobs for better progress tracking
 
 **Configuration**:
+
 ```bash
 # Enable in your .env file
-ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false  
+ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false
 SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ```
 

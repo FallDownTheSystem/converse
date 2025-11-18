@@ -10,7 +10,12 @@
 import { fileURLToPath, pathToFileURL } from 'url';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { loadConfig, validateRuntimeConfig, getMcpClientConfig, getHttpTransportConfig } from './config.js';
+import {
+  loadConfig,
+  validateRuntimeConfig,
+  getMcpClientConfig,
+  getHttpTransportConfig,
+} from './config.js';
 import { createRouter } from './router.js';
 import { createHTTPTransport } from './transport/httpTransport.js';
 import { createLogger, startTimer } from './utils/logger.js';
@@ -55,7 +60,7 @@ function getTransportType() {
   const args = process.argv.slice(2);
 
   // Support --transport=value format
-  const transportEqualArg = args.find(arg => arg.startsWith('--transport='));
+  const transportEqualArg = args.find((arg) => arg.startsWith('--transport='));
   if (transportEqualArg) {
     const transport = transportEqualArg.split('=')[1];
     if (transport && ['http', 'stdio'].includes(transport)) {
@@ -64,7 +69,7 @@ function getTransportType() {
   }
 
   // Support --transport value format
-  const transportIndex = args.findIndex(arg => arg === '--transport');
+  const transportIndex = args.findIndex((arg) => arg === '--transport');
   if (transportIndex >= 0 && transportIndex + 1 < args.length) {
     const transport = args[transportIndex + 1];
     if (transport && ['http', 'stdio'].includes(transport)) {
@@ -102,7 +107,7 @@ async function main() {
     const { configureLogger } = await import('./utils/logger.js');
     configureLogger({
       level: process.env.LOG_LEVEL || 'info',
-      isDevelopment: process.env.NODE_ENV === 'development'
+      isDevelopment: process.env.NODE_ENV === 'development',
     });
   }
 
@@ -121,7 +126,7 @@ async function main() {
     logger.info('Using transport type', { data: { transport: transportType } });
 
     logger.debug('Creating MCP server instance', {
-      data: { name: mcpConfig.name, version: mcpConfig.version }
+      data: { name: mcpConfig.name, version: mcpConfig.version },
     });
 
     // Create MCP server with configuration
@@ -130,7 +135,7 @@ async function main() {
         name: mcpConfig.name,
         version: mcpConfig.version,
       },
-      mcpConfig
+      mcpConfig,
     );
 
     // Set up router with server and config
@@ -146,14 +151,17 @@ async function main() {
       const status = httpTransport.getStatus();
 
       const startupTime = serverTimer('completed');
-      logger.info('Converse MCP Server started successfully with HTTP transport', {
-        data: {
-          startupTime: `${startupTime}ms`,
-          endpoint: `http://${status.host}:${status.port}/mcp`,
-          host: status.host,
-          port: status.port
-        }
-      });
+      logger.info(
+        'Converse MCP Server started successfully with HTTP transport',
+        {
+          data: {
+            startupTime: `${startupTime}ms`,
+            endpoint: `http://${status.host}:${status.port}/mcp`,
+            host: status.host,
+            port: status.port,
+          },
+        },
+      );
 
       // Store reference for shutdown
       process.httpTransport = httpTransport;
@@ -163,9 +171,12 @@ async function main() {
       await server.connect(transport);
 
       const startupTime = serverTimer('completed');
-      logger.info('Converse MCP Server started successfully with stdio transport', {
-        data: { startupTime: `${startupTime}ms` }
-      });
+      logger.info(
+        'Converse MCP Server started successfully with stdio transport',
+        {
+          data: { startupTime: `${startupTime}ms` },
+        },
+      );
     }
   } catch (error) {
     serverTimer('failed');
@@ -176,7 +187,7 @@ async function main() {
       debugError(error.message);
       if (error.details?.errors) {
         debugError('\nDetailed errors:');
-        error.details.errors.forEach(err => debugError(`  - ${err}`));
+        error.details.errors.forEach((err) => debugError(`  - ${err}`));
       }
       process.exit(1);
     } else {
@@ -194,8 +205,12 @@ async function gracefulShutdown(signal) {
 
   // Stop all cleanup intervals
   try {
-    const { stopContinuationStoreCleanup } = await import('./continuationStore.js');
-    const { stopAsyncJobStoreCleanup } = await import('./async/asyncJobStore.js');
+    const { stopContinuationStoreCleanup } = await import(
+      './continuationStore.js'
+    );
+    const { stopAsyncJobStoreCleanup } = await import(
+      './async/asyncJobStore.js'
+    );
     const { stopFileCacheCleanup } = await import('./async/fileCache.js');
 
     stopContinuationStoreCleanup();
@@ -226,8 +241,12 @@ process.on('beforeExit', async (code) => {
   logger.info('Process beforeExit event', { data: { code } });
   // Cleanup intervals if not already done
   try {
-    const { stopContinuationStoreCleanup } = await import('./continuationStore.js');
-    const { stopAsyncJobStoreCleanup } = await import('./async/asyncJobStore.js');
+    const { stopContinuationStoreCleanup } = await import(
+      './continuationStore.js'
+    );
+    const { stopAsyncJobStoreCleanup } = await import(
+      './async/asyncJobStore.js'
+    );
     const { stopFileCacheCleanup } = await import('./async/fileCache.js');
 
     stopContinuationStoreCleanup();
@@ -251,7 +270,7 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled promise rejection', {
     error: reason,
-    data: { promise: promise.toString() }
+    data: { promise: promise.toString() },
   });
   debugError('Unhandled promise rejection:', reason);
   process.exit(1);
@@ -262,8 +281,9 @@ export { main };
 
 // Check if this module is the main entry point
 // This works better across platforms and Node.js versions
-const isMainModule = import.meta.url === pathToFileURL(process.argv[1]).href ||
-                     process.argv[1] === fileURLToPath(import.meta.url);
+const isMainModule =
+  import.meta.url === pathToFileURL(process.argv[1]).href ||
+  process.argv[1] === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
   main().catch((error) => {

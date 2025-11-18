@@ -30,9 +30,9 @@ export class MCPServerManager {
       env: {
         NODE_ENV: 'test',
         LOG_LEVEL: 'silent',
-        ...optionsEnv
+        ...optionsEnv,
       },
-      ...otherOptions
+      ...otherOptions,
     };
 
     this.transport = null;
@@ -55,7 +55,11 @@ export class MCPServerManager {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         this.cleanup();
-        reject(new Error(`Server startup timeout after ${this.options.startupTimeout}ms`));
+        reject(
+          new Error(
+            `Server startup timeout after ${this.options.startupTimeout}ms`,
+          ),
+        );
       }, this.options.startupTimeout);
 
       try {
@@ -68,19 +72,20 @@ export class MCPServerManager {
             ...this.options.env,
             MCP_TRANSPORT: 'stdio', // Force stdio transport
             LOG_LEVEL: 'silent', // No logging for test environment to avoid JSON corruption
-            NODE_ENV: 'test'
+            NODE_ENV: 'test',
           },
-          stderr: 'pipe'
+          stderr: 'pipe',
         });
 
         // Create MCP client
         this.client = new Client({
           name: 'test-client',
-          version: '1.0.0'
+          version: '1.0.0',
         });
 
         // Connect client to server first
-        this.client.connect(this.transport)
+        this.client
+          .connect(this.transport)
           .then(() => {
             clearTimeout(timeoutId);
             this.isStarted = true;
@@ -117,7 +122,6 @@ export class MCPServerManager {
         this.transport.onclose = () => {
           this.isStarted = false;
         };
-
       } catch (error) {
         clearTimeout(timeoutId);
         this.cleanup();
@@ -143,7 +147,8 @@ export class MCPServerManager {
 
       try {
         if (this.transport) {
-          this.transport.close?.()
+          this.transport
+            .close?.()
             .then(() => {
               clearTimeout(timeoutId);
               this.cleanup();
@@ -224,8 +229,11 @@ export class MCPServerManager {
     return Promise.race([
       this.client.callTool(toolCall),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Tool call timeout after ${timeout}ms`)), timeout)
-      )
+        setTimeout(
+          () => reject(new Error(`Tool call timeout after ${timeout}ms`)),
+          timeout,
+        ),
+      ),
     ]);
   }
 
@@ -331,7 +339,7 @@ export class MCPServerManager {
       hasClient: !!this.client,
       hasTransport: !!this.transport,
       stderrLines: this.stderrData.length,
-      stdoutLines: this.stdoutData.length
+      stdoutLines: this.stdoutData.length,
     };
   }
 }

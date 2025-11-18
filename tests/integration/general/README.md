@@ -20,6 +20,7 @@ npm test tests/integration/general/error-recovery.test.js
 ## Purpose
 
 These tests ensure:
+
 - Proper error handling across the system
 - File validation and security
 - Recovery from various failure scenarios

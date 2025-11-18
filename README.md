@@ -16,22 +16,23 @@ An MCP (Model Context Protocol) server that lets Claude talk to other AI models.
 
 You need at least one API key from these providers:
 
-| Provider | Where to Get | Example Format |
-|----------|-------------|----------------|
-| **OpenAI** | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | `sk-proj-...` |
-| **Google/Gemini** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...` |
-| **X.AI** | [console.x.ai](https://console.x.ai/) | `xai-...` |
-| **Anthropic** | [console.anthropic.com](https://console.anthropic.com/) | `sk-ant-...` |
-| **Mistral** | [console.mistral.ai](https://console.mistral.ai/) | `wfBMkWL0...` |
-| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | `sk-...` |
-| **OpenRouter** | [openrouter.ai/keys](https://openrouter.ai/keys) | `sk-or-...` |
-| **Codex** | ChatGPT login (system-wide) | Local agentic assistant |
+| Provider          | Where to Get                                                                 | Example Format          |
+| ----------------- | ---------------------------------------------------------------------------- | ----------------------- |
+| **OpenAI**        | [platform.openai.com/api-keys](https://platform.openai.com/api-keys)         | `sk-proj-...`           |
+| **Google/Gemini** | [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey) | `AIzaSy...`             |
+| **X.AI**          | [console.x.ai](https://console.x.ai/)                                        | `xai-...`               |
+| **Anthropic**     | [console.anthropic.com](https://console.anthropic.com/)                      | `sk-ant-...`            |
+| **Mistral**       | [console.mistral.ai](https://console.mistral.ai/)                            | `wfBMkWL0...`           |
+| **DeepSeek**      | [platform.deepseek.com](https://platform.deepseek.com/)                      | `sk-...`                |
+| **OpenRouter**    | [openrouter.ai/keys](https://openrouter.ai/keys)                             | `sk-or-...`             |
+| **Codex**         | ChatGPT login (system-wide)                                                  | Local agentic assistant |
 
 **Note:** Codex uses your ChatGPT login (not an API key). If you have an active ChatGPT session, Codex will work automatically. For headless/server deployments, set `CODEX_API_KEY` in your environment.
 
 ### Step 2: Add to Claude Code or Claude Desktop
 
 #### For Claude Code (Recommended)
+
 ```bash
 # Add the server with your API keys
 claude mcp add converse \
@@ -75,6 +76,7 @@ Add this configuration to your Claude Desktop settings:
 ```
 
 **Windows Troubleshooting**: If `npx converse-mcp-server` doesn't work on Windows, try:
+
 ```json
 {
   "command": "cmd",
@@ -136,6 +138,7 @@ Talk to any AI model with support for files, images, and conversation history. T
 ```
 
 **Codex Notes:**
+
 - Uses thread-based sessions (context persists with `continuation_id`)
 - Responses typically take 6-20 seconds (complex tasks may take minutes)
 - Accesses files directly from your working directory
@@ -202,19 +205,21 @@ Cancel running asynchronous operations when needed.
 When enabled, the server automatically generates intelligent titles and summaries for better context understanding:
 
 - **Automatic Title Generation**: Creates descriptive titles (up to 60 chars) for each request
-- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response  
+- **Streaming Summaries**: Status check returns an up-to-date summary of the progress based on the partially streamed response
 - **Final Summaries**: Concise 1-2 sentence summaries of completed responses
 - **Smart Status Display**: Enhanced check_status tool shows titles and summaries in job listings
 - **Persistent Context**: Summaries are stored with async jobs for better progress tracking
 
 **Configuration**:
+
 ```bash
 # Enable in your environment
-ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false  
+ENABLE_RESPONSE_SUMMARIZATION=true    # Default: false
 SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ```
 
 **Benefits**:
+
 - Quickly understand what each async job is doing without reading full responses
 - Better context when reviewing multiple ongoing operations
 - Improved job management with at-a-glance understanding of task progress
@@ -223,6 +228,7 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ## 📊 Supported Models
 
 ### OpenAI Models
+
 - **gpt-5**: Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis
 - **gpt-5-mini**: Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts
 - **gpt-5-nano**: Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification
@@ -240,19 +246,28 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ### Google/Gemini Models
 
 **API Key Options**:
+
 - **GEMINI_API_KEY**: For Gemini Developer API (recommended)
 - **GOOGLE_API_KEY**: Alternative name (GEMINI_API_KEY takes priority)
 - **Vertex AI**: Use `GOOGLE_GENAI_USE_VERTEXAI=true` with project/location settings
-- **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context)
-- **gemini-2.5-pro** (alias: `pro`): Deep reasoning (1M context)
-- **gemini-2.0-flash**: Latest with experimental thinking
-- **gemini-2.0-flash-lite**: Lightweight fast model, text-only
 
-### X.AI/Grok Models  
+**Supported Models**:
+
+- **gemini-3-pro-preview** (aliases: `pro`, `gemini`): Enhanced reasoning with thinking levels (1M context, 64K output)
+- **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context, 65K output)
+- **gemini-2.5-pro** (alias: `pro 2.5`): Deep reasoning with thinking budget (1M context, 65K output)
+- **gemini-2.0-flash**: Latest with experimental thinking (1M context, 65K output)
+- **gemini-2.0-flash-lite**: Lightweight fast model, text-only (1M context, 65K output)
+
+**Note**: Default aliases (`gemini`, `pro`) now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need version 2.5.
+
+### X.AI/Grok Models
+
 - **grok-4-0709** (aliases: `grok`, `grok-4`): Latest advanced model (256K context)
 - **grok-code-fast-1**: Speedy and economical reasoning model that excels at agentic coding (256K context)
 
 ### Anthropic Models
+
 - **claude-opus-4.1**: Highest intelligence with extended thinking (200K context)
 - **claude-sonnet-4**: Balanced performance with extended thinking (200K context)
 - **claude-3.7-sonnet**: Enhanced 3.x generation with thinking (200K context)
@@ -260,20 +275,24 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **claude-3.5-haiku**: Fastest model for simple queries (200K context)
 
 ### Mistral Models
+
 - **magistral-medium**: Frontier-class reasoning model (40K context)
 - **magistral-small**: Small reasoning model (40K context)
 - **mistral-medium-3**: Frontier-class multimodal model (128K context)
 
 ### DeepSeek Models
+
 - **deepseek-chat**: Strong MoE model with 671B/37B parameters (64K context)
 - **deepseek-reasoner**: Advanced reasoning model with CoT (64K context)
 
 ### OpenRouter Models
+
 - **qwen3-235b-thinking**: Qwen3 with enhanced reasoning (32K context)
 - **qwen3-coder**: Specialized for programming tasks (32K context)
 - **kimi-k2**: Moonshot AI Kimi K2 with extended context (200K context)
 
 ### Codex Models
+
 - **codex**: OpenAI Codex agentic coding assistant
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
@@ -284,7 +303,9 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ## 📚 Help & Documentation
 
 ### Built-in Help
+
 Type these commands directly in Claude:
+
 - `/converse:help` - Full documentation
 - `/converse:help tools` - Tool-specific help (includes async features)
 - `/converse:help models` - Model information
@@ -293,6 +314,7 @@ Type these commands directly in Claude:
 - `/converse:help async` - Async execution guide
 
 ### Additional Resources
+
 - **API Reference**: [docs/API.md](docs/API.md)
 - **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Integration Examples**: [docs/EXAMPLES.md](docs/EXAMPLES.md)
@@ -306,7 +328,7 @@ Create a `.env` file in your project root:
 ```bash
 # Required: At least one API key
 OPENAI_API_KEY=sk-proj-your_openai_key_here
-GEMINI_API_KEY=your_gemini_api_key_here  # Or GOOGLE_API_KEY (GEMINI_API_KEY takes priority)  
+GEMINI_API_KEY=your_gemini_api_key_here  # Or GOOGLE_API_KEY (GEMINI_API_KEY takes priority)
 XAI_API_KEY=xai-your_xai_key_here
 ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
 MISTRAL_API_KEY=your_mistral_key_here
@@ -337,18 +359,20 @@ CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ### Configuration Options
 
 #### Server Environment Variables (.env file)
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `PORT` | Server port | `3157` | `3157` |
-| `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `error` |
+
+| Variable    | Description   | Default | Example                  |
+| ----------- | ------------- | ------- | ------------------------ |
+| `PORT`      | Server port   | `3157`  | `3157`                   |
+| `LOG_LEVEL` | Logging level | `info`  | `debug`, `info`, `error` |
 
 #### Claude Code Environment Variables (System/Global)
+
 These must be set in your system environment or when launching Claude Code, NOT in the project .env file:
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `MAX_MCP_OUTPUT_TOKENS` | Token response limit | `25000` | `200000` |
-| `MCP_TOOL_TIMEOUT` | Tool execution timeout (ms) | `120000` | `5400000` (90 min for deep research) |
+| Variable                | Description                 | Default  | Example                              |
+| ----------------------- | --------------------------- | -------- | ------------------------------------ |
+| `MAX_MCP_OUTPUT_TOKENS` | Token response limit        | `25000`  | `200000`                             |
+| `MCP_TOOL_TIMEOUT`      | Tool execution timeout (ms) | `120000` | `5400000` (90 min for deep research) |
 
 ```bash
 # Example: Set globally before starting Claude Code
@@ -363,33 +387,35 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 ```javascript
 // Auto-selection (recommended)
-"auto"
+"auto";
 
 // Specific models
-"gemini-2.5-flash"
-"gpt-5"
-"grok-4-0709"
+"gemini-2.5-flash";
+"gpt-5";
+"grok-4-0709";
 
 // Using aliases
-"flash"    // -> gemini-2.5-flash
-"pro"      // -> gemini-2.5-pro
-"grok"     // -> grok-4-0709
-"grok-4"   // -> grok-4-0709
+"flash"; // -> gemini-2.5-flash
+"pro"; // -> gemini-2.5-pro
+"grok"; // -> grok-4-0709
+"grok-4"; // -> grok-4-0709
 ```
 
 **Auto Model Behavior:**
+
 - **Chat Tool**: Selects the first available provider and uses its default model
 - **Consensus Tool**: When using `["auto"]`, automatically expands to the first 3 available providers
 
 Provider priority order (requires corresponding API key):
-  1. OpenAI (`gpt-5`)
-  2. Google (`gemini-2.5-pro`)
-  3. XAI (`grok-4`)
-  4. Anthropic (`claude-sonnet-4-20250514`)
-  5. Mistral (`magistral-medium-2506`)
-  6. DeepSeek (`deepseek-reasoner`)
-  7. OpenRouter (`qwen/qwen3-coder`)
-  
+
+1. OpenAI (`gpt-5`)
+2. Google (`gemini-2.5-pro`)
+3. XAI (`grok-4`)
+4. Anthropic (`claude-sonnet-4-20250514`)
+5. Mistral (`magistral-medium-2506`)
+6. DeepSeek (`deepseek-reasoner`)
+7. OpenRouter (`qwen/qwen3-coder`)
+
 The system will use the first 3 providers that have valid API keys configured. This enables automatic multi-model consensus without manually specifying models.
 
 ### Advanced Configuration
@@ -427,6 +453,7 @@ If you've cloned the repository locally:
 For local development with HTTP transport (optional, for debugging):
 
 1. **First, start the server manually with HTTP transport**:
+
    ```bash
    # In a terminal, navigate to the project directory
    cd converse
@@ -449,6 +476,7 @@ For local development with HTTP transport (optional, for debugging):
 ### Configuration File Locations
 
 The Claude configuration file is typically located at:
+
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Linux: `~/.config/Claude/claude_desktop_config.json`
@@ -475,14 +503,17 @@ For development setup, see the [Development](#-development) section below.
 ### Common Issues
 
 **Server won't start:**
+
 - Check Node.js version: `node --version` (needs v20+)
 - Try a different port: `PORT=3001 npm start`
 
 **API key errors:**
+
 - Verify your .env file has the correct format
 - Test with: `npm run test:real-api`
 
 **Module import errors:**
+
 - Clear cache and reinstall: `npm run clean`
 
 ### Debug Mode
@@ -564,10 +595,12 @@ npm run kill-server    # Kill any server running on port 3157
 ### Development Notes
 
 **Port conflicts**: The server uses port 3157 by default. If you get an "EADDRINUSE" error:
+
 - Run `npm run kill-server` to free the port
 - Or use a different port: `PORT=3001 npm start`
 
-**Transport Modes**: 
+**Transport Modes**:
+
 - **Stdio** (default): Works automatically with Claude
 - **HTTP**: Better for debugging, requires manual start (`MCP_TRANSPORT=http npm run dev`)
 

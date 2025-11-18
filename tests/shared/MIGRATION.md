@@ -8,34 +8,32 @@ Instead of creating mocks manually in each test file, import from the shared uti
 
 ```javascript
 // Before
-import { vi } from 'vitest';
+import { vi } from "vitest";
 const mockProvider = {
-  invoke: vi.fn().mockResolvedValue({ content: 'test' }),
+  invoke: vi.fn().mockResolvedValue({ content: "test" }),
   // ... other properties
 };
 
 // After
-import { createMockProvider } from '../shared';
+import { createMockProvider } from "../shared";
 const mockProvider = createMockProvider();
 ```
 
 ## Import Changes
 
 ### Old Way - Multiple Imports
+
 ```javascript
-import { vi } from 'vitest';
-import path from 'path';
-import { createMockProvider } from '../mocks/providers/base.mock.js';
-import { getFixturePath } from '../utils/helpers/testHelpers.js';
+import { vi } from "vitest";
+import path from "path";
+import { createMockProvider } from "../mocks/providers/base.mock.js";
+import { getFixturePath } from "../utils/helpers/testHelpers.js";
 ```
 
 ### New Way - Single Import
+
 ```javascript
-import testUtils, { 
-  createMockProvider, 
-  helpers, 
-  fixtures 
-} from '../shared';
+import testUtils, { createMockProvider, helpers, fixtures } from "../shared";
 ```
 
 ## Common Patterns
@@ -52,11 +50,11 @@ const google = createMockGoogleProvider();
 const xai = createMockXAIProvider();
 
 // Provider with error
-const errorProvider = createMockProviderWithError(new Error('API Error'));
+const errorProvider = createMockProviderWithError(new Error("API Error"));
 
 // Provider registry
 const registry = createMockProviderRegistry();
-const openai = registry.get('openai');
+const openai = registry.get("openai");
 ```
 
 ### Creating Mock Configuration
@@ -64,13 +62,13 @@ const openai = registry.get('openai');
 ```javascript
 // Before
 const mockConfig = {
-  apiKeys: { openai: 'sk-test' },
-  server: { port: 3157 }
+  apiKeys: { openai: "sk-test" },
+  server: { port: 3157 },
 };
 
 // After
 const mockConfig = helpers.config.createMockConfig({
-  apiKeys: { openai: 'sk-test' }
+  apiKeys: { openai: "sk-test" },
 });
 ```
 
@@ -120,61 +118,69 @@ const intelligentModels = fixtures.models.intelligent;
 ## Example Migration
 
 ### Before
-```javascript
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { chatTool } from '../../src/tools/chat.js';
 
-describe('Chat Tool', () => {
+```javascript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { chatTool } from "../../src/tools/chat.js";
+
+describe("Chat Tool", () => {
   let mockProviders;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockProviders = {
       openai: {
         invoke: vi.fn().mockResolvedValue({
-          content: 'Test response',
-          usage: { input_tokens: 10, output_tokens: 20 }
+          content: "Test response",
+          usage: { input_tokens: 10, output_tokens: 20 },
         }),
         validateConfig: vi.fn().mockReturnValue(true),
-        isAvailable: vi.fn().mockReturnValue(true)
-      }
+        isAvailable: vi.fn().mockReturnValue(true),
+      },
     };
   });
 
-  it('should handle chat request', async () => {
-    const result = await chatTool.handler({
-      prompt: 'Hello'
-    }, { providers: mockProviders });
-    
-    expect(result.result).toBe('Test response');
+  it("should handle chat request", async () => {
+    const result = await chatTool.handler(
+      {
+        prompt: "Hello",
+      },
+      { providers: mockProviders },
+    );
+
+    expect(result.result).toBe("Test response");
   });
 });
 ```
 
 ### After
-```javascript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockOpenAIProvider, helpers, fixtures } from '../shared';
-import { chatTool } from '../../src/tools/chat.js';
 
-describe('Chat Tool', () => {
+```javascript
+import { describe, it, expect, beforeEach } from "vitest";
+import { createMockOpenAIProvider, helpers, fixtures } from "../shared";
+import { chatTool } from "../../src/tools/chat.js";
+
+describe("Chat Tool", () => {
   let mockProviders;
 
   beforeEach(() => {
     helpers.setup.beforeEachTest();
-    
+
     mockProviders = {
-      openai: createMockOpenAIProvider()
+      openai: createMockOpenAIProvider(),
     };
   });
 
-  it('should handle chat request', async () => {
-    const result = await chatTool.handler({
-      prompt: fixtures.prompts.simple
-    }, { providers: mockProviders });
-    
-    expect(result.result).toBe('Mock response');
+  it("should handle chat request", async () => {
+    const result = await chatTool.handler(
+      {
+        prompt: fixtures.prompts.simple,
+      },
+      { providers: mockProviders },
+    );
+
+    expect(result.result).toBe("Mock response");
   });
 });
 ```

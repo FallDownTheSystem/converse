@@ -25,12 +25,13 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json'],
+        include: ['src/**/*.{js,ts}'],
         exclude: [
-          'node_modules/**',
           'tests/**',
           'dev-server.js',
           'scripts/**',
-          '**/*.config.js'
+          '**/*.config.{js,ts}',
+          'bin/**'
         ]
       },
       
@@ -40,12 +41,7 @@ export default defineConfig(({ mode }) => {
       
       // Sequential execution for real API tests to avoid rate limiting
       pool: 'threads',
-      poolOptions: {
-        threads: {
-          maxThreads: 1,
-          minThreads: 1
-        }
-      },
+      maxWorkers: 1,
       
       // Reporter configuration
       reporters: ['verbose'],

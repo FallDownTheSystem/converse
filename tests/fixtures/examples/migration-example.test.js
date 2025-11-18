@@ -134,7 +134,11 @@ describe('Migration Example: Streaming Responses', () => {
   */
 
   // AFTER: Using streaming response generator
-  const chunks = fixtureLoader.createStreamingChunks('openai', ['Hello', ' world', '!']);
+  const chunks = fixtureLoader.createStreamingChunks('openai', [
+    'Hello',
+    ' world',
+    '!',
+  ]);
 
   it('should generate streaming chunks', () => {
     expect(chunks).toHaveLength(3);
@@ -167,9 +171,9 @@ describe('Migration Example: Test Matrix', () => {
     providers: ['openai', 'google'],
     models: {
       openai: ['gpt-4', 'gpt-3.5-turbo'],
-      google: ['gemini-2.5-pro']
+      google: ['gemini-2.5-pro'],
     },
-    scenarios: ['success', 'error']
+    scenarios: ['success', 'error'],
   });
 
   testMatrix.forEach(({ provider, model, scenario }) => {
@@ -207,11 +211,13 @@ describe('Migration Example: Custom Mock Responses', () => {
     'openai',
     'gpt-4',
     'This is my custom response',
-    { usage: { total_tokens: 50 } }
+    { usage: { total_tokens: 50 } },
   );
 
   it('should create custom mock response', () => {
-    expect(customResponse.choices[0].message.content).toBe('This is my custom response');
+    expect(customResponse.choices[0].message.content).toBe(
+      'This is my custom response',
+    );
     expect(customResponse.usage.total_tokens).toBe(50);
   });
 });

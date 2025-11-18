@@ -34,25 +34,29 @@ fixtures/
 ### Basic Import
 
 ```javascript
-import fixtures from './fixtures/index.js';
-import { fixtureLoader } from './fixtures/loader.js';
+import fixtures from "./fixtures/index.js";
+import { fixtureLoader } from "./fixtures/loader.js";
 ```
 
 ### Provider Response Fixtures
 
 ```javascript
 // Get a provider response template
-const gpt4Response = fixtureLoader.getProviderResponse('openai', 'gpt-4');
+const gpt4Response = fixtureLoader.getProviderResponse("openai", "gpt-4");
 
 // Get a streaming response template
-const streamingResponse = fixtureLoader.getProviderResponse('openai', 'gpt-4', 'streaming');
+const streamingResponse = fixtureLoader.getProviderResponse(
+  "openai",
+  "gpt-4",
+  "streaming",
+);
 
 // Create a custom response
 const customResponse = fixtureLoader.createMockResponse(
-  'openai',
-  'gpt-4',
-  'Custom response content',
-  { usage: { total_tokens: 100 } }
+  "openai",
+  "gpt-4",
+  "Custom response content",
+  { usage: { total_tokens: 100 } },
 );
 ```
 
@@ -60,51 +64,57 @@ const customResponse = fixtureLoader.createMockResponse(
 
 ```javascript
 // Get a chat tool fixture
-const chatBasic = fixtureLoader.getToolFixture('chat', 'basic');
-console.log(chatBasic.request);  // Request parameters
+const chatBasic = fixtureLoader.getToolFixture("chat", "basic");
+console.log(chatBasic.request); // Request parameters
 console.log(chatBasic.response); // Expected response
 
 // Get a consensus tool fixture
-const consensusWithFiles = fixtureLoader.getToolFixture('consensus', 'withFiles');
+const consensusWithFiles = fixtureLoader.getToolFixture(
+  "consensus",
+  "withFiles",
+);
 ```
 
 ### Error Scenarios
 
 ```javascript
 // Get provider-specific errors
-const rateLimitError = fixtureLoader.getErrorScenario('openai', 'rateLimit');
-const invalidKeyError = fixtureLoader.getErrorScenario('google', 'invalidKey');
+const rateLimitError = fixtureLoader.getErrorScenario("openai", "rateLimit");
+const invalidKeyError = fixtureLoader.getErrorScenario("google", "invalidKey");
 
 // Get validation errors
-const missingPromptError = fixtureLoader.getErrorScenario('validation', 'missingPrompt');
+const missingPromptError = fixtureLoader.getErrorScenario(
+  "validation",
+  "missingPrompt",
+);
 
 // Get network errors
-const timeoutError = fixtureLoader.getErrorScenario('network', 'timeout');
+const timeoutError = fixtureLoader.getErrorScenario("network", "timeout");
 ```
 
 ### Edge Cases
 
 ```javascript
 // Get string edge cases
-const emptyString = fixtureLoader.getEdgeCase('strings', 'empty');
-const unicodeString = fixtureLoader.getEdgeCase('strings', 'unicode');
+const emptyString = fixtureLoader.getEdgeCase("strings", "empty");
+const unicodeString = fixtureLoader.getEdgeCase("strings", "unicode");
 
 // Get number edge cases
-const infinity = fixtureLoader.getEdgeCase('numbers', 'infinity');
-const veryLarge = fixtureLoader.getEdgeCase('numbers', 'very_large');
+const infinity = fixtureLoader.getEdgeCase("numbers", "infinity");
+const veryLarge = fixtureLoader.getEdgeCase("numbers", "very_large");
 
 // Get file path edge cases
-const longPath = fixtureLoader.getEdgeCase('files', 'paths').very_long_path;
+const longPath = fixtureLoader.getEdgeCase("files", "paths").very_long_path;
 ```
 
 ### File Fixtures
 
 ```javascript
 // Load a file
-const jsCode = fixtureLoader.loadFile('sample.js');
+const jsCode = fixtureLoader.loadFile("sample.js");
 
 // Get file metadata
-const metadata = fixtureLoader.getFileMetadata('large-text.txt');
+const metadata = fixtureLoader.getFileMetadata("large-text.txt");
 console.log(metadata); // { path, name, content, size, lines, isEmpty }
 ```
 
@@ -112,12 +122,12 @@ console.log(metadata); // { path, name, content, size, lines, isEmpty }
 
 ```javascript
 // Get a complete test scenario
-const scenario = fixtureLoader.getTestScenario('chatWithFiles');
+const scenario = fixtureLoader.getTestScenario("chatWithFiles");
 // Returns: { tool, request, response, files, provider, model }
 
 // List available fixtures
-const providers = fixtureLoader.listFixtures('providers');
-const errorTypes = fixtureLoader.listFixtures('errors');
+const providers = fixtureLoader.listFixtures("providers");
+const errorTypes = fixtureLoader.listFixtures("errors");
 ```
 
 ### Test Matrix Generation
@@ -125,12 +135,12 @@ const errorTypes = fixtureLoader.listFixtures('errors');
 ```javascript
 // Generate a test matrix for multiple providers and models
 const matrix = fixtureLoader.generateTestMatrix({
-  providers: ['openai', 'google'],
+  providers: ["openai", "google"],
   models: {
-    openai: ['gpt-4', 'gpt-3.5-turbo'],
-    google: ['gemini-2.5-pro']
+    openai: ["gpt-4", "gpt-3.5-turbo"],
+    google: ["gemini-2.5-pro"],
   },
-  scenarios: ['success', 'error']
+  scenarios: ["success", "error"],
 });
 
 // Results in combinations like:
@@ -190,23 +200,23 @@ const matrix = fixtureLoader.generateTestMatrix({
 ## Example Test Usage
 
 ```javascript
-import { describe, it, expect } from 'vitest';
-import { fixtureLoader } from '../fixtures/loader.js';
+import { describe, it, expect } from "vitest";
+import { fixtureLoader } from "../fixtures/loader.js";
 
-describe('Provider Tests', () => {
-  it('should handle successful responses', () => {
-    const response = fixtureLoader.getProviderResponse('openai', 'gpt-4');
+describe("Provider Tests", () => {
+  it("should handle successful responses", () => {
+    const response = fixtureLoader.getProviderResponse("openai", "gpt-4");
     expect(response.choices[0].message.content).toBeDefined();
   });
 
-  it('should handle rate limit errors', () => {
-    const error = fixtureLoader.getErrorScenario('openai', 'rateLimit');
-    expect(error.error.code).toBe('rate_limit_exceeded');
+  it("should handle rate limit errors", () => {
+    const error = fixtureLoader.getErrorScenario("openai", "rateLimit");
+    expect(error.error.code).toBe("rate_limit_exceeded");
   });
 
-  it('should handle edge case strings', () => {
-    const unicode = fixtureLoader.getEdgeCase('strings', 'unicode');
-    expect(unicode).toContain('🌍');
+  it("should handle edge case strings", () => {
+    const unicode = fixtureLoader.getEdgeCase("strings", "unicode");
+    expect(unicode).toContain("🌍");
   });
 });
 ```

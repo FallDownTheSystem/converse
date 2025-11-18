@@ -7,7 +7,7 @@ import {
   fetchModelEndpoints,
   fetchModelEndpointsWithCache,
   createEndpointsCache,
-  endpointsCache
+  endpointsCache,
 } from '../../../src/providers/openrouter-endpoints-client.js';
 
 // Mock fetch globally
@@ -26,22 +26,24 @@ describe('OpenRouter Endpoints API Client', () => {
         data: {
           id: 'anthropic/claude-3',
           name: 'Claude 3',
-          endpoints: [{
-            context_length: 200000,
-            max_completion_tokens: 4096,
-            provider_name: 'Anthropic',
-            supported_parameters: ['temperature']
-          }],
+          endpoints: [
+            {
+              context_length: 200000,
+              max_completion_tokens: 4096,
+              provider_name: 'Anthropic',
+              supported_parameters: ['temperature'],
+            },
+          ],
           architecture: {
-            input_modalities: ['text']
-          }
-        }
+            input_modalities: ['text'],
+          },
+        },
       };
 
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => mockResponse
+        json: async () => mockResponse,
       });
 
       const result = await fetchModelEndpoints('anthropic/claude-3');
@@ -50,8 +52,8 @@ describe('OpenRouter Endpoints API Client', () => {
         'https://openrouter.ai/api/v1/models/anthropic/claude-3/endpoints',
         expect.objectContaining({
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        })
+          headers: { Accept: 'application/json' },
+        }),
       );
 
       expect(result).toBeDefined();
@@ -66,7 +68,7 @@ describe('OpenRouter Endpoints API Client', () => {
         'no-slash',
         '/leading-slash',
         'trailing-slash/',
-        'too/many/slashes'
+        'too/many/slashes',
       ];
 
       for (const id of invalidIds) {
@@ -90,36 +92,38 @@ describe('OpenRouter Endpoints API Client', () => {
             instruct_type: null,
             modality: 'text+image->text',
             input_modalities: ['image', 'text'],
-            output_modalities: ['text']
+            output_modalities: ['text'],
           },
-          endpoints: [{
-            name: 'Anthropic | anthropic/claude-4-sonnet',
-            context_length: 200000,
-            pricing: {
-              prompt: '0.000003',
-              completion: '0.000015',
-              image: '0.0048'
+          endpoints: [
+            {
+              name: 'Anthropic | anthropic/claude-4-sonnet',
+              context_length: 200000,
+              pricing: {
+                prompt: '0.000003',
+                completion: '0.000015',
+                image: '0.0048',
+              },
+              provider_name: 'Anthropic',
+              max_completion_tokens: 64000,
+              max_prompt_tokens: null,
+              supported_parameters: [
+                'max_tokens',
+                'temperature',
+                'stop',
+                'reasoning',
+                'include_reasoning',
+                'tools',
+                'tool_choice',
+              ],
             },
-            provider_name: 'Anthropic',
-            max_completion_tokens: 64000,
-            max_prompt_tokens: null,
-            supported_parameters: [
-              'max_tokens',
-              'temperature',
-              'stop',
-              'reasoning',
-              'include_reasoning',
-              'tools',
-              'tool_choice'
-            ]
-          }]
-        }
+          ],
+        },
       };
 
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => mockResponse
+        json: async () => mockResponse,
       });
 
       const config = await fetchModelEndpoints('anthropic/claude-sonnet-4');
@@ -135,12 +139,12 @@ describe('OpenRouter Endpoints API Client', () => {
         supportsTemperature: true,
         supportsThinking: true,
         supportsTools: true,
-        isDynamic: true
+        isDynamic: true,
       });
 
       expect(config.metadata).toMatchObject({
         selectedProvider: 'Anthropic',
-        pricing: mockResponse.data.endpoints[0].pricing
+        pricing: mockResponse.data.endpoints[0].pricing,
       });
     });
 
@@ -148,7 +152,7 @@ describe('OpenRouter Endpoints API Client', () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        statusText: 'Not Found'
+        statusText: 'Not Found',
       });
 
       const result = await fetchModelEndpoints('nonexistent/model');
@@ -166,7 +170,7 @@ describe('OpenRouter Endpoints API Client', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ invalid: 'response' })
+        json: async () => ({ invalid: 'response' }),
       });
 
       const result = await fetchModelEndpoints('test/model');
@@ -183,23 +187,23 @@ describe('OpenRouter Endpoints API Client', () => {
               provider_name: 'Unknown Provider',
               context_length: 8192,
               max_completion_tokens: 2048,
-              supported_parameters: []
+              supported_parameters: [],
             },
             {
               provider_name: 'Google',
               context_length: 128000,
               max_completion_tokens: 8192,
-              supported_parameters: ['temperature']
-            }
+              supported_parameters: ['temperature'],
+            },
           ],
-          architecture: { input_modalities: ['text'] }
-        }
+          architecture: { input_modalities: ['text'] },
+        },
       };
 
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => mockResponse
+        json: async () => mockResponse,
       });
 
       const config = await fetchModelEndpoints('test/model');
@@ -217,20 +221,22 @@ describe('OpenRouter Endpoints API Client', () => {
         data: {
           id: 'cached/model',
           name: 'Cached Model',
-          endpoints: [{
-            context_length: 16384,
-            max_completion_tokens: 4096,
-            provider_name: 'TestProvider',
-            supported_parameters: []
-          }],
-          architecture: { input_modalities: ['text'] }
-        }
+          endpoints: [
+            {
+              context_length: 16384,
+              max_completion_tokens: 4096,
+              provider_name: 'TestProvider',
+              supported_parameters: [],
+            },
+          ],
+          architecture: { input_modalities: ['text'] },
+        },
       };
 
       fetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => mockResponse
+        json: async () => mockResponse,
       });
 
       // First call - should fetch from API
@@ -248,7 +254,7 @@ describe('OpenRouter Endpoints API Client', () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        statusText: 'Not Found'
+        statusText: 'Not Found',
       });
 
       // First call - should fetch from API
@@ -269,7 +275,10 @@ describe('OpenRouter Endpoints API Client', () => {
 
       cache.set('test-key', { test: 'value' });
       expect(cache.size()).toBe(1);
-      expect(cache.get('test-key')).toEqual({ found: true, value: { test: 'value' } });
+      expect(cache.get('test-key')).toEqual({
+        found: true,
+        value: { test: 'value' },
+      });
 
       cache.clear();
       expect(cache.size()).toBe(0);

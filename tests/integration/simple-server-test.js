@@ -23,16 +23,20 @@ async function testServerStartup() {
       reject(new Error('Server startup timeout after 15 seconds'));
     }, 15000);
 
-    const serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
-      env: {
-        ...process.env,
-        NODE_ENV: 'test',
-        LOG_LEVEL: 'info',
-        PORT: '3002',
-        MCP_TRANSPORT: 'http'
-      },
-      stdio: ['pipe', 'pipe', 'pipe']
-    }));
+    const serverProcess = spawn(
+      getNodeCommand(),
+      ['src/index.js'],
+      getSpawnOptions({
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+          LOG_LEVEL: 'info',
+          PORT: '3002',
+          MCP_TRANSPORT: 'http',
+        },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }),
+    );
 
     let startupSuccess = false;
 
@@ -51,7 +55,7 @@ async function testServerStartup() {
           serverProcess.kill('SIGTERM');
           resolve({
             success: true,
-            message: 'Server started and stopped successfully'
+            message: 'Server started and stopped successfully',
           });
         }, 2000);
       }
@@ -69,7 +73,9 @@ async function testServerStartup() {
     serverProcess.on('exit', (code, signal) => {
       clearTimeout(timeout);
       if (!startupSuccess) {
-        reject(new Error(`Server exited early with code ${code}, signal ${signal}`));
+        reject(
+          new Error(`Server exited early with code ${code}, signal ${signal}`),
+        );
       }
     });
   });
@@ -79,16 +85,20 @@ async function testBasicFunctionality() {
   log('Testing basic HTTP functionality...');
 
   // Start server
-  const serverProcess = spawn(getNodeCommand(), ['src/index.js'], getSpawnOptions({
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      LOG_LEVEL: 'info',
-      PORT: '3003',
-      MCP_TRANSPORT: 'http'
-    },
-    stdio: ['pipe', 'pipe', 'pipe']
-  }));
+  const serverProcess = spawn(
+    getNodeCommand(),
+    ['src/index.js'],
+    getSpawnOptions({
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        LOG_LEVEL: 'info',
+        PORT: '3003',
+        MCP_TRANSPORT: 'http',
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }),
+  );
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -129,7 +139,11 @@ async function testBasicFunctionality() {
     serverProcess.on('exit', (code, signal) => {
       if (!serverReady) {
         clearTimeout(timeout);
-        reject(new Error(`Server exited before ready: code ${code}, signal ${signal}`));
+        reject(
+          new Error(
+            `Server exited before ready: code ${code}, signal ${signal}`,
+          ),
+        );
       }
     });
   });
@@ -157,7 +171,7 @@ async function testHTTPEndpoint(port) {
       return {
         success: true,
         message: 'HTTP endpoints responding',
-        data: infoData
+        data: infoData,
       };
     }
   } catch (error) {
@@ -170,7 +184,7 @@ async function testHTTPEndpoint(port) {
     return {
       success: true,
       message: `Server responding on port ${port}`,
-      status: response.status
+      status: response.status,
     };
   } catch (error) {
     throw new Error(`Server not responding on port ${port}: ${error.message}`);
@@ -187,7 +201,11 @@ async function runAllTests() {
     results.push({ test: 'Server Startup', ...startupResult });
     log(`✓ Server Startup: ${startupResult.message}`);
   } catch (error) {
-    results.push({ test: 'Server Startup', success: false, error: error.message });
+    results.push({
+      test: 'Server Startup',
+      success: false,
+      error: error.message,
+    });
     log(`✗ Server Startup: ${error.message}`);
   }
 
@@ -198,12 +216,16 @@ async function runAllTests() {
     results.push({ test: 'Basic HTTP Functionality', ...funcResult });
     log(`✓ Basic HTTP Functionality: ${funcResult.message}`);
   } catch (error) {
-    results.push({ test: 'Basic HTTP Functionality', success: false, error: error.message });
+    results.push({
+      test: 'Basic HTTP Functionality',
+      success: false,
+      error: error.message,
+    });
     log(`✗ Basic HTTP Functionality: ${error.message}`);
   }
 
   // Print summary
-  const passed = results.filter(r => r.success).length;
+  const passed = results.filter((r) => r.success).length;
   const total = results.length;
 
   log('\n' + '='.repeat(50));
@@ -211,7 +233,7 @@ async function runAllTests() {
   log('='.repeat(50));
   log(`Passed: ${passed}/${total}`);
 
-  results.forEach(r => {
+  results.forEach((r) => {
     const status = r.success ? '✓' : '✗';
     const message = r.success ? r.message : r.error;
     log(`${status} ${r.test}: ${message}`);

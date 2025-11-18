@@ -99,6 +99,12 @@ MCP_TRANSPORT=stdio npm start
       "default": false,
       "description": "Enable web search for current information. Example: true for framework docs, false for private code analysis"
     },
+    "media_resolution": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "default": "high",
+      "description": "Control image/PDF/video processing quality (Gemini 3.0 only). Defaults to 'high' for Gemini 3.0. Examples: 'low' (faster, less detail), 'medium' (balanced), 'high' (maximum detail)"
+    },
     "async": {
       "type": "boolean",
       "default": false,
@@ -329,9 +335,12 @@ MCP_TRANSPORT=stdio npm start
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
+| `gemini-3-pro-preview` | `pro`, `gemini` | 1M | 64K | Thinking levels, enhanced reasoning | Complex problems, deep analysis |
 | `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast | Quick analysis, simple queries |
-| `gemini-2.5-pro` | `pro` | 1M | 65K | Thinking mode | Deep reasoning, architecture |
+| `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Thinking mode | Deep reasoning, architecture |
 | `gemini-2.0-flash` | `flash2` | 1M | 65K | Latest | Experimental thinking |
+
+**Note:** Default aliases `gemini`, `pro`, and `gemini-pro` now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need the 2.5 version.
 
 ### X.AI/Grok Models
 

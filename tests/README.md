@@ -5,6 +5,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 ## Test Categories
 
 ### Unit Tests (`npm run test:unit`)
+
 - **Location**: `tests/unit/`, `tests/tools/`
 - **Purpose**: Fast, isolated tests with mocked dependencies
 - **Execution Time**: ~30 seconds
@@ -12,6 +13,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: During development, before commits, in CI/CD
 
 ### Integration Tests (`npm run test:integration`)
+
 - **Location**: `tests/integration/`
 - **Purpose**: Tests with real dependencies but no external API calls
 - **Execution Time**: ~3 minutes
@@ -19,6 +21,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: Validating component interactions, CI/CD
 
 ### End-to-End Tests (`npm run test:e2e`)
+
 - **Location**: `tests/integration/providers/`
 - **Purpose**: Tests that make actual API calls to validate real provider behavior
 - **Execution Time**: ~5-10 minutes
@@ -26,6 +29,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: Final validation before release, testing provider updates
 
 ### Provider Tests (`npm run test:providers`)
+
 - **Location**: `tests/unit/providers/`
 - **Purpose**: Unit tests for all provider implementations
 - **Execution Time**: ~15 seconds
@@ -33,6 +37,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: After modifying provider code
 
 ### Tool Tests (`npm run test:tools`)
+
 - **Location**: `tests/tools/`
 - **Purpose**: Tests for MCP tools (chat, consensus)
 - **Execution Time**: ~20 seconds
@@ -40,6 +45,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: After modifying tool implementations
 
 ### MCP Client Tests (`npm run test:mcp-client`)
+
 - **Location**: Various integration tests using HTTP transport
 - **Purpose**: MCP protocol compliance validation, client-server testing
 - **Execution Time**: ~3-5 minutes
@@ -47,6 +53,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: Validating MCP protocol implementation
 
 ### Performance Tests (`npm run test:performance`)
+
 - **Location**: `tests/integration/performance/`
 - **Purpose**: Performance and scalability validation
 - **Execution Time**: ~5-15 minutes
@@ -54,6 +61,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: Before major releases, performance optimization
 
 ### Utility Tests (`npm run test:utils`)
+
 - **Location**: `tests/utils/`
 - **Purpose**: Tests for utility modules
 - **Execution Time**: ~10 seconds
@@ -61,6 +69,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: After modifying utility code
 
 ### Resource Tests (`npm run test:resources`)
+
 - **Location**: `tests/resources/`
 - **Purpose**: Tests for MCP resources
 - **Execution Time**: ~5 seconds
@@ -68,6 +77,7 @@ This directory contains the comprehensive test suite for the Converse MCP Server
 - **Use When**: After modifying resource implementations
 
 ### Prompt Tests (`npm run test:prompts`)
+
 - **Location**: `tests/prompts/`
 - **Purpose**: Tests for MCP prompts
 - **Execution Time**: ~5 seconds
@@ -169,17 +179,20 @@ tests/
 ## Troubleshooting
 
 ### Tests Failing
+
 1. Check if you have the required API keys for E2E tests
 2. Ensure Node.js version is 20.0.0 or higher
 3. Run `npm install` to ensure dependencies are up to date
 4. Check test logs with `LOG_LEVEL=debug npm run test:unit`
 
 ### Performance Issues
+
 1. Run tests in isolation: `npm run test:unit -- path/to/specific.test.js`
 2. Use `test:watch` for faster feedback during development
 3. Disable coverage for faster runs when not needed
 
 ### API Rate Limits
+
 1. Real API tests may hit rate limits
 2. Run them separately or with delays
 3. Consider using mock mode for development

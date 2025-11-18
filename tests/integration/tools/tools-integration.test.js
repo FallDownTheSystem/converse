@@ -20,13 +20,15 @@ describe('Tools Integration Tests', () => {
       config,
       continuationStore: getContinuationStore(),
       providers: getProviders(), // Get actual provider instances
-      contextProcessor: { processUnifiedContext }
+      contextProcessor: { processUnifiedContext },
     };
 
     // Get tools
     tools = getTools();
 
-    logger.info('[tools-integration-test] Tools integration test setup completed');
+    logger.info(
+      '[tools-integration-test] Tools integration test setup completed',
+    );
   });
 
   describe('Chat Tool Integration', () => {
@@ -35,9 +37,12 @@ describe('Tools Integration Tests', () => {
       expect(chatTool).toBeDefined();
       expect(typeof chatTool).toBe('function');
 
-      const result = await chatTool({
-        prompt: 'Hello, this is a test message'
-      }, dependencies);
+      const result = await chatTool(
+        {
+          prompt: 'Hello, this is a test message',
+        },
+        dependencies,
+      );
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
@@ -50,18 +55,24 @@ describe('Tools Integration Tests', () => {
       const chatTool = tools.chat;
 
       // First message
-      const firstResult = await chatTool({
-        prompt: 'Start a conversation'
-      }, dependencies);
+      const firstResult = await chatTool(
+        {
+          prompt: 'Start a conversation',
+        },
+        dependencies,
+      );
 
       expect(firstResult.continuation).toBeDefined();
       const continuationId = firstResult.continuation.id;
 
       // Second message with continuation
-      const secondResult = await chatTool({
-        prompt: 'Continue the conversation',
-        continuation_id: continuationId
-      }, dependencies);
+      const secondResult = await chatTool(
+        {
+          prompt: 'Continue the conversation',
+          continuation_id: continuationId,
+        },
+        dependencies,
+      );
 
       expect(secondResult.continuation.id).toBe(continuationId);
       expect(secondResult.continuation.messageCount).toBeGreaterThan(1);
@@ -70,10 +81,13 @@ describe('Tools Integration Tests', () => {
     it('should handle invalid provider gracefully', async () => {
       const chatTool = tools.chat;
 
-      const result = await chatTool({
-        prompt: 'Test message',
-        model: 'invalid-model-123'
-      }, dependencies);
+      const result = await chatTool(
+        {
+          prompt: 'Test message',
+          model: 'invalid-model-123',
+        },
+        dependencies,
+      );
 
       // Should either succeed with fallback or return error content
       expect(result.content).toBeDefined();
@@ -83,10 +97,13 @@ describe('Tools Integration Tests', () => {
     it('should process file context', async () => {
       const chatTool = tools.chat;
 
-      const result = await chatTool({
-        prompt: 'Analyze this package.json',
-        files: ['package.json']
-      }, dependencies);
+      const result = await chatTool(
+        {
+          prompt: 'Analyze this package.json',
+          files: ['package.json'],
+        },
+        dependencies,
+      );
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -99,10 +116,13 @@ describe('Tools Integration Tests', () => {
       expect(consensusTool).toBeDefined();
       expect(typeof consensusTool).toBe('function');
 
-      const result = await consensusTool({
-        prompt: 'What is 2+2?',
-        models: ['auto']
-      }, dependencies);
+      const result = await consensusTool(
+        {
+          prompt: 'What is 2+2?',
+          models: ['auto'],
+        },
+        dependencies,
+      );
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
@@ -118,11 +138,14 @@ describe('Tools Integration Tests', () => {
     it('should handle multiple models', async () => {
       const consensusTool = tools.consensus;
 
-      const result = await consensusTool({
-        prompt: 'Simple test question',
-        models: ['auto', 'auto'],
-        enable_cross_feedback: false
-      }, dependencies);
+      const result = await consensusTool(
+        {
+          prompt: 'Simple test question',
+          models: ['auto', 'auto'],
+          enable_cross_feedback: false,
+        },
+        dependencies,
+      );
 
       const consensusResult = JSON.parse(result.content[0].text);
       expect(consensusResult.models_consulted).toBe(2);
@@ -133,11 +156,14 @@ describe('Tools Integration Tests', () => {
     it('should handle cross-feedback when enabled', async () => {
       const consensusTool = tools.consensus;
 
-      const result = await consensusTool({
-        prompt: 'Test question for cross-feedback',
-        models: ['auto', 'auto'], // Need at least 2 models for cross-feedback
-        enable_cross_feedback: true
-      }, dependencies);
+      const result = await consensusTool(
+        {
+          prompt: 'Test question for cross-feedback',
+          models: ['auto', 'auto'], // Need at least 2 models for cross-feedback
+          enable_cross_feedback: true,
+        },
+        dependencies,
+      );
 
       const consensusResult = JSON.parse(result.content[0].text);
       // Cross-feedback only happens with multiple successful responses
@@ -171,7 +197,9 @@ describe('Tools Integration Tests', () => {
         expect(typeof isAvailable).toBe('boolean');
 
         if (isAvailable) {
-          logger.debug(`[tools-integration-test] Provider ${name} is available`);
+          logger.debug(
+            `[tools-integration-test] Provider ${name} is available`,
+          );
         }
       }
     });
@@ -200,7 +228,7 @@ describe('Tools Integration Tests', () => {
       const result = await processUnifiedContext({
         files: [], // Empty for testing
         images: [],
-        webSearch: null
+        webSearch: null,
       });
 
       expect(result).toBeDefined();
@@ -219,7 +247,7 @@ describe('Tools Integration Tests', () => {
       const result = await processUnifiedContext({
         files: ['/nonexistent/file.txt'],
         images: [],
-        webSearch: null
+        webSearch: null,
       });
 
       // Should handle errors gracefully
@@ -234,15 +262,17 @@ describe('Tools Integration Tests', () => {
   describe('Continuation Store Integration', () => {
     it('should store and retrieve conversation state', async () => {
       const store = dependencies.continuationStore;
-      const { generateContinuationId } = await import('../../../src/continuationStore.js');
+      const { generateContinuationId } = await import(
+        '../../../src/continuationStore.js'
+      );
 
       const testConversation = {
         messages: [
           { role: 'user', content: 'Test message' },
-          { role: 'assistant', content: 'Test response' }
+          { role: 'assistant', content: 'Test response' },
         ],
         provider: 'openai',
-        model: 'gpt-4o-mini'
+        model: 'gpt-4o-mini',
       };
 
       const conversationId = generateContinuationId();
@@ -276,9 +306,12 @@ describe('Tools Integration Tests', () => {
       const chatTool = tools.chat;
 
       try {
-        await chatTool({
-          // Missing required prompt
-        }, dependencies);
+        await chatTool(
+          {
+            // Missing required prompt
+          },
+          dependencies,
+        );
       } catch (error) {
         expect(error).toBeDefined();
         expect(error.message).toContain('prompt');
@@ -289,10 +322,13 @@ describe('Tools Integration Tests', () => {
       const consensusTool = tools.consensus;
 
       try {
-        await consensusTool({
-          prompt: 'Test',
-          // Missing required models array
-        }, dependencies);
+        await consensusTool(
+          {
+            prompt: 'Test',
+            // Missing required models array
+          },
+          dependencies,
+        );
       } catch (error) {
         expect(error).toBeDefined();
         expect(error.message).toMatch(/(models|required)/i);
@@ -302,10 +338,13 @@ describe('Tools Integration Tests', () => {
     it('should handle invalid continuation IDs', async () => {
       const chatTool = tools.chat;
 
-      const result = await chatTool({
-        prompt: 'Test message',
-        continuation_id: 'invalid-continuation-id'
-      }, dependencies);
+      const result = await chatTool(
+        {
+          prompt: 'Test message',
+          continuation_id: 'invalid-continuation-id',
+        },
+        dependencies,
+      );
 
       // Should handle gracefully and create new conversation
       expect(result.content).toBeDefined();
@@ -318,9 +357,12 @@ describe('Tools Integration Tests', () => {
       const chatTool = tools.chat;
       const startTime = Date.now();
 
-      await chatTool({
-        prompt: 'Quick test'
-      }, dependencies);
+      await chatTool(
+        {
+          prompt: 'Quick test',
+        },
+        dependencies,
+      );
 
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
@@ -333,9 +375,12 @@ describe('Tools Integration Tests', () => {
 
       for (let i = 0; i < concurrency; i++) {
         requests.push(
-          chatTool({
-            prompt: `Concurrent test ${i}`
-          }, dependencies)
+          chatTool(
+            {
+              prompt: `Concurrent test ${i}`,
+            },
+            dependencies,
+          ),
         );
       }
 

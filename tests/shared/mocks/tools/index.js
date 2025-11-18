@@ -15,15 +15,15 @@ export function createMockTool(overrides = {}) {
     parameters: overrides.parameters || {
       type: 'object',
       properties: {
-        prompt: { type: 'string', description: 'Input prompt' }
+        prompt: { type: 'string', description: 'Input prompt' },
       },
-      required: ['prompt']
+      required: ['prompt'],
     },
     handler: vi.fn().mockResolvedValue({
       result: 'Mock tool result',
-      metadata: {}
+      metadata: {},
     }),
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -42,17 +42,17 @@ export function createMockChatTool(overrides = {}) {
         temperature: { type: 'number', description: 'Temperature setting' },
         files: { type: 'array', items: { type: 'string' } },
         images: { type: 'array', items: { type: 'string' } },
-        continuation_id: { type: 'string', description: 'Continuation ID' }
+        continuation_id: { type: 'string', description: 'Continuation ID' },
       },
-      required: ['prompt']
+      required: ['prompt'],
     },
     handler: vi.fn().mockResolvedValue({
       result: 'Mock chat response',
       continuation_id: 'chat_123',
       model_used: 'mock-model',
-      usage: { input_tokens: 10, output_tokens: 20 }
+      usage: { input_tokens: 10, output_tokens: 20 },
     }),
-    ...overrides
+    ...overrides,
   });
 }
 
@@ -72,27 +72,35 @@ export function createMockConsensusTool(overrides = {}) {
           items: {
             type: 'object',
             properties: {
-              model: { type: 'string' }
+              model: { type: 'string' },
             },
-            required: ['model']
-          }
+            required: ['model'],
+          },
         },
         enable_cross_feedback: { type: 'boolean' },
-        cross_feedback_prompt: { type: 'string' }
+        cross_feedback_prompt: { type: 'string' },
       },
-      required: ['prompt', 'models']
+      required: ['prompt', 'models'],
     },
     handler: vi.fn().mockResolvedValue({
       initial_responses: [
         { model: 'mock-model-1', response: 'Response 1', success: true },
-        { model: 'mock-model-2', response: 'Response 2', success: true }
+        { model: 'mock-model-2', response: 'Response 2', success: true },
       ],
       refined_responses: [
-        { model: 'mock-model-1', response: 'Refined response 1', success: true },
-        { model: 'mock-model-2', response: 'Refined response 2', success: true }
-      ]
+        {
+          model: 'mock-model-1',
+          response: 'Refined response 1',
+          success: true,
+        },
+        {
+          model: 'mock-model-2',
+          response: 'Refined response 2',
+          success: true,
+        },
+      ],
     }),
-    ...overrides
+    ...overrides,
   });
 }
 
@@ -101,7 +109,7 @@ export function createMockConsensusTool(overrides = {}) {
  */
 export function createMockToolWithError(error) {
   return createMockTool({
-    handler: vi.fn().mockRejectedValue(error)
+    handler: vi.fn().mockRejectedValue(error),
   });
 }
 
@@ -112,7 +120,7 @@ export function createMockToolRegistry(tools = {}) {
   const defaultTools = {
     chat: createMockChatTool(),
     consensus: createMockConsensusTool(),
-    ...tools
+    ...tools,
   };
 
   return {
@@ -121,6 +129,6 @@ export function createMockToolRegistry(tools = {}) {
     list: () => Object.keys(defaultTools),
     register: (name, tool) => {
       defaultTools[name] = tool;
-    }
+    },
   };
 }

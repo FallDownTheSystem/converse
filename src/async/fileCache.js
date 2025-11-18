@@ -34,7 +34,9 @@ export class FileCacheInterface {
    * @returns {Promise<void>}
    */
   async writeJournalEvent(_jobId, _event) {
-    throw new Error('writeJournalEvent() method must be implemented by file cache backend');
+    throw new Error(
+      'writeJournalEvent() method must be implemented by file cache backend',
+    );
   }
 
   /**
@@ -44,7 +46,9 @@ export class FileCacheInterface {
    * @returns {Promise<void>}
    */
   async writeSnapshot(_jobId, _result) {
-    throw new Error('writeSnapshot() method must be implemented by file cache backend');
+    throw new Error(
+      'writeSnapshot() method must be implemented by file cache backend',
+    );
   }
 
   /**
@@ -53,7 +57,9 @@ export class FileCacheInterface {
    * @returns {Promise<object|null>} Job result or null if not found
    */
   async readSnapshot(_jobId) {
-    throw new Error('readSnapshot() method must be implemented by file cache backend');
+    throw new Error(
+      'readSnapshot() method must be implemented by file cache backend',
+    );
   }
 
   /**
@@ -62,7 +68,9 @@ export class FileCacheInterface {
    * @returns {Promise<number>} Number of directories cleaned up
    */
   async cleanup(_maxAgeMs = 3 * 24 * 60 * 60 * 1000) {
-    throw new Error('cleanup() method must be implemented by file cache backend');
+    throw new Error(
+      'cleanup() method must be implemented by file cache backend',
+    );
   }
 }
 
@@ -72,11 +80,16 @@ export class FileCacheInterface {
 export class FileCache extends FileCacheInterface {
   constructor(options = {}) {
     super();
-    this.baseDir = options.baseDir || process.env.ASYNC_CACHE_DIR || path.join(process.cwd(), 'cache', 'async');
+    this.baseDir =
+      options.baseDir ||
+      process.env.ASYNC_CACHE_DIR ||
+      path.join(process.cwd(), 'cache', 'async');
     this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000; // 10 minutes
 
     // Check environment variable for disk TTL
-    const envDiskTTL = process.env.ASYNC_DISK_TTL_MS ? parseInt(process.env.ASYNC_DISK_TTL_MS, 10) : null;
+    const envDiskTTL = process.env.ASYNC_DISK_TTL_MS
+      ? parseInt(process.env.ASYNC_DISK_TTL_MS, 10)
+      : null;
     this.maxAge = options.maxAge || envDiskTTL || 3 * 24 * 60 * 60 * 1000; // 3 days default
 
     this.cleanupTimer = null;
@@ -84,7 +97,10 @@ export class FileCache extends FileCacheInterface {
     // Start cleanup timer
     this.startCleanupTimer();
 
-    debugLog('FileCache', `Initialized with baseDir: ${this.baseDir}, maxAge: ${this.maxAge}ms`);
+    debugLog(
+      'FileCache',
+      `Initialized with baseDir: ${this.baseDir}, maxAge: ${this.maxAge}ms`,
+    );
   }
 
   /**
@@ -100,7 +116,10 @@ export class FileCache extends FileCacheInterface {
       try {
         const cleaned = await this.cleanup();
         if (cleaned > 0) {
-          debugLog('FileCache', `Cleanup completed: ${cleaned} directories removed`);
+          debugLog(
+            'FileCache',
+            `Cleanup completed: ${cleaned} directories removed`,
+          );
         }
       } catch (error) {
         debugError('FileCache', 'Cleanup timer error:', error);
@@ -167,7 +186,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         `Failed to create directory: ${dirPath}`,
         ERROR_CODES.CACHE_DIRECTORY_CREATION_FAILED,
-        { dirPath, originalError: error.message }
+        { dirPath, originalError: error.message },
       );
     }
   }
@@ -183,7 +202,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId }
+        { jobId },
       );
     }
 
@@ -191,7 +210,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Event must be an object',
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId, event }
+        { jobId, event },
       );
     }
 
@@ -206,24 +225,32 @@ export class FileCache extends FileCacheInterface {
       const eventWithMeta = {
         ts: Date.now(),
         jobId,
-        ...event
+        ...event,
       };
 
       // Append NDJSON line
       const ndjsonLine = JSON.stringify(eventWithMeta) + '\n';
       await fs.appendFile(journalPath, ndjsonLine, 'utf8');
 
-      debugLog('FileCache', `Journal event written for job ${jobId}:`, event.type || 'unknown');
+      debugLog(
+        'FileCache',
+        `Journal event written for job ${jobId}:`,
+        event.type || 'unknown',
+      );
     } catch (error) {
       if (error instanceof FileCacheError) {
         throw error;
       }
 
-      debugError('FileCache', `Failed to write journal event for job ${jobId}:`, error);
+      debugError(
+        'FileCache',
+        `Failed to write journal event for job ${jobId}:`,
+        error,
+      );
       throw new FileCacheError(
         `Failed to write journal event for job ${jobId}`,
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId, event, originalError: error.message }
+        { jobId, event, originalError: error.message },
       );
     }
   }
@@ -239,7 +266,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId }
+        { jobId },
       );
     }
 
@@ -247,7 +274,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Result must be an object',
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId, result }
+        { jobId, result },
       );
     }
 
@@ -262,7 +289,7 @@ export class FileCache extends FileCacheInterface {
       const snapshot = {
         jobId,
         completedAt: Date.now(),
-        ...result
+        ...result,
       };
 
       // Write pretty-printed JSON
@@ -275,11 +302,15 @@ export class FileCache extends FileCacheInterface {
         throw error;
       }
 
-      debugError('FileCache', `Failed to write snapshot for job ${jobId}:`, error);
+      debugError(
+        'FileCache',
+        `Failed to write snapshot for job ${jobId}:`,
+        error,
+      );
       throw new FileCacheError(
         `Failed to write snapshot for job ${jobId}`,
         ERROR_CODES.CACHE_WRITE_FAILED,
-        { jobId, result, originalError: error.message }
+        { jobId, result, originalError: error.message },
       );
     }
   }
@@ -294,7 +325,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
         ERROR_CODES.CACHE_READ_FAILED,
-        { jobId }
+        { jobId },
       );
     }
 
@@ -311,12 +342,18 @@ export class FileCache extends FileCacheInterface {
           const lastUpdate = snapshot.updated_at || snapshot.ended_at;
           const age = Date.now() - lastUpdate;
           if (age > this.maxAge) {
-            debugLog('FileCache', `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`);
+            debugLog(
+              'FileCache',
+              `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`,
+            );
             return null;
           }
         }
 
-        debugLog('FileCache', `Snapshot read for job ${jobId} from current date`);
+        debugLog(
+          'FileCache',
+          `Snapshot read for job ${jobId} from current date`,
+        );
         return snapshot;
       } catch (_currentDateError) {
         // If not found in current date, search in recent directories
@@ -327,12 +364,18 @@ export class FileCache extends FileCacheInterface {
             const lastUpdate = result.updated_at || result.ended_at;
             const age = Date.now() - lastUpdate;
             if (age > this.maxAge) {
-              debugLog('FileCache', `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`);
+              debugLog(
+                'FileCache',
+                `Snapshot for job ${jobId} has expired (age: ${age}ms, maxAge: ${this.maxAge}ms)`,
+              );
               return null;
             }
           }
 
-          debugLog('FileCache', `Snapshot read for job ${jobId} from recent directories`);
+          debugLog(
+            'FileCache',
+            `Snapshot read for job ${jobId} from recent directories`,
+          );
           return result;
         }
 
@@ -345,11 +388,15 @@ export class FileCache extends FileCacheInterface {
         throw error;
       }
 
-      debugError('FileCache', `Failed to read snapshot for job ${jobId}:`, error);
+      debugError(
+        'FileCache',
+        `Failed to read snapshot for job ${jobId}:`,
+        error,
+      );
       throw new FileCacheError(
         `Failed to read snapshot for job ${jobId}`,
         ERROR_CODES.CACHE_READ_FAILED,
-        { jobId, originalError: error.message }
+        { jobId, originalError: error.message },
       );
     }
   }
@@ -365,12 +412,20 @@ export class FileCache extends FileCacheInterface {
       // Get directories in base directory
       const entries = await fs.readdir(this.baseDir, { withFileTypes: true });
       const dateDirs = entries
-        .filter(entry => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
+        .filter(
+          (entry) =>
+            entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name),
+        )
         .sort((a, b) => b.name.localeCompare(a.name)) // Most recent first
         .slice(0, 10); // Only check last 10 days
 
       for (const dateDir of dateDirs) {
-        const snapshotPath = path.join(this.baseDir, dateDir.name, jobId, 'result.json');
+        const snapshotPath = path.join(
+          this.baseDir,
+          dateDir.name,
+          jobId,
+          'result.json',
+        );
         try {
           const content = await fs.readFile(snapshotPath, 'utf8');
           return JSON.parse(content);
@@ -409,7 +464,10 @@ export class FileCache extends FileCacheInterface {
       // Get directories in base directory
       const entries = await fs.readdir(this.baseDir, { withFileTypes: true });
       const dateDirs = entries
-        .filter(entry => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
+        .filter(
+          (entry) =>
+            entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name),
+        )
         .sort((a, b) => b.name.localeCompare(a.name)) // Most recent first
         .slice(0, daysBack); // Only check specified days back
 
@@ -421,9 +479,11 @@ export class FileCache extends FileCacheInterface {
 
         try {
           // Get all job directories in this date
-          const jobEntries = await fs.readdir(dateDirPath, { withFileTypes: true });
+          const jobEntries = await fs.readdir(dateDirPath, {
+            withFileTypes: true,
+          });
           const jobDirs = jobEntries
-            .filter(entry => entry.isDirectory())
+            .filter((entry) => entry.isDirectory())
             .sort((a, b) => {
               // Try to sort by modification time if possible
               try {
@@ -441,14 +501,23 @@ export class FileCache extends FileCacheInterface {
           for (const jobDir of jobDirs) {
             if (jobs.length >= limit) break;
 
-            const snapshotPath = path.join(dateDirPath, jobDir.name, 'result.json');
+            const snapshotPath = path.join(
+              dateDirPath,
+              jobDir.name,
+              'result.json',
+            );
 
             try {
               const content = await fs.readFile(snapshotPath, 'utf8');
               const snapshot = JSON.parse(content);
 
               // Add the job to our list if it's completed
-              if (snapshot && (snapshot.status === 'completed' || snapshot.status === 'failed' || snapshot.status === 'cancelled')) {
+              if (
+                snapshot &&
+                (snapshot.status === 'completed' ||
+                  snapshot.status === 'failed' ||
+                  snapshot.status === 'cancelled')
+              ) {
                 jobs.push(snapshot);
               }
             } catch {
@@ -457,7 +526,11 @@ export class FileCache extends FileCacheInterface {
             }
           }
         } catch (error) {
-          debugError('FileCache', `Failed to read date directory ${dateDir.name}:`, error);
+          debugError(
+            'FileCache',
+            `Failed to read date directory ${dateDir.name}:`,
+            error,
+          );
           // Continue with other directories
         }
       }
@@ -486,14 +559,18 @@ export class FileCache extends FileCacheInterface {
         await fs.access(this.baseDir);
       } catch {
         // Base directory doesn't exist, nothing to clean
-        debugLog('FileCache', 'Base directory does not exist, skipping cleanup');
+        debugLog(
+          'FileCache',
+          'Base directory does not exist, skipping cleanup',
+        );
         return 0;
       }
 
       // Get all date directories
       const entries = await fs.readdir(this.baseDir, { withFileTypes: true });
-      const dateDirs = entries.filter(entry =>
-        entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name)
+      const dateDirs = entries.filter(
+        (entry) =>
+          entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name),
       );
 
       for (const dateDir of dateDirs) {
@@ -509,7 +586,11 @@ export class FileCache extends FileCacheInterface {
             debugLog('FileCache', `Cleaned up old directory: ${dateDir.name}`);
           }
         } catch (error) {
-          debugError('FileCache', `Failed to clean directory ${dateDir.name}:`, error);
+          debugError(
+            'FileCache',
+            `Failed to clean directory ${dateDir.name}:`,
+            error,
+          );
           // Continue with other directories
         }
       }
@@ -520,7 +601,7 @@ export class FileCache extends FileCacheInterface {
       throw new FileCacheError(
         'Failed to cleanup old cache directories',
         ERROR_CODES.CACHE_CLEANUP_FAILED,
-        { maxAgeMs, originalError: error.message }
+        { maxAgeMs, originalError: error.message },
       );
     }
   }

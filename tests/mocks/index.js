@@ -11,5 +11,8 @@ export * from './tools/base.mock.js';
 
 // Re-export commonly used mocks for convenience
 export { createMockProvider } from './providers/base.mock.js';
-export { mockOpenAIProvider, createMockOpenAIResponse } from './providers/openai.mock.js';
+export {
+  mockOpenAIProvider,
+  createMockOpenAIResponse,
+} from './providers/openai.mock.js';
 export { createMockTool } from './tools/base.mock.js';

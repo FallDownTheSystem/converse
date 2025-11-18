@@ -128,7 +128,7 @@ export const ProviderInterface = {
    */
   getModelConfig(_modelName) {
     throw new Error('Provider must implement getModelConfig method');
-  }
+  },
 };
 
 /**
@@ -179,7 +179,7 @@ export const ErrorCodes = {
   // Other errors
   API_ERROR: 'API_ERROR',
   TIMEOUT_ERROR: 'TIMEOUT_ERROR',
-  NETWORK_ERROR: 'NETWORK_ERROR'
+  NETWORK_ERROR: 'NETWORK_ERROR',
 };
 
 /**
@@ -189,7 +189,13 @@ export const ErrorCodes = {
  * @throws {Error} - If provider is invalid
  */
 export function validateProvider(provider) {
-  const requiredMethods = ['invoke', 'validateConfig', 'isAvailable', 'getSupportedModels', 'getModelConfig'];
+  const requiredMethods = [
+    'invoke',
+    'validateConfig',
+    'isAvailable',
+    'getSupportedModels',
+    'getModelConfig',
+  ];
 
   for (const method of requiredMethods) {
     if (typeof provider[method] !== 'function') {
@@ -204,12 +210,11 @@ export function validateProvider(provider) {
  * Common stop reasons that providers should map to
  */
 export const StopReasons = {
-  STOP: 'stop',              // Normal completion
-  LENGTH: 'length',          // Max tokens reached
-  TOOL_USE: 'tool_use',      // Tool use requested
-  CONTENT_FILTER: 'content_filter',  // Content filtered
-  SAFETY: 'safety',          // Safety filter triggered
-  ERROR: 'error',            // Error occurred
-  OTHER: 'other'             // Other reason
+  STOP: 'stop', // Normal completion
+  LENGTH: 'length', // Max tokens reached
+  TOOL_USE: 'tool_use', // Tool use requested
+  CONTENT_FILTER: 'content_filter', // Content filtered
+  SAFETY: 'safety', // Safety filter triggered
+  ERROR: 'error', // Error occurred
+  OTHER: 'other', // Other reason
 };
-

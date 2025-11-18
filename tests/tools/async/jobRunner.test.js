@@ -6,8 +6,17 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { JobRunner, createJobRunner, getJobRunner, setJobRunner, JobRunnerError } from '../../../src/async/jobRunner.js';
-import { getAsyncJobStore, JOB_STATUS } from '../../../src/async/asyncJobStore.js';
+import {
+  JobRunner,
+  createJobRunner,
+  getJobRunner,
+  setJobRunner,
+  JobRunnerError,
+} from '../../../src/async/jobRunner.js';
+import {
+  getAsyncJobStore,
+  JOB_STATUS,
+} from '../../../src/async/asyncJobStore.js';
 
 describe('JobRunner', () => {
   let jobRunner;
@@ -22,13 +31,16 @@ describe('JobRunner', () => {
       createSnapshot: vi.fn(),
     };
 
-    jobRunner = new JobRunner({
-      asyncJobStore,
-      fileCache: mockFileCache,
-    }, {
-      concurrency: 2, // Lower concurrency for easier testing
-      defaultTimeout: 1000, // 1 second timeout for faster tests
-    });
+    jobRunner = new JobRunner(
+      {
+        asyncJobStore,
+        fileCache: mockFileCache,
+      },
+      {
+        concurrency: 2, // Lower concurrency for easier testing
+        defaultTimeout: 1000, // 1 second timeout for faster tests
+      },
+    );
 
     // Clean up any existing jobs
     asyncJobStore.jobs?.clear();
@@ -67,8 +79,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_test12345'
-        }
+          jobId: 'job_test12345',
+        },
       };
 
       const runFunction = vi.fn().mockResolvedValue({ result: 'success' });
@@ -85,12 +97,15 @@ describe('JobRunner', () => {
 
       // Missing tool
       await expect(
-        jobRunner.submit({ sessionId: 'session_123' }, runFunction)
+        jobRunner.submit({ sessionId: 'session_123' }, runFunction),
       ).rejects.toThrow(JobRunnerError);
 
       // Invalid runFunction
       await expect(
-        jobRunner.submit({ sessionId: 'session_123', tool: 'chat' }, 'not a function')
+        jobRunner.submit(
+          { sessionId: 'session_123', tool: 'chat' },
+          'not a function',
+        ),
       ).rejects.toThrow(JobRunnerError);
     });
 
@@ -102,11 +117,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_test56789'
-        }
+          jobId: 'job_test56789',
+        },
       };
 
-      const jobId = await jobRunner.submit(jobSpec, vi.fn().mockResolvedValue({}));
+      const jobId = await jobRunner.submit(
+        jobSpec,
+        vi.fn().mockResolvedValue({}),
+      );
 
       expect(eventSpy).toHaveBeenCalledWith({
         jobId,
@@ -133,15 +151,18 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_execute123'
-        }
+          jobId: 'job_execute123',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for execution to complete with timeout
       await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Job completion timeout')), 5000);
+        const timeout = setTimeout(
+          () => reject(new Error('Job completion timeout')),
+          5000,
+        );
         jobRunner.on('job.completed', () => {
           clearTimeout(timeout);
           resolve();
@@ -164,14 +185,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_error123'
-        }
+          jobId: 'job_error123',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for execution to fail
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.failed', () => resolve());
       });
 
@@ -185,8 +206,12 @@ describe('JobRunner', () => {
 
     it('should emit job lifecycle events', async () => {
       const events = [];
-      jobRunner.on('job.started', (data) => events.push({ type: 'started', data }));
-      jobRunner.on('job.completed', (data) => events.push({ type: 'completed', data }));
+      jobRunner.on('job.started', (data) =>
+        events.push({ type: 'started', data }),
+      );
+      jobRunner.on('job.completed', (data) =>
+        events.push({ type: 'completed', data }),
+      );
 
       const runFunction = vi.fn().mockResolvedValue({ result: 'success' });
 
@@ -194,14 +219,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_lifecycle'
-        }
+          jobId: 'job_lifecycle',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for completion
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.completed', () => resolve());
       });
 
@@ -223,7 +248,7 @@ describe('JobRunner', () => {
         maxConcurrent = Math.max(maxConcurrent, activeJobs);
 
         // Simulate some work
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
         activeJobs--;
         return { result: 'success' };
@@ -239,7 +264,7 @@ describe('JobRunner', () => {
       for (let i = 0; i < 5; i++) {
         const jobSpecWithId = {
           ...jobSpec,
-          options: { jobId: 'job_concur' + i }
+          options: { jobId: 'job_concur' + i },
         };
         promises.push(jobRunner.submit(jobSpecWithId, runFunction));
       }
@@ -249,7 +274,7 @@ describe('JobRunner', () => {
 
       // Wait for all jobs to complete
       let completedJobs = 0;
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.completed', () => {
           completedJobs++;
           if (completedJobs === 5) resolve();
@@ -263,7 +288,7 @@ describe('JobRunner', () => {
 
     it('should track active job count correctly', async () => {
       const runFunction = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return { result: 'success' };
       });
 
@@ -273,15 +298,24 @@ describe('JobRunner', () => {
       };
 
       // Submit 3 jobs
-      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track1' } }, runFunction);
-      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track2' } }, runFunction);
-      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_track3' } }, runFunction);
+      await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_track1' } },
+        runFunction,
+      );
+      await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_track2' } },
+        runFunction,
+      );
+      await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_track3' } },
+        runFunction,
+      );
 
       expect(jobRunner.stats.activeCount).toBe(3);
 
       // Wait for all to complete
       let completedJobs = 0;
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.completed', () => {
           completedJobs++;
           if (completedJobs === 3) resolve();
@@ -296,7 +330,7 @@ describe('JobRunner', () => {
     it('should cancel queued job', async () => {
       // Create a long-running job to block the queue
       const blockingFunction = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         return { result: 'blocking' };
       });
 
@@ -309,11 +343,20 @@ describe('JobRunner', () => {
       };
 
       // Submit blocking jobs to fill concurrency limit
-      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_blocking1' } }, blockingFunction);
-      await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_blocking2' } }, blockingFunction);
+      await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_blocking1' } },
+        blockingFunction,
+      );
+      await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_blocking2' } },
+        blockingFunction,
+      );
 
       // Submit job to cancel (should be queued)
-      const jobIdToCancel = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_tocancel' } }, cancelledFunction);
+      const jobIdToCancel = await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_tocancel' } },
+        cancelledFunction,
+      );
 
       // Cancel the queued job
       const cancelled = await jobRunner.cancel(jobIdToCancel);
@@ -326,7 +369,7 @@ describe('JobRunner', () => {
       expect(jobState.status).toBe(JOB_STATUS.CANCELLED);
 
       // Wait for blocking jobs to finish
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Cancelled job should not have executed
       expect(cancelledFunction).not.toHaveBeenCalled();
@@ -346,7 +389,7 @@ describe('JobRunner', () => {
           if (context.signal.aborted) {
             throw new Error('Job was aborted');
           }
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
 
         return { result: 'completed' };
@@ -356,14 +399,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_runcancel'
-        }
+          jobId: 'job_runcancel',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait a bit for job to start
-      await new Promise(resolve => setTimeout(resolve, 25));
+      await new Promise((resolve) => setTimeout(resolve, 25));
 
       // Cancel the running job
       const cancelled = await jobRunner.cancel(jobId);
@@ -372,7 +415,7 @@ describe('JobRunner', () => {
       expect(jobCancelled).toBe(true);
 
       // Wait for cancellation to process
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const jobState = await asyncJobStore.get(jobId);
       expect(jobState.status).toBe(JOB_STATUS.CANCELLED);
@@ -383,7 +426,7 @@ describe('JobRunner', () => {
       jobRunner.on('job.cancelled', eventSpy);
 
       const runFunction = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return { result: 'success' };
       });
 
@@ -391,8 +434,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_emit_cancel'
-        }
+          jobId: 'job_emit_cancel',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
@@ -411,14 +454,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_notcancel'
-        }
+          jobId: 'job_notcancel',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for completion
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.completed', () => resolve());
       });
 
@@ -440,7 +483,7 @@ describe('JobRunner', () => {
         // Run longer than timeout
         for (let i = 0; i < 50; i++) {
           if (aborted) break;
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
 
         if (aborted) {
@@ -454,8 +497,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_timeout'
-        }
+          jobId: 'job_timeout',
+        },
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction, {
@@ -463,7 +506,7 @@ describe('JobRunner', () => {
       });
 
       // Wait for timeout and cancellation
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.cancelled', () => resolve());
       });
 
@@ -472,9 +515,12 @@ describe('JobRunner', () => {
     });
 
     it('should use default timeout when not specified', async () => {
-      const runner = new JobRunner({ asyncJobStore }, {
-        defaultTimeout: 50,
-      });
+      const runner = new JobRunner(
+        { asyncJobStore },
+        {
+          defaultTimeout: 50,
+        },
+      );
 
       const runFunction = vi.fn().mockImplementation(async (context) => {
         let aborted = false;
@@ -482,7 +528,7 @@ describe('JobRunner', () => {
           aborted = true;
         });
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         if (aborted) {
           throw new Error('Timeout');
@@ -494,13 +540,13 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_deftimeout'
-        }
+          jobId: 'job_deftimeout',
+        },
       };
 
       const jobId = await runner.submit(jobSpec, runFunction);
 
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         runner.on('job.cancelled', () => resolve());
       });
 
@@ -515,24 +561,37 @@ describe('JobRunner', () => {
 
       const jobSpec = {
         sessionId: 'session_123',
-        tool: 'chat'
+        tool: 'chat',
       };
 
       // Submit various jobs sequentially to avoid timing issues
-      const job1 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats1' } }, successFunction);
-      const job2 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats2' } }, successFunction);
-      const job3 = await jobRunner.submit({ ...jobSpec, options: { jobId: 'job_stats3' } }, failureFunction);
+      const job1 = await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_stats1' } },
+        successFunction,
+      );
+      const job2 = await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_stats2' } },
+        successFunction,
+      );
+      const job3 = await jobRunner.submit(
+        { ...jobSpec, options: { jobId: 'job_stats3' } },
+        failureFunction,
+      );
 
       expect(jobRunner.stats.submitted).toBe(3);
 
       // Wait for specific jobs to complete using the AsyncJobStore
       const waitForJobCompletion = async (jobId) => {
-        for (let i = 0; i < 100; i++) { // 10 second timeout
+        for (let i = 0; i < 100; i++) {
+          // 10 second timeout
           const jobState = await asyncJobStore.get(jobId);
-          if (jobState && [JOB_STATUS.COMPLETED, JOB_STATUS.FAILED].includes(jobState.status)) {
+          if (
+            jobState &&
+            [JOB_STATUS.COMPLETED, JOB_STATUS.FAILED].includes(jobState.status)
+          ) {
             return jobState.status;
           }
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
         throw new Error(`Job ${jobId} did not complete in time`);
       };
@@ -543,7 +602,7 @@ describe('JobRunner', () => {
       await waitForJobCompletion(job3);
 
       // Give a bit more time for stats to update
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const stats = jobRunner.getStats();
       expect(stats.submitted).toBe(3);
@@ -574,7 +633,7 @@ describe('JobRunner', () => {
 
       const runFunction = vi.fn().mockImplementation(async () => {
         jobStarted = true;
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         jobCompleted = true;
         return { result: 'success' };
       });
@@ -583,14 +642,14 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_shutdown1'
-        }
+          jobId: 'job_shutdown1',
+        },
       };
 
       await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for job to actually start
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         const check = () => {
           if (jobStarted) {
             resolve();
@@ -605,7 +664,7 @@ describe('JobRunner', () => {
       const shutdownPromise = jobRunner.shutdown(300);
 
       // Shutdown should not complete immediately
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       expect(jobCompleted).toBe(false);
 
       // Wait for shutdown to complete
@@ -615,7 +674,7 @@ describe('JobRunner', () => {
 
     it('should force shutdown after timeout', async () => {
       const runFunction = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         return { result: 'success' };
       });
 
@@ -623,8 +682,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_shutdown2'
-        }
+          jobId: 'job_shutdown2',
+        },
       };
 
       await jobRunner.submit(jobSpec, runFunction);
@@ -664,12 +723,12 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_initial'
-        }
+          jobId: 'job_initial',
+        },
       };
 
       const runFunction = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         return { result: 'success' };
       });
 
@@ -689,8 +748,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_update'
-        }
+          jobId: 'job_update',
+        },
       };
 
       const runFunction = vi.fn().mockImplementation(async (context) => {
@@ -699,7 +758,7 @@ describe('JobRunner', () => {
           progress: 0.5,
         });
 
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         return { result: 'success' };
       });
 
@@ -709,7 +768,7 @@ describe('JobRunner', () => {
       const jobStateBeforeRunning = await asyncJobStore.get(jobId);
 
       // Wait for completion
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.completed', () => resolve());
       });
 
@@ -718,7 +777,9 @@ describe('JobRunner', () => {
       expect(jobStateBeforeRunning.status).toBe(JOB_STATUS.QUEUED);
       expect(jobStateAfterRunning.status).toBe(JOB_STATUS.COMPLETED);
       expect(jobStateAfterRunning.overall.progress).toBe(1.0);
-      expect(jobStateAfterRunning.overall.result).toEqual({ result: 'success' });
+      expect(jobStateAfterRunning.overall.result).toEqual({
+        result: 'success',
+      });
     });
   });
 
@@ -740,9 +801,9 @@ describe('JobRunner', () => {
         tool: 'chat',
       };
 
-      await expect(
-        failingRunner.submit(jobSpec, vi.fn())
-      ).rejects.toThrow('Store creation failed');
+      await expect(failingRunner.submit(jobSpec, vi.fn())).rejects.toThrow(
+        'Store creation failed',
+      );
 
       await failingRunner.shutdown(100);
     });
@@ -753,8 +814,8 @@ describe('JobRunner', () => {
         sessionId: 'session_123',
         tool: 'chat',
         options: {
-          jobId: 'job_syserror'
-        }
+          jobId: 'job_syserror',
+        },
       };
 
       const runFunction = vi.fn().mockImplementation(() => {
@@ -764,7 +825,7 @@ describe('JobRunner', () => {
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for failure
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         jobRunner.on('job.failed', () => resolve());
       });
 

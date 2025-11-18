@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'test') {
 // Configure logger early
 configureLogger({
   level: process.env.LOG_LEVEL || 'info',
-  isDevelopment: process.env.NODE_ENV === 'development'
+  isDevelopment: process.env.NODE_ENV === 'development',
 });
 
 const logger = createLogger('config');
@@ -41,88 +41,283 @@ const CONFIG_SCHEMA = {
   server: {
     PORT: { type: 'number', default: 3157, description: 'Server port' },
     HOST: { type: 'string', default: 'localhost', description: 'Server host' },
-    NODE_ENV: { type: 'string', default: 'development', description: 'Environment mode' },
-    LOG_LEVEL: { type: 'string', default: 'info', description: 'Logging level' },
-    CLIENT_CWD: { type: 'string', default: null, description: 'Client working directory for relative paths' },
+    NODE_ENV: {
+      type: 'string',
+      default: 'development',
+      description: 'Environment mode',
+    },
+    LOG_LEVEL: {
+      type: 'string',
+      default: 'info',
+      description: 'Logging level',
+    },
+    CLIENT_CWD: {
+      type: 'string',
+      default: null,
+      description: 'Client working directory for relative paths',
+    },
   },
 
   // Transport configuration
   transport: {
-    MCP_TRANSPORT: { type: 'string', default: 'stdio', description: 'MCP transport type (stdio or http)' },
+    MCP_TRANSPORT: {
+      type: 'string',
+      default: 'stdio',
+      description: 'MCP transport type (stdio or http)',
+    },
 
     // HTTP server settings
-    HTTP_PORT: { type: 'number', default: 3157, description: 'HTTP server port' },
-    HTTP_HOST: { type: 'string', default: 'localhost', description: 'HTTP server host' },
-    HTTP_REQUEST_TIMEOUT: { type: 'number', default: 300000, description: 'HTTP request timeout in milliseconds (5 minutes)' },
-    HTTP_MAX_REQUEST_SIZE: { type: 'string', default: '10mb', description: 'Maximum HTTP request body size' },
+    HTTP_PORT: {
+      type: 'number',
+      default: 3157,
+      description: 'HTTP server port',
+    },
+    HTTP_HOST: {
+      type: 'string',
+      default: 'localhost',
+      description: 'HTTP server host',
+    },
+    HTTP_REQUEST_TIMEOUT: {
+      type: 'number',
+      default: 300000,
+      description: 'HTTP request timeout in milliseconds (5 minutes)',
+    },
+    HTTP_MAX_REQUEST_SIZE: {
+      type: 'string',
+      default: '10mb',
+      description: 'Maximum HTTP request body size',
+    },
 
     // Session management
-    HTTP_SESSION_TIMEOUT: { type: 'number', default: 1800000, description: 'Session timeout in milliseconds (30 minutes)' },
-    HTTP_SESSION_CLEANUP_INTERVAL: { type: 'number', default: 300000, description: 'Session cleanup interval in milliseconds (5 minutes)' },
-    HTTP_MAX_CONCURRENT_SESSIONS: { type: 'number', default: 100, description: 'Maximum concurrent sessions' },
+    HTTP_SESSION_TIMEOUT: {
+      type: 'number',
+      default: 1800000,
+      description: 'Session timeout in milliseconds (30 minutes)',
+    },
+    HTTP_SESSION_CLEANUP_INTERVAL: {
+      type: 'number',
+      default: 300000,
+      description: 'Session cleanup interval in milliseconds (5 minutes)',
+    },
+    HTTP_MAX_CONCURRENT_SESSIONS: {
+      type: 'number',
+      default: 100,
+      description: 'Maximum concurrent sessions',
+    },
 
     // CORS configuration
-    HTTP_ENABLE_CORS: { type: 'boolean', default: true, description: 'Enable CORS for HTTP transport' },
-    HTTP_CORS_ORIGINS: { type: 'string', default: '*', description: 'CORS allowed origins (comma-separated)' },
-    HTTP_CORS_METHODS: { type: 'string', default: 'GET,POST,DELETE,OPTIONS', description: 'CORS allowed methods' },
-    HTTP_CORS_HEADERS: { type: 'string', default: 'Content-Type,mcp-session-id,Authorization', description: 'CORS allowed headers' },
-    HTTP_CORS_CREDENTIALS: { type: 'boolean', default: false, description: 'CORS allow credentials' },
+    HTTP_ENABLE_CORS: {
+      type: 'boolean',
+      default: true,
+      description: 'Enable CORS for HTTP transport',
+    },
+    HTTP_CORS_ORIGINS: {
+      type: 'string',
+      default: '*',
+      description: 'CORS allowed origins (comma-separated)',
+    },
+    HTTP_CORS_METHODS: {
+      type: 'string',
+      default: 'GET,POST,DELETE,OPTIONS',
+      description: 'CORS allowed methods',
+    },
+    HTTP_CORS_HEADERS: {
+      type: 'string',
+      default: 'Content-Type,mcp-session-id,Authorization',
+      description: 'CORS allowed headers',
+    },
+    HTTP_CORS_CREDENTIALS: {
+      type: 'boolean',
+      default: false,
+      description: 'CORS allow credentials',
+    },
 
     // Security settings
-    HTTP_DNS_REBINDING_PROTECTION: { type: 'boolean', default: false, description: 'Enable DNS rebinding protection' },
-    HTTP_ALLOWED_HOSTS: { type: 'string', default: '127.0.0.1,localhost', description: 'Allowed hosts for DNS rebinding protection (comma-separated)' },
-    HTTP_RATE_LIMIT_ENABLED: { type: 'boolean', default: false, description: 'Enable rate limiting' },
-    HTTP_RATE_LIMIT_WINDOW: { type: 'number', default: 900000, description: 'Rate limit window in milliseconds (15 minutes)' },
-    HTTP_RATE_LIMIT_MAX_REQUESTS: { type: 'number', default: 1000, description: 'Maximum requests per window' },
+    HTTP_DNS_REBINDING_PROTECTION: {
+      type: 'boolean',
+      default: false,
+      description: 'Enable DNS rebinding protection',
+    },
+    HTTP_ALLOWED_HOSTS: {
+      type: 'string',
+      default: '127.0.0.1,localhost',
+      description:
+        'Allowed hosts for DNS rebinding protection (comma-separated)',
+    },
+    HTTP_RATE_LIMIT_ENABLED: {
+      type: 'boolean',
+      default: false,
+      description: 'Enable rate limiting',
+    },
+    HTTP_RATE_LIMIT_WINDOW: {
+      type: 'number',
+      default: 900000,
+      description: 'Rate limit window in milliseconds (15 minutes)',
+    },
+    HTTP_RATE_LIMIT_MAX_REQUESTS: {
+      type: 'number',
+      default: 1000,
+      description: 'Maximum requests per window',
+    },
   },
 
   // API Keys (at least one required)
   apiKeys: {
-    OPENAI_API_KEY: { type: 'string', required: false, secret: true, description: 'OpenAI API key' },
-    XAI_API_KEY: { type: 'string', required: false, secret: true, description: 'XAI API key' },
-    GOOGLE_API_KEY: { type: 'string', required: false, secret: true, description: 'Google API key' },
-    GEMINI_API_KEY: { type: 'string', required: false, secret: true, description: 'Gemini API key (alternative to GOOGLE_API_KEY)' },
-    ANTHROPIC_API_KEY: { type: 'string', required: false, secret: true, description: 'Anthropic API key' },
-    MISTRAL_API_KEY: { type: 'string', required: false, secret: true, description: 'Mistral API key' },
-    DEEPSEEK_API_KEY: { type: 'string', required: false, secret: true, description: 'DeepSeek API key' },
-    OPENROUTER_API_KEY: { type: 'string', required: false, secret: true, description: 'OpenRouter API key' },
+    OPENAI_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'OpenAI API key',
+    },
+    XAI_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'XAI API key',
+    },
+    GOOGLE_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Google API key',
+    },
+    GEMINI_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Gemini API key (alternative to GOOGLE_API_KEY)',
+    },
+    ANTHROPIC_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Anthropic API key',
+    },
+    MISTRAL_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Mistral API key',
+    },
+    DEEPSEEK_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'DeepSeek API key',
+    },
+    OPENROUTER_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'OpenRouter API key',
+    },
   },
 
   // Provider-specific configuration
   providers: {
-    OPENROUTER_REFERER: { type: 'string', required: false, description: 'OpenRouter referer header for compliance' },
-    OPENROUTER_TITLE: { type: 'string', required: false, description: 'OpenRouter X-Title header for request tracking' },
-    OPENROUTER_DYNAMIC_MODELS: { type: 'boolean', default: false, description: 'Enable dynamic model discovery via OpenRouter endpoints API' },
+    OPENROUTER_REFERER: {
+      type: 'string',
+      required: false,
+      description: 'OpenRouter referer header for compliance',
+    },
+    OPENROUTER_TITLE: {
+      type: 'string',
+      required: false,
+      description: 'OpenRouter X-Title header for request tracking',
+    },
+    OPENROUTER_DYNAMIC_MODELS: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enable dynamic model discovery via OpenRouter endpoints API',
+    },
 
     // Google Vertex AI configuration
-    GOOGLE_GENAI_USE_VERTEXAI: { type: 'boolean', default: false, description: 'Use Google Vertex AI instead of Gemini Developer API' },
-    GOOGLE_CLOUD_PROJECT: { type: 'string', required: false, description: 'Google Cloud project ID for Vertex AI' },
-    GOOGLE_CLOUD_LOCATION: { type: 'string', required: false, description: 'Google Cloud location for Vertex AI (e.g., us-central1)' },
-    GOOGLE_API_VERSION: { type: 'string', default: 'v1beta', description: 'Google API version (v1, v1beta, v1alpha)' },
+    GOOGLE_GENAI_USE_VERTEXAI: {
+      type: 'boolean',
+      default: false,
+      description: 'Use Google Vertex AI instead of Gemini Developer API',
+    },
+    GOOGLE_CLOUD_PROJECT: {
+      type: 'string',
+      required: false,
+      description: 'Google Cloud project ID for Vertex AI',
+    },
+    GOOGLE_CLOUD_LOCATION: {
+      type: 'string',
+      required: false,
+      description: 'Google Cloud location for Vertex AI (e.g., us-central1)',
+    },
+    GOOGLE_API_VERSION: {
+      type: 'string',
+      default: 'v1beta',
+      description: 'Google API version (v1, v1beta, v1alpha)',
+    },
 
     // Codex configuration
-    CODEX_API_KEY: { type: 'string', required: false, secret: true, description: 'Codex API key (alternative to ChatGPT login)' },
-    CODEX_SANDBOX_MODE: { type: 'string', default: 'read-only', description: 'Codex sandbox mode (read-only | workspace-write | danger-full-access)' },
-    CODEX_SKIP_GIT_CHECK: { type: 'boolean', default: true, description: 'Skip Git repository validation check' },
-    CODEX_APPROVAL_POLICY: { type: 'string', default: 'never', description: 'Approval policy (never | untrusted | on-failure | on-request)' },
-    CODEX_DEFAULT_MODEL: { type: 'string', default: 'gpt-5-codex', description: 'Default Codex model' }
+    CODEX_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Codex API key (alternative to ChatGPT login)',
+    },
+    CODEX_SANDBOX_MODE: {
+      type: 'string',
+      default: 'read-only',
+      description:
+        'Codex sandbox mode (read-only | workspace-write | danger-full-access)',
+    },
+    CODEX_SKIP_GIT_CHECK: {
+      type: 'boolean',
+      default: true,
+      description: 'Skip Git repository validation check',
+    },
+    CODEX_APPROVAL_POLICY: {
+      type: 'string',
+      default: 'never',
+      description:
+        'Approval policy (never | untrusted | on-failure | on-request)',
+    },
+    CODEX_DEFAULT_MODEL: {
+      type: 'string',
+      default: 'gpt-5-codex',
+      description: 'Default Codex model',
+    },
   },
-
 
   // MCP configuration
   mcp: {
-    MAX_MCP_OUTPUT_TOKENS: { type: 'number', default: 25000, description: 'Maximum tokens in MCP tool responses' },
+    MAX_MCP_OUTPUT_TOKENS: {
+      type: 'number',
+      default: 25000,
+      description: 'Maximum tokens in MCP tool responses',
+    },
   },
 
   // Summarization configuration
   summarization: {
-    ENABLE_RESPONSE_SUMMARIZATION: { type: 'boolean', default: false, description: 'Enable AI-powered response summarization for async operations' },
-    SUMMARIZATION_MODEL: { type: 'string', default: 'gpt-5-nano', description: 'Model to use for summarization tasks (title generation, streaming summaries, final summaries)' },
+    ENABLE_RESPONSE_SUMMARIZATION: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enable AI-powered response summarization for async operations',
+    },
+    SUMMARIZATION_MODEL: {
+      type: 'string',
+      default: 'gpt-5-nano',
+      description:
+        'Model to use for summarization tasks (title generation, streaming summaries, final summaries)',
+    },
   },
 
   // Async tools configuration
   async: {
-    DISABLE_ASYNC_TOOLS: { type: 'boolean', default: false, description: 'Disable async execution support (removes async parameter from tools and status check tools)' },
+    DISABLE_ASYNC_TOOLS: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Disable async execution support (removes async parameter from tools and status check tools)',
+    },
   },
 };
 
@@ -139,7 +334,9 @@ function validateEnvVar(key, value, schema) {
   // Handle missing values
   if (value === undefined || value === '') {
     if (schema.required) {
-      throw new ConfigurationError(`Required environment variable ${key} is missing`);
+      throw new ConfigurationError(
+        `Required environment variable ${key} is missing`,
+      );
     }
     return schema.default;
   }
@@ -152,7 +349,7 @@ function validateEnvVar(key, value, schema) {
     const num = parseInt(value, 10);
     if (isNaN(num)) {
       throw new ConfigurationError(
-        `Environment variable ${key} must be a valid number, got: ${value}`
+        `Environment variable ${key} must be a valid number, got: ${value}`,
       );
     }
     return num;
@@ -160,7 +357,7 @@ function validateEnvVar(key, value, schema) {
     const lower = value.toLowerCase();
     if (!['true', 'false', '1', '0', 'yes', 'no'].includes(lower)) {
       throw new ConfigurationError(
-        `Environment variable ${key} must be a boolean value, got: ${value}`
+        `Environment variable ${key} must be a boolean value, got: ${value}`,
       );
     }
     return ['true', '1', 'yes'].includes(lower);
@@ -239,14 +436,21 @@ export async function loadConfig() {
           // When run via npx, INIT_CWD contains the directory where npx was invoked
           // PWD is another common variable set to the working directory
           // npm_config_local_prefix is set when run via npm/npx
-          const detectedCwd = process.env.INIT_CWD ||
-                            process.env.PWD ||
-                            process.env.npm_config_local_prefix ||
-                            process.cwd();
+          const detectedCwd =
+            process.env.INIT_CWD ||
+            process.env.PWD ||
+            process.env.npm_config_local_prefix ||
+            process.cwd();
           config.server.client_cwd = detectedCwd;
-          configLogger.debug(`Auto-detected client working directory: ${detectedCwd}`);
+          configLogger.debug(
+            `Auto-detected client working directory: ${detectedCwd}`,
+          );
         } else {
-          config.server[key.toLowerCase()] = validateEnvVar(key, process.env[key], schema);
+          config.server[key.toLowerCase()] = validateEnvVar(
+            key,
+            process.env[key],
+            schema,
+          );
         }
       } catch (error) {
         errors.push(error.message);
@@ -262,7 +466,10 @@ export async function loadConfig() {
           config.transport.mcptransport = value;
         } else if (key.startsWith('HTTP_')) {
           // Convert HTTP_PORT -> port, HTTP_CORS_ORIGINS -> corsorigins, etc.
-          const configKey = key.replace('HTTP_', '').toLowerCase().replace(/_/g, '');
+          const configKey = key
+            .replace('HTTP_', '')
+            .toLowerCase()
+            .replace(/_/g, '');
           config.transport[configKey] = value;
         }
       } catch (error) {
@@ -304,20 +511,29 @@ export async function loadConfig() {
 
           // Validate Codex sandbox mode during loading
           if (key === 'CODEX_SANDBOX_MODE') {
-            const validSandboxModes = ['read-only', 'workspace-write', 'danger-full-access'];
+            const validSandboxModes = [
+              'read-only',
+              'workspace-write',
+              'danger-full-access',
+            ];
             if (!validSandboxModes.includes(value)) {
               errors.push(
-                `Invalid CODEX_SANDBOX_MODE: "${value}". Must be one of: ${validSandboxModes.join(', ')}`
+                `Invalid CODEX_SANDBOX_MODE: "${value}". Must be one of: ${validSandboxModes.join(', ')}`,
               );
             }
           }
 
           // Validate Codex approval policy during loading
           if (key === 'CODEX_APPROVAL_POLICY') {
-            const validPolicies = ['never', 'untrusted', 'on-failure', 'on-request'];
+            const validPolicies = [
+              'never',
+              'untrusted',
+              'on-failure',
+              'on-request',
+            ];
             if (!validPolicies.includes(value)) {
               errors.push(
-                `Invalid CODEX_APPROVAL_POLICY: "${value}". Must be one of: ${validPolicies.join(', ')}`
+                `Invalid CODEX_APPROVAL_POLICY: "${value}". Must be one of: ${validPolicies.join(', ')}`,
               );
             }
           }
@@ -331,7 +547,9 @@ export async function loadConfig() {
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.mcp)) {
       try {
         const value = validateEnvVar(key, process.env[key], schema);
-        const configKey = key.replace('MAX_MCP_OUTPUT_TOKENS', 'max_mcp_output_tokens').toLowerCase();
+        const configKey = key
+          .replace('MAX_MCP_OUTPUT_TOKENS', 'max_mcp_output_tokens')
+          .toLowerCase();
         config.mcp[configKey] = value;
       } catch (error) {
         errors.push(error.message);
@@ -367,7 +585,10 @@ export async function loadConfig() {
 
     // Load name and version from package.json
     try {
-      const packagePath = join(dirname(fileURLToPath(import.meta.url)), '../package.json');
+      const packagePath = join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../package.json',
+      );
       const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
       config.mcp.name = packageJson.name || 'converse-mcp-server';
       config.mcp.version = packageJson.version || 'unknown';
@@ -375,7 +596,9 @@ export async function loadConfig() {
       // Fallback values if package.json can't be read
       config.mcp.name = 'converse-mcp-server';
       config.mcp.version = 'unknown';
-      configLogger.warn('Could not read package.json for name/version', { error: error.message });
+      configLogger.warn('Could not read package.json for name/version', {
+        error: error.message,
+      });
     }
 
     // Set environment flags
@@ -388,13 +611,14 @@ export async function loadConfig() {
 
     // Validate that at least one API key is present OR Vertex AI is configured
     const availableKeys = Object.keys(config.apiKeys);
-    const hasVertexAI = config.providers.googlegenaiusevertexai &&
-                        config.providers.googlecloudproject &&
-                        config.providers.googlecloudlocation;
+    const hasVertexAI =
+      config.providers.googlegenaiusevertexai &&
+      config.providers.googlecloudproject &&
+      config.providers.googlecloudlocation;
 
     if (availableKeys.length === 0 && !hasVertexAI) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI with GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT, and GOOGLE_CLOUD_LOCATION.'
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI with GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT, and GOOGLE_CLOUD_LOCATION.',
       );
     }
 
@@ -409,15 +633,17 @@ export async function loadConfig() {
     // Validate API key formats
     for (const [provider, apiKey] of Object.entries(config.apiKeys)) {
       if (!validateApiKeyFormat(provider, apiKey)) {
-        errors.push(`Invalid API key format for ${provider.toUpperCase()}_API_KEY`);
+        errors.push(
+          `Invalid API key format for ${provider.toUpperCase()}_API_KEY`,
+        );
       }
     }
 
     // Throw accumulated errors
     if (errors.length > 0) {
       throw new ConfigurationError(
-        `Configuration validation failed with ${errors.length} error(s):\n${errors.map(e => `  - ${e}`).join('\n')}`,
-        { errors }
+        `Configuration validation failed with ${errors.length} error(s):\n${errors.map((e) => `  - ${e}`).join('\n')}`,
+        { errors },
       );
     }
 
@@ -426,13 +652,15 @@ export async function loadConfig() {
     configLogger.info('Configuration loaded successfully');
 
     return config;
-
   } catch (error) {
     configLogger.error('Configuration loading failed', { error });
     if (error instanceof ConfigurationError) {
       throw error;
     }
-    throw new ConfigurationError(`Failed to load configuration: ${error.message}`, { originalError: error });
+    throw new ConfigurationError(
+      `Failed to load configuration: ${error.message}`,
+      { originalError: error },
+    );
   }
 }
 
@@ -445,10 +673,23 @@ export function getHttpTransportConfig(config) {
   const transport = config.transport;
 
   // Parse comma-separated values
-  const corsOrigins = transport.corsorigins === '*' ? '*' : transport.corsorigins?.split(',').map(o => o.trim()) || ['*'];
-  const corsMethods = transport.corsmethods?.split(',').map(m => m.trim()) || ['GET', 'POST', 'DELETE', 'OPTIONS'];
-  const corsHeaders = transport.corsheaders?.split(',').map(h => h.trim()) || ['Content-Type', 'mcp-session-id', 'Authorization'];
-  const allowedHosts = transport.allowedhosts?.split(',').map(h => h.trim()) || ['127.0.0.1', 'localhost'];
+  const corsOrigins =
+    transport.corsorigins === '*'
+      ? '*'
+      : transport.corsorigins?.split(',').map((o) => o.trim()) || ['*'];
+  const corsMethods = transport.corsmethods
+    ?.split(',')
+    .map((m) => m.trim()) || ['GET', 'POST', 'DELETE', 'OPTIONS'];
+  const corsHeaders = transport.corsheaders
+    ?.split(',')
+    .map((h) => h.trim()) || [
+    'Content-Type',
+    'mcp-session-id',
+    'Authorization',
+  ];
+  const allowedHosts = transport.allowedhosts
+    ?.split(',')
+    .map((h) => h.trim()) || ['127.0.0.1', 'localhost'];
 
   return {
     // Server settings
@@ -516,8 +757,8 @@ export function isProviderAvailable(config, providerName) {
  * @returns {string[]} Array of available provider names
  */
 export function getAvailableProviders(config) {
-  return Object.keys(config.apiKeys).filter(provider =>
-    isProviderAvailable(config, provider)
+  return Object.keys(config.apiKeys).filter((provider) =>
+    isProviderAvailable(config, provider),
   );
 }
 
@@ -531,10 +772,14 @@ function validateCodexConfig(config) {
   const approvalPolicy = config.providers?.codexapprovalpolicy;
 
   // Validate sandbox mode
-  const validSandboxModes = ['read-only', 'workspace-write', 'danger-full-access'];
+  const validSandboxModes = [
+    'read-only',
+    'workspace-write',
+    'danger-full-access',
+  ];
   if (sandbox && !validSandboxModes.includes(sandbox)) {
     throw new ConfigurationError(
-      `Invalid CODEX_SANDBOX_MODE: "${sandbox}". Must be one of: ${validSandboxModes.join(', ')}`
+      `Invalid CODEX_SANDBOX_MODE: "${sandbox}". Must be one of: ${validSandboxModes.join(', ')}`,
     );
   }
 
@@ -542,17 +787,24 @@ function validateCodexConfig(config) {
   const validPolicies = ['never', 'untrusted', 'on-failure', 'on-request'];
   if (approvalPolicy && !validPolicies.includes(approvalPolicy)) {
     throw new ConfigurationError(
-      `Invalid CODEX_APPROVAL_POLICY: "${approvalPolicy}". Must be one of: ${validPolicies.join(', ')}`
+      `Invalid CODEX_APPROVAL_POLICY: "${approvalPolicy}". Must be one of: ${validPolicies.join(', ')}`,
     );
   }
 
   // Warn about dangerous configurations
   if (sandbox === 'danger-full-access') {
-    logger.warn('[Codex] Warning: Running with danger-full-access sandbox mode - full filesystem access enabled');
+    logger.warn(
+      '[Codex] Warning: Running with danger-full-access sandbox mode - full filesystem access enabled',
+    );
   }
 
-  if ((approvalPolicy === 'on-request' || approvalPolicy === 'untrusted') && config.transport.mcptransport !== 'stdio') {
-    logger.warn(`[Codex] Warning: approval policy '${approvalPolicy}' may cause hangs in headless/server mode`);
+  if (
+    (approvalPolicy === 'on-request' || approvalPolicy === 'untrusted') &&
+    config.transport.mcptransport !== 'stdio'
+  ) {
+    logger.warn(
+      `[Codex] Warning: approval policy '${approvalPolicy}' may cause hangs in headless/server mode`,
+    );
   }
 }
 
@@ -569,14 +821,16 @@ export async function validateRuntimeConfig(config) {
 
     // Validate server configuration
     if (config.server.port < 1 || config.server.port > 65535) {
-      throw new ConfigurationError(`Invalid port number: ${config.server.port}`);
+      throw new ConfigurationError(
+        `Invalid port number: ${config.server.port}`,
+      );
     }
 
     // Validate environment
     const validEnvs = ['development', 'production', 'test'];
     if (!validEnvs.includes(config.environment.nodeEnv)) {
       throw new ConfigurationError(
-        `Invalid NODE_ENV: ${config.environment.nodeEnv}. Must be one of: ${validEnvs.join(', ')}`
+        `Invalid NODE_ENV: ${config.environment.nodeEnv}. Must be one of: ${validEnvs.join(', ')}`,
       );
     }
 
@@ -584,7 +838,7 @@ export async function validateRuntimeConfig(config) {
     const validLogLevels = ['silent', 'error', 'warn', 'info', 'debug'];
     if (!validLogLevels.includes(config.server.log_level)) {
       throw new ConfigurationError(
-        `Invalid LOG_LEVEL: ${config.server.log_level}. Must be one of: ${validLogLevels.join(', ')}`
+        `Invalid LOG_LEVEL: ${config.server.log_level}. Must be one of: ${validLogLevels.join(', ')}`,
       );
     }
 
@@ -594,35 +848,52 @@ export async function validateRuntimeConfig(config) {
 
       // Validate HTTP port
       if (httpConfig.port < 1 || httpConfig.port > 65535) {
-        throw new ConfigurationError(`Invalid HTTP_PORT: ${httpConfig.port}. Must be between 1 and 65535`);
+        throw new ConfigurationError(
+          `Invalid HTTP_PORT: ${httpConfig.port}. Must be between 1 and 65535`,
+        );
       }
 
       // Validate timeouts
       if (httpConfig.requestTimeout < 1000) {
-        throw new ConfigurationError(`Invalid HTTP_REQUEST_TIMEOUT: ${httpConfig.requestTimeout}. Must be at least 1000ms`);
+        throw new ConfigurationError(
+          `Invalid HTTP_REQUEST_TIMEOUT: ${httpConfig.requestTimeout}. Must be at least 1000ms`,
+        );
       }
 
       if (httpConfig.sessionTimeout < 60000) {
-        throw new ConfigurationError(`Invalid HTTP_SESSION_TIMEOUT: ${httpConfig.sessionTimeout}. Must be at least 60000ms (1 minute)`);
+        throw new ConfigurationError(
+          `Invalid HTTP_SESSION_TIMEOUT: ${httpConfig.sessionTimeout}. Must be at least 60000ms (1 minute)`,
+        );
       }
 
       if (httpConfig.sessionCleanupInterval < 10000) {
-        throw new ConfigurationError(`Invalid HTTP_SESSION_CLEANUP_INTERVAL: ${httpConfig.sessionCleanupInterval}. Must be at least 10000ms (10 seconds)`);
+        throw new ConfigurationError(
+          `Invalid HTTP_SESSION_CLEANUP_INTERVAL: ${httpConfig.sessionCleanupInterval}. Must be at least 10000ms (10 seconds)`,
+        );
       }
 
       // Validate max concurrent sessions
-      if (httpConfig.maxConcurrentSessions < 1 || httpConfig.maxConcurrentSessions > 10000) {
-        throw new ConfigurationError(`Invalid HTTP_MAX_CONCURRENT_SESSIONS: ${httpConfig.maxConcurrentSessions}. Must be between 1 and 10000`);
+      if (
+        httpConfig.maxConcurrentSessions < 1 ||
+        httpConfig.maxConcurrentSessions > 10000
+      ) {
+        throw new ConfigurationError(
+          `Invalid HTTP_MAX_CONCURRENT_SESSIONS: ${httpConfig.maxConcurrentSessions}. Must be between 1 and 10000`,
+        );
       }
 
       // Validate rate limiting
       if (httpConfig.rateLimitEnabled) {
         if (httpConfig.rateLimitWindow < 1000) {
-          throw new ConfigurationError(`Invalid HTTP_RATE_LIMIT_WINDOW: ${httpConfig.rateLimitWindow}. Must be at least 1000ms`);
+          throw new ConfigurationError(
+            `Invalid HTTP_RATE_LIMIT_WINDOW: ${httpConfig.rateLimitWindow}. Must be at least 1000ms`,
+          );
         }
 
         if (httpConfig.rateLimitMaxRequests < 1) {
-          throw new ConfigurationError(`Invalid HTTP_RATE_LIMIT_MAX_REQUESTS: ${httpConfig.rateLimitMaxRequests}. Must be at least 1`);
+          throw new ConfigurationError(
+            `Invalid HTTP_RATE_LIMIT_MAX_REQUESTS: ${httpConfig.rateLimitMaxRequests}. Must be at least 1`,
+          );
         }
       }
     }
@@ -637,7 +908,6 @@ export async function validateRuntimeConfig(config) {
     }
 
     return true;
-
   } catch (error) {
     if (error instanceof ConfigurationError) {
       throw error;
@@ -667,11 +937,13 @@ function logConfigurationSummary(config) {
       logLevel: config.server.log_level,
       availableProviders: availableProviders.join(', ') || 'none',
       mcpServer: `${config.mcp.name} v${config.mcp.version}`,
-      apiKeys: Object.keys(config.apiKeys).map(key => {
-        const value = config.apiKeys[key];
-        return `${key.toUpperCase()}: ${value ? `${value.substring(0, 8)}...` : 'not configured'}`;
-      }).join(', ')
-    }
+      apiKeys: Object.keys(config.apiKeys)
+        .map((key) => {
+          const value = config.apiKeys[key];
+          return `${key.toUpperCase()}: ${value ? `${value.substring(0, 8)}...` : 'not configured'}`;
+        })
+        .join(', '),
+    },
   });
 }
 

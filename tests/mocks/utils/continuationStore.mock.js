@@ -15,7 +15,7 @@ export function createMockContinuationStore(initialData = new Map()) {
     set: vi.fn().mockImplementation((id, data) => {
       store.set(id, {
         ...data,
-        lastAccessed: Date.now()
+        lastAccessed: Date.now(),
       });
     }),
 
@@ -29,7 +29,7 @@ export function createMockContinuationStore(initialData = new Map()) {
 
     getStats: vi.fn().mockReturnValue({
       totalConversations: store.size,
-      memoryUsage: store.size * 1000 // Mock memory usage
+      memoryUsage: store.size * 1000, // Mock memory usage
     }),
 
     clear: vi.fn().mockImplementation(() => {
@@ -37,7 +37,7 @@ export function createMockContinuationStore(initialData = new Map()) {
     }),
 
     // Expose the internal store for testing
-    _store: store
+    _store: store,
   };
 }
 
@@ -49,6 +49,6 @@ export function createMockConversation(id, overrides = {}) {
     createdAt: Date.now(),
     lastAccessed: Date.now(),
     metadata: {},
-    ...overrides
+    ...overrides,
   };
 }

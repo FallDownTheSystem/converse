@@ -17,13 +17,21 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,  // GPT-5 doesn't support temperature
+    supportsTemperature: false, // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true,  // GPT-5.1 supports "none" for faster responses
+    supportsNoneReasoningEffort: true, // GPT-5.1 supports "none" for faster responses
     timeout: 3600000, // 1 hour
-    description: 'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, analysis. Supports "none" reasoning for faster responses',
-    aliases: ['gpt-5', 'gpt5', 'gpt 5', 'gpt-5.1-2025-11-13', 'gpt5.1', 'gpt 5.1']
+    description:
+      'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, analysis. Supports "none" reasoning for faster responses',
+    aliases: [
+      'gpt-5',
+      'gpt5',
+      'gpt 5',
+      'gpt-5.1-2025-11-13',
+      'gpt5.1',
+      'gpt 5.1',
+    ],
   },
   'gpt-5-2025-08-07': {
     modelName: 'gpt-5-2025-08-07',
@@ -32,13 +40,14 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,  // GPT-5 doesn't support temperature
+    supportsTemperature: false, // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: false,  // GPT-5.0 does not support "none" reasoning
+    supportsNoneReasoningEffort: false, // GPT-5.0 does not support "none" reasoning
     timeout: 3600000, // 1 hour
-    description: 'GPT-5.0 model (400K context, 128K output) - Previous version, accessible via fully qualified name',
-    aliases: ['gpt-5.0', 'gpt5.0', 'gpt 5.0']
+    description:
+      'GPT-5.0 model (400K context, 128K output) - Previous version, accessible via fully qualified name',
+    aliases: ['gpt-5.0', 'gpt5.0', 'gpt 5.0'],
   },
   'gpt-5-mini': {
     modelName: 'gpt-5-mini',
@@ -47,12 +56,13 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,  // GPT-5 models don't support temperature
+    supportsTemperature: false, // GPT-5 models don't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 1800000, // 30 minutes
-    description: 'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
-    aliases: ['gpt5-mini', 'gpt-5mini', 'gpt 5 mini', 'gpt-5-mini-2025-08-07']
+    description:
+      'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
+    aliases: ['gpt5-mini', 'gpt-5mini', 'gpt 5 mini', 'gpt-5-mini-2025-08-07'],
   },
   'gpt-5-nano': {
     modelName: 'gpt-5-nano',
@@ -61,29 +71,37 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,  // GPT-5 models don't support temperature
-    supportsWebSearch: false,    // GPT-5-nano doesn't support web search
+    supportsTemperature: false, // GPT-5 models don't support temperature
+    supportsWebSearch: false, // GPT-5-nano doesn't support web search
     supportsResponsesAPI: true,
     timeout: 600000, // 10 minutes
-    description: 'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
-    aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07']
+    description:
+      'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
+    aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07'],
   },
   'gpt-5-pro': {
     modelName: 'gpt-5-pro',
     friendlyName: 'OpenAI (GPT-5 Pro)',
     contextWindow: 400000,
     maxOutputTokens: 272000,
-    supportsStreaming: false,     // GPT-5 Pro doesn't support streaming
+    supportsStreaming: false, // GPT-5 Pro doesn't support streaming
     supportsImages: true,
-    supportsTemperature: false,   // GPT-5 models don't support temperature
+    supportsTemperature: false, // GPT-5 models don't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsDeepResearch: false,  // Not a deep research model
+    supportsDeepResearch: false, // Not a deep research model
     timeout: 3600000, // 60 minutes - some requests may take several minutes
-    description: 'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
-    aliases: ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro', 'gpt-5-pro-2025-10-06']
+    description:
+      'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
+    aliases: [
+      'gpt5-pro',
+      'gpt-5pro',
+      'gpt 5 pro',
+      'gpt-5 pro',
+      'gpt-5-pro-2025-10-06',
+    ],
   },
-  'o3': {
+  o3: {
     modelName: 'o3',
     friendlyName: 'OpenAI (O3)',
     contextWindow: 200000,
@@ -94,8 +112,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 600000, // 10 minutes
-    description: 'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
-    aliases: ['o3-2025-01-31']
+    description:
+      'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
+    aliases: ['o3-2025-01-31'],
   },
   'o3-mini': {
     modelName: 'o3-mini',
@@ -108,8 +127,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // o3-mini does not support web search
     supportsResponsesAPI: true,
     timeout: 300000,
-    description: 'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
-    aliases: ['o3mini', 'o3 mini', 'o3-mini-2025-01-31']
+    description:
+      'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
+    aliases: ['o3mini', 'o3 mini', 'o3-mini-2025-01-31'],
   },
   'o3-pro-2025-06-10': {
     modelName: 'o3-pro-2025-06-10',
@@ -122,8 +142,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 3600000, // 60 minutes
-    description: 'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
-    aliases: ['o3-pro', 'o3pro', 'o3 pro']
+    description:
+      'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
+    aliases: ['o3-pro', 'o3pro', 'o3 pro'],
   },
   'o4-mini': {
     modelName: 'o4-mini',
@@ -136,8 +157,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 180000, // 3 minutes
-    description: 'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
-    aliases: ['o4mini', 'o4', 'o4 mini', 'o4-mini-2025-01-30']
+    description:
+      'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
+    aliases: ['o4mini', 'o4', 'o4 mini', 'o4-mini-2025-01-30'],
   },
   'gpt-4.1-2025-04-14': {
     modelName: 'gpt-4.1-2025-04-14',
@@ -150,8 +172,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 300000,
-    description: 'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
-    aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1', 'gpt-4.1-latest']
+    description:
+      'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
+    aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1', 'gpt-4.1-latest'],
   },
   'gpt-4o': {
     modelName: 'gpt-4o',
@@ -164,8 +187,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 180000,
-    description: 'GPT-4o (128K context) - Multimodal flagship model with vision capabilities',
-    aliases: ['gpt4o', 'gpt 4o', '4o']
+    description:
+      'GPT-4o (128K context) - Multimodal flagship model with vision capabilities',
+    aliases: ['gpt4o', 'gpt 4o', '4o'],
   },
   'gpt-4o-mini': {
     modelName: 'gpt-4o-mini',
@@ -178,8 +202,9 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 120000,
-    description: 'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
-    aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini']
+    description:
+      'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
+    aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini'],
   },
   'o3-deep-research-2025-06-26': {
     modelName: 'o3-deep-research-2025-06-26',
@@ -193,8 +218,14 @@ const SUPPORTED_MODELS = {
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
     timeout: 7200000, // 120 minutes for deep research
-    description: 'Deep research model (200K context) - In-depth synthesis, comprehensive reports, multi-source analysis (30-90 min runtime)',
-    aliases: ['o3-deep-research', 'o3-research', 'o3 deep research', 'deep-research-o3']
+    description:
+      'Deep research model (200K context) - In-depth synthesis, comprehensive reports, multi-source analysis (30-90 min runtime)',
+    aliases: [
+      'o3-deep-research',
+      'o3-research',
+      'o3 deep research',
+      'deep-research-o3',
+    ],
   },
   'o4-mini-deep-research-2025-06-26': {
     modelName: 'o4-mini-deep-research-2025-06-26',
@@ -208,9 +239,17 @@ const SUPPORTED_MODELS = {
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
     timeout: 3600000, // 60 minutes for faster deep research
-    description: 'Fast deep research model (200K context) - Lightweight research, faster results, latency-sensitive analysis (15-60 min runtime)',
-    aliases: ['o4-mini-deep-research', 'o4-mini-research', 'o4-research', 'o4 mini deep research', 'deep-research-o4-mini', 'o4-deep-research']
-  }
+    description:
+      'Fast deep research model (200K context) - Lightweight research, faster results, latency-sensitive analysis (15-60 min runtime)',
+    aliases: [
+      'o4-mini-deep-research',
+      'o4-mini-research',
+      'o4-research',
+      'o4 mini deep research',
+      'deep-research-o4-mini',
+      'o4-deep-research',
+    ],
+  },
 };
 
 /**
@@ -270,27 +309,41 @@ function validateApiKey(apiKey) {
  */
 function convertMessages(messages, useResponsesAPI = false) {
   if (!Array.isArray(messages)) {
-    throw new OpenAIProviderError('Messages must be an array', 'INVALID_MESSAGES');
+    throw new OpenAIProviderError(
+      'Messages must be an array',
+      'INVALID_MESSAGES',
+    );
   }
 
   return messages.map((msg, index) => {
     if (!msg || typeof msg !== 'object') {
-      throw new OpenAIProviderError(`Message at index ${index} must be an object`, 'INVALID_MESSAGE');
+      throw new OpenAIProviderError(
+        `Message at index ${index} must be an object`,
+        'INVALID_MESSAGE',
+      );
     }
 
     const { role, content } = msg;
 
     if (!role || !['system', 'user', 'assistant'].includes(role)) {
-      throw new OpenAIProviderError(`Invalid role "${role}" at message index ${index}`, 'INVALID_ROLE');
+      throw new OpenAIProviderError(
+        `Invalid role "${role}" at message index ${index}`,
+        'INVALID_ROLE',
+      );
     }
 
     if (!content) {
-      throw new OpenAIProviderError(`Message content is required at index ${index}`, 'MISSING_CONTENT');
+      throw new OpenAIProviderError(
+        `Message content is required at index ${index}`,
+        'MISSING_CONTENT',
+      );
     }
 
     // Handle complex content structure (array with text and images)
     if (Array.isArray(content)) {
-      debugLog(`[OpenAI] Processing complex content array with ${content.length} items for ${useResponsesAPI ? 'Responses API' : 'Chat Completions API'}`);
+      debugLog(
+        `[OpenAI] Processing complex content array with ${content.length} items for ${useResponsesAPI ? 'Responses API' : 'Chat Completions API'}`,
+      );
       if (useResponsesAPI) {
         // Convert to Responses API format
         const convertedContent = [];
@@ -299,15 +352,17 @@ function convertMessages(messages, useResponsesAPI = false) {
           if (item.type === 'text') {
             convertedContent.push({
               type: 'input_text',
-              text: item.text
+              text: item.text,
             });
           } else if (item.type === 'image' && item.source) {
             // Convert Anthropic/Claude format to OpenAI Responses API format
             const imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
-            debugLog(`[OpenAI] Converting image for Responses API: ${item.source.media_type}, data length: ${item.source.data.length}`);
+            debugLog(
+              `[OpenAI] Converting image for Responses API: ${item.source.media_type}, data length: ${item.source.data.length}`,
+            );
             convertedContent.push({
               type: 'input_image',
-              image_url: imageUrl
+              image_url: imageUrl,
             });
           }
         }
@@ -321,18 +376,20 @@ function convertMessages(messages, useResponsesAPI = false) {
           if (item.type === 'text') {
             convertedContent.push({
               type: 'text',
-              text: item.text
+              text: item.text,
             });
           } else if (item.type === 'image' && item.source) {
             // Convert Anthropic/Claude format to OpenAI Chat Completions format
             const imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
-            debugLog(`[OpenAI] Converting image for Chat Completions API: ${item.source.media_type}, data length: ${item.source.data.length}`);
+            debugLog(
+              `[OpenAI] Converting image for Chat Completions API: ${item.source.media_type}, data length: ${item.source.data.length}`,
+            );
             convertedContent.push({
               type: 'image_url',
               image_url: {
                 url: imageUrl,
-                detail: 'high'
-              }
+                detail: 'high',
+              },
             });
           }
         }
@@ -372,11 +429,17 @@ export const openaiProvider = {
 
     // Validate API key
     if (!config?.apiKeys?.openai) {
-      throw new OpenAIProviderError('OpenAI API key not configured', 'MISSING_API_KEY');
+      throw new OpenAIProviderError(
+        'OpenAI API key not configured',
+        'MISSING_API_KEY',
+      );
     }
 
     if (!validateApiKey(config.apiKeys.openai)) {
-      throw new OpenAIProviderError('Invalid OpenAI API key format', 'INVALID_API_KEY');
+      throw new OpenAIProviderError(
+        'Invalid OpenAI API key format',
+        'INVALID_API_KEY',
+      );
     }
 
     // Initialize OpenAI client
@@ -404,7 +467,7 @@ export const openaiProvider = {
         model: resolvedModel,
         input: openaiMessages,
         stream,
-        ...otherOptions
+        ...otherOptions,
       };
 
       // Add web search tools only if requested and model supports it
@@ -414,17 +477,24 @@ export const openaiProvider = {
       }
 
       // Add temperature if model supports it
-      if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
+      if (
+        modelConfig.supportsTemperature !== false &&
+        temperature !== undefined
+      ) {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
-      if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
+      if (
+        (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
+        reasoning_effort
+      ) {
         // GPT-5 Pro only supports 'high' reasoning effort
-        const effectiveEffort = resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
+        const effectiveEffort =
+          resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
         requestPayload.reasoning = {
           effort: effectiveEffort,
-          summary: 'auto' // Enable reasoning summaries
+          summary: 'auto', // Enable reasoning summaries
         };
       }
 
@@ -434,23 +504,34 @@ export const openaiProvider = {
       }
     } else {
       // Build Chat Completions API payload
-      const { reasoning_effort: _unused, verbosity: _unused2, ...cleanOptions } = otherOptions;
+      const {
+        reasoning_effort: _unused,
+        verbosity: _unused2,
+        ...cleanOptions
+      } = otherOptions;
       requestPayload = {
         model: resolvedModel,
         messages: openaiMessages,
         stream,
-        ...cleanOptions
+        ...cleanOptions,
       };
 
       // Add temperature if model supports it
-      if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
+      if (
+        modelConfig.supportsTemperature !== false &&
+        temperature !== undefined
+      ) {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
-      if ((resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) && reasoning_effort) {
+      if (
+        (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
+        reasoning_effort
+      ) {
         // GPT-5 Pro only supports 'high' reasoning effort
-        const effectiveEffort = resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
+        const effectiveEffort =
+          resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
         requestPayload.reasoning_effort = effectiveEffort;
       }
 
@@ -463,9 +544,15 @@ export const openaiProvider = {
     // Add max tokens if specified (both APIs)
     if (maxTokens) {
       if (shouldUseResponsesAPI) {
-        requestPayload.max_output_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+        requestPayload.max_output_tokens = Math.min(
+          maxTokens,
+          modelConfig.maxOutputTokens || 100000,
+        );
       } else {
-        requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+        requestPayload.max_tokens = Math.min(
+          maxTokens,
+          modelConfig.maxOutputTokens || 100000,
+        );
       }
     }
 
@@ -476,19 +563,36 @@ export const openaiProvider = {
 
     // If streaming is requested and model doesn't support it, fall back to non-streaming
     if (stream && modelConfig.supportsStreaming === false) {
-      debugLog(`[OpenAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      debugLog(
+        `[OpenAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`,
+      );
       requestPayload.stream = false;
     }
 
     // Handle streaming requests
     if (stream && requestPayload.stream !== false) {
-      return this._createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch, signal);
+      return this._createStreamingGenerator(
+        openai,
+        requestPayload,
+        shouldUseResponsesAPI,
+        resolvedModel,
+        modelConfig,
+        use_websearch,
+        signal,
+      );
     }
 
     try {
-      const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
-      const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
-      debugLog(`[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${searchInfo}`);
+      const apiType = shouldUseResponsesAPI
+        ? 'Responses API'
+        : 'Chat Completions API';
+      const searchInfo =
+        use_websearch && modelConfig.supportsWebSearch
+          ? ' (with web search)'
+          : '';
+      debugLog(
+        `[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${searchInfo}`,
+      );
 
       const startTime = Date.now();
 
@@ -521,23 +625,37 @@ export const openaiProvider = {
 
         if (response.output) {
           // New format with output array (includes reasoning summaries)
-          const messageOutput = response.output.find(item => item.type === 'message');
-          const reasoningOutput = response.output.find(item => item.type === 'reasoning');
+          const messageOutput = response.output.find(
+            (item) => item.type === 'message',
+          );
+          const reasoningOutput = response.output.find(
+            (item) => item.type === 'reasoning',
+          );
 
           if (!messageOutput || !messageOutput.content) {
-            throw new OpenAIProviderError('No message content in Responses API response', 'NO_RESPONSE_CONTENT');
+            throw new OpenAIProviderError(
+              'No message content in Responses API response',
+              'NO_RESPONSE_CONTENT',
+            );
           }
 
           // Extract content from message output
-          const textContent = messageOutput.content.find(item => item.type === 'output_text');
+          const textContent = messageOutput.content.find(
+            (item) => item.type === 'output_text',
+          );
           if (!textContent) {
-            throw new OpenAIProviderError('No text content in message output', 'NO_RESPONSE_CONTENT');
+            throw new OpenAIProviderError(
+              'No text content in message output',
+              'NO_RESPONSE_CONTENT',
+            );
           }
           content = textContent.text;
 
           // Extract reasoning summary if available
           if (reasoningOutput && reasoningOutput.summary) {
-            const summaryText = reasoningOutput.summary.find(item => item.type === 'summary_text');
+            const summaryText = reasoningOutput.summary.find(
+              (item) => item.type === 'summary_text',
+            );
             if (summaryText) {
               reasoningSummary = summaryText.text;
             }
@@ -546,7 +664,10 @@ export const openaiProvider = {
           // Legacy format
           content = response.output_text;
         } else {
-          throw new OpenAIProviderError('No output in Responses API response', 'NO_RESPONSE_CONTENT');
+          throw new OpenAIProviderError(
+            'No output in Responses API response',
+            'NO_RESPONSE_CONTENT',
+          );
         }
 
         stopReason = response.status || 'stop';
@@ -555,21 +676,32 @@ export const openaiProvider = {
         // Store reasoning summary in metadata
         if (reasoningSummary) {
           usage.reasoning_summary = reasoningSummary;
-          debugLog(`[OpenAI] Found reasoning summary: ${reasoningSummary.substring(0, 100)}...`);
+          debugLog(
+            `[OpenAI] Found reasoning summary: ${reasoningSummary.substring(0, 100)}...`,
+          );
         } else {
           debugLog('[OpenAI] No reasoning summary found in response');
-          debugLog('[OpenAI] Response structure:', JSON.stringify(response, null, 2).substring(0, 500));
+          debugLog(
+            '[OpenAI] Response structure:',
+            JSON.stringify(response, null, 2).substring(0, 500),
+          );
         }
       } else {
         // Handle Chat Completions API response format
         const choice = response.choices[0];
         if (!choice) {
-          throw new OpenAIProviderError('No response choice received from OpenAI', 'NO_RESPONSE_CHOICE');
+          throw new OpenAIProviderError(
+            'No response choice received from OpenAI',
+            'NO_RESPONSE_CHOICE',
+          );
         }
 
         content = choice.message?.content;
         if (!content) {
-          throw new OpenAIProviderError('No content in response from OpenAI', 'NO_RESPONSE_CONTENT');
+          throw new OpenAIProviderError(
+            'No content in response from OpenAI',
+            'NO_RESPONSE_CONTENT',
+          );
         }
         stopReason = choice.finish_reason || 'stop';
         usage = response.usage || {};
@@ -589,40 +721,63 @@ export const openaiProvider = {
           usage: {
             input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
             output_tokens: usage.completion_tokens || usage.output_tokens || 0,
-            total_tokens: usage.total_tokens || 0
+            total_tokens: usage.total_tokens || 0,
           },
           response_time_ms: responseTime,
           finish_reason: stopReason,
           provider: 'openai',
           api_type: apiType,
           web_search_used: webSearchUsed,
-          web_search_type: webSearchType
-        }
+          web_search_type: webSearchType,
+        },
       };
-
     } catch (error) {
       debugError('[OpenAI] Error during API call:', error);
 
       // Handle specific OpenAI errors
       if (error.code === 'insufficient_quota') {
-        throw new OpenAIProviderError('OpenAI API quota exceeded', 'QUOTA_EXCEEDED', error);
+        throw new OpenAIProviderError(
+          'OpenAI API quota exceeded',
+          'QUOTA_EXCEEDED',
+          error,
+        );
       } else if (error.code === 'invalid_api_key') {
-        throw new OpenAIProviderError('Invalid OpenAI API key', 'INVALID_API_KEY', error);
+        throw new OpenAIProviderError(
+          'Invalid OpenAI API key',
+          'INVALID_API_KEY',
+          error,
+        );
       } else if (error.code === 'model_not_found') {
-        throw new OpenAIProviderError(`Model ${resolvedModel} not found`, 'MODEL_NOT_FOUND', error);
+        throw new OpenAIProviderError(
+          `Model ${resolvedModel} not found`,
+          'MODEL_NOT_FOUND',
+          error,
+        );
       } else if (error.code === 'context_length_exceeded') {
-        throw new OpenAIProviderError('Context length exceeded for model', 'CONTEXT_LENGTH_EXCEEDED', error);
+        throw new OpenAIProviderError(
+          'Context length exceeded for model',
+          'CONTEXT_LENGTH_EXCEEDED',
+          error,
+        );
       } else if (error.type === 'invalid_request_error') {
-        throw new OpenAIProviderError(`Invalid request: ${error.message}`, 'INVALID_REQUEST', error);
+        throw new OpenAIProviderError(
+          `Invalid request: ${error.message}`,
+          'INVALID_REQUEST',
+          error,
+        );
       } else if (error.type === 'rate_limit_error') {
-        throw new OpenAIProviderError('OpenAI rate limit exceeded', 'RATE_LIMIT_EXCEEDED', error);
+        throw new OpenAIProviderError(
+          'OpenAI rate limit exceeded',
+          'RATE_LIMIT_EXCEEDED',
+          error,
+        );
       }
 
       // Generic error handling
       throw new OpenAIProviderError(
         `OpenAI API error: ${error.message || 'Unknown error'}`,
         'API_ERROR',
-        error
+        error,
       );
     }
   },
@@ -638,11 +793,26 @@ export const openaiProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
-  async *_createStreamingGenerator(openai, requestPayload, shouldUseResponsesAPI, resolvedModel, modelConfig, use_websearch, signal) {
-    const apiType = shouldUseResponsesAPI ? 'Responses API' : 'Chat Completions API';
-    const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with web search)' : '';
+  async *_createStreamingGenerator(
+    openai,
+    requestPayload,
+    shouldUseResponsesAPI,
+    resolvedModel,
+    modelConfig,
+    use_websearch,
+    signal,
+  ) {
+    const apiType = shouldUseResponsesAPI
+      ? 'Responses API'
+      : 'Chat Completions API';
+    const searchInfo =
+      use_websearch && modelConfig.supportsWebSearch
+        ? ' (with web search)'
+        : '';
 
-    debugLog(`[OpenAI] Starting streaming for ${resolvedModel} via ${apiType} with ${requestPayload.input?.length || requestPayload.messages?.length} messages${searchInfo}`);
+    debugLog(
+      `[OpenAI] Starting streaming for ${resolvedModel} via ${apiType} with ${requestPayload.input?.length || requestPayload.messages?.length} messages${searchInfo}`,
+    );
 
     const startTime = Date.now();
     let totalContent = '';
@@ -663,7 +833,7 @@ export const openaiProvider = {
         timestamp: new Date().toISOString(),
         model: resolvedModel,
         provider: 'openai',
-        api_type: apiType
+        api_type: apiType,
       };
 
       // Create stream based on API type
@@ -683,11 +853,12 @@ export const openaiProvider = {
         try {
           // Check for cancellation during stream processing
           if (signal?.aborted) {
-            debugLog(`[OpenAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            debugLog(
+              `[OpenAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`,
+            );
             break;
           }
           if (shouldUseResponsesAPI) {
-
             // Handle Responses API streaming format
             if (chunk.type === 'response.output_text.delta') {
               const content = chunk.delta || '';
@@ -696,7 +867,7 @@ export const openaiProvider = {
                 yield {
                   type: 'delta',
                   content,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
             } else if (chunk.type === 'response.reasoning_summary_part.added') {
@@ -707,12 +878,14 @@ export const openaiProvider = {
               const summaryText = chunk.part?.text || '';
               if (summaryText) {
                 totalReasoningSummary = summaryText;
-                debugLog(`[OpenAI] *** REASONING PART DONE: "${summaryText.substring(0, 100)}..."`);
+                debugLog(
+                  `[OpenAI] *** REASONING PART DONE: "${summaryText.substring(0, 100)}..."`,
+                );
 
                 yield {
                   type: 'reasoning_summary',
                   content: totalReasoningSummary,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
             } else if (chunk.type === 'response.reasoning_summary_text.delta') {
@@ -720,12 +893,14 @@ export const openaiProvider = {
               const summaryDelta = chunk.delta || '';
               if (summaryDelta) {
                 totalReasoningSummary += summaryDelta;
-                debugLog(`[OpenAI] *** REASONING TEXT DELTA: "${summaryDelta}"`);
+                debugLog(
+                  `[OpenAI] *** REASONING TEXT DELTA: "${summaryDelta}"`,
+                );
 
                 yield {
                   type: 'reasoning_summary',
                   content: totalReasoningSummary,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
             } else if (chunk.type === 'response.reasoning_summary_text.done') {
@@ -733,12 +908,14 @@ export const openaiProvider = {
               const fullSummary = chunk.text || totalReasoningSummary;
               if (fullSummary) {
                 totalReasoningSummary = fullSummary;
-                debugLog(`[OpenAI] *** REASONING TEXT DONE: "${fullSummary.substring(0, 100)}..."`);
+                debugLog(
+                  `[OpenAI] *** REASONING TEXT DONE: "${fullSummary.substring(0, 100)}..."`,
+                );
 
                 yield {
                   type: 'reasoning_summary',
                   content: fullSummary,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
             } else if (chunk.type === 'response.completed') {
@@ -758,7 +935,7 @@ export const openaiProvider = {
                 yield {
                   type: 'delta',
                   content,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
 
@@ -784,9 +961,9 @@ export const openaiProvider = {
             error: {
               message: `Chunk processing error: ${chunkError.message}`,
               code: 'CHUNK_PROCESSING_ERROR',
-              recoverable: true
+              recoverable: true,
             },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
       }
@@ -799,11 +976,13 @@ export const openaiProvider = {
         yield {
           type: 'usage',
           usage: {
-            input_tokens: lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
-            output_tokens: lastUsage.completion_tokens || lastUsage.output_tokens || 0,
-            total_tokens: lastUsage.total_tokens || 0
+            input_tokens:
+              lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
+            output_tokens:
+              lastUsage.completion_tokens || lastUsage.output_tokens || 0,
+            total_tokens: lastUsage.total_tokens || 0,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -819,9 +998,11 @@ export const openaiProvider = {
         metadata: {
           model: finalModel,
           usage: {
-            input_tokens: lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
-            output_tokens: lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
-            total_tokens: lastUsage?.total_tokens || 0
+            input_tokens:
+              lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
+            output_tokens:
+              lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
+            total_tokens: lastUsage?.total_tokens || 0,
           },
           response_time_ms: responseTime,
           finish_reason: finishReason || 'stop',
@@ -829,11 +1010,10 @@ export const openaiProvider = {
           api_type: apiType,
           web_search_used: webSearchUsed,
           web_search_type: webSearchType,
-          reasoning_summary: totalReasoningSummary || null
+          reasoning_summary: totalReasoningSummary || null,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       debugError('[OpenAI] Streaming error:', error);
 
@@ -866,9 +1046,9 @@ export const openaiProvider = {
           message: errorMessage,
           code: errorCode,
           recoverable,
-          originalError: error
+          originalError: error,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // Re-throw the error to maintain existing error handling behavior
@@ -910,5 +1090,5 @@ export const openaiProvider = {
   getModelConfig(modelName) {
     const resolved = resolveModelName(modelName);
     return SUPPORTED_MODELS[resolved] || null;
-  }
+  },
 };

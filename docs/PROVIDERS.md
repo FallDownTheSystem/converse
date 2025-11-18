@@ -20,9 +20,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 - **Environment Variable**: `GOOGLE_API_KEY`
 - **Supported Models**:
-  - `gemini-2.5-pro` - Deep reasoning with thinking mode
-  - `gemini-2.5-flash` - Ultra-fast model
-  - `gemini-2.0-flash`, `gemini-2.0-flash-lite` - Latest generation
+  - `gemini-3-pro-preview` (aliases: `pro`, `gemini`) - Enhanced reasoning with thinking levels (1M context, 64K output)
+  - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
+  - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
+  - `gemini-2.0-flash`, `gemini-2.0-flash-lite` - Latest generation (1M context, 65K output)
+- **Note**: Default aliases (`gemini`, `pro`, `gemini-pro`) now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need version 2.5.
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -176,7 +178,9 @@ All providers support streaming responses for real-time output.
 
 ### Thinking/Reasoning Modes
 - **OpenAI**: O3 series models support `reasoning_effort` parameter
-- **Google**: Gemini Pro/Flash support thinking mode with configurable budget
+- **Google**:
+  - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
+  - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
 - **Anthropic**: Claude 4 and 3.7 models support extended thinking with `reasoning_effort`
 - **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only

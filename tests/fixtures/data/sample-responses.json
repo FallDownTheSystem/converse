@@ -5,14 +5,16 @@
       "object": "chat.completion",
       "created": 1234567890,
       "model": "gpt-4",
-      "choices": [{
-        "index": 0,
-        "message": {
-          "role": "assistant",
-          "content": "This is a test response from OpenAI."
-        },
-        "finish_reason": "stop"
-      }],
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "This is a test response from OpenAI."
+          },
+          "finish_reason": "stop"
+        }
+      ],
       "usage": {
         "prompt_tokens": 10,
         "completion_tokens": 20,
@@ -29,15 +31,19 @@
   },
   "google": {
     "success": {
-      "candidates": [{
-        "content": {
-          "parts": [{
-            "text": "This is a test response from Google Gemini."
-          }],
-          "role": "model"
-        },
-        "finishReason": "STOP"
-      }],
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "This is a test response from Google Gemini."
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP"
+        }
+      ],
       "usageMetadata": {
         "promptTokenCount": 15,
         "candidatesTokenCount": 25,
@@ -51,14 +57,16 @@
       "object": "chat.completion",
       "created": 1234567890,
       "model": "grok-4",
-      "choices": [{
-        "index": 0,
-        "message": {
-          "role": "assistant",
-          "content": "This is a test response from XAI Grok."
-        },
-        "finish_reason": "stop"
-      }],
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "This is a test response from XAI Grok."
+          },
+          "finish_reason": "stop"
+        }
+      ],
       "usage": {
         "prompt_tokens": 12,
         "completion_tokens": 18,

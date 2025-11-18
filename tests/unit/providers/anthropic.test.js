@@ -13,7 +13,7 @@ const mockStream = vi.fn();
 
 // Mock the Anthropic SDK
 vi.mock('@anthropic-ai/sdk', () => {
-  const MockAnthropic = function(config) {
+  const MockAnthropic = function (config) {
     this.apiKey = config.apiKey;
     this.messages = {
       create: vi.fn((options) => {
@@ -23,13 +23,13 @@ vi.mock('@anthropic-ai/sdk', () => {
         }
         return mockCreate(options);
       }),
-      stream: mockStream
+      stream: mockStream,
     };
   };
 
   return {
     default: MockAnthropic,
-    Anthropic: MockAnthropic
+    Anthropic: MockAnthropic,
   };
 });
 
@@ -46,8 +46,8 @@ describe('Anthropic Provider', () => {
 
     mockConfig = {
       apiKeys: {
-        anthropic: 'sk-ant-test-key-1234567890abcdefghijklmnopqrstuvwxyz'
-      }
+        anthropic: 'sk-ant-test-key-1234567890abcdefghijklmnopqrstuvwxyz',
+      },
     };
   });
 
@@ -66,10 +66,10 @@ describe('Anthropic Provider', () => {
         { apiKeys: { anthropic: '' } },
         { apiKeys: { anthropic: 'invalid-key' } },
         { apiKeys: { anthropic: 'sk-ant-short' } },
-        { apiKeys: { anthropic: 123 } }
+        { apiKeys: { anthropic: 123 } },
       ];
 
-      invalidConfigs.forEach(config => {
+      invalidConfigs.forEach((config) => {
         expect(anthropicProvider.validateConfig(config)).toBe(false);
       });
     });
@@ -94,7 +94,9 @@ describe('Anthropic Provider', () => {
     });
 
     it('should get model config by exact name', () => {
-      const config = anthropicProvider.getModelConfig('claude-3-5-sonnet-20241022');
+      const config = anthropicProvider.getModelConfig(
+        'claude-3-5-sonnet-20241022',
+      );
 
       expect(config).toBeDefined();
       expect(config.modelName).toBe('claude-3-5-sonnet-20241022');
@@ -104,7 +106,9 @@ describe('Anthropic Provider', () => {
     });
 
     it('should get Claude Haiku 4.5 config with correct specifications', () => {
-      const config = anthropicProvider.getModelConfig('claude-haiku-4-5-20251001');
+      const config = anthropicProvider.getModelConfig(
+        'claude-haiku-4-5-20251001',
+      );
 
       expect(config).toBeDefined();
       expect(config.modelName).toBe('claude-haiku-4-5-20251001');
@@ -126,9 +130,17 @@ describe('Anthropic Provider', () => {
     });
 
     it('should resolve Claude Haiku 4.5 by various aliases', () => {
-      const aliases = ['haiku-4.5', 'haiku-4-5', 'claude-haiku-4.5', 'claude-haiku-4-5', 'haiku4.5', 'haiku', 'claude-haiku'];
+      const aliases = [
+        'haiku-4.5',
+        'haiku-4-5',
+        'claude-haiku-4.5',
+        'claude-haiku-4-5',
+        'haiku4.5',
+        'haiku',
+        'claude-haiku',
+      ];
 
-      aliases.forEach(alias => {
+      aliases.forEach((alias) => {
         const config = anthropicProvider.getModelConfig(alias);
         expect(config).toBeDefined();
         expect(config.modelName).toBe('claude-haiku-4-5-20251001');
@@ -136,7 +148,9 @@ describe('Anthropic Provider', () => {
     });
 
     it('should handle case-insensitive model names', () => {
-      const config = anthropicProvider.getModelConfig('CLAUDE-3-5-SONNET-20241022');
+      const config = anthropicProvider.getModelConfig(
+        'CLAUDE-3-5-SONNET-20241022',
+      );
 
       expect(config).toBeDefined();
       expect(config.modelName).toBe('claude-3-5-sonnet-20241022');
@@ -157,21 +171,19 @@ describe('Anthropic Provider', () => {
         stop_reason: 'end_turn',
         usage: {
           input_tokens: 10,
-          output_tokens: 20
+          output_tokens: 20,
         },
-        model: 'claude-3-5-sonnet-20241022'
+        model: 'claude-3-5-sonnet-20241022',
       };
 
       mockCreate.mockResolvedValue(mockResponse);
     });
 
     it('should invoke with basic messages', async () => {
-      const messages = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages = [{ role: 'user', content: 'Hello' }];
 
       const result = await anthropicProvider.invoke(messages, {
-        config: mockConfig
+        config: mockConfig,
       });
 
       expect(mockCreate).toHaveBeenCalled();
@@ -188,76 +200,80 @@ describe('Anthropic Provider', () => {
           usage: {
             input_tokens: 10,
             output_tokens: 20,
-            total_tokens: 30
+            total_tokens: 30,
           },
-          provider: 'anthropic'
-        }
+          provider: 'anthropic',
+        },
       });
     });
 
     it('should handle system messages', async () => {
       const messages = [
         { role: 'system', content: 'You are a helpful assistant' },
-        { role: 'user', content: 'Hello' }
+        { role: 'user', content: 'Hello' },
       ];
 
       await anthropicProvider.invoke(messages, {
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.system).toEqual([{
-        type: 'text',
-        text: 'You are a helpful assistant',
-        cache_control: {
-          type: 'ephemeral',
-          ttl: '1h'
-        }
-      }]);
-      expect(callArgs.messages).toEqual([
-        { role: 'user', content: 'Hello' }
+      expect(callArgs.system).toEqual([
+        {
+          type: 'text',
+          text: 'You are a helpful assistant',
+          cache_control: {
+            type: 'ephemeral',
+            ttl: '1h',
+          },
+        },
       ]);
+      expect(callArgs.messages).toEqual([{ role: 'user', content: 'Hello' }]);
     });
 
     it('should concatenate multiple system messages', async () => {
       const messages = [
         { role: 'system', content: 'First system message' },
         { role: 'system', content: 'Second system message' },
-        { role: 'user', content: 'Hello' }
+        { role: 'user', content: 'Hello' },
       ];
 
       await anthropicProvider.invoke(messages, {
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.system).toEqual([{
-        type: 'text',
-        text: 'First system message\n\nSecond system message',
-        cache_control: {
-          type: 'ephemeral',
-          ttl: '1h'
-        }
-      }]);
+      expect(callArgs.system).toEqual([
+        {
+          type: 'text',
+          text: 'First system message\n\nSecond system message',
+          cache_control: {
+            type: 'ephemeral',
+            ttl: '1h',
+          },
+        },
+      ]);
     });
 
     it('should handle image content', async () => {
-      const messages = [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What is this?' },
-          {
-            type: 'image',
-            source: {
-              media_type: 'image/jpeg',
-              data: 'base64data'
-            }
-          }
-        ]
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is this?' },
+            {
+              type: 'image',
+              source: {
+                media_type: 'image/jpeg',
+                data: 'base64data',
+              },
+            },
+          ],
+        },
+      ];
 
       await anthropicProvider.invoke(messages, {
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -268,9 +284,9 @@ describe('Anthropic Provider', () => {
           source: {
             type: 'base64',
             media_type: 'image/jpeg',
-            data: 'base64data'
-          }
-        }
+            data: 'base64data',
+          },
+        },
       ]);
     });
 
@@ -281,7 +297,7 @@ describe('Anthropic Provider', () => {
         model: 'claude-3-5-haiku-20241022',
         temperature: 0.5,
         maxTokens: 2000,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -297,10 +313,10 @@ describe('Anthropic Provider', () => {
       // Note: thinking budget must be < max_tokens (32000 for opus-4)
       const efforts = ['minimal', 'low', 'medium', 'high'];
       const expectedBudgets = {
-        minimal: 1600,   // 5% of 32000, min 1024
-        low: 4800,       // 15% of 32000
-        medium: 10560,   // 33% of 32000
-        high: 21440,     // 67% of 32000
+        minimal: 1600, // 5% of 32000, min 1024
+        low: 4800, // 15% of 32000
+        medium: 10560, // 33% of 32000
+        high: 21440, // 67% of 32000
       };
 
       for (const effort of efforts) {
@@ -309,13 +325,13 @@ describe('Anthropic Provider', () => {
         await anthropicProvider.invoke(messages, {
           model: 'claude-opus-4-1-20250805',
           reasoning_effort: effort,
-          config: mockConfig
+          config: mockConfig,
         });
 
         const callArgs = mockCreate.mock.calls[0][0];
         expect(callArgs.thinking).toEqual({
           type: 'enabled',
-          budget_tokens: expectedBudgets[effort]
+          budget_tokens: expectedBudgets[effort],
         });
         // Verify max_tokens is set correctly for Claude 4 models
         expect(callArgs.max_tokens).toBe(32000);
@@ -326,7 +342,7 @@ describe('Anthropic Provider', () => {
       await anthropicProvider.invoke(messages, {
         model: 'claude-opus-4-1-20250805',
         reasoning_effort: 'max',
-        config: mockConfig
+        config: mockConfig,
       });
 
       const maxEffortCallArgs = mockCreate.mock.calls[0][0];
@@ -340,7 +356,7 @@ describe('Anthropic Provider', () => {
       await anthropicProvider.invoke(messages, {
         model: 'claude-sonnet-4',
         reasoning_effort: 'medium',
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -348,7 +364,7 @@ describe('Anthropic Provider', () => {
       expect(callArgs.max_tokens).toBe(64000); // Set for Claude 4 models
       expect(callArgs.thinking).toEqual({
         type: 'enabled',
-        budget_tokens: 21120 // 33% of 64000
+        budget_tokens: 21120, // 33% of 64000
       });
     });
 
@@ -358,7 +374,7 @@ describe('Anthropic Provider', () => {
       await anthropicProvider.invoke(messages, {
         model: 'claude-3-5-sonnet-20241022',
         reasoning_effort: 'high',
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -371,7 +387,7 @@ describe('Anthropic Provider', () => {
       await anthropicProvider.invoke(messages, {
         model: 'claude-3-5-sonnet-20241022',
         maxTokens: 100000,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
@@ -382,12 +398,12 @@ describe('Anthropic Provider', () => {
       mockCreate.mockResolvedValue({
         content: 'String response',
         stop_reason: 'end_turn',
-        usage: { input_tokens: 5, output_tokens: 10 }
+        usage: { input_tokens: 5, output_tokens: 10 },
       });
 
       const result = await anthropicProvider.invoke(
         [{ role: 'user', content: 'Hello' }],
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.content).toBe('String response');
@@ -399,7 +415,7 @@ describe('Anthropic Provider', () => {
       ['end_turn', StopReasons.STOP],
       ['max_tokens', StopReasons.LENGTH],
       ['stop_sequence', StopReasons.STOP],
-      ['tool_use', StopReasons.TOOL_USE]
+      ['tool_use', StopReasons.TOOL_USE],
     ];
 
     testCases.forEach(([anthropicReason, expectedReason]) => {
@@ -407,12 +423,12 @@ describe('Anthropic Provider', () => {
         mockCreate.mockResolvedValue({
           content: [{ type: 'text', text: 'Test' }],
           stop_reason: anthropicReason,
-          usage: {}
+          usage: {},
         });
 
         const result = await anthropicProvider.invoke(
           [{ role: 'user', content: 'Hello' }],
-          { config: mockConfig }
+          { config: mockConfig },
         );
 
         expect(result.stop_reason).toBe(expectedReason);
@@ -423,12 +439,12 @@ describe('Anthropic Provider', () => {
       mockCreate.mockResolvedValue({
         content: [{ type: 'text', text: 'Test' }],
         stop_reason: 'unknown_reason',
-        usage: {}
+        usage: {},
       });
 
       const result = await anthropicProvider.invoke(
         [{ role: 'user', content: 'Hello' }],
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.stop_reason).toBe(StopReasons.OTHER);
@@ -439,85 +455,89 @@ describe('Anthropic Provider', () => {
     it('should handle missing API key', async () => {
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: {}
-        })
+          config: {},
+        }),
       ).rejects.toThrow('Anthropic API key not configured');
     });
 
     it('should handle invalid API key format', async () => {
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { apiKeys: { anthropic: 'invalid-key' } }
-        })
+          config: { apiKeys: { anthropic: 'invalid-key' } },
+        }),
       ).rejects.toThrow('Invalid Anthropic API key format');
     });
 
     it('should validate message format', async () => {
       await expect(
         anthropicProvider.invoke('not an array', {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGES,
-        message: 'Messages must be an array'
+        message: 'Messages must be an array',
       });
     });
 
     it('should validate individual messages', async () => {
       await expect(
         anthropicProvider.invoke([null], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGE,
-        message: expect.stringContaining('Message at index 0 must be an object')
+        message: expect.stringContaining(
+          'Message at index 0 must be an object',
+        ),
       });
     });
 
     it('should validate message roles', async () => {
       await expect(
         anthropicProvider.invoke([{ role: 'invalid', content: 'test' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_ROLE,
-        message: expect.stringContaining('Invalid role "invalid"')
+        message: expect.stringContaining('Invalid role "invalid"'),
       });
     });
 
     it('should validate message content', async () => {
       await expect(
         anthropicProvider.invoke([{ role: 'user' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MISSING_CONTENT,
-        message: expect.stringContaining('Message content is required')
+        message: expect.stringContaining('Message content is required'),
       });
     });
 
     it('should validate first message is from user', async () => {
       await expect(
         anthropicProvider.invoke([{ role: 'assistant', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGE,
-        message: 'First message must be from user role'
+        message: 'First message must be from user role',
       });
     });
 
     it('should validate message alternation', async () => {
       const messages = [
         { role: 'user', content: 'Hello' },
-        { role: 'user', content: 'Hello again' }
+        { role: 'user', content: 'Hello again' },
       ];
 
       await expect(
-        anthropicProvider.invoke(messages, { config: mockConfig })
+        anthropicProvider.invoke(messages, { config: mockConfig }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGE,
-        message: expect.stringContaining('Messages must alternate between user and assistant')
+        message: expect.stringContaining(
+          'Messages must alternate between user and assistant',
+        ),
       });
     });
 
@@ -525,24 +545,36 @@ describe('Anthropic Provider', () => {
       mockCreate.mockResolvedValue({
         content: [],
         stop_reason: 'end_turn',
-        usage: {}
+        usage: {},
       });
 
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NO_RESPONSE_CONTENT,
-        message: 'No content in response from Anthropic'
+        message: 'No content in response from Anthropic',
       });
     });
 
     it('should handle API errors', async () => {
       const errorCases = [
-        { status: 401, expectedCode: ErrorCodes.INVALID_API_KEY, expectedMessage: 'Invalid Anthropic API key' },
-        { status: 429, expectedCode: ErrorCodes.RATE_LIMIT_EXCEEDED, expectedMessage: 'rate limit exceeded' },
-        { status: 403, expectedCode: ErrorCodes.QUOTA_EXCEEDED, expectedMessage: 'quota exceeded' }
+        {
+          status: 401,
+          expectedCode: ErrorCodes.INVALID_API_KEY,
+          expectedMessage: 'Invalid Anthropic API key',
+        },
+        {
+          status: 429,
+          expectedCode: ErrorCodes.RATE_LIMIT_EXCEEDED,
+          expectedMessage: 'rate limit exceeded',
+        },
+        {
+          status: 403,
+          expectedCode: ErrorCodes.QUOTA_EXCEEDED,
+          expectedMessage: 'quota exceeded',
+        },
       ];
 
       for (const { status, expectedCode, expectedMessage } of errorCases) {
@@ -550,11 +582,11 @@ describe('Anthropic Provider', () => {
 
         await expect(
           anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-            config: mockConfig
-          })
+            config: mockConfig,
+          }),
         ).rejects.toMatchObject({
           code: expectedCode,
-          message: expect.stringContaining(expectedMessage)
+          message: expect.stringContaining(expectedMessage),
         });
       }
     });
@@ -563,17 +595,17 @@ describe('Anthropic Provider', () => {
       mockCreate.mockRejectedValue({
         error: {
           type: 'invalid_request_error',
-          message: 'Invalid parameter'
-        }
+          message: 'Invalid parameter',
+        },
       });
 
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('Invalid request: Invalid parameter')
+        message: expect.stringContaining('Invalid request: Invalid parameter'),
       });
     });
 
@@ -581,32 +613,34 @@ describe('Anthropic Provider', () => {
       mockCreate.mockRejectedValue({
         error: {
           type: 'not_found_error',
-          message: 'Model not found'
-        }
+          message: 'Model not found',
+        },
       });
 
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining('Model claude-3-5-sonnet-20241022 not found')
+        message: expect.stringContaining(
+          'Model claude-3-5-sonnet-20241022 not found',
+        ),
       });
     });
 
     it('should handle context length errors', async () => {
       mockCreate.mockRejectedValue({
-        message: 'Your request exceeds the model context length limit'
+        message: 'Your request exceeds the model context length limit',
       });
 
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
-        message: expect.stringContaining('Context length exceeded for model')
+        message: expect.stringContaining('Context length exceeded for model'),
       });
     });
   });
@@ -625,14 +659,14 @@ describe('Anthropic Provider', () => {
       async function* mockStreamGenerator() {
         yield {
           type: 'message_start',
-          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
         };
         yield {
           type: 'content_block_delta',
-          delta: { type: 'text_delta', text: 'Hello' }
+          delta: { type: 'text_delta', text: 'Hello' },
         };
         yield {
-          type: 'message_stop'
+          type: 'message_stop',
         };
       }
 
@@ -640,7 +674,7 @@ describe('Anthropic Provider', () => {
 
       const result = await anthropicProvider.invoke(messages, {
         stream: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       expect(result).toBeInstanceOf(Object);
@@ -655,33 +689,33 @@ describe('Anthropic Provider', () => {
         {
           type: 'message_start',
           message: {
-            usage: { input_tokens: 10, output_tokens: 1 }
-          }
+            usage: { input_tokens: 10, output_tokens: 1 },
+          },
         },
         {
           type: 'content_block_start',
-          content_block: { type: 'text' }
+          content_block: { type: 'text' },
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'text_delta', text: 'Hello' }
+          delta: { type: 'text_delta', text: 'Hello' },
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'text_delta', text: ' world' }
+          delta: { type: 'text_delta', text: ' world' },
         },
         {
           type: 'content_block_stop',
-          index: 0
+          index: 0,
         },
         {
           type: 'message_delta',
           delta: { stop_reason: 'end_turn' },
-          usage: { input_tokens: 10, output_tokens: 15, total_tokens: 25 }
+          usage: { input_tokens: 10, output_tokens: 15, total_tokens: 25 },
         },
         {
-          type: 'message_stop'
-        }
+          type: 'message_stop',
+        },
       ];
 
       // Create async generator for mock stream
@@ -695,7 +729,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const events = [];
@@ -715,18 +749,18 @@ describe('Anthropic Provider', () => {
         type: 'start',
         model: 'claude-3-5-sonnet-20241022',
         provider: 'anthropic',
-        thinking_mode: false
+        thinking_mode: false,
       });
 
       // Check delta events
       expect(events[1]).toMatchObject({
         type: 'delta',
-        content: 'Hello'
+        content: 'Hello',
       });
 
       expect(events[2]).toMatchObject({
         type: 'delta',
-        content: ' world'
+        content: ' world',
       });
 
       // Check usage event
@@ -738,8 +772,8 @@ describe('Anthropic Provider', () => {
           total_tokens: 25,
           thinking_tokens: 0,
           cache_creation_input_tokens: 0,
-          cache_read_input_tokens: 0
-        }
+          cache_read_input_tokens: 0,
+        },
       });
 
       // Check end event
@@ -750,8 +784,8 @@ describe('Anthropic Provider', () => {
         metadata: {
           model: 'claude-3-5-sonnet-20241022',
           provider: 'anthropic',
-          reasoning_effort: null
-        }
+          reasoning_effort: null,
+        },
       });
     });
 
@@ -761,40 +795,44 @@ describe('Anthropic Provider', () => {
       const mockStreamEvents = [
         {
           type: 'message_start',
-          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
         },
         {
           type: 'content_block_start',
-          content_block: { type: 'thinking' }
+          content_block: { type: 'thinking' },
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'thinking_delta', thinking: 'Let me think...' }
+          delta: { type: 'thinking_delta', thinking: 'Let me think...' },
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'thinking_delta', thinking: ' about this problem.' }
+          delta: { type: 'thinking_delta', thinking: ' about this problem.' },
         },
         {
           type: 'content_block_stop',
-          index: 0
+          index: 0,
         },
         {
           type: 'content_block_start',
-          content_block: { type: 'text' }
+          content_block: { type: 'text' },
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'text_delta', text: 'The answer is 42.' }
+          delta: { type: 'text_delta', text: 'The answer is 42.' },
         },
         {
           type: 'message_delta',
           delta: { stop_reason: 'end_turn' },
-          usage: { input_tokens: 10, output_tokens: 20, thinking_input_tokens: 50 }
+          usage: {
+            input_tokens: 10,
+            output_tokens: 20,
+            thinking_input_tokens: 50,
+          },
         },
         {
-          type: 'message_stop'
-        }
+          type: 'message_stop',
+        },
       ];
 
       async function* mockStreamGenerator() {
@@ -809,7 +847,7 @@ describe('Anthropic Provider', () => {
         stream: true,
         model: 'claude-opus-4-1-20250805',
         reasoning_effort: 'medium',
-        config: mockConfig
+        config: mockConfig,
       });
 
       const events = [];
@@ -823,21 +861,21 @@ describe('Anthropic Provider', () => {
       // Check start event has thinking mode enabled
       expect(events[0]).toMatchObject({
         type: 'start',
-        thinking_mode: true
+        thinking_mode: true,
       });
 
       // Check text delta
       expect(events[1]).toMatchObject({
         type: 'delta',
-        content: 'The answer is 42.'
+        content: 'The answer is 42.',
       });
 
       // Check usage includes thinking tokens
       expect(events[2]).toMatchObject({
         type: 'usage',
         usage: {
-          thinking_tokens: 50
-        }
+          thinking_tokens: 50,
+        },
       });
 
       // Check end event includes thinking content in metadata
@@ -845,8 +883,8 @@ describe('Anthropic Provider', () => {
         type: 'end',
         metadata: {
           reasoning_effort: 'medium',
-          thinking_content: 'Let me think... about this problem.'
-        }
+          thinking_content: 'Let me think... about this problem.',
+        },
       });
     });
 
@@ -859,26 +897,32 @@ describe('Anthropic Provider', () => {
       const modifiedModel = { ...originalModel, supportsStreaming: false };
 
       // Use Object.defineProperty to temporarily replace the model
-      const originalDescriptor = Object.getOwnPropertyDescriptor(originalModels, 'claude-3-5-haiku-20241022');
+      const originalDescriptor = Object.getOwnPropertyDescriptor(
+        originalModels,
+        'claude-3-5-haiku-20241022',
+      );
       Object.defineProperty(originalModels, 'claude-3-5-haiku-20241022', {
         value: modifiedModel,
         writable: true,
         enumerable: true,
-        configurable: true
+        configurable: true,
       });
 
       try {
         mockCreate.mockResolvedValue({
           content: [{ type: 'text', text: 'Non-streaming response' }],
           stop_reason: 'end_turn',
-          usage: { input_tokens: 5, output_tokens: 10 }
+          usage: { input_tokens: 5, output_tokens: 10 },
         });
 
-        const result = await anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          stream: true,
-          model: 'claude-3-5-haiku-20241022',
-          config: mockConfig
-        });
+        const result = await anthropicProvider.invoke(
+          [{ role: 'user', content: 'Hello' }],
+          {
+            stream: true,
+            model: 'claude-3-5-haiku-20241022',
+            config: mockConfig,
+          },
+        );
 
         // Should return regular response object, not AsyncGenerator
         expect(result).toHaveProperty('content');
@@ -891,7 +935,11 @@ describe('Anthropic Provider', () => {
       } finally {
         // Restore original model config
         if (originalDescriptor) {
-          Object.defineProperty(originalModels, 'claude-3-5-haiku-20241022', originalDescriptor);
+          Object.defineProperty(
+            originalModels,
+            'claude-3-5-haiku-20241022',
+            originalDescriptor,
+          );
         }
       }
     });
@@ -902,7 +950,7 @@ describe('Anthropic Provider', () => {
       async function* mockErrorStreamGenerator() {
         yield {
           type: 'message_start',
-          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
         };
         throw new Error('Network error');
       }
@@ -911,7 +959,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const events = [];
@@ -935,7 +983,7 @@ describe('Anthropic Provider', () => {
       async function* mockStreamGenerator() {
         yield {
           type: 'message_start',
-          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
         };
         // Throw an error during stream processing to simulate network/processing error
         throw new Error('Simulated stream processing error');
@@ -945,7 +993,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const events = [];
@@ -968,26 +1016,26 @@ describe('Anthropic Provider', () => {
       const mockStreamEvents = [
         {
           type: 'message_start',
-          message: { usage: { input_tokens: 10, output_tokens: 1 } }
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
         },
         {
-          type: 'ping' // Should be ignored
+          type: 'ping', // Should be ignored
         },
         {
           type: 'content_block_delta',
-          delta: { type: 'text_delta', text: 'Hello' }
+          delta: { type: 'text_delta', text: 'Hello' },
         },
         {
           type: 'message_delta',
           delta: { stop_reason: 'end_turn' },
-          usage: { input_tokens: 10, output_tokens: 5 }
+          usage: { input_tokens: 10, output_tokens: 5 },
         },
         {
-          type: 'ping' // Should be ignored
+          type: 'ping', // Should be ignored
         },
         {
-          type: 'message_stop'
-        }
+          type: 'message_stop',
+        },
       ];
 
       async function* mockStreamGenerator() {
@@ -1000,7 +1048,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const events = [];
@@ -1010,7 +1058,12 @@ describe('Anthropic Provider', () => {
 
       // Should get start, delta, usage, end (ping events ignored)
       expect(events).toHaveLength(4);
-      expect(events.map(e => e.type)).toEqual(['start', 'delta', 'usage', 'end']);
+      expect(events.map((e) => e.type)).toEqual([
+        'start',
+        'delta',
+        'usage',
+        'end',
+      ]);
     });
   });
 

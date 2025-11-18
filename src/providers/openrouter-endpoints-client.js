@@ -60,7 +60,8 @@ function convertEndpointToModelConfig(endpointData) {
     contextWindow: selectedEndpoint.context_length || 8192,
     maxOutputTokens: selectedEndpoint.max_completion_tokens || 4096,
     supportsStreaming: true, // Most models support streaming
-    supportsImages: data.architecture?.input_modalities?.includes('image') || false,
+    supportsImages:
+      data.architecture?.input_modalities?.includes('image') || false,
     supportsTemperature: supportedParams.includes('temperature'),
     supportsWebSearch: false, // Not in API response, conservative default
     supportsThinking: supportedParams.includes('reasoning'),
@@ -73,8 +74,8 @@ function convertEndpointToModelConfig(endpointData) {
       endpoints: data.endpoints,
       pricing: selectedEndpoint.pricing,
       selectedProvider: selectedEndpoint.provider_name,
-      maxPromptTokens: selectedEndpoint.max_prompt_tokens
-    }
+      maxPromptTokens: selectedEndpoint.max_prompt_tokens,
+    },
   };
 }
 
@@ -99,8 +100,8 @@ export async function fetchModelEndpoints(modelId) {
     const response = await globalThis.fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
 
     if (response.status === 404) {
@@ -116,15 +117,18 @@ export async function fetchModelEndpoints(modelId) {
 
     // Validate response structure
     if (!data?.data?.id || !data?.data?.endpoints?.length) {
-      debugLog(`[OpenRouter Endpoints] Invalid response structure for ${modelId}`);
+      debugLog(
+        `[OpenRouter Endpoints] Invalid response structure for ${modelId}`,
+      );
       return null;
     }
 
     const modelConfig = convertEndpointToModelConfig(data);
-    debugLog(`[OpenRouter Endpoints] Successfully fetched config for ${modelId}`);
+    debugLog(
+      `[OpenRouter Endpoints] Successfully fetched config for ${modelId}`,
+    );
 
     return modelConfig;
-
   } catch (error) {
     debugError(`[OpenRouter Endpoints] Error fetching ${modelId}:`, error);
     return null;
@@ -169,7 +173,7 @@ export function createEndpointsCache() {
       const ttl = isFailure ? FAILED_TTL : DEFAULT_TTL;
       cache.set(key, {
         value,
-        expiry: Date.now() + ttl
+        expiry: Date.now() + ttl,
       });
     },
 
@@ -186,7 +190,7 @@ export function createEndpointsCache() {
      */
     size() {
       return cache.size;
-    }
+    },
   };
 }
 

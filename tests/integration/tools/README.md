@@ -21,6 +21,7 @@ npm test tests/integration/tools/continuation-flow.test.js
 ## Purpose
 
 These tests ensure:
+
 - Tool functionality with real dependencies
 - Conversation continuation support
 - File and image processing

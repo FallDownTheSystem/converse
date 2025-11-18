@@ -27,11 +27,7 @@ export default defineConfig({
     
     // Sequential execution for accurate performance measurements
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
-    },
+    singleFork: true,
     
     // Reporter configuration
     reporters: ['verbose'],

@@ -144,19 +144,19 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "I recommend TypeScript for better type safety...",
-            "usage": {"total_tokens": 150}
+            "usage": { "total_tokens": 150 }
           },
           {
             "model": "gemini-2.5-pro",
             "provider": "google",
             "content": "TypeScript offers significant advantages...",
-            "usage": {"total_tokens": 140}
+            "usage": { "total_tokens": 140 }
           },
           {
             "model": "grok-4",
             "provider": "xai",
             "content": "While JavaScript is simpler, TypeScript provides...",
-            "usage": {"total_tokens": 160}
+            "usage": { "total_tokens": 160 }
           }
         ],
         "refined_responses": [
@@ -164,19 +164,19 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "After considering other perspectives, I maintain that TypeScript...",
-            "usage": {"total_tokens": 200}
+            "usage": { "total_tokens": 200 }
           },
           {
             "model": "gemini-2.5-pro",
             "provider": "google",
             "content": "Building on the consensus, TypeScript clearly...",
-            "usage": {"total_tokens": 190}
+            "usage": { "total_tokens": 190 }
           },
           {
             "model": "grok-4",
             "provider": "xai",
             "content": "I agree with the general consensus that TypeScript...",
-            "usage": {"total_tokens": 210}
+            "usage": { "total_tokens": 210 }
           }
         ],
         "metadata": {
@@ -202,13 +202,13 @@
             "model": "o3",
             "provider": "openai",
             "content": "The architecture shows good separation of concerns...",
-            "usage": {"total_tokens": 200}
+            "usage": { "total_tokens": 200 }
           },
           {
             "model": "claude-3-5-sonnet-20241022",
             "provider": "anthropic",
             "content": "I see several strengths in this architecture...",
-            "usage": {"total_tokens": 180}
+            "usage": { "total_tokens": 180 }
           }
         ],
         "refined_responses": [
@@ -216,13 +216,13 @@
             "model": "o3",
             "provider": "openai",
             "content": "After reviewing my colleague's insights...",
-            "usage": {"total_tokens": 250}
+            "usage": { "total_tokens": 250 }
           },
           {
             "model": "claude-3-5-sonnet-20241022",
             "provider": "anthropic",
             "content": "Building on the previous analysis...",
-            "usage": {"total_tokens": 230}
+            "usage": { "total_tokens": 230 }
           }
         ]
       }
@@ -239,13 +239,13 @@
             "model": "gpt-3.5-turbo",
             "provider": "openai",
             "content": "REST is simpler and more widely understood...",
-            "usage": {"total_tokens": 80}
+            "usage": { "total_tokens": 80 }
           },
           {
             "model": "gemini-2.5-flash",
             "provider": "google",
             "content": "GraphQL offers more flexibility...",
-            "usage": {"total_tokens": 75}
+            "usage": { "total_tokens": 75 }
           }
         ],
         "refined_responses": null,
@@ -263,10 +263,7 @@
     "withCustomFeedbackPrompt": {
       "request": {
         "prompt": "Evaluate security implications",
-        "models": [
-          {"model": "gpt-4"},
-          {"model": "grok-4"}
-        ],
+        "models": [{ "model": "gpt-4" }, { "model": "grok-4" }],
         "cross_feedback_prompt": "Focus specifically on potential vulnerabilities"
       },
       "response": {
@@ -275,13 +272,13 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "Security considerations include...",
-            "usage": {"total_tokens": 120}
+            "usage": { "total_tokens": 120 }
           },
           {
             "model": "grok-4",
             "provider": "xai",
             "content": "From a security perspective...",
-            "usage": {"total_tokens": 110}
+            "usage": { "total_tokens": 110 }
           }
         ],
         "refined_responses": [
@@ -289,13 +286,13 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "Focusing on vulnerabilities as requested...",
-            "usage": {"total_tokens": 180}
+            "usage": { "total_tokens": 180 }
           },
           {
             "model": "grok-4",
             "provider": "xai",
             "content": "Regarding specific vulnerabilities...",
-            "usage": {"total_tokens": 170}
+            "usage": { "total_tokens": 170 }
           }
         ]
       }
@@ -304,10 +301,7 @@
       "request": {
         "prompt": "Continue our architecture discussion",
         "continuation_id": "consensus_1234567890_xyz789",
-        "models": [
-          {"model": "gpt-4"},
-          {"model": "gemini-2.5-pro"}
-        ]
+        "models": [{ "model": "gpt-4" }, { "model": "gemini-2.5-pro" }]
       },
       "response": {
         "initial_responses": [
@@ -315,13 +309,13 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "Building on our previous discussion about microservices...",
-            "usage": {"total_tokens": 160}
+            "usage": { "total_tokens": 160 }
           },
           {
             "model": "gemini-2.5-pro",
             "provider": "google",
             "content": "As we discussed earlier regarding the API gateway...",
-            "usage": {"total_tokens": 150}
+            "usage": { "total_tokens": 150 }
           }
         ]
       }
@@ -330,9 +324,9 @@
       "request": {
         "prompt": "Analyze performance options",
         "models": [
-          {"model": "gpt-4"},
-          {"model": "invalid-model"},
-          {"model": "gemini-2.5-pro"}
+          { "model": "gpt-4" },
+          { "model": "invalid-model" },
+          { "model": "gemini-2.5-pro" }
         ]
       },
       "response": {
@@ -341,7 +335,7 @@
             "model": "gpt-4",
             "provider": "openai",
             "content": "For performance optimization...",
-            "usage": {"total_tokens": 130}
+            "usage": { "total_tokens": 130 }
           },
           {
             "model": "invalid-model",
@@ -351,7 +345,7 @@
             "model": "gemini-2.5-pro",
             "provider": "google",
             "content": "Performance can be improved through...",
-            "usage": {"total_tokens": 140}
+            "usage": { "total_tokens": 140 }
           }
         ],
         "metadata": {
@@ -366,9 +360,9 @@
       "request": {
         "prompt": "Complex algorithm optimization problem",
         "models": [
-          {"model": "o3"},
-          {"model": "o3-mini"},
-          {"model": "o1"}
+          { "model": "o3" },
+          { "model": "o3-mini" },
+          { "model": "o1" }
         ],
         "reasoning_effort": "high"
       },

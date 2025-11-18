@@ -15,22 +15,25 @@ describe('Chat Tool Unit Tests', () => {
 
   beforeEach(() => {
     // Mock file validator
-    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] });
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
 
     // Mock configuration
     mockConfig = {
       apiKeys: {
         openai: 'sk-test-key',
         xai: 'xai-test-key',
-        google: 'google-test-key'
+        google: 'google-test-key',
       },
       providers: {
         googleLocation: 'us-central1',
-        xaiBaseUrl: 'https://api.x.ai/v1'
+        xaiBaseUrl: 'https://api.x.ai/v1',
       },
       environment: {
-        nodeEnv: 'test'
-      }
+        nodeEnv: 'test',
+      },
     };
 
     // Mock continuation store
@@ -39,7 +42,7 @@ describe('Chat Tool Unit Tests', () => {
       set: vi.fn(),
       delete: vi.fn(),
       exists: vi.fn(),
-      getStats: vi.fn()
+      getStats: vi.fn(),
     };
 
     // Mock providers - chat tool expects a plain object with provider names as keys
@@ -48,7 +51,7 @@ describe('Chat Tool Unit Tests', () => {
       validateConfig: vi.fn(),
       isAvailable: vi.fn(),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     const mockXAIProvider = {
@@ -56,7 +59,7 @@ describe('Chat Tool Unit Tests', () => {
       validateConfig: vi.fn(),
       isAvailable: vi.fn(),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     const mockGoogleProvider = {
@@ -64,18 +67,18 @@ describe('Chat Tool Unit Tests', () => {
       validateConfig: vi.fn(),
       isAvailable: vi.fn(),
       getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn()
+      getModelConfig: vi.fn(),
     };
 
     mockProviders = {
       openai: mockOpenAIProvider,
       xai: mockXAIProvider,
-      google: mockGoogleProvider
+      google: mockGoogleProvider,
     };
 
     // Mock context processor
     mockContextProcessor = {
-      processUnifiedContext: vi.fn()
+      processUnifiedContext: vi.fn(),
     };
 
     // Create mock dependencies
@@ -83,7 +86,7 @@ describe('Chat Tool Unit Tests', () => {
       config: mockConfig,
       continuationStore: mockContinuationStore,
       providers: mockProviders,
-      contextProcessor: mockContextProcessor
+      contextProcessor: mockContextProcessor,
     };
 
     // Set up default mock return values
@@ -96,28 +99,28 @@ describe('Chat Tool Unit Tests', () => {
       contextMessages: [],
       files: [],
       processed: [],
-      failed: []
+      failed: [],
     });
 
     mockOpenAIProvider.invoke.mockResolvedValue({
       content: 'Test response from provider',
       stop_reason: 'stop',
       rawResponse: { usage: { total_tokens: 50 } },
-      metadata: { provider: 'openai', model: 'gpt-4o-mini' }
+      metadata: { provider: 'openai', model: 'gpt-4o-mini' },
     });
 
     mockGoogleProvider.invoke.mockResolvedValue({
       content: 'Test response from google provider',
       stop_reason: 'stop',
       rawResponse: { usage: { total_tokens: 50 } },
-      metadata: { provider: 'google', model: 'gemini-pro' }
+      metadata: { provider: 'google', model: 'gemini-pro' },
     });
 
     mockXAIProvider.invoke.mockResolvedValue({
       content: 'Test response from xai provider',
       stop_reason: 'stop',
       rawResponse: { usage: { total_tokens: 50 } },
-      metadata: { provider: 'xai', model: 'grok' }
+      metadata: { provider: 'xai', model: 'grok' },
     });
 
     mockOpenAIProvider.isAvailable.mockReturnValue(true);
@@ -127,26 +130,26 @@ describe('Chat Tool Unit Tests', () => {
     mockOpenAIProvider.getModelConfig.mockReturnValue({
       contextWindow: 128000,
       supportsImages: true,
-      supportsTemperature: true
+      supportsTemperature: true,
     });
 
     mockGoogleProvider.getModelConfig.mockReturnValue({
       contextWindow: 1000000,
       supportsImages: true,
-      supportsTemperature: true
+      supportsTemperature: true,
     });
 
     mockXAIProvider.getModelConfig.mockReturnValue({
       contextWindow: 131000,
       supportsImages: true,
-      supportsTemperature: true
+      supportsTemperature: true,
     });
   });
 
   describe('Basic Chat Functionality', () => {
     it('should handle basic chat request', async () => {
       const args = {
-        prompt: 'Hello, world!'
+        prompt: 'Hello, world!',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -163,7 +166,7 @@ describe('Chat Tool Unit Tests', () => {
     it('should handle chat with model specification', async () => {
       const args = {
         prompt: 'Test prompt',
-        model: 'gpt-4o-mini'
+        model: 'gpt-4o-mini',
       };
 
       await chatTool(args, mockDependencies);
@@ -172,19 +175,19 @@ describe('Chat Tool Unit Tests', () => {
         expect.arrayContaining([
           expect.objectContaining({
             role: 'user',
-            content: 'Test prompt'
-          })
+            content: 'Test prompt',
+          }),
         ]),
         expect.objectContaining({
-          model: 'gpt-4o-mini'
-        })
+          model: 'gpt-4o-mini',
+        }),
       );
     });
 
     it('should handle auto model selection', async () => {
       const args = {
         prompt: 'Test prompt',
-        model: 'auto'
+        model: 'auto',
       };
 
       await chatTool(args, mockDependencies);
@@ -195,7 +198,7 @@ describe('Chat Tool Unit Tests', () => {
     it('should handle temperature parameter', async () => {
       const args = {
         prompt: 'Test prompt',
-        temperature: 0.7
+        temperature: 0.7,
       };
 
       await chatTool(args, mockDependencies);
@@ -203,8 +206,8 @@ describe('Chat Tool Unit Tests', () => {
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          temperature: 0.7
-        })
+          temperature: 0.7,
+        }),
       );
     });
   });
@@ -212,7 +215,7 @@ describe('Chat Tool Unit Tests', () => {
   describe('Continuation Support', () => {
     it('should create new conversation when no continuation provided', async () => {
       const args = {
-        prompt: 'First message'
+        prompt: 'First message',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -223,11 +226,14 @@ describe('Chat Tool Unit Tests', () => {
         expect.objectContaining({
           messages: expect.arrayContaining([
             expect.objectContaining({ role: 'user', content: 'First message' }),
-            expect.objectContaining({ role: 'assistant', content: 'Test response from provider' })
+            expect.objectContaining({
+              role: 'assistant',
+              content: 'Test response from provider',
+            }),
           ]),
           provider: 'openai',
-          model: 'auto'
-        })
+          model: 'auto',
+        }),
       );
       expect(result.continuation.messageCount).toBe(2); // user + assistant (system messages excluded)
     });
@@ -236,10 +242,10 @@ describe('Chat Tool Unit Tests', () => {
       const existingConversation = {
         messages: [
           { role: 'user', content: 'Previous message' },
-          { role: 'assistant', content: 'Previous response' }
+          { role: 'assistant', content: 'Previous response' },
         ],
         provider: 'openai',
-        model: 'gpt-4o-mini'
+        model: 'gpt-4o-mini',
       };
 
       mockContinuationStore.get.mockResolvedValue(existingConversation);
@@ -247,7 +253,7 @@ describe('Chat Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Follow-up message',
-        continuation_id: 'conv_existing'
+        continuation_id: 'conv_existing',
       };
 
       await chatTool(args, mockDependencies);
@@ -255,11 +261,20 @@ describe('Chat Tool Unit Tests', () => {
       expect(mockContinuationStore.get).toHaveBeenCalledWith('conv_existing');
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ role: 'user', content: 'Previous message' }),
-          expect.objectContaining({ role: 'assistant', content: 'Previous response' }),
-          expect.objectContaining({ role: 'user', content: 'Follow-up message' })
+          expect.objectContaining({
+            role: 'user',
+            content: 'Previous message',
+          }),
+          expect.objectContaining({
+            role: 'assistant',
+            content: 'Previous response',
+          }),
+          expect.objectContaining({
+            role: 'user',
+            content: 'Follow-up message',
+          }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -269,7 +284,7 @@ describe('Chat Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test message',
-        continuation_id: 'invalid-continuation-id'
+        continuation_id: 'invalid-continuation-id',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -284,21 +299,23 @@ describe('Chat Tool Unit Tests', () => {
     it('should process file context when files provided', async () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
         success: true,
-        files: [{
-          originalPath: 'package.json',
-          path: 'package.json',
-          type: 'text',
-          content: '{"name": "test"}',
-          size: 100,
-          lineCount: 1
-        }],
+        files: [
+          {
+            originalPath: 'package.json',
+            path: 'package.json',
+            type: 'text',
+            content: '{"name": "test"}',
+            size: 100,
+            lineCount: 1,
+          },
+        ],
         images: [],
-        webSearch: null
+        webSearch: null,
       });
 
       const args = {
         prompt: 'Analyze these files',
-        files: ['package.json']
+        files: ['package.json'],
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -308,15 +325,18 @@ describe('Chat Tool Unit Tests', () => {
         console.log('Chat tool returned error:', result);
       }
 
-      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
-        files: ['package.json'],
-        images: [],
-        webSearch: null
-      }, {
-        enforceSecurityCheck: false,
-        skipSecurityCheck: true,
-        clientCwd: undefined
-      });
+      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith(
+        {
+          files: ['package.json'],
+          images: [],
+          webSearch: null,
+        },
+        {
+          enforceSecurityCheck: false,
+          skipSecurityCheck: true,
+          clientCwd: undefined,
+        },
+      );
 
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -324,16 +344,16 @@ describe('Chat Tool Unit Tests', () => {
             content: expect.arrayContaining([
               expect.objectContaining({
                 type: 'text',
-                text: expect.stringContaining('=== FILE CONTEXT ===')
+                text: expect.stringContaining('=== FILE CONTEXT ==='),
               }),
               expect.objectContaining({
                 type: 'text',
-                text: 'Analyze these files'
-              })
-            ])
-          })
+                text: 'Analyze these files',
+              }),
+            ]),
+          }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -341,58 +361,62 @@ describe('Chat Tool Unit Tests', () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
         success: true,
         contextMessages: [
-          { role: 'user', content: 'Image content: [base64 data]' }
+          { role: 'user', content: 'Image content: [base64 data]' },
         ],
         files: [],
         processed: [{ fileName: 'image.png', fileType: 'image' }],
-        failed: []
+        failed: [],
       });
 
       const args = {
         prompt: 'Describe this image',
-        images: ['image.png']
+        images: ['image.png'],
       };
 
       await chatTool(args, mockDependencies);
 
-      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
-        files: [],
-        images: ['image.png'],
-        webSearch: null
-      }, {
-        enforceSecurityCheck: false,
-        skipSecurityCheck: true,
-        clientCwd: undefined
-      });
+      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith(
+        {
+          files: [],
+          images: ['image.png'],
+          webSearch: null,
+        },
+        {
+          enforceSecurityCheck: false,
+          skipSecurityCheck: true,
+          clientCwd: undefined,
+        },
+      );
     });
 
     it('should process web search context when provided', async () => {
       mockContextProcessor.processUnifiedContext.mockResolvedValue({
         success: true,
-        contextMessages: [
-          { role: 'user', content: 'Web search results: ...' }
-        ],
+        contextMessages: [{ role: 'user', content: 'Web search results: ...' }],
         files: [],
         processed: [],
-        failed: []
+        failed: [],
       });
 
       const args = {
         prompt: 'Based on recent news',
-        use_websearch: true
+        use_websearch: true,
       };
 
       await chatTool(args, mockDependencies);
 
-      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
-        files: [],
-        images: [],
-        webSearch: 'Based on recent news'
-      }, {
-        enforceSecurityCheck: false,
-        skipSecurityCheck: true,
-        clientCwd: undefined
-      });
+      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith(
+        {
+          files: [],
+          images: [],
+          webSearch: 'Based on recent news',
+        },
+        {
+          enforceSecurityCheck: false,
+          skipSecurityCheck: true,
+          clientCwd: undefined,
+        },
+      );
     });
 
     it('should handle context processing failures gracefully', async () => {
@@ -401,12 +425,12 @@ describe('Chat Tool Unit Tests', () => {
         contextMessages: [],
         files: [],
         processed: [],
-        failed: [{ file: 'nonexistent.txt', error: 'File not found' }]
+        failed: [{ file: 'nonexistent.txt', error: 'File not found' }],
       });
 
       const args = {
         prompt: 'Test message',
-        files: ['nonexistent.txt']
+        files: ['nonexistent.txt'],
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -425,7 +449,7 @@ describe('Chat Tool Unit Tests', () => {
         { model: 'grok', expectedProvider: 'xai' },
         { model: 'grok-4', expectedProvider: 'xai' },
         { model: 'flash', expectedProvider: 'google' },
-        { model: 'gemini-pro', expectedProvider: 'google' }
+        { model: 'gemini-pro', expectedProvider: 'google' },
       ];
 
       for (const { model, expectedProvider } of testCases) {
@@ -443,7 +467,7 @@ describe('Chat Tool Unit Tests', () => {
       const args = {
         prompt: 'Test thinking',
         model: 'gemini-pro',
-        thinking: 'medium'
+        thinking: 'medium',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -458,7 +482,7 @@ describe('Chat Tool Unit Tests', () => {
       const args = {
         prompt: 'Complex reasoning task',
         model: 'o3-mini',
-        reasoning_effort: 'high'
+        reasoning_effort: 'high',
       };
 
       await chatTool(args, mockDependencies);
@@ -466,8 +490,8 @@ describe('Chat Tool Unit Tests', () => {
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          reasoning_effort: 'high'
-        })
+          reasoning_effort: 'high',
+        }),
       );
     });
   });
@@ -491,7 +515,7 @@ describe('Chat Tool Unit Tests', () => {
 
     it('should handle provider errors gracefully', async () => {
       mockProviders.openai.invoke.mockRejectedValue(
-        new Error('Provider API error')
+        new Error('Provider API error'),
       );
 
       const args = { prompt: 'Test prompt' };
@@ -509,7 +533,7 @@ describe('Chat Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        model: 'auto'
+        model: 'auto',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -525,7 +549,7 @@ describe('Chat Tool Unit Tests', () => {
 
       const args = {
         prompt: 'Test prompt',
-        model: 'unknown-model'
+        model: 'unknown-model',
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -583,12 +607,12 @@ describe('Chat Tool Unit Tests', () => {
         content: 'Streaming response',
         stop_reason: 'stop',
         rawResponse: { usage: { total_tokens: 25 } },
-        metadata: { provider: 'openai', model: 'gpt-4o-mini', streaming: true }
+        metadata: { provider: 'openai', model: 'gpt-4o-mini', streaming: true },
       });
 
       const args = {
         prompt: 'Test prompt',
-        streaming: true
+        streaming: true,
       };
 
       const result = await chatTool(args, mockDependencies);
@@ -605,9 +629,9 @@ describe('Chat Tool Unit Tests', () => {
       expect(result).toBeDefined();
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ content: longPrompt })
+          expect.objectContaining({ content: longPrompt }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -624,35 +648,46 @@ describe('Chat Tool Unit Tests', () => {
         success: true,
         contextMessages: [
           { role: 'user', content: 'File 1 content' },
-          { role: 'user', content: 'File 2 content' }
+          { role: 'user', content: 'File 2 content' },
         ],
         files: [
-          { fileName: 'file1.txt', fileType: 'text', content: 'File 1 content' },
-          { fileName: 'file2.json', fileType: 'json', content: 'File 2 content' }
+          {
+            fileName: 'file1.txt',
+            fileType: 'text',
+            content: 'File 1 content',
+          },
+          {
+            fileName: 'file2.json',
+            fileType: 'json',
+            content: 'File 2 content',
+          },
         ],
         processed: [
           { fileName: 'file1.txt', fileType: 'text' },
-          { fileName: 'file2.json', fileType: 'json' }
+          { fileName: 'file2.json', fileType: 'json' },
         ],
-        failed: []
+        failed: [],
       });
 
       const args = {
         prompt: 'Analyze these files',
-        files: ['file1.txt', 'file2.json']
+        files: ['file1.txt', 'file2.json'],
       };
 
       const result = await chatTool(args, mockDependencies);
       expect(result).toBeDefined();
-      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith({
-        files: ['file1.txt', 'file2.json'],
-        images: [],
-        webSearch: null
-      }, {
-        enforceSecurityCheck: false,
-        skipSecurityCheck: true,
-        clientCwd: undefined
-      });
+      expect(mockContextProcessor.processUnifiedContext).toHaveBeenCalledWith(
+        {
+          files: ['file1.txt', 'file2.json'],
+          images: [],
+          webSearch: null,
+        },
+        {
+          enforceSecurityCheck: false,
+          skipSecurityCheck: true,
+          clientCwd: undefined,
+        },
+      );
     });
 
     it('should handle boundary temperature values', async () => {
@@ -663,13 +698,13 @@ describe('Chat Tool Unit Tests', () => {
 
         const args = {
           prompt: 'Test prompt',
-          temperature
+          temperature,
         };
 
         await chatTool(args, mockDependencies);
         expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
           expect.any(Array),
-          expect.objectContaining({ temperature })
+          expect.objectContaining({ temperature }),
         );
       }
     });

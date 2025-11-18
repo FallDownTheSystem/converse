@@ -22,7 +22,7 @@ export function generateHelpContent(config = null) {
     anthropic: providers.anthropic?.getSupportedModels() || {},
     mistral: providers.mistral?.getSupportedModels() || {},
     deepseek: providers.deepseek?.getSupportedModels() || {},
-    openrouter: providers.openrouter?.getSupportedModels() || {}
+    openrouter: providers.openrouter?.getSupportedModels() || {},
   };
 
   // Format provider models for display
@@ -68,8 +68,13 @@ export function generateHelpContent(config = null) {
 
     for (const [name, prop] of Object.entries(properties)) {
       const isRequired = required.includes(name);
-      const defaultValue = prop.default !== undefined ? ` (default: ${JSON.stringify(prop.default)})` : '';
-      params.push(`- **${name}** (${isRequired ? 'required' : 'optional'}, ${prop.type}): ${prop.description}${defaultValue}`);
+      const defaultValue =
+        prop.default !== undefined
+          ? ` (default: ${JSON.stringify(prop.default)})`
+          : '';
+      params.push(
+        `- **${name}** (${isRequired ? 'required' : 'optional'}, ${prop.type}): ${prop.description}${defaultValue}`,
+      );
     }
 
     return params.join('\n');
@@ -100,8 +105,9 @@ export function generateHelpContent(config = null) {
     return '';
   };
 
-  const toolsSection = Object.entries(tools).map(([name, tool], index) => {
-    return `### ${index + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)} Tool
+  const toolsSection = Object.entries(tools)
+    .map(([name, tool], index) => {
+      return `### ${index + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)} Tool
 ${tool.description}
 
 **Parameters:**
@@ -109,7 +115,8 @@ ${formatToolParameters(tool.inputSchema)}
 
 **Example Usage:**
 ${formatToolExample(name)}`;
-  }).join('\n\n');
+    })
+    .join('\n\n');
 
   const helpContent = `# Converse MCP Server - Comprehensive Guide
 
@@ -247,13 +254,15 @@ export async function helpPromptHandler(args = {}, config = null) {
   // If no topic specified, return full help
   if (!topic) {
     return {
-      messages: [{
-        role: 'user',
-        content: {
-          type: 'text',
-          text: `Please provide the following comprehensive help guide for the Converse MCP Server to the user. Share all of this information with them:\n\n${fullHelp}`
-        }
-      }]
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Please provide the following comprehensive help guide for the Converse MCP Server to the user. Share all of this information with them:\n\n${fullHelp}`,
+          },
+        },
+      ],
     };
   }
 
@@ -265,27 +274,39 @@ export async function helpPromptHandler(args = {}, config = null) {
     const toolsMatch = fullHelp.match(/## Available Tools[\s\S]*?(?=##|$)/);
     sectionContent = toolsMatch ? toolsMatch[0] : 'Tools section not found';
   } else if (topicLower === 'models' || topicLower === 'providers') {
-    const modelsMatch = fullHelp.match(/## Provider Models[\s\S]*?(?=## Model Selection Tips|$)/);
+    const modelsMatch = fullHelp.match(
+      /## Provider Models[\s\S]*?(?=## Model Selection Tips|$)/,
+    );
     sectionContent = modelsMatch ? modelsMatch[0] : 'Models section not found';
   } else if (topicLower === 'parameters') {
-    const paramsMatch = fullHelp.match(/## Configuration Tips[\s\S]*?(?=## Best Practices|$)/);
-    sectionContent = paramsMatch ? paramsMatch[0] : 'Parameters section not found';
+    const paramsMatch = fullHelp.match(
+      /## Configuration Tips[\s\S]*?(?=## Best Practices|$)/,
+    );
+    sectionContent = paramsMatch
+      ? paramsMatch[0]
+      : 'Parameters section not found';
   } else if (topicLower === 'examples') {
     // Extract example usage from both tools
-    const examples = fullHelp.match(/\*\*Example Usage:\*\*[\s\S]*?```[\s\S]*?```/g);
-    sectionContent = examples ? '## Examples\n\n' + examples.join('\n\n') : 'Examples not found';
+    const examples = fullHelp.match(
+      /\*\*Example Usage:\*\*[\s\S]*?```[\s\S]*?```/g,
+    );
+    sectionContent = examples
+      ? '## Examples\n\n' + examples.join('\n\n')
+      : 'Examples not found';
   } else {
     sectionContent = `Topic "${topic}" not found. Available topics: tools, models, providers, parameters, examples`;
   }
 
   return {
-    messages: [{
-      role: 'user',
-      content: {
-        type: 'text',
-        text: `Please share this help information about "${topic}" for the Converse MCP Server with the user:\n\n${sectionContent}`
-      }
-    }]
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `Please share this help information about "${topic}" for the Converse MCP Server with the user:\n\n${sectionContent}`,
+        },
+      },
+    ],
   };
 }
 
@@ -294,12 +315,14 @@ export async function helpPromptHandler(args = {}, config = null) {
  */
 export const helpPromptMetadata = {
   name: 'help',
-  description: 'Comprehensive guide for using the Converse MCP Server with all tools, parameters, and models',
+  description:
+    'Comprehensive guide for using the Converse MCP Server with all tools, parameters, and models',
   arguments: [
     {
       name: 'topic',
-      description: 'Specific topic to get help on (optional). Options: tools, models, providers, parameters, examples',
-      required: false
-    }
-  ]
+      description:
+        'Specific topic to get help on (optional). Options: tools, models, providers, parameters, examples',
+      required: false,
+    },
+  ],
 };

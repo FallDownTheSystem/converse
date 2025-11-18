@@ -12,23 +12,25 @@ export function createMockTool(overrides = {}) {
     inputSchema: {
       type: 'object',
       properties: {
-        prompt: { type: 'string', description: 'Input prompt' }
+        prompt: { type: 'string', description: 'Input prompt' },
       },
-      required: ['prompt']
+      required: ['prompt'],
     },
     handler: vi.fn().mockResolvedValue({
-      content: [{
-        type: 'text',
-        text: 'Mock tool response'
-      }]
+      content: [
+        {
+          type: 'text',
+          text: 'Mock tool response',
+        },
+      ],
     }),
-    ...overrides
+    ...overrides,
   };
 }
 
 export function createMockToolWithError(error) {
   return createMockTool({
-    handler: vi.fn().mockRejectedValue(error)
+    handler: vi.fn().mockRejectedValue(error),
   });
 }
 

@@ -23,7 +23,7 @@ import fixtures from './fixtures/index.js';
 export const testUtils = {
   mocks: {
     providers: mockProviders,
-    tools: mockTools
+    tools: mockTools,
   },
   helpers,
   fixtures,
@@ -36,7 +36,7 @@ export const testUtils = {
   createMockConfig: helpers.config.createMockConfig,
   createMockLogger: helpers.logging.createMockLogger,
   waitFor: helpers.async.waitFor,
-  getFixturePath: helpers.paths.getFixturePath
+  getFixturePath: helpers.paths.getFixturePath,
 };
 
 // Export default for convenient importing

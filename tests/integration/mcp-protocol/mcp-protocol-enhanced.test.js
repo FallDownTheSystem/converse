@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { logger } from '../../../src/utils/logger.js';
@@ -19,21 +22,23 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       server = new Server(
         {
           name: config.mcp.name,
-          version: config.mcp.version
+          version: config.mcp.version,
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       // Create router with server and config (this sets up the MCP handlers)
       router = await createRouter(server, config);
 
-      logger.info('[mcp-protocol-enhanced-test] Enhanced MCP protocol test setup completed');
+      logger.info(
+        '[mcp-protocol-enhanced-test] Enhanced MCP protocol test setup completed',
+      );
     } catch (error) {
       logger.error('[mcp-protocol-enhanced-test] Setup failed:', error);
       throw error;
@@ -41,7 +46,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
   });
 
   afterAll(async () => {
-    logger.info('[mcp-protocol-enhanced-test] Enhanced MCP protocol test cleanup completed');
+    logger.info(
+      '[mcp-protocol-enhanced-test] Enhanced MCP protocol test cleanup completed',
+    );
   });
 
   describe('MCP SDK Integration', () => {
@@ -63,7 +70,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       // Validate MCP tools list response format
       expect(response.tools.length).toBeGreaterThan(0);
 
-      response.tools.forEach(tool => {
+      response.tools.forEach((tool) => {
         // Required MCP tool properties
         expect(tool.name).toBeTypeOf('string');
         expect(tool.description).toBeTypeOf('string');
@@ -86,8 +93,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       const validRequest = {
         name: 'chat',
         arguments: {
-          prompt: 'Hello, this is an MCP protocol compliance test'
-        }
+          prompt: 'Hello, this is an MCP protocol compliance test',
+        },
       };
 
       const response = await router.callTool(validRequest);
@@ -97,7 +104,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       expect(Array.isArray(response.content)).toBe(true);
 
       // Validate MCP content response format
-      response.content.forEach(content => {
+      response.content.forEach((content) => {
         expect(content.type).toBeDefined();
         expect(typeof content.type).toBe('string');
 
@@ -115,7 +122,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       // Test with invalid tool name
       const invalidRequest = {
         name: 'nonexistent-tool',
-        arguments: { prompt: 'test' }
+        arguments: { prompt: 'test' },
       };
 
       const response = await router.callTool(invalidRequest);
@@ -140,7 +147,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
     it('should have JSON Schema compliant input schemas', async () => {
       const toolsList = await router.listTools();
 
-      toolsList.tools.forEach(tool => {
+      toolsList.tools.forEach((tool) => {
         const schema = tool.inputSchema;
 
         // JSON Schema Draft 7 compliance
@@ -176,7 +183,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
 
         // Required fields must exist in properties
         if (schema.required) {
-          schema.required.forEach(requiredField => {
+          schema.required.forEach((requiredField) => {
             expect(schema.properties[requiredField]).toBeDefined();
           });
         }
@@ -186,7 +193,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
     it('should provide comprehensive tool descriptions', async () => {
       const toolsList = await router.listTools();
 
-      toolsList.tools.forEach(tool => {
+      toolsList.tools.forEach((tool) => {
         // Tool description should be informative
         expect(tool.description).toBeDefined();
         expect(tool.description.length).toBeGreaterThan(20);
@@ -214,7 +221,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
     it('should handle complete request/response cycle for chat tool', async () => {
       // 1. List tools to get schema
       const toolsList = await router.listTools();
-      const chatTool = toolsList.tools.find(t => t.name === 'chat');
+      const chatTool = toolsList.tools.find((t) => t.name === 'chat');
       expect(chatTool).toBeDefined();
 
       // 2. Validate required parameters from schema
@@ -224,8 +231,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       const callRequest = {
         name: 'chat',
         arguments: {
-          prompt: 'MCP compliance test message'
-        }
+          prompt: 'MCP compliance test message',
+        },
       };
 
       const callResponse = await router.callTool(callRequest);
@@ -245,7 +252,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
     it('should handle complete request/response cycle for consensus tool', async () => {
       // 1. List tools to get schema
       const toolsList = await router.listTools();
-      const consensusTool = toolsList.tools.find(t => t.name === 'consensus');
+      const consensusTool = toolsList.tools.find((t) => t.name === 'consensus');
       expect(consensusTool).toBeDefined();
 
       // 2. Validate required parameters from schema
@@ -257,8 +264,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'MCP consensus compliance test',
-          models: ['auto']
-        }
+          models: ['auto'],
+        },
       };
 
       const callResponse = await router.callTool(callRequest);
@@ -280,35 +287,35 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         {
           tool: 'chat',
           args: { prompt: 123 }, // Wrong type (should be string)
-          shouldFail: true
+          shouldFail: true,
         },
         {
           tool: 'chat',
           args: { prompt: 'valid string' },
-          shouldFail: false
+          shouldFail: false,
         },
         {
           tool: 'consensus',
           args: {
             prompt: 'test',
-            models: 'not-an-array' // Wrong type (should be array)
+            models: 'not-an-array', // Wrong type (should be array)
           },
-          shouldFail: true
+          shouldFail: true,
         },
         {
           tool: 'consensus',
           args: {
             prompt: 'test',
-            models: ['auto']
+            models: ['auto'],
           },
-          shouldFail: false
-        }
+          shouldFail: false,
+        },
       ];
 
       for (const test of validationTests) {
         const response = await router.callTool({
           name: test.tool,
-          arguments: test.args
+          arguments: test.args,
         });
 
         if (test.shouldFail) {
@@ -318,7 +325,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           // May still fail due to API keys, but validation should pass
           if (response.isError) {
             // If it fails, should be due to provider issues, not validation
-            expect(response.error.code).not.toMatch(/(VALIDATION|INVALID|TYPE)/i);
+            expect(response.error.code).not.toMatch(
+              /(VALIDATION|INVALID|TYPE)/i,
+            );
           }
         }
       }
@@ -331,18 +340,18 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         {
           name: 'invalid-tool',
           arguments: { prompt: 'test' },
-          expectedErrorType: 'RouterError'
+          expectedErrorType: 'RouterError',
         },
         {
           name: 'chat',
           arguments: {}, // Missing required prompt
-          expectedErrorType: 'ValidationError'
+          expectedErrorType: 'ValidationError',
         },
         {
           name: 'consensus',
           arguments: { prompt: 'test' }, // Missing required models
-          expectedErrorType: 'ValidationError'
-        }
+          expectedErrorType: 'ValidationError',
+        },
       ];
 
       for (const scenario of errorScenarios) {
@@ -370,8 +379,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'chat',
         arguments: {
           prompt: '', // Empty prompt (should fail validation)
-          temperature: 'invalid' // Invalid type
-        }
+          temperature: 'invalid', // Invalid type
+        },
       });
 
       expect(response.isError).toBe(true);
@@ -379,7 +388,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
 
       // Should provide details about what went wrong
       const errorMessage = response.error.message.toLowerCase();
-      expect(errorMessage).toMatch(/(prompt|required|empty|validation|type|argument)/i);
+      expect(errorMessage).toMatch(
+        /(prompt|required|empty|validation|type|argument)/i,
+      );
     });
   });
 
@@ -394,9 +405,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           router.callTool({
             name: 'chat',
             arguments: {
-              prompt: `Concurrent MCP test ${i}`
-            }
-          })
+              prompt: `Concurrent MCP test ${i}`,
+            },
+          }),
         );
       }
 
@@ -416,7 +427,9 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       });
 
       // Continuation IDs should be unique
-      const continuationIds = results.map(r => r.continuation?.id).filter(Boolean);
+      const continuationIds = results
+        .map((r) => r.continuation?.id)
+        .filter(Boolean);
       const uniqueIds = new Set(continuationIds);
       expect(uniqueIds.size).toBe(continuationIds.length);
     });
@@ -435,7 +448,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       // Test basic tool call performance (without actual API call)
       await router.callTool({
         name: 'chat',
-        arguments: { prompt: 'Performance test' }
+        arguments: { prompt: 'Performance test' },
       });
 
       const callTime = Date.now() - callStart;
@@ -451,8 +464,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           prompt: 'Test with optional parameters',
           model: 'auto',
           temperature: 0.5,
-          maxTokens: 100
-        }
+          maxTokens: 100,
+        },
       });
 
       // Should accept optional parameters without error
@@ -466,8 +479,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         arguments: {
           prompt: 'Test with future parameters',
           futureParameter: 'unknown-value',
-          anotherFutureParam: 123
-        }
+          anotherFutureParam: 123,
+        },
       });
 
       // Should not fail due to unknown parameters
@@ -486,7 +499,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       expect(toolsList.tools.length).toBeGreaterThan(0);
 
       // 3. Select a tool and examine its schema
-      const chatTool = toolsList.tools.find(t => t.name === 'chat');
+      const chatTool = toolsList.tools.find((t) => t.name === 'chat');
       expect(chatTool).toBeDefined();
       expect(chatTool.inputSchema.required).toContain('prompt');
 
@@ -494,8 +507,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       const execution = await router.callTool({
         name: 'chat',
         arguments: {
-          prompt: 'Complete MCP workflow test'
-        }
+          prompt: 'Complete MCP workflow test',
+        },
       });
 
       expect(execution.content).toBeDefined();
@@ -506,14 +519,16 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Follow-up message',
-          continuation_id: execution.continuation.id
-        }
+          continuation_id: execution.continuation.id,
+        },
       });
 
       expect(continuation.continuation.id).toBe(execution.continuation.id);
       expect(continuation.continuation.messageCount).toBeGreaterThan(1);
 
-      logger.info('[mcp-protocol-enhanced-test] Full MCP workflow completed successfully');
+      logger.info(
+        '[mcp-protocol-enhanced-test] Full MCP workflow completed successfully',
+      );
     });
   });
 });

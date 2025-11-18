@@ -50,12 +50,12 @@ export function getTools(config = null) {
       // Create a modified inputSchema without the async parameter
       const modifiedSchema = {
         ...tool.inputSchema,
-        properties: { ...tool.inputSchema.properties }
+        properties: { ...tool.inputSchema.properties },
       };
       delete modifiedSchema.properties.async;
 
       // Create a wrapper function with modified metadata
-      const wrappedTool = async function(...args) {
+      const wrappedTool = async function (...args) {
         return await tool(...args);
       };
       wrappedTool.description = tool.description;
@@ -117,7 +117,12 @@ export function getAvailableTools() {
  * @param {boolean} enableDisplay - Whether to enable metadata display
  * @returns {string} Formatted metadata string
  */
-export function formatMetadataDisplay(metadata = {}, toolName = '', executionTime = null, enableDisplay = true) {
+export function formatMetadataDisplay(
+  metadata = {},
+  toolName = '',
+  executionTime = null,
+  enableDisplay = true,
+) {
   // Return empty string if display is disabled (useful for testing)
   if (!enableDisplay) {
     return '';
@@ -126,7 +131,10 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
   const parts = [];
 
   // Use elapsed_seconds from job if available, otherwise use executionTime
-  const timeToShow = metadata.elapsed_seconds !== undefined ? metadata.elapsed_seconds : executionTime;
+  const timeToShow =
+    metadata.elapsed_seconds !== undefined
+      ? metadata.elapsed_seconds
+      : executionTime;
 
   if (timeToShow !== null) {
     // Format time appropriately based on duration
@@ -147,7 +155,9 @@ export function formatMetadataDisplay(metadata = {}, toolName = '', executionTim
   }
 
   if (metadata.successful_models !== undefined) {
-    parts.push(`✅ ${metadata.successful_models}/${metadata.total_models} models`);
+    parts.push(
+      `✅ ${metadata.successful_models}/${metadata.total_models} models`,
+    );
   }
 
   if (metadata.continuation_id) {
@@ -178,7 +188,7 @@ export function formatFailureDetails(failureDetails = []) {
     return '';
   }
 
-  const failureList = failureDetails.map(detail => `• ${detail}`).join('\n');
+  const failureList = failureDetails.map((detail) => `• ${detail}`).join('\n');
   return `\nModel failures:\n${failureList}`;
 }
 
@@ -189,20 +199,33 @@ export function formatFailureDetails(failureDetails = []) {
  * @param {object} additionalFields - Additional fields to include in response
  * @returns {object} MCP tool response
  */
-export function createToolResponse(content, isError = false, additionalFields = {}) {
+export function createToolResponse(
+  content,
+  isError = false,
+  additionalFields = {},
+) {
   // If content is already a structured response object, use it directly
-  if (typeof content === 'object' && content !== null && !Array.isArray(content)) {
+  if (
+    typeof content === 'object' &&
+    content !== null &&
+    !Array.isArray(content)
+  ) {
     // If it's a complete response object with content array, return it directly
     if (content.content && Array.isArray(content.content)) {
       return {
         ...content,
         isError: isError || content.isError || false,
-        ...additionalFields
+        ...additionalFields,
       };
     }
 
     // If it's a tool result object (has continuation, metadata, etc.) convert to MCP format
-    if (content.continuation || content.metadata || content.content || content.metadata_display) {
+    if (
+      content.continuation ||
+      content.metadata ||
+      content.content ||
+      content.metadata_display
+    ) {
       // Prepare the text content, potentially prefixing with metadata display
       let textContent = content.content || JSON.stringify(content, null, 2);
       if (content.metadata_display) {
@@ -213,11 +236,11 @@ export function createToolResponse(content, isError = false, additionalFields = 
         content: [
           {
             type: 'text',
-            text: textContent
-          }
+            text: textContent,
+          },
         ],
         isError: isError || content.isError || false,
-        ...additionalFields
+        ...additionalFields,
       };
 
       // Preserve continuation and metadata at top level
@@ -240,7 +263,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
         },
       ],
       isError,
-      ...additionalFields
+      ...additionalFields,
     };
   }
 
@@ -253,7 +276,7 @@ export function createToolResponse(content, isError = false, additionalFields = 
       },
     ],
     isError,
-    ...additionalFields
+    ...additionalFields,
   };
 }
 
@@ -271,7 +294,7 @@ export function createToolError(message, error = null) {
   response.error = {
     message: errorText,
     type: 'ToolError',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   return response;

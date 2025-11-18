@@ -16,35 +16,42 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('normalize() method', () => {
     it('should throw error for unsupported provider', async () => {
-      const mockStream = async function*() {
+      const mockStream = async function* () {
         yield { type: 'start' };
       };
 
       await expect(async () => {
-        for await (const event of normalizer.normalize('unsupported', mockStream())) {
+        for await (const event of normalizer.normalize(
+          'unsupported',
+          mockStream(),
+        )) {
           // Should not reach here
         }
-      }).rejects.toThrow('Unsupported provider for streaming normalization: unsupported');
+      }).rejects.toThrow(
+        'Unsupported provider for streaming normalization: unsupported',
+      );
     });
 
     it('should route to correct provider normalizer', async () => {
-      const mockStream = async function*() {
+      const mockStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'gpt-5',
-          provider: 'openai'
+          provider: 'openai',
         };
         yield {
           type: 'end',
           content: 'Hello',
           stop_reason: 'stop',
-          metadata: { model: 'gpt-5' }
+          metadata: { model: 'gpt-5' },
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('openai', mockStream(), { model: 'gpt-5' })) {
+      for await (const event of normalizer.normalize('openai', mockStream(), {
+        model: 'gpt-5',
+      })) {
         events.push(event);
       }
 
@@ -57,32 +64,32 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('OpenAI Stream Normalization', () => {
     it('should normalize complete OpenAI Chat Completions stream', async () => {
-      const mockOpenAIStream = async function*() {
+      const mockOpenAIStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'gpt-5',
           provider: 'openai',
-          api_type: 'Chat Completions API'
+          api_type: 'Chat Completions API',
         };
         yield {
           type: 'delta',
           content: 'Hello ',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'delta',
           content: 'world!',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'usage',
           usage: {
             input_tokens: 10,
             output_tokens: 5,
-            total_tokens: 15
+            total_tokens: 15,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -93,17 +100,21 @@ describe('ProviderStreamNormalizer', () => {
             usage: {
               input_tokens: 10,
               output_tokens: 5,
-              total_tokens: 15
+              total_tokens: 15,
             },
             provider: 'openai',
-            api_type: 'Chat Completions API'
+            api_type: 'Chat Completions API',
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('openai', mockOpenAIStream(), { model: 'gpt-5' })) {
+      for await (const event of normalizer.normalize(
+        'openai',
+        mockOpenAIStream(),
+        { model: 'gpt-5' },
+      )) {
         events.push(event);
       }
 
@@ -135,18 +146,18 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should handle OpenAI Responses API format', async () => {
-      const mockResponsesAPIStream = async function*() {
+      const mockResponsesAPIStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'gpt-5',
           provider: 'openai',
-          api_type: 'Responses API'
+          api_type: 'Responses API',
         };
         yield {
           type: 'delta',
           content: 'Response API test',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -155,14 +166,17 @@ describe('ProviderStreamNormalizer', () => {
           metadata: {
             model: 'gpt-5',
             api_type: 'Responses API',
-            usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 }
+            usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 },
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('openai', mockResponsesAPIStream())) {
+      for await (const event of normalizer.normalize(
+        'openai',
+        mockResponsesAPIStream(),
+      )) {
         events.push(event);
       }
 
@@ -176,17 +190,17 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('XAI Stream Normalization', () => {
     it('should normalize XAI stream with search metadata', async () => {
-      const mockXAIStream = async function*() {
+      const mockXAIStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'grok-4-0709',
-          provider: 'xai'
+          provider: 'xai',
         };
         yield {
           type: 'delta',
           content: 'XAI response with search',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'usage',
@@ -195,9 +209,9 @@ describe('ProviderStreamNormalizer', () => {
             output_tokens: 8,
             total_tokens: 23,
             search_sources_used: 3,
-            search_cost_estimate: 0.075
+            search_cost_estimate: 0.075,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -207,14 +221,16 @@ describe('ProviderStreamNormalizer', () => {
             model: 'grok-4-0709',
             usage: { input_tokens: 15, output_tokens: 8, total_tokens: 23 },
             provider: 'xai',
-            web_search_used: true
+            web_search_used: true,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('xai', mockXAIStream(), { model: 'grok-4-0709' })) {
+      for await (const event of normalizer.normalize('xai', mockXAIStream(), {
+        model: 'grok-4-0709',
+      })) {
         events.push(event);
       }
 
@@ -228,30 +244,30 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Google GenAI Stream Normalization', () => {
     it('should normalize Google stream with grounding metadata', async () => {
-      const mockGoogleStream = async function*() {
+      const mockGoogleStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'gemini-2.5-pro',
-          provider: 'google'
+          provider: 'google',
         };
         yield {
           type: 'delta',
           content: 'Google response',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'usage',
           usage: {
             input_tokens: 20,
             output_tokens: 12,
-            total_tokens: 32
+            total_tokens: 32,
           },
           groundingMetadata: {
             groundingSupport: true,
-            searchQueries: ['test query']
+            searchQueries: ['test query'],
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -260,14 +276,17 @@ describe('ProviderStreamNormalizer', () => {
           metadata: {
             model: 'gemini-2.5-pro',
             usage: { input_tokens: 20, output_tokens: 12, total_tokens: 32 },
-            provider: 'google'
+            provider: 'google',
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('google', mockGoogleStream())) {
+      for await (const event of normalizer.normalize(
+        'google',
+        mockGoogleStream(),
+      )) {
         events.push(event);
       }
 
@@ -280,23 +299,23 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Anthropic Stream Normalization', () => {
     it('should normalize Anthropic stream with thinking tokens', async () => {
-      const mockAnthropicStream = async function*() {
+      const mockAnthropicStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'claude-3.5-sonnet',
-          provider: 'anthropic'
+          provider: 'anthropic',
         };
         yield {
           type: 'delta',
           content: '<thinking>Let me think...</thinking>',
           isThinking: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'delta',
           content: 'Anthropic response',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'usage',
@@ -306,9 +325,9 @@ describe('ProviderStreamNormalizer', () => {
             total_tokens: 40,
             thinking_tokens: 10,
             cache_creation_input_tokens: 100,
-            cache_read_input_tokens: 50
+            cache_read_input_tokens: 50,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -320,16 +339,19 @@ describe('ProviderStreamNormalizer', () => {
               input_tokens: 25,
               output_tokens: 15,
               total_tokens: 40,
-              thinking_tokens: 10
+              thinking_tokens: 10,
             },
-            provider: 'anthropic'
+            provider: 'anthropic',
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('anthropic', mockAnthropicStream())) {
+      for await (const event of normalizer.normalize(
+        'anthropic',
+        mockAnthropicStream(),
+      )) {
         events.push(event);
       }
 
@@ -346,23 +368,23 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('DeepSeek Stream Normalization', () => {
     it('should normalize DeepSeek stream with reasoning tokens', async () => {
-      const mockDeepSeekStream = async function*() {
+      const mockDeepSeekStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'deepseek-r1',
-          provider: 'deepseek'
+          provider: 'deepseek',
         };
         yield {
           type: 'delta',
           content: 'Reasoning content',
           isReasoning: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'delta',
           content: 'Final answer',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'usage',
@@ -370,9 +392,9 @@ describe('ProviderStreamNormalizer', () => {
             input_tokens: 30,
             output_tokens: 20,
             total_tokens: 50,
-            reasoning_tokens: 15
+            reasoning_tokens: 15,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
@@ -381,14 +403,17 @@ describe('ProviderStreamNormalizer', () => {
           metadata: {
             model: 'deepseek-r1',
             usage: { input_tokens: 30, output_tokens: 20, total_tokens: 50 },
-            provider: 'deepseek'
+            provider: 'deepseek',
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('deepseek', mockDeepSeekStream())) {
+      for await (const event of normalizer.normalize(
+        'deepseek',
+        mockDeepSeekStream(),
+      )) {
         events.push(event);
       }
 
@@ -403,26 +428,29 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Error Handling', () => {
     it('should normalize error events correctly', async () => {
-      const mockErrorStream = async function*() {
+      const mockErrorStream = async function* () {
         yield {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: 'gpt-5',
-          provider: 'openai'
+          provider: 'openai',
         };
         yield {
           type: 'error',
           error: {
             message: 'Rate limit exceeded',
             code: 'RATE_LIMIT_EXCEEDED',
-            recoverable: true
+            recoverable: true,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('openai', mockErrorStream())) {
+      for await (const event of normalizer.normalize(
+        'openai',
+        mockErrorStream(),
+      )) {
         events.push(event);
       }
 
@@ -433,13 +461,21 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should handle stream processing errors', async () => {
-      const mockFailingStream = async function*() {
-        yield { type: 'start', timestamp: new Date().toISOString(), model: 'gpt-5', provider: 'openai' };
+      const mockFailingStream = async function* () {
+        yield {
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          model: 'gpt-5',
+          provider: 'openai',
+        };
         throw new Error('Stream processing failed');
       };
 
       await expect(async () => {
-        for await (const event of normalizer.normalize('openai', mockFailingStream())) {
+        for await (const event of normalizer.normalize(
+          'openai',
+          mockFailingStream(),
+        )) {
           // Should yield error event before throwing
         }
       }).rejects.toThrow('Stream processing failed');
@@ -450,7 +486,7 @@ describe('ProviderStreamNormalizer', () => {
     it('should create valid start events', () => {
       const startEvent = normalizer.createStartEvent('openai', 'gpt-5', {
         requestId: 'test-123',
-        estimatedTokens: 1000
+        estimatedTokens: 1000,
       });
 
       expect(startEvent.type).toBe(EVENT_TYPES.START);
@@ -462,9 +498,14 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should create valid delta events', () => {
-      const deltaEvent = normalizer.createDeltaEvent('Hello', 'anthropic', 'claude-3.5-sonnet', {
-        isThinking: true
-      });
+      const deltaEvent = normalizer.createDeltaEvent(
+        'Hello',
+        'anthropic',
+        'claude-3.5-sonnet',
+        {
+          isThinking: true,
+        },
+      );
 
       expect(deltaEvent.type).toBe(EVENT_TYPES.DELTA);
       expect(deltaEvent.data.textDelta).toBe('Hello');
@@ -478,10 +519,14 @@ describe('ProviderStreamNormalizer', () => {
         input_tokens: 100,
         output_tokens: 50,
         total_tokens: 150,
-        thinking_tokens: 25
+        thinking_tokens: 25,
       };
 
-      const usageEvent = normalizer.createUsageEvent(usage, 'anthropic', 'claude-3.5-sonnet');
+      const usageEvent = normalizer.createUsageEvent(
+        usage,
+        'anthropic',
+        'claude-3.5-sonnet',
+      );
 
       expect(usageEvent.type).toBe(EVENT_TYPES.USAGE);
       expect(usageEvent.data.usage.inputTokens).toBe(100);
@@ -496,10 +541,14 @@ describe('ProviderStreamNormalizer', () => {
         stopReason: 'end_turn',
         usage: { input_tokens: 100, output_tokens: 50, total_tokens: 150 },
         responseTime: 2500,
-        metadata: { model: 'claude-3.5-sonnet', provider: 'anthropic' }
+        metadata: { model: 'claude-3.5-sonnet', provider: 'anthropic' },
       };
 
-      const endEvent = normalizer.createEndEvent(params, 'anthropic', 'claude-3.5-sonnet');
+      const endEvent = normalizer.createEndEvent(
+        params,
+        'anthropic',
+        'claude-3.5-sonnet',
+      );
 
       expect(endEvent.type).toBe(EVENT_TYPES.END);
       expect(endEvent.data.content).toBe('Final response');
@@ -522,11 +571,21 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should determine error recoverability correctly', () => {
-      const rateLimitError = { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limited' };
+      const rateLimitError = {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Rate limited',
+      };
       const quotaError = { code: 'QUOTA_EXCEEDED', message: 'Quota exceeded' };
-      const chunkError = { code: 'CHUNK_PROCESSING_ERROR', message: 'Chunk failed', recoverable: true };
+      const chunkError = {
+        code: 'CHUNK_PROCESSING_ERROR',
+        message: 'Chunk failed',
+        recoverable: true,
+      };
 
-      const rateLimitEvent = normalizer.createErrorEvent(rateLimitError, 'openai');
+      const rateLimitEvent = normalizer.createErrorEvent(
+        rateLimitError,
+        'openai',
+      );
       const quotaEvent = normalizer.createErrorEvent(quotaError, 'openai');
       const chunkEvent = normalizer.createErrorEvent(chunkError, 'openai');
 
@@ -538,16 +597,24 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Stream Validation', () => {
     it('should validate complete valid stream', async () => {
-      const mockValidStream = async function*() {
+      const mockValidStream = async function* () {
         yield normalizer.createStartEvent('openai', 'gpt-5');
         yield normalizer.createDeltaEvent('Hello', 'openai', 'gpt-5');
-        yield normalizer.createUsageEvent({ input_tokens: 10, output_tokens: 5, total_tokens: 15 }, 'openai', 'gpt-5');
-        yield normalizer.createEndEvent({
-          content: 'Hello',
-          stopReason: 'stop',
-          usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
-          responseTime: 1000
-        }, 'openai', 'gpt-5');
+        yield normalizer.createUsageEvent(
+          { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+          'openai',
+          'gpt-5',
+        );
+        yield normalizer.createEndEvent(
+          {
+            content: 'Hello',
+            stopReason: 'stop',
+            usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+            responseTime: 1000,
+          },
+          'openai',
+          'gpt-5',
+        );
       };
 
       const validation = await normalizer.validateStream(mockValidStream());
@@ -560,7 +627,7 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should detect invalid stream structure', async () => {
-      const mockInvalidStream = async function*() {
+      const mockInvalidStream = async function* () {
         yield { invalidEvent: true }; // Missing required fields
       };
 
@@ -571,12 +638,14 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should detect missing start or end events', async () => {
-      const mockIncompleteStream = async function*() {
+      const mockIncompleteStream = async function* () {
         yield normalizer.createDeltaEvent('Hello', 'openai', 'gpt-5');
         // Missing start and end events
       };
 
-      const validation = await normalizer.validateStream(mockIncompleteStream());
+      const validation = await normalizer.validateStream(
+        mockIncompleteStream(),
+      );
 
       expect(validation.valid).toBe(false);
       expect(validation.hasStart).toBe(false);
@@ -584,13 +653,25 @@ describe('ProviderStreamNormalizer', () => {
     });
 
     it('should validate specific event types', async () => {
-      const mockInvalidDeltaStream = async function*() {
+      const mockInvalidDeltaStream = async function* () {
         yield normalizer.createStartEvent('openai', 'gpt-5');
-        yield { type: 'delta', provider: 'openai', model: 'gpt-5', timestamp: Date.now(), data: {} }; // Missing textDelta
-        yield normalizer.createEndEvent({ content: '', stopReason: 'stop' }, 'openai', 'gpt-5');
+        yield {
+          type: 'delta',
+          provider: 'openai',
+          model: 'gpt-5',
+          timestamp: Date.now(),
+          data: {},
+        }; // Missing textDelta
+        yield normalizer.createEndEvent(
+          { content: '', stopReason: 'stop' },
+          'openai',
+          'gpt-5',
+        );
       };
 
-      const validation = await normalizer.validateStream(mockInvalidDeltaStream());
+      const validation = await normalizer.validateStream(
+        mockInvalidDeltaStream(),
+      );
 
       expect(validation.valid).toBe(false);
       expect(validation.error).toContain('Delta event missing textDelta');
@@ -599,9 +680,19 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Case Sensitivity and Provider Names', () => {
     it('should handle case-insensitive provider names', async () => {
-      const mockStream = async function*() {
-        yield { type: 'start', timestamp: new Date().toISOString(), model: 'gpt-5', provider: 'openai' };
-        yield { type: 'end', content: 'test', stop_reason: 'stop', metadata: {} };
+      const mockStream = async function* () {
+        yield {
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          model: 'gpt-5',
+          provider: 'openai',
+        };
+        yield {
+          type: 'end',
+          content: 'test',
+          stop_reason: 'stop',
+          metadata: {},
+        };
       };
 
       const events1 = [];
@@ -623,52 +714,78 @@ describe('ProviderStreamNormalizer', () => {
 
   describe('Provider-Specific Features', () => {
     it('should preserve OpenRouter routing metadata', async () => {
-      const mockOpenRouterStream = async function*() {
-        yield { type: 'start', timestamp: new Date().toISOString(), model: 'gpt-5', provider: 'openrouter' };
-        yield { type: 'delta', content: 'test', timestamp: new Date().toISOString() };
+      const mockOpenRouterStream = async function* () {
+        yield {
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          model: 'gpt-5',
+          provider: 'openrouter',
+        };
+        yield {
+          type: 'delta',
+          content: 'test',
+          timestamp: new Date().toISOString(),
+        };
         yield {
           type: 'usage',
           usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
           routingInfo: { actualProvider: 'openai', cost: 0.002 },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         yield {
           type: 'end',
           content: 'test',
           stop_reason: 'stop',
-          metadata: { usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 } },
-          timestamp: new Date().toISOString()
+          metadata: {
+            usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+          },
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('openrouter', mockOpenRouterStream())) {
+      for await (const event of normalizer.normalize(
+        'openrouter',
+        mockOpenRouterStream(),
+      )) {
         events.push(event);
       }
 
-      const endEvent = events.find(e => e.type === EVENT_TYPES.END);
+      const endEvent = events.find((e) => e.type === EVENT_TYPES.END);
       expect(endEvent.data.metadata.actualProvider).toBe('openai');
       expect(endEvent.data.metadata.cost).toBe(0.002);
     });
 
     it('should handle Mistral streaming format', async () => {
-      const mockMistralStream = async function*() {
-        yield { type: 'start', timestamp: new Date().toISOString(), model: 'mistral-large', provider: 'mistral' };
-        yield { type: 'delta', content: 'Mistral response', timestamp: new Date().toISOString() };
+      const mockMistralStream = async function* () {
+        yield {
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          model: 'mistral-large',
+          provider: 'mistral',
+        };
+        yield {
+          type: 'delta',
+          content: 'Mistral response',
+          timestamp: new Date().toISOString(),
+        };
         yield {
           type: 'end',
           content: 'Mistral response',
           stop_reason: 'stop',
           metadata: {
             model: 'mistral-large',
-            usage: { input_tokens: 8, output_tokens: 4, total_tokens: 12 }
+            usage: { input_tokens: 8, output_tokens: 4, total_tokens: 12 },
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       };
 
       const events = [];
-      for await (const event of normalizer.normalize('mistral', mockMistralStream())) {
+      for await (const event of normalizer.normalize(
+        'mistral',
+        mockMistralStream(),
+      )) {
         events.push(event);
       }
 

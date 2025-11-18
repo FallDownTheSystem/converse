@@ -15,23 +15,23 @@ describe('SummarizationService', () => {
     mockProviders = {
       openai: {
         isAvailable: vi.fn().mockReturnValue(true),
-        invoke: vi.fn()
+        invoke: vi.fn(),
       },
       google: {
         isAvailable: vi.fn().mockReturnValue(false),
-        invoke: vi.fn()
-      }
+        invoke: vi.fn(),
+      },
     };
 
     // Setup mock config
     mockConfig = {
       apiKeys: {
-        openai: 'test-key'
+        openai: 'test-key',
       },
       summarization: {
-        enabled: true,  // Enable summarization for tests
-        model: null     // Use auto-selection
-      }
+        enabled: true, // Enable summarization for tests
+        model: null, // Use auto-selection
+      },
     };
 
     // Create service instance
@@ -41,16 +41,21 @@ describe('SummarizationService', () => {
   describe('generateTitle', () => {
     it('should generate a title when provider is available', async () => {
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'Test Title for Request'
+        content: 'Test Title for Request',
       });
 
-      const title = await service.generateTitle('Create a REST API endpoint for user authentication');
+      const title = await service.generateTitle(
+        'Create a REST API endpoint for user authentication',
+      );
 
       expect(title).toBe('Test Title for Request');
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ role: 'system' }),
-          expect.objectContaining({ role: 'user', content: 'Create a REST API endpoint for user authentication' })
+          expect.objectContaining({
+            role: 'user',
+            content: 'Create a REST API endpoint for user authentication',
+          }),
         ]),
         expect.objectContaining({
           model: 'gpt-5-nano', // Updated to new default
@@ -58,22 +63,25 @@ describe('SummarizationService', () => {
           maxTokens: 200, // Increased tokens
           reasoning_effort: 'minimal', // Added for speed
           verbosity: 'low', // Added for conciseness
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       );
     });
 
     it('should fallback to text snippet when provider fails', async () => {
       mockProviders.openai.invoke.mockRejectedValue(new Error('API error'));
 
-      const title = await service.generateTitle('Create a REST API endpoint for user authentication');
+      const title = await service.generateTitle(
+        'Create a REST API endpoint for user authentication',
+      );
 
       expect(title).toBe('Create a REST API endpoint for user authentication');
     });
 
     it('should truncate title to 50 characters', async () => {
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'This is a very long title that definitely exceeds fifty characters limit'
+        content:
+          'This is a very long title that definitely exceeds fifty characters limit',
       });
 
       const title = await service.generateTitle('Test prompt');
@@ -94,15 +102,18 @@ describe('SummarizationService', () => {
   describe('generateStreamingSummary', () => {
     it('should generate streaming summary when provider is available', async () => {
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'Overall the code implements authentication. Currently working on JWT validation.'
+        content:
+          'Overall the code implements authentication. Currently working on JWT validation.',
       });
 
       const summary = await service.generateStreamingSummary(
         'Full implementation of authentication system',
-        'JWT token validation'
+        'JWT token validation',
       );
 
-      expect(summary).toBe('Overall the code implements authentication. Currently working on JWT validation.');
+      expect(summary).toBe(
+        'Overall the code implements authentication. Currently working on JWT validation.',
+      );
       expect(mockProviders.openai.invoke).toHaveBeenCalled();
     });
 
@@ -111,7 +122,7 @@ describe('SummarizationService', () => {
 
       const summary = await service.generateStreamingSummary(
         'Full implementation of authentication system',
-        'JWT token validation'
+        'JWT token validation',
       );
 
       expect(summary).toContain('Full implementation');
@@ -123,21 +134,30 @@ describe('SummarizationService', () => {
   describe('generateFinalSummary', () => {
     it('should generate final summary when provider is available', async () => {
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'Successfully implemented user authentication with JWT tokens.'
+        content:
+          'Successfully implemented user authentication with JWT tokens.',
       });
 
-      const summary = await service.generateFinalSummary('Complete authentication implementation details...');
+      const summary = await service.generateFinalSummary(
+        'Complete authentication implementation details...',
+      );
 
-      expect(summary).toBe('Successfully implemented user authentication with JWT tokens.');
+      expect(summary).toBe(
+        'Successfully implemented user authentication with JWT tokens.',
+      );
       expect(mockProviders.openai.invoke).toHaveBeenCalled();
     });
 
     it('should fallback to text snippet on error', async () => {
       mockProviders.openai.invoke.mockRejectedValue(new Error('API error'));
 
-      const summary = await service.generateFinalSummary('Complete authentication implementation details...');
+      const summary = await service.generateFinalSummary(
+        'Complete authentication implementation details...',
+      );
 
-      expect(summary).toContain('Complete authentication implementation details');
+      expect(summary).toContain(
+        'Complete authentication implementation details',
+      );
       expect(summary).toContain('...');
     });
   });
@@ -157,7 +177,7 @@ describe('SummarizationService', () => {
       service.setEnabled(true);
 
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'Generated Title'
+        content: 'Generated Title',
       });
 
       const title = await service.generateTitle('Test prompt');
@@ -172,7 +192,7 @@ describe('SummarizationService', () => {
       mockProviders.openai.isAvailable.mockReturnValue(false);
       mockProviders.google.isAvailable.mockReturnValue(true);
       mockProviders.google.invoke.mockResolvedValue({
-        content: 'Google Generated Title'
+        content: 'Google Generated Title',
       });
 
       const title = await service.generateTitle('Test prompt');
@@ -198,12 +218,17 @@ describe('SummarizationService', () => {
         ...mockConfig,
         summarization: {
           enabled: false,
-          model: null
-        }
+          model: null,
+        },
       };
-      const disabledService = new SummarizationService(mockProviders, disabledConfig);
+      const disabledService = new SummarizationService(
+        mockProviders,
+        disabledConfig,
+      );
 
-      const title = await disabledService.generateTitle('Test prompt with disabled summarization');
+      const title = await disabledService.generateTitle(
+        'Test prompt with disabled summarization',
+      );
 
       // Should use fallback (truncated prompt)
       expect(title).toBe('Test prompt with disabled summarization');
@@ -216,13 +241,16 @@ describe('SummarizationService', () => {
         ...mockConfig,
         summarization: {
           enabled: true,
-          model: 'gpt-4o-mini'
-        }
+          model: 'gpt-4o-mini',
+        },
       };
-      const customService = new SummarizationService(mockProviders, customModelConfig);
+      const customService = new SummarizationService(
+        mockProviders,
+        customModelConfig,
+      );
 
       mockProviders.openai.invoke.mockResolvedValue({
-        content: 'Custom Model Title'
+        content: 'Custom Model Title',
       });
 
       const title = await customService.generateTitle('Test with custom model');
@@ -231,8 +259,8 @@ describe('SummarizationService', () => {
       expect(mockProviders.openai.invoke).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          model: 'gpt-4o-mini'
-        })
+          model: 'gpt-4o-mini',
+        }),
       );
     });
   });

@@ -23,7 +23,7 @@ const EVENT_TYPES = {
   USAGE: 'usage',
   END: 'end',
   ERROR: 'error',
-  REASONING_SUMMARY: 'reasoning_summary'
+  REASONING_SUMMARY: 'reasoning_summary',
 };
 
 /**
@@ -41,7 +41,7 @@ class ProviderStreamNormalizer {
       mistral: this.normalizeMistralStream.bind(this),
       deepseek: this.normalizeDeepSeekStream.bind(this),
       openrouter: this.normalizeOpenRouterStream.bind(this),
-      codex: this.normalizeCodexStream.bind(this)
+      codex: this.normalizeCodexStream.bind(this),
     };
   }
 
@@ -56,16 +56,23 @@ class ProviderStreamNormalizer {
     const normalizedProvider = provider.toLowerCase();
 
     if (!this.normalizers[normalizedProvider]) {
-      throw new Error(`Unsupported provider for streaming normalization: ${provider}`);
+      throw new Error(
+        `Unsupported provider for streaming normalization: ${provider}`,
+      );
     }
 
-    debugLog(`[StreamNormalizer] Normalizing ${provider} stream for model ${context.model || 'unknown'}`);
+    debugLog(
+      `[StreamNormalizer] Normalizing ${provider} stream for model ${context.model || 'unknown'}`,
+    );
 
     try {
       // Delegate to provider-specific normalizer
       yield* this.normalizers[normalizedProvider](stream, context);
     } catch (error) {
-      debugError(`[StreamNormalizer] Error during ${provider} stream normalization:`, error);
+      debugError(
+        `[StreamNormalizer] Error during ${provider} stream normalization:`,
+        error,
+      );
 
       // Yield error event before re-throwing
       yield this.createErrorEvent(error, provider);
@@ -112,26 +119,38 @@ class ProviderStreamNormalizer {
 
         // Handle reasoning summary events (OpenAI reasoning models)
         if (event.type === 'reasoning_summary') {
-          yield this.createReasoningSummaryEvent(event.content, provider, model);
+          yield this.createReasoningSummaryEvent(
+            event.content,
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle end event
         if (event.type === 'end') {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: event.metadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: event.metadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -177,7 +196,8 @@ class ProviderStreamNormalizer {
           accumulatedUsage = event.usage;
           if (event.usage.search_sources_used) {
             searchMetadata.searchSourcesUsed = event.usage.search_sources_used;
-            searchMetadata.searchCostEstimate = event.usage.search_cost_estimate;
+            searchMetadata.searchCostEstimate =
+              event.usage.search_cost_estimate;
           }
           yield this.createUsageEvent(event.usage, provider, model);
           continue;
@@ -188,22 +208,30 @@ class ProviderStreamNormalizer {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
           const endMetadata = {
             ...event.metadata,
-            ...searchMetadata
+            ...searchMetadata,
           };
 
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: endMetadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: endMetadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -259,22 +287,30 @@ class ProviderStreamNormalizer {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
           const endMetadata = {
             ...event.metadata,
-            ...searchMetadata
+            ...searchMetadata,
           };
 
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: endMetadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: endMetadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -312,7 +348,7 @@ class ProviderStreamNormalizer {
         if (event.type === 'delta') {
           accumulatedContent += event.content || '';
           yield this.createDeltaEvent(event.content || '', provider, model, {
-            isThinking: event.isThinking || false
+            isThinking: event.isThinking || false,
           });
           continue;
         }
@@ -323,10 +359,13 @@ class ProviderStreamNormalizer {
           if (event.usage.thinking_tokens) {
             thinkingMetadata.thinkingTokens = event.usage.thinking_tokens;
           }
-          if (event.usage.cache_creation_input_tokens || event.usage.cache_read_input_tokens) {
+          if (
+            event.usage.cache_creation_input_tokens ||
+            event.usage.cache_read_input_tokens
+          ) {
             thinkingMetadata.cacheUsage = {
               creation: event.usage.cache_creation_input_tokens || 0,
-              read: event.usage.cache_read_input_tokens || 0
+              read: event.usage.cache_read_input_tokens || 0,
             };
           }
           yield this.createUsageEvent(event.usage, provider, model);
@@ -338,22 +377,30 @@ class ProviderStreamNormalizer {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
           const endMetadata = {
             ...event.metadata,
-            ...thinkingMetadata
+            ...thinkingMetadata,
           };
 
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: endMetadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: endMetadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -403,19 +450,27 @@ class ProviderStreamNormalizer {
         // Handle end event
         if (event.type === 'end') {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: event.metadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: event.metadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -453,7 +508,7 @@ class ProviderStreamNormalizer {
         if (event.type === 'delta') {
           accumulatedContent += event.content || '';
           yield this.createDeltaEvent(event.content || '', provider, model, {
-            isReasoning: event.isReasoning || false
+            isReasoning: event.isReasoning || false,
           });
           continue;
         }
@@ -473,22 +528,30 @@ class ProviderStreamNormalizer {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
           const endMetadata = {
             ...event.metadata,
-            ...reasoningMetadata
+            ...reasoningMetadata,
           };
 
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: endMetadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: endMetadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -544,22 +607,30 @@ class ProviderStreamNormalizer {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
           const endMetadata = {
             ...event.metadata,
-            ...routingMetadata
+            ...routingMetadata,
           };
 
-          yield this.createEndEvent({
-            content: event.content || accumulatedContent,
-            stopReason: finishReason,
-            usage: event.metadata?.usage || accumulatedUsage,
-            responseTime: Date.now() - startTime,
-            metadata: endMetadata
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: event.content || accumulatedContent,
+              stopReason: finishReason,
+              usage: event.metadata?.usage || accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: endMetadata,
+            },
+            provider,
+            model,
+          );
           continue;
         }
 
         // Handle error events
         if (event.type === 'error') {
-          yield this.createErrorEvent(event.error, provider, event.error?.recoverable);
+          yield this.createErrorEvent(
+            event.error,
+            provider,
+            event.error?.recoverable,
+          );
           continue;
         }
       }
@@ -582,8 +653,8 @@ class ProviderStreamNormalizer {
       data: {
         requestId: originalEvent.requestId || `${provider}-${Date.now()}`,
         estimatedTokens: originalEvent.estimatedTokens || null,
-        ...originalEvent.data
-      }
+        ...originalEvent.data,
+      },
     };
   }
 
@@ -600,8 +671,8 @@ class ProviderStreamNormalizer {
         textDelta,
         role: 'assistant',
         index: 0,
-        ...metadata
-      }
+        ...metadata,
+      },
     };
   }
 
@@ -620,9 +691,9 @@ class ProviderStreamNormalizer {
           outputTokens: usage.output_tokens || usage.completion_tokens || 0,
           totalTokens: usage.total_tokens || 0,
           // Preserve provider-specific usage fields
-          ...usage
-        }
-      }
+          ...usage,
+        },
+      },
     };
   }
 
@@ -638,8 +709,8 @@ class ProviderStreamNormalizer {
       data: {
         content: content || '',
         role: 'assistant',
-        isReasoningSummary: true
-      }
+        isReasoningSummary: true,
+      },
     };
   }
 
@@ -656,14 +727,16 @@ class ProviderStreamNormalizer {
         content: params.content,
         stopReason: params.stopReason || 'stop',
         usage: {
-          inputTokens: params.usage?.input_tokens || params.usage?.prompt_tokens || 0,
-          outputTokens: params.usage?.output_tokens || params.usage?.completion_tokens || 0,
+          inputTokens:
+            params.usage?.input_tokens || params.usage?.prompt_tokens || 0,
+          outputTokens:
+            params.usage?.output_tokens || params.usage?.completion_tokens || 0,
           totalTokens: params.usage?.total_tokens || 0,
-          ...params.usage
+          ...params.usage,
         },
         responseTimeMs: params.responseTime,
-        metadata: params.metadata || {}
-      }
+        metadata: params.metadata || {},
+      },
     };
   }
 
@@ -672,7 +745,8 @@ class ProviderStreamNormalizer {
    */
   createErrorEvent(error, provider, recoverable = false) {
     // Determine if error is recoverable based on error type
-    const isRecoverable = recoverable ||
+    const isRecoverable =
+      recoverable ||
       error.code === 'RATE_LIMIT_EXCEEDED' ||
       error.code === 'CHUNK_PROCESSING_ERROR' ||
       error.code === 'TIMEOUT' ||
@@ -688,9 +762,9 @@ class ProviderStreamNormalizer {
           message: error.message || 'Unknown streaming error',
           code: error.code || 'STREAMING_ERROR',
           recoverable: isRecoverable,
-          originalError: error
-        }
-      }
+          originalError: error,
+        },
+      },
     };
   }
 
@@ -740,13 +814,13 @@ class ProviderStreamNormalizer {
             // Internal reasoning - log for debugging but don't send to user
             debugLog('[Codex] Reasoning item completed', {
               id: event.item.id,
-              text: event.item.text?.substring(0, 100) // Log first 100 chars
+              text: event.item.text?.substring(0, 100), // Log first 100 chars
             });
           } else {
             // Unknown item type - log and preserve
             debugLog('[Codex] Unknown item type', {
               type: event.item?.type,
-              event
+              event,
             });
           }
           break;
@@ -756,18 +830,26 @@ class ProviderStreamNormalizer {
           finalUsage = event.usage;
           hasEnded = true;
 
-          yield this.createEndEvent({
-            content: accumulatedContent,
-            stopReason: 'stop',
-            usage: finalUsage ? {
-              input_tokens: finalUsage.input_tokens || 0,
-              output_tokens: finalUsage.output_tokens || 0,
-              total_tokens: (finalUsage.input_tokens || 0) + (finalUsage.output_tokens || 0),
-              cached_input_tokens: finalUsage.cached_input_tokens || 0
-            } : null,
-            responseTime: Date.now() - startTime,
-            metadata: { threadId }
-          }, provider, model);
+          yield this.createEndEvent(
+            {
+              content: accumulatedContent,
+              stopReason: 'stop',
+              usage: finalUsage
+                ? {
+                  input_tokens: finalUsage.input_tokens || 0,
+                  output_tokens: finalUsage.output_tokens || 0,
+                  total_tokens:
+                        (finalUsage.input_tokens || 0) +
+                        (finalUsage.output_tokens || 0),
+                  cached_input_tokens: finalUsage.cached_input_tokens || 0,
+                }
+                : null,
+              responseTime: Date.now() - startTime,
+              metadata: { threadId },
+            },
+            provider,
+            model,
+          );
           // Exit the generator after turn completion - no more events expected
           return;
 
@@ -777,7 +859,7 @@ class ProviderStreamNormalizer {
           debugError('[Codex] Turn failed', event.error);
           yield this.createErrorEvent(
             new Error(event.error?.message || 'Turn failed'),
-            provider
+            provider,
           );
           // Exit the generator after turn failure
           return;
@@ -788,7 +870,7 @@ class ProviderStreamNormalizer {
           debugError('[Codex] Stream error', event.message);
           yield this.createErrorEvent(
             new Error(event.message || 'Stream error'),
-            provider
+            provider,
           );
           // Exit the generator after fatal error
           return;
@@ -798,7 +880,7 @@ class ProviderStreamNormalizer {
           // Item progress events - log for debugging
           debugLog('[Codex] Item event', {
             type: event.type,
-            itemType: event.item?.type
+            itemType: event.item?.type,
           });
           break;
 
@@ -806,7 +888,7 @@ class ProviderStreamNormalizer {
           // Unknown event type - log at debug level but don't crash
           debugLog('[Codex] Unknown event type', {
             type: event?.type,
-            event
+            event,
           });
           break;
         }
@@ -816,13 +898,17 @@ class ProviderStreamNormalizer {
       // yield a final end event with whatever content we accumulated
       if (!hasEnded) {
         debugLog('[Codex] Stream ended naturally without turn.completed event');
-        yield this.createEndEvent({
-          content: accumulatedContent,
-          stopReason: 'stop',
-          usage: finalUsage,
-          responseTime: Date.now() - startTime,
-          metadata: { threadId }
-        }, provider, model);
+        yield this.createEndEvent(
+          {
+            content: accumulatedContent,
+            stopReason: 'stop',
+            usage: finalUsage,
+            responseTime: Date.now() - startTime,
+            metadata: { threadId },
+          },
+          provider,
+          model,
+        );
       }
     } catch (error) {
       debugError('[Codex] Stream normalization error:', error);
@@ -891,7 +977,7 @@ class ProviderStreamNormalizer {
         hasStart,
         hasEnd,
         errorCount,
-        totalEvents: events.length
+        totalEvents: events.length,
       };
     } catch (error) {
       return {
@@ -901,7 +987,7 @@ class ProviderStreamNormalizer {
         hasStart,
         hasEnd,
         errorCount,
-        totalEvents: events.length
+        totalEvents: events.length,
       };
     }
   }

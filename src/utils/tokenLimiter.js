@@ -36,7 +36,7 @@ function truncateToTokenLimit(text, maxTokens) {
       truncated: false,
       originalTokens: 0,
       finalTokens: 0,
-      truncationReason: null
+      truncationReason: null,
     };
   }
 
@@ -48,7 +48,7 @@ function truncateToTokenLimit(text, maxTokens) {
       truncated: false,
       originalTokens,
       finalTokens: originalTokens,
-      truncationReason: null
+      truncationReason: null,
     };
   }
 
@@ -97,7 +97,7 @@ function truncateToTokenLimit(text, maxTokens) {
     truncated: true,
     originalTokens,
     finalTokens: finalTokens + estimateTokens(truncationMessage),
-    truncationReason: 'Exceeded maximum token limit'
+    truncationReason: 'Exceeded maximum token limit',
   };
 }
 
@@ -114,8 +114,8 @@ export function applyTokenLimit(response, maxTokens) {
       metadata: {
         tokenLimitApplied: false,
         originalTokens: 0,
-        finalTokens: 0
-      }
+        finalTokens: 0,
+      },
     };
   }
 
@@ -145,7 +145,7 @@ export function applyTokenLimit(response, maxTokens) {
       originalTokens: result.originalTokens,
       finalTokens: result.finalTokens,
       maxTokens,
-      truncationRatio: (result.finalTokens / result.originalTokens).toFixed(3)
+      truncationRatio: (result.finalTokens / result.originalTokens).toFixed(3),
     });
   }
 
@@ -157,8 +157,8 @@ export function applyTokenLimit(response, maxTokens) {
         tokenLimitApplied: result.truncated,
         originalTokens: result.originalTokens,
         finalTokens: result.finalTokens,
-        truncationReason: result.truncationReason
-      }
+        truncationReason: result.truncationReason,
+      },
     };
   } else if (originalResponse && typeof originalResponse === 'object') {
     // For structured responses, update the content field
@@ -170,8 +170,8 @@ export function applyTokenLimit(response, maxTokens) {
         tokenLimitApplied: result.truncated,
         originalTokens: result.originalTokens,
         finalTokens: result.finalTokens,
-        truncationReason: result.truncationReason
-      }
+        truncationReason: result.truncationReason,
+      },
     };
   } else {
     return {
@@ -180,8 +180,8 @@ export function applyTokenLimit(response, maxTokens) {
         tokenLimitApplied: result.truncated,
         originalTokens: result.originalTokens,
         finalTokens: result.finalTokens,
-        truncationReason: result.truncationReason
-      }
+        truncationReason: result.truncationReason,
+      },
     };
   }
 }

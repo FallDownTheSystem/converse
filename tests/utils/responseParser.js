@@ -33,9 +33,10 @@ export function parseStatusResponse(text) {
     if (parts[i] && parts[i].includes('elapsed')) {
       const timeMatch = parts[i].match(/([\d.]+)([ms])/);
       if (timeMatch) {
-        elapsedSeconds = timeMatch[2] === 'm'
-          ? parseFloat(timeMatch[1]) * 60
-          : parseFloat(timeMatch[1]);
+        elapsedSeconds =
+          timeMatch[2] === 'm'
+            ? parseFloat(timeMatch[1]) * 60
+            : parseFloat(timeMatch[1]);
       }
       elapsedIndex = i;
       break;
@@ -75,13 +76,17 @@ export function parseStatusResponse(text) {
   let result = null;
   if (status === 'completed') {
     // Find content after status line and optional continuation_id line
-    const statusLineIndex = lines.findIndex(line => line.includes('COMPLETED'));
+    const statusLineIndex = lines.findIndex((line) =>
+      line.includes('COMPLETED'),
+    );
     if (statusLineIndex >= 0) {
       // Skip status line and any continuation_id line
       let contentStartIndex = statusLineIndex + 1;
-      while (contentStartIndex < lines.length &&
-             (lines[contentStartIndex].trim() === '' ||
-              lines[contentStartIndex].trim().startsWith('continuation_id:'))) {
+      while (
+        contentStartIndex < lines.length &&
+        (lines[contentStartIndex].trim() === '' ||
+          lines[contentStartIndex].trim().startsWith('continuation_id:'))
+      ) {
         contentStartIndex++;
       }
 
@@ -96,7 +101,7 @@ export function parseStatusResponse(text) {
 
   // Check for error
   let error = null;
-  const errorLine = lines.find(l => l.startsWith('Error: '));
+  const errorLine = lines.find((l) => l.startsWith('Error: '));
   if (errorLine) {
     error = errorLine.substring('Error: '.length);
   }
@@ -104,9 +109,11 @@ export function parseStatusResponse(text) {
   // Check for streaming preview or summary
   let streamingPreview = null;
   let accumulated_content = null;
-  const streamingLine = lines.find(l => l.startsWith('Streaming: "'));
-  const summaryLine = lines.find(l => l.startsWith('Summary: ') && !l.startsWith('Summary: ${'));
-  const statusSummaryLine = lines.find(l => l.startsWith('Status: '));
+  const streamingLine = lines.find((l) => l.startsWith('Streaming: "'));
+  const summaryLine = lines.find(
+    (l) => l.startsWith('Summary: ') && !l.startsWith('Summary: ${'),
+  );
+  const statusSummaryLine = lines.find((l) => l.startsWith('Status: '));
 
   if (streamingLine) {
     streamingPreview = streamingLine.match(/Streaming: "([^"]+)"/)?.[1] || null;
@@ -136,7 +143,7 @@ export function parseStatusResponse(text) {
     error,
     accumulated_content,
     title,
-    final_summary
+    final_summary,
   };
 }
 
@@ -176,7 +183,7 @@ export function parseJsonResponse(text) {
   } else {
     // Has status line - skip it and find JSON
     const lines = text.split('\n');
-    const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+    const jsonStart = lines.findIndex((line) => line.trim().startsWith('{'));
 
     if (jsonStart === -1) {
       throw new Error('No JSON found in response: ' + text.substring(0, 200));

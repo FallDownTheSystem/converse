@@ -4,7 +4,7 @@ import {
   createTestClient,
   withTestClient,
   createMultipleTestClients,
-  stopMultipleTestClients
+  stopMultipleTestClients,
 } from './MCPTestClient.js';
 
 describe('MCPTestClient', () => {
@@ -14,7 +14,7 @@ describe('MCPTestClient', () => {
     client = new MCPTestClient({
       connectionTimeout: 10000,
       operationTimeout: 5000,
-      debugMode: false
+      debugMode: false,
     });
   });
 
@@ -42,8 +42,8 @@ describe('MCPTestClient', () => {
         retryDelay: 2000,
         debugMode: true,
         serverOptions: {
-          startupTimeout: 20000
-        }
+          startupTimeout: 20000,
+        },
       });
 
       expect(customClient.options.maxRetries).toBe(5);
@@ -79,7 +79,9 @@ describe('MCPTestClient', () => {
     it('should throw error when starting already started client', async () => {
       await client.start();
 
-      await expect(client.start()).rejects.toThrow('Test client is already started');
+      await expect(client.start()).rejects.toThrow(
+        'Test client is already started',
+      );
 
       await client.stop();
     }, 20000);
@@ -93,9 +95,15 @@ describe('MCPTestClient', () => {
     }, 20000);
 
     it('should throw error when calling operations on stopped client', async () => {
-      await expect(client.listTools()).rejects.toThrow('Test client is not ready');
-      await expect(client.callTool('chat', { prompt: 'test' })).rejects.toThrow('Test client is not ready');
-      await expect(client.chat('test')).rejects.toThrow('Test client is not ready');
+      await expect(client.listTools()).rejects.toThrow(
+        'Test client is not ready',
+      );
+      await expect(client.callTool('chat', { prompt: 'test' })).rejects.toThrow(
+        'Test client is not ready',
+      );
+      await expect(client.chat('test')).rejects.toThrow(
+        'Test client is not ready',
+      );
     });
   });
 
@@ -112,7 +120,7 @@ describe('MCPTestClient', () => {
       expect(Array.isArray(tools.tools)).toBe(true);
       expect(tools.tools.length).toBeGreaterThan(0);
 
-      const toolNames = tools.tools.map(tool => tool.name);
+      const toolNames = tools.tools.map((tool) => tool.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
     });
@@ -120,7 +128,7 @@ describe('MCPTestClient', () => {
     it('should call tools using generic callTool method', async () => {
       const result = await client.callTool('chat', {
         prompt: 'Hello, test message',
-        model: 'auto'
+        model: 'auto',
       });
 
       expect(result).toBeDefined();
@@ -133,7 +141,7 @@ describe('MCPTestClient', () => {
     it('should call chat tool using simplified interface', async () => {
       const result = await client.chat('Hello, simplified test', {
         model: 'auto',
-        temperature: 0
+        temperature: 0,
       });
 
       expect(result.content).toBeDefined();
@@ -143,11 +151,13 @@ describe('MCPTestClient', () => {
     });
 
     it('should call consensus tool using simplified interface', async () => {
-      const result = await client.consensus('What is 2+2?', [
-        { model: 'auto' }
-      ], {
-        enable_cross_feedback: false
-      });
+      const result = await client.consensus(
+        'What is 2+2?',
+        [{ model: 'auto' }],
+        {
+          enable_cross_feedback: false,
+        },
+      );
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -159,7 +169,7 @@ describe('MCPTestClient', () => {
 
     it('should handle tool call timeouts', async () => {
       await expect(
-        client.callTool('chat', { prompt: 'Test timeout' }, { timeout: 1 })
+        client.callTool('chat', { prompt: 'Test timeout' }, { timeout: 1 }),
       ).rejects.toThrow('timeout');
     });
 
@@ -203,7 +213,7 @@ describe('MCPTestClient', () => {
       const operations = [
         async (client) => await client.chat('Concurrent test 1'),
         async (client) => await client.chat('Concurrent test 2'),
-        async (client) => await client.listTools()
+        async (client) => await client.listTools(),
       ];
 
       const results = await client.executeConcurrent(operations);
@@ -221,12 +231,18 @@ describe('MCPTestClient', () => {
         async (client) => await client.chat('Success test'),
         async (client) => {
           // This will throw due to timeout
-          return await client.callTool('chat', { prompt: 'Test timeout' }, { timeout: 1 });
+          return await client.callTool(
+            'chat',
+            { prompt: 'Test timeout' },
+            { timeout: 1 },
+          );
         },
-        async (client) => await client.listTools()
+        async (client) => await client.listTools(),
       ];
 
-      const results = await client.executeConcurrent(operations, { timeout: 5000 });
+      const results = await client.executeConcurrent(operations, {
+        timeout: 5000,
+      });
 
       expect(results).toHaveLength(3);
       expect(results[0].success).toBe(true);
@@ -241,13 +257,13 @@ describe('MCPTestClient', () => {
       const retryClient = new MCPTestClient({
         maxRetries: 2,
         retryDelay: 100,
-        connectionTimeout: 5000
+        connectionTimeout: 5000,
       });
 
       // This should fail and retry
-      await expect(
-        retryClient.start()
-      ).rejects.toThrow('Failed to start test client after 2 attempts');
+      await expect(retryClient.start()).rejects.toThrow(
+        'Failed to start test client after 2 attempts',
+      );
 
       expect(retryClient.isReady).toBe(false);
     });
@@ -304,7 +320,7 @@ describe('MCPTestClient', () => {
       await client.start();
 
       // Wait a bit
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const uptime = client.getDebugInfo().uptime;
       expect(uptime).toBeGreaterThan(0);
@@ -316,7 +332,7 @@ describe('MCPTestClient', () => {
   describe('Utility Functions', () => {
     it('should create test client with factory function', async () => {
       const testClient = await createTestClient({
-        connectionTimeout: 10000
+        connectionTimeout: 10000,
       });
 
       expect(testClient).toBeInstanceOf(MCPTestClient);
@@ -328,16 +344,19 @@ describe('MCPTestClient', () => {
     it('should run test with automatic client lifecycle', async () => {
       let clientReceived = null;
 
-      const result = await withTestClient(async (client) => {
-        clientReceived = client;
+      const result = await withTestClient(
+        async (client) => {
+          clientReceived = client;
 
-        expect(client.isReady).toBe(true);
+          expect(client.isReady).toBe(true);
 
-        const tools = await client.listTools();
-        expect(tools.tools.length).toBeGreaterThan(0);
+          const tools = await client.listTools();
+          expect(tools.tools.length).toBeGreaterThan(0);
 
-        return 'test-result';
-      }, { connectionTimeout: 10000 });
+          return 'test-result';
+        },
+        { connectionTimeout: 10000 },
+      );
 
       expect(result).toBe('test-result');
       expect(clientReceived).toBeDefined();
@@ -348,11 +367,14 @@ describe('MCPTestClient', () => {
       let clientRef = null;
 
       try {
-        await withTestClient(async (client) => {
-          clientRef = client;
-          expect(client.isReady).toBe(true);
-          throw new Error('Test error');
-        }, { connectionTimeout: 10000 });
+        await withTestClient(
+          async (client) => {
+            clientRef = client;
+            expect(client.isReady).toBe(true);
+            throw new Error('Test error');
+          },
+          { connectionTimeout: 10000 },
+        );
       } catch (error) {
         expect(error.message).toBe('Test error');
       }

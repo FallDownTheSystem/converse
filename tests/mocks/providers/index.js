@@ -13,7 +13,7 @@ export {
   resetAllMocks,
   MockResponseBuilder,
   MockProviderBehavior,
-  CallTracker
+  CallTracker,
 } from './base.mock.js';
 
 // Import provider creators separately to use in registry
@@ -34,7 +34,7 @@ export {
   createMockOpenAIResponse,
   createMockOpenAIStreamResponse,
   createMockOpenAIError,
-  createMockOpenAIClient
+  createMockOpenAIClient,
 } from './openai.mock.js';
 
 // Google mocks
@@ -45,7 +45,7 @@ export {
   createMockGoogleResponse,
   createMockGoogleStreamResponse,
   createMockGoogleError,
-  createMockGoogleClient
+  createMockGoogleClient,
 } from './google.mock.js';
 
 // XAI mocks
@@ -55,7 +55,7 @@ export {
   createMockXAIResponse,
   createMockXAIStreamResponse,
   createMockXAIError,
-  createMockXAIClient
+  createMockXAIClient,
 } from './xai.mock.js';
 
 // Anthropic mocks
@@ -66,7 +66,7 @@ export {
   createMockAnthropicResponse,
   createMockAnthropicStreamResponse,
   createMockAnthropicError,
-  createMockAnthropicClient
+  createMockAnthropicClient,
 } from './anthropic.mock.js';
 
 // OpenRouter mocks
@@ -78,7 +78,7 @@ export {
   createMockOpenRouterResponse,
   createMockOpenRouterStreamResponse,
   createMockOpenRouterError,
-  createMockOpenRouterClient
+  createMockOpenRouterClient,
 } from './openrouter.mock.js';
 
 // Mistral mocks
@@ -88,7 +88,7 @@ export {
   createMockMistralResponse,
   createMockMistralStreamResponse,
   createMockMistralError,
-  createMockMistralClient
+  createMockMistralClient,
 } from './mistral.mock.js';
 
 // DeepSeek mocks
@@ -98,7 +98,7 @@ export {
   createMockDeepSeekResponse,
   createMockDeepSeekStreamResponse,
   createMockDeepSeekError,
-  createMockDeepSeekClient
+  createMockDeepSeekClient,
 } from './deepseek.mock.js';
 
 /**
@@ -113,7 +113,7 @@ export function createMockProviderRegistry(providers = {}) {
     anthropic: _createMockAnthropicProvider(),
     openrouter: _createMockOpenRouterProvider(),
     mistral: _createMockMistralProvider(),
-    deepseek: _createMockDeepSeekProvider()
+    deepseek: _createMockDeepSeekProvider(),
   };
 
   return {
@@ -138,6 +138,6 @@ export function createMockProviderRegistry(providers = {}) {
 
     reset() {
       _resetAllMocks(...Object.values(this.providers));
-    }
+    },
   };
 }

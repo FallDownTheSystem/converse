@@ -12,9 +12,11 @@ import { inspect } from 'util';
  * @returns {boolean} True if console output should be suppressed
  */
 function shouldSuppressConsole() {
-  return process.env.LOG_LEVEL === 'silent' ||
-         process.env.NODE_ENV === 'test' ||
-         process.env.MCP_TRANSPORT === 'stdio';
+  return (
+    process.env.LOG_LEVEL === 'silent' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.MCP_TRANSPORT === 'stdio'
+  );
 }
 
 /**
@@ -26,7 +28,7 @@ const LOG_LEVELS = {
   warn: 1,
   info: 2,
   debug: 3,
-  trace: 4
+  trace: 4,
 };
 
 /**
@@ -37,7 +39,7 @@ let loggerConfig = {
   isDevelopment: process.env.NODE_ENV === 'development',
   enableColors: process.env.NODE_ENV !== 'production',
   enableTimestamps: true,
-  enableStackTrace: process.env.NODE_ENV === 'development'
+  enableStackTrace: process.env.NODE_ENV === 'development',
 };
 
 /**
@@ -54,7 +56,7 @@ const COLORS = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   white: '\x1b[37m',
-  gray: '\x1b[90m'
+  gray: '\x1b[90m',
 };
 
 /**
@@ -65,7 +67,7 @@ const LEVEL_COLORS = {
   warn: COLORS.yellow,
   info: COLORS.green,
   debug: COLORS.blue,
-  trace: COLORS.gray
+  trace: COLORS.gray,
 };
 
 /**
@@ -120,7 +122,7 @@ function formatError(error) {
     name: error.name,
     message: error.message,
     code: error.code,
-    details: error.details
+    details: error.details,
   };
 
   if (loggerConfig.enableStackTrace && error.stack) {
@@ -147,7 +149,10 @@ function formatData(data) {
   if (data instanceof Error) {
     const errorInfo = formatError(data);
     if (loggerConfig.isDevelopment) {
-      return inspect(errorInfo, { depth: 3, colors: loggerConfig.enableColors });
+      return inspect(errorInfo, {
+        depth: 3,
+        colors: loggerConfig.enableColors,
+      });
     }
     return JSON.stringify(errorInfo);
   }
@@ -189,12 +194,7 @@ function log(level, message, metadata = {}) {
   const context = formatContext(metadata.module, metadata.operation);
 
   // Build log parts
-  const parts = [
-    timestamp,
-    formattedLevel,
-    context,
-    message
-  ].filter(Boolean);
+  const parts = [timestamp, formattedLevel, context, message].filter(Boolean);
 
   // Output main log line
   const logLine = parts.join(' ');
@@ -296,13 +296,18 @@ export function createLogger(moduleName) {
      */
     operation(operation) {
       return {
-        error: (message, metadata = {}) => log('error', message, { ...metadata, module: moduleName, operation }),
-        warn: (message, metadata = {}) => log('warn', message, { ...metadata, module: moduleName, operation }),
-        info: (message, metadata = {}) => log('info', message, { ...metadata, module: moduleName, operation }),
-        debug: (message, metadata = {}) => log('debug', message, { ...metadata, module: moduleName, operation }),
-        trace: (message, metadata = {}) => log('trace', message, { ...metadata, module: moduleName, operation })
+        error: (message, metadata = {}) =>
+          log('error', message, { ...metadata, module: moduleName, operation }),
+        warn: (message, metadata = {}) =>
+          log('warn', message, { ...metadata, module: moduleName, operation }),
+        info: (message, metadata = {}) =>
+          log('info', message, { ...metadata, module: moduleName, operation }),
+        debug: (message, metadata = {}) =>
+          log('debug', message, { ...metadata, module: moduleName, operation }),
+        trace: (message, metadata = {}) =>
+          log('trace', message, { ...metadata, module: moduleName, operation }),
       };
-    }
+    },
   };
 }
 
@@ -335,7 +340,12 @@ export const logger = createLogger('global');
  * @param {Error} originalError - Original error
  * @returns {Error} Structured error
  */
-export function createStructuredError(message, code = 'UNKNOWN_ERROR', details = {}, originalError = null) {
+export function createStructuredError(
+  message,
+  code = 'UNKNOWN_ERROR',
+  details = {},
+  originalError = null,
+) {
   const error = new Error(message);
   error.code = code;
   error.details = details;
@@ -360,17 +370,17 @@ export function logTiming(operation, startTime, metadata = {}) {
   if (duration > 1000) {
     logger.warn(`Slow operation: ${operation}`, {
       ...metadata,
-      data: { duration: `${duration}ms` }
+      data: { duration: `${duration}ms` },
     });
   } else if (duration > 100) {
     logger.info(`Operation completed: ${operation}`, {
       ...metadata,
-      data: { duration: `${duration}ms` }
+      data: { duration: `${duration}ms` },
     });
   } else {
     logger.debug(`Operation completed: ${operation}`, {
       ...metadata,
-      data: { duration: `${duration}ms` }
+      data: { duration: `${duration}ms` },
     });
   }
 }
@@ -391,7 +401,7 @@ export function startTimer(operation, module = 'timer') {
     const duration = Date.now() - startTime;
     moduleLogger.debug(`${result}: ${operation}`, {
       ...metadata,
-      data: { duration: `${duration}ms` }
+      data: { duration: `${duration}ms` },
     });
     return duration;
   };
@@ -415,11 +425,11 @@ export function logFunction(functionName, module = 'function') {
     if (error) {
       moduleLogger.trace(`Exiting with error: ${functionName}`, {
         data: { duration: `${duration}ms` },
-        error
+        error,
       });
     } else {
       moduleLogger.trace(`Exiting: ${functionName}`, {
-        data: { duration: `${duration}ms`, result }
+        data: { duration: `${duration}ms`, result },
       });
     }
   };
@@ -439,11 +449,11 @@ export class LoggedError extends Error {
     // Log the error immediately
     if (logger) {
       logger.error(`${this.name}: ${message}`, {
-        data: { code, details }
+        data: { code, details },
       });
     } else {
       global.logger?.error(`${this.name}: ${message}`, {
-        data: { code, details }
+        data: { code, details },
       });
     }
   }

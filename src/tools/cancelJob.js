@@ -45,7 +45,9 @@ export async function cancelJobTool(args, dependencies) {
 
   if (!dependencies?.asyncJobStore) {
     debugError('CancelJob: Missing AsyncJobStore dependency');
-    return createToolError('Service not available: AsyncJobStore not configured');
+    return createToolError(
+      'Service not available: AsyncJobStore not configured',
+    );
   }
 
   const { jobRunner, asyncJobStore, config, providers } = dependencies;
@@ -53,7 +55,9 @@ export async function cancelJobTool(args, dependencies) {
   try {
     // Validate continuation_id
     if (!continuation_id || typeof continuation_id !== 'string') {
-      return createToolError('Invalid continuation_id: must be a non-empty string');
+      return createToolError(
+        'Invalid continuation_id: must be a non-empty string',
+      );
     }
 
     debugLog(`CancelJob: Attempting to cancel job ${continuation_id}`);
@@ -68,14 +72,17 @@ export async function cancelJobTool(args, dependencies) {
       });
     }
 
-    debugLog(`CancelJob: Found job ${continuation_id} with status: ${jobState.status}`);
+    debugLog(
+      `CancelJob: Found job ${continuation_id} with status: ${jobState.status}`,
+    );
 
     // Check if job is in a cancellable state
     const cancellableStatuses = ['queued', 'running'];
     if (!cancellableStatuses.includes(jobState.status)) {
-      const message = jobState.status === 'cancelled'
-        ? `Job ${continuation_id} is already cancelled`
-        : `Job ${continuation_id} cannot be cancelled (status: ${jobState.status})`;
+      const message =
+        jobState.status === 'cancelled'
+          ? `Job ${continuation_id} is already cancelled`
+          : `Job ${continuation_id} cannot be cancelled (status: ${jobState.status})`;
 
       return createToolResponse({
         status: 'not_cancellable',
@@ -95,7 +102,9 @@ export async function cancelJobTool(args, dependencies) {
       const updatedJobState = await asyncJobStore.get(continuation_id);
 
       // Calculate actual elapsed time from job creation
-      const elapsedMs = Date.now() - (updatedJobState?.createdAt || jobState.createdAt || Date.now());
+      const elapsedMs =
+        Date.now() -
+        (updatedJobState?.createdAt || jobState.createdAt || Date.now());
       const elapsedSeconds = elapsedMs / 1000;
 
       // Format elapsed time
@@ -113,7 +122,9 @@ export async function cancelJobTool(args, dependencies) {
 
       // Status line with proper timing
       const statusEmoji = '⛔';
-      const startTime = updatedJobState?.createdAt ? new Date(updatedJobState.createdAt).toLocaleString() : 'unknown';
+      const startTime = updatedJobState?.createdAt
+        ? new Date(updatedJobState.createdAt).toLocaleString()
+        : 'unknown';
 
       let statusLine = `${statusEmoji} CANCELLED | ${updatedJobState?.tool?.toUpperCase() || jobState.tool?.toUpperCase() || 'UNKNOWN'} | ${continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
 
@@ -130,9 +141,10 @@ export async function cancelJobTool(args, dependencies) {
 
       // Add partial results info if available
       if (updatedJobState?.accumulated_content) {
-        const preview = updatedJobState.accumulated_content.length > 200
-          ? updatedJobState.accumulated_content.substring(0, 200) + '...'
-          : updatedJobState.accumulated_content;
+        const preview =
+          updatedJobState.accumulated_content.length > 200
+            ? updatedJobState.accumulated_content.substring(0, 200) + '...'
+            : updatedJobState.accumulated_content;
         parts.push(`Partial results available: "${preview}"`);
       } else if (updatedJobState?.result) {
         parts.push('Partial results available in job state');
@@ -149,11 +161,15 @@ export async function cancelJobTool(args, dependencies) {
           cancelled_at: new Date().toISOString(),
           previous_status: jobState.status,
           elapsed_seconds: elapsedSeconds,
-          has_partial_results: !!(updatedJobState?.result || updatedJobState?.accumulated_content)
-        }
+          has_partial_results: !!(
+            updatedJobState?.result || updatedJobState?.accumulated_content
+          ),
+        },
       });
     } else {
-      debugLog(`CancelJob: Failed to cancel job ${continuation_id} - may have completed`);
+      debugLog(
+        `CancelJob: Failed to cancel job ${continuation_id} - may have completed`,
+      );
 
       // Job may have completed between our checks
       const currentJobState = await asyncJobStore.get(continuation_id);
@@ -165,14 +181,10 @@ export async function cancelJobTool(args, dependencies) {
         current_status: currentJobState?.status || 'unknown',
       });
     }
-
   } catch (error) {
     debugError(`CancelJob: Error cancelling job ${continuation_id}:`, error);
 
-    return createToolError(
-      `Failed to cancel job ${continuation_id}`,
-      error
-    );
+    return createToolError(`Failed to cancel job ${continuation_id}`, error);
   }
 }
 

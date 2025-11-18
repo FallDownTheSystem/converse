@@ -5,6 +5,7 @@ This directory contains integration tests for all supported AI providers. Tests 
 ## Test Structure
 
 Each provider has its own subdirectory containing:
+
 - `*-api.test.js` - Basic API functionality tests
 - `*-features.test.js` - Provider-specific feature tests
 - `*-image.test.js` - Image processing tests (where supported)
@@ -13,17 +14,20 @@ Each provider has its own subdirectory containing:
 ## Provider Directories
 
 ### Main Providers
+
 - `openai/` - OpenAI GPT models
 - `google/` - Google Gemini models
 - `xai/` - XAI Grok models
 
 ### Additional Providers
+
 - `anthropic/` - Anthropic Claude models
 - `deepseek/` - DeepSeek models
 - `mistral/` - Mistral AI models
 - `openrouter/` - OpenRouter proxy service
 
 ### Multi-Provider Tests
+
 - `multi-provider.test.js` - Cross-provider consensus tests
 - `multi-provider-error.test.js` - Error handling across providers
 - `multi-provider-advanced.test.js` - Advanced scenarios and consistency tests
@@ -49,6 +53,7 @@ OPENAI_API_KEY=sk-... npm run test:integration:providers
 ## Test Categories
 
 ### API Tests (`*-api.test.js`)
+
 - Basic chat functionality
 - Model-specific behavior
 - Conversation continuity
@@ -56,18 +61,21 @@ OPENAI_API_KEY=sk-... npm run test:integration:providers
 - Performance benchmarks
 
 ### Feature Tests (`*-features.test.js`)
+
 - Provider-specific capabilities
 - Advanced model features
 - Multi-model support within provider
 - Special parameters (thinking modes, reasoning effort, etc.)
 
 ### Image Tests (`*-image.test.js`)
+
 - Image processing capabilities
 - Multi-modal conversations
 - Base64 and file path support
 - Multiple image handling
 
 ### Error Tests (`*-error.test.js`)
+
 - Rate limiting behavior
 - Invalid input handling
 - Network error recovery
@@ -97,11 +105,13 @@ OPENAI_API_KEY=sk-... npm run test:integration:providers
 ## Debugging
 
 To see detailed logs during test execution:
+
 ```bash
 LOG_LEVEL=debug npm test -- tests/integration/providers/openai
 ```
 
 To run in watch mode for development:
+
 ```bash
 npm run test:watch -- tests/integration/providers/openai
 ```

@@ -20,8 +20,16 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: true,
     timeout: 300000, // 5 minutes
-    description: 'GROK-4 (256K context) - Latest advanced model from X.AI with image support and live search',
-    aliases: ['grok', 'grok4', 'grok-4', 'grok-4-latest', 'grok 4', 'grok 4 latest']
+    description:
+      'GROK-4 (256K context) - Latest advanced model from X.AI with image support and live search',
+    aliases: [
+      'grok',
+      'grok4',
+      'grok-4',
+      'grok-4-latest',
+      'grok 4',
+      'grok 4 latest',
+    ],
   },
   'grok-4-fast-reasoning': {
     modelName: 'grok-4-fast-reasoning',
@@ -36,8 +44,14 @@ const SUPPORTED_MODELS = {
     supportsFunctionCalling: true,
     supportsStructuredOutputs: true,
     timeout: 300000, // 5 minutes
-    description: 'GROK-4 Fast Reasoning (2M context) - Cost-efficient reasoning model with function calling and structured outputs',
-    aliases: ['grok-4-fast', 'grok-4-fast-reasoning-latest', 'grok 4 fast', 'grok 4 fast reasoning']
+    description:
+      'GROK-4 Fast Reasoning (2M context) - Cost-efficient reasoning model with function calling and structured outputs',
+    aliases: [
+      'grok-4-fast',
+      'grok-4-fast-reasoning-latest',
+      'grok 4 fast',
+      'grok 4 fast reasoning',
+    ],
   },
   'grok-4-fast-non-reasoning': {
     modelName: 'grok-4-fast-non-reasoning',
@@ -52,8 +66,9 @@ const SUPPORTED_MODELS = {
     supportsFunctionCalling: true,
     supportsStructuredOutputs: true,
     timeout: 300000, // 5 minutes
-    description: 'GROK-4 Fast Non-Reasoning (2M context) - Fast, cost-efficient model without reasoning for quick responses',
-    aliases: ['grok-4-fast-non-reasoning-latest', 'grok 4 fast non-reasoning']
+    description:
+      'GROK-4 Fast Non-Reasoning (2M context) - Fast, cost-efficient model without reasoning for quick responses',
+    aliases: ['grok-4-fast-non-reasoning-latest', 'grok 4 fast non-reasoning'],
   },
   'grok-code-fast-1': {
     modelName: 'grok-code-fast-1',
@@ -65,8 +80,14 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000, // 5 minutes
-    description: 'GROK Code Fast 1 (256K context) - Speedy and economical reasoning model that excels at agentic coding',
-    aliases: ['grok-code-fast', 'grok-code-fast-1-0825', 'grok code fast', 'grok code fast 1']
+    description:
+      'GROK Code Fast 1 (256K context) - Speedy and economical reasoning model that excels at agentic coding',
+    aliases: [
+      'grok-code-fast',
+      'grok-code-fast-1-0825',
+      'grok code fast',
+      'grok code fast 1',
+    ],
   },
 };
 
@@ -132,17 +153,26 @@ function convertMessages(messages) {
 
   return messages.map((msg, index) => {
     if (!msg || typeof msg !== 'object') {
-      throw new XAIProviderError(`Message at index ${index} must be an object`, 'INVALID_MESSAGE');
+      throw new XAIProviderError(
+        `Message at index ${index} must be an object`,
+        'INVALID_MESSAGE',
+      );
     }
 
     const { role, content } = msg;
 
     if (!role || !['system', 'user', 'assistant'].includes(role)) {
-      throw new XAIProviderError(`Invalid role "${role}" at message index ${index}`, 'INVALID_ROLE');
+      throw new XAIProviderError(
+        `Invalid role "${role}" at message index ${index}`,
+        'INVALID_ROLE',
+      );
     }
 
     if (!content) {
-      throw new XAIProviderError(`Message content is required at index ${index}`, 'MISSING_CONTENT');
+      throw new XAIProviderError(
+        `Message content is required at index ${index}`,
+        'MISSING_CONTENT',
+      );
     }
 
     // Handle complex content structure (array with text and images)
@@ -153,7 +183,7 @@ function convertMessages(messages) {
         if (item.type === 'text') {
           convertedContent.push({
             type: 'text',
-            text: item.text
+            text: item.text,
           });
         } else if (item.type === 'image' && item.source) {
           // Convert Anthropic/Claude format to OpenAI format for XAI
@@ -161,10 +191,12 @@ function convertMessages(messages) {
             type: 'image_url',
             image_url: {
               url: `data:${item.source.media_type};base64,${item.source.data}`,
-              detail: 'high'
-            }
+              detail: 'high',
+            },
           });
-          debugLog(`[XAI] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+          debugLog(
+            `[XAI] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`,
+          );
         }
       }
 
@@ -201,11 +233,17 @@ export const xaiProvider = {
 
     // Validate API key
     if (!config?.apiKeys?.xai) {
-      throw new XAIProviderError('XAI API key not configured', 'MISSING_API_KEY');
+      throw new XAIProviderError(
+        'XAI API key not configured',
+        'MISSING_API_KEY',
+      );
     }
 
     if (!validateApiKey(config.apiKeys.xai)) {
-      throw new XAIProviderError('Invalid XAI API key format', 'INVALID_API_KEY');
+      throw new XAIProviderError(
+        'Invalid XAI API key format',
+        'INVALID_API_KEY',
+      );
     }
 
     // Get base URL from config or use default
@@ -225,14 +263,15 @@ export const xaiProvider = {
     const xaiMessages = convertMessages(messages);
 
     // Filter out unsupported parameters for XAI/Grok models
-    const { reasoning_effort: _unused_reasoning_effort, ...supportedOptions } = otherOptions;
+    const { reasoning_effort: _unused_reasoning_effort, ...supportedOptions } =
+      otherOptions;
 
     // Build request payload
     const requestPayload = {
       model: resolvedModel,
       messages: xaiMessages,
       stream,
-      ...supportedOptions
+      ...supportedOptions,
     };
 
     // Add temperature (all Grok models support temperature)
@@ -242,13 +281,16 @@ export const xaiProvider = {
 
     // Add max tokens if specified
     if (maxTokens) {
-      requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 256000);
+      requestPayload.max_tokens = Math.min(
+        maxTokens,
+        modelConfig.maxOutputTokens || 256000,
+      );
     }
 
     // Add web search parameters if requested and model supports it
     if (use_websearch && modelConfig.supportsWebSearch) {
       requestPayload.search_parameters = {
-        mode: 'auto' // Let the model decide when to use web search
+        mode: 'auto', // Let the model decide when to use web search
       };
     }
 
@@ -259,20 +301,31 @@ export const xaiProvider = {
 
     // If streaming is requested and model doesn't support it, fall back to non-streaming
     if (stream && modelConfig.supportsStreaming === false) {
-      debugLog(`[XAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+      debugLog(
+        `[XAI] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`,
+      );
       requestPayload.stream = false;
     }
 
     // Handle streaming requests
     if (stream && requestPayload.stream !== false) {
-      return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch, signal);
+      return this._createStreamingGenerator(
+        openai,
+        requestPayload,
+        resolvedModel,
+        modelConfig,
+        use_websearch,
+        signal,
+      );
     }
 
     // Note: XAI/Grok models don't currently support reasoning_effort parameter
     // We silently ignore it for API consistency (no need to log warnings in tests)
 
     try {
-      debugLog(`[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with live search)' : ''}`);
+      debugLog(
+        `[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with live search)' : ''}`,
+      );
 
       // Check if already aborted before making request
       if (signal?.aborted) {
@@ -294,12 +347,18 @@ export const xaiProvider = {
       // Extract response data
       const choice = response.choices[0];
       if (!choice) {
-        throw new XAIProviderError('No response choice received from XAI', 'NO_RESPONSE_CHOICE');
+        throw new XAIProviderError(
+          'No response choice received from XAI',
+          'NO_RESPONSE_CHOICE',
+        );
       }
 
       const content = choice.message?.content;
       if (!content) {
-        throw new XAIProviderError('No content in response from XAI', 'NO_RESPONSE_CONTENT');
+        throw new XAIProviderError(
+          'No content in response from XAI',
+          'NO_RESPONSE_CONTENT',
+        );
       }
 
       // Extract usage information
@@ -315,38 +374,61 @@ export const xaiProvider = {
           usage: {
             input_tokens: usage.prompt_tokens || 0,
             output_tokens: usage.completion_tokens || 0,
-            total_tokens: usage.total_tokens || 0
+            total_tokens: usage.total_tokens || 0,
           },
           response_time_ms: responseTime,
           finish_reason: choice.finish_reason,
           provider: 'xai',
-          web_search_used: use_websearch && modelConfig.supportsWebSearch
-        }
+          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+        },
       };
-
     } catch (error) {
       debugError('[XAI] Error during API call:', error);
 
       // Handle specific XAI/OpenAI compatible errors
       if (error.code === 'insufficient_quota') {
-        throw new XAIProviderError('XAI API quota exceeded', 'QUOTA_EXCEEDED', error);
+        throw new XAIProviderError(
+          'XAI API quota exceeded',
+          'QUOTA_EXCEEDED',
+          error,
+        );
       } else if (error.code === 'invalid_api_key') {
-        throw new XAIProviderError('Invalid XAI API key', 'INVALID_API_KEY', error);
+        throw new XAIProviderError(
+          'Invalid XAI API key',
+          'INVALID_API_KEY',
+          error,
+        );
       } else if (error.code === 'model_not_found') {
-        throw new XAIProviderError(`Model ${resolvedModel} not found`, 'MODEL_NOT_FOUND', error);
+        throw new XAIProviderError(
+          `Model ${resolvedModel} not found`,
+          'MODEL_NOT_FOUND',
+          error,
+        );
       } else if (error.code === 'context_length_exceeded') {
-        throw new XAIProviderError('Context length exceeded for model', 'CONTEXT_LENGTH_EXCEEDED', error);
+        throw new XAIProviderError(
+          'Context length exceeded for model',
+          'CONTEXT_LENGTH_EXCEEDED',
+          error,
+        );
       } else if (error.type === 'invalid_request_error') {
-        throw new XAIProviderError(`Invalid request: ${error.message}`, 'INVALID_REQUEST', error);
+        throw new XAIProviderError(
+          `Invalid request: ${error.message}`,
+          'INVALID_REQUEST',
+          error,
+        );
       } else if (error.type === 'rate_limit_error') {
-        throw new XAIProviderError('XAI rate limit exceeded', 'RATE_LIMIT_EXCEEDED', error);
+        throw new XAIProviderError(
+          'XAI rate limit exceeded',
+          'RATE_LIMIT_EXCEEDED',
+          error,
+        );
       }
 
       // Generic error handling
       throw new XAIProviderError(
         `XAI API error: ${error.message || 'Unknown error'}`,
         'API_ERROR',
-        error
+        error,
       );
     }
   },
@@ -361,10 +443,22 @@ export const xaiProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
-  async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, use_websearch, signal) {
-    const searchInfo = (use_websearch && modelConfig.supportsWebSearch) ? ' (with live search)' : '';
+  async *_createStreamingGenerator(
+    openai,
+    requestPayload,
+    resolvedModel,
+    modelConfig,
+    use_websearch,
+    signal,
+  ) {
+    const searchInfo =
+      use_websearch && modelConfig.supportsWebSearch
+        ? ' (with live search)'
+        : '';
 
-    debugLog(`[XAI] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages${searchInfo}`);
+    debugLog(
+      `[XAI] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages${searchInfo}`,
+    );
 
     const startTime = Date.now();
     let totalContent = '';
@@ -385,7 +479,7 @@ export const xaiProvider = {
         type: 'start',
         timestamp: new Date().toISOString(),
         model: resolvedModel,
-        provider: 'xai'
+        provider: 'xai',
       };
 
       // Create stream using OpenAI SDK with XAI base URL and abort signal support
@@ -400,7 +494,9 @@ export const xaiProvider = {
         try {
           // Check for cancellation during stream processing
           if (signal?.aborted) {
-            debugLog(`[XAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            debugLog(
+              `[XAI] Stream aborted during processing: ${signal.reason || 'Cancelled'}`,
+            );
             break;
           }
           // Handle Chat Completions API streaming format (XAI uses OpenAI-compatible format)
@@ -412,7 +508,7 @@ export const xaiProvider = {
               yield {
                 type: 'delta',
                 content,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
               };
             }
 
@@ -446,15 +542,17 @@ export const xaiProvider = {
             error: {
               message: `Chunk processing error: ${chunkError.message}`,
               code: 'CHUNK_PROCESSING_ERROR',
-              recoverable: true
+              recoverable: true,
             },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
       }
 
       const responseTime = Date.now() - startTime;
-      debugLog(`[XAI] Streaming completed in ${responseTime}ms${searchSourcesUsed > 0 ? ` (used ${searchSourcesUsed} search sources)` : ''}`);
+      debugLog(
+        `[XAI] Streaming completed in ${responseTime}ms${searchSourcesUsed > 0 ? ` (used ${searchSourcesUsed} search sources)` : ''}`,
+      );
 
       // Yield usage information if available
       if (lastUsage) {
@@ -463,9 +561,9 @@ export const xaiProvider = {
           usage: {
             input_tokens: lastUsage.prompt_tokens || 0,
             output_tokens: lastUsage.completion_tokens || 0,
-            total_tokens: lastUsage.total_tokens || 0
+            total_tokens: lastUsage.total_tokens || 0,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
 
         // Add search-specific usage information
@@ -486,12 +584,12 @@ export const xaiProvider = {
         usage: {
           input_tokens: lastUsage?.prompt_tokens || 0,
           output_tokens: lastUsage?.completion_tokens || 0,
-          total_tokens: lastUsage?.total_tokens || 0
+          total_tokens: lastUsage?.total_tokens || 0,
         },
         response_time_ms: responseTime,
         finish_reason: finishReason || 'stop',
         provider: 'xai',
-        web_search_used: webSearchUsed
+        web_search_used: webSearchUsed,
       };
 
       // Add search-specific metadata
@@ -510,9 +608,8 @@ export const xaiProvider = {
         content: totalContent,
         stop_reason: finishReason || 'stop',
         metadata,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       debugError('[XAI] Streaming error:', error);
 
@@ -549,9 +646,9 @@ export const xaiProvider = {
           message: errorMessage,
           code: errorCode,
           recoverable,
-          originalError: error.message
+          originalError: error.message,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // Re-throw to maintain error propagation
@@ -593,5 +690,5 @@ export const xaiProvider = {
   getModelConfig(modelName) {
     const resolved = resolveModelName(modelName);
     return SUPPORTED_MODELS[resolved] || null;
-  }
+  },
 };

@@ -15,7 +15,7 @@ import {
   formatJobStatus,
   formatHumanReadableStatus,
   formatJobListHumanReadable,
-  formatConversationHistory
+  formatConversationHistory,
 } from '../utils/formatStatus.js';
 
 const logger = createLogger('check-status');
@@ -33,10 +33,7 @@ export async function checkStatusTool(args, dependencies) {
     const { config, providers } = dependencies;
 
     // Extract and validate arguments
-    const {
-      continuation_id,
-      full_history = false
-    } = args;
+    const { continuation_id, full_history = false } = args;
 
     // Validate arguments
     if (continuation_id && typeof continuation_id !== 'string') {
@@ -48,7 +45,7 @@ export async function checkStatusTool(args, dependencies) {
 
     debugLog('checkStatus', 'Processing status query', {
       continuation_id,
-      full_history
+      full_history,
     });
 
     if (continuation_id) {
@@ -58,52 +55,58 @@ export async function checkStatusTool(args, dependencies) {
         asyncJobStore,
         fileCache,
         {
-          include_output: true,  // Always include output
-          full_history
-        }
+          include_output: true, // Always include output
+          full_history,
+        },
       );
 
       if (!jobStatus) {
-        return createToolError(`Job not found or access denied: ${continuation_id}`);
+        return createToolError(
+          `Job not found or access denied: ${continuation_id}`,
+        );
       }
 
       // Format content as human-readable status (now async)
       const content = full_history
-        ? await formatConversationHistory(jobStatus, continuation_id, { config, providers })
-        : await formatHumanReadableStatus(jobStatus, { sequence: '1/1' }, { config, providers });
+        ? await formatConversationHistory(jobStatus, continuation_id, {
+          config,
+          providers,
+        })
+        : await formatHumanReadableStatus(
+          jobStatus,
+          { sequence: '1/1' },
+          { config, providers },
+        );
 
       return createToolResponse({
         content,
         metadata: {
           continuation_id,
           execution_time: (Date.now() - startTime) / 1000,
-          full_history
-        }
+          full_history,
+        },
       });
-
     } else {
       // List all active/recent jobs (hardcoded to 10 latest)
-      const jobsList = await listAllJobs(
-        asyncJobStore,
-        fileCache,
-        {
-          include_output: true,  // Always include output
-          max_results: 10
-        }
-      );
+      const jobsList = await listAllJobs(asyncJobStore, fileCache, {
+        include_output: true, // Always include output
+        max_results: 10,
+      });
 
       // Format content as human-readable jobs list (now async)
-      const content = await formatJobListHumanReadable(jobsList, { config, providers });
+      const content = await formatJobListHumanReadable(jobsList, {
+        config,
+        providers,
+      });
 
       return createToolResponse({
         content,
         metadata: {
           execution_time: (Date.now() - startTime) / 1000,
-          total_jobs: jobsList.jobs.length
-        }
+          total_jobs: jobsList.jobs.length,
+        },
       });
     }
-
   } catch (error) {
     debugError('checkStatus', 'Tool execution failed:', error);
     return createToolError('Failed to check job status', error);
@@ -118,7 +121,12 @@ export async function checkStatusTool(args, dependencies) {
  * @param {object} options - Query options
  * @returns {object|null} Job status or null if not found
  */
-async function querySpecificJob(continuationId, asyncJobStore, fileCache, options = {}) {
+async function querySpecificJob(
+  continuationId,
+  asyncJobStore,
+  fileCache,
+  options = {},
+) {
   try {
     // First try memory store (AsyncJobStore)
     const memoryJob = await asyncJobStore.get(continuationId);
@@ -135,7 +143,6 @@ async function querySpecificJob(continuationId, asyncJobStore, fileCache, option
     // Job not found
     debugLog('checkStatus', 'Job not found', { continuationId });
     return null;
-
   } catch (error) {
     debugError('checkStatus', 'Error querying specific job:', error);
     throw error;
@@ -157,7 +164,7 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
       completed_jobs: 0,
       failed_jobs: 0,
       cancelled_jobs: 0,
-      total_jobs: 0
+      total_jobs: 0,
     };
 
     // Get stats from AsyncJobStore to understand what's in memory
@@ -192,41 +199,53 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
 
     // If we haven't reached 10 jobs, try to get more from FileCache
     if (jobs.length < 10 && fileCache) {
-      debugLog('checkStatus', `Have ${jobs.length} jobs from memory, checking FileCache for additional completed jobs`);
+      debugLog(
+        'checkStatus',
+        `Have ${jobs.length} jobs from memory, checking FileCache for additional completed jobs`,
+      );
 
       try {
         // Get recent jobs from FileCache
         const remainingLimit = 10 - jobs.length;
         const cachedJobs = await fileCache.listRecentJobs({
           limit: remainingLimit,
-          daysBack: 3
+          daysBack: 3,
         });
 
-        debugLog('checkStatus', `Found ${cachedJobs.length} additional jobs in FileCache`);
+        debugLog(
+          'checkStatus',
+          `Found ${cachedJobs.length} additional jobs in FileCache`,
+        );
 
         // Format and add cached jobs to the list
         for (const cachedJob of cachedJobs) {
           // Check if this job is already in our list (avoid duplicates)
-          const isDuplicate = jobs.some(j => j.continuation_id === cachedJob.jobId);
+          const isDuplicate = jobs.some(
+            (j) => j.continuation_id === cachedJob.jobId,
+          );
           if (!isDuplicate) {
             // Format the cached job to match our standard format
-            const formattedJob = formatJobStatus({
-              jobId: cachedJob.jobId,
-              status: cachedJob.status || 'completed',
-              tool: cachedJob.tool || 'unknown',
-              createdAt: cachedJob.createdAt || cachedJob.startedAt,
-              updatedAt: cachedJob.completedAt || cachedJob.updatedAt || Date.now(),
-              overall: {
-                result: cachedJob.result || cachedJob,
-                progress: 100,
-                startedAt: cachedJob.startedAt,
-                endedAt: cachedJob.completedAt
+            const formattedJob = formatJobStatus(
+              {
+                jobId: cachedJob.jobId,
+                status: cachedJob.status || 'completed',
+                tool: cachedJob.tool || 'unknown',
+                createdAt: cachedJob.createdAt || cachedJob.startedAt,
+                updatedAt:
+                  cachedJob.completedAt || cachedJob.updatedAt || Date.now(),
+                overall: {
+                  result: cachedJob.result || cachedJob,
+                  progress: 100,
+                  startedAt: cachedJob.startedAt,
+                  endedAt: cachedJob.completedAt,
+                },
+                provider: cachedJob.provider,
+                model: cachedJob.model,
+                title: cachedJob.title,
+                final_summary: cachedJob.final_summary,
               },
-              provider: cachedJob.provider,
-              model: cachedJob.model,
-              title: cachedJob.title,
-              final_summary: cachedJob.final_summary
-            }, options);
+              options,
+            );
 
             jobs.push(formattedJob);
 
@@ -244,7 +263,11 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
           }
         }
       } catch (error) {
-        debugError('checkStatus', 'Error retrieving jobs from FileCache:', error);
+        debugError(
+          'checkStatus',
+          'Error retrieving jobs from FileCache:',
+          error,
+        );
         // Continue without cached jobs if there's an error
       }
     }
@@ -253,12 +276,11 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
       jobs,
       summary,
       query_options: {
-        include_output: true,  // Always include output
-        max_results: 10
+        include_output: true, // Always include output
+        max_results: 10,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-
   } catch (error) {
     debugError('checkStatus', 'Error listing session jobs:', error);
     throw error;
@@ -276,7 +298,7 @@ async function getAllJobsFromStore(asyncJobStore, options = {}) {
     return await asyncJobStore.getAllJobs({
       limit: 10,
       sortBy: 'updatedAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   } catch (error) {
     debugError('checkStatus', 'Error getting all jobs:', error);
@@ -284,25 +306,24 @@ async function getAllJobsFromStore(asyncJobStore, options = {}) {
   }
 }
 
-
-
-
-
 // Tool metadata and input schema
-checkStatusTool.description = 'Check the status and progress of async jobs. Query specific jobs by continuation_id or list the 10 most recent jobs. Returns job status with start time and progress information.';
+checkStatusTool.description =
+  'Check the status and progress of async jobs. Query specific jobs by continuation_id or list the 10 most recent jobs. Returns job status with start time and progress information.';
 
 checkStatusTool.inputSchema = {
   type: 'object',
   properties: {
     continuation_id: {
       type: 'string',
-      description: 'Optional job continuation ID to query. If not provided, returns the 10 most recent jobs.'
+      description:
+        'Optional job continuation ID to query. If not provided, returns the 10 most recent jobs.',
     },
     full_history: {
       type: 'boolean',
       default: false,
-      description: 'When used with continuation_id, returns the full conversation history for that continuation ID. Only use when there are multiple turns and you need the full conversation.'
-    }
+      description:
+        'When used with continuation_id, returns the full conversation history for that continuation ID. Only use when there are multiple turns and you need the full conversation.',
+    },
   },
-  additionalProperties: false
+  additionalProperties: false,
 };

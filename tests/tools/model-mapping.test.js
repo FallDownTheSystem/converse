@@ -66,7 +66,7 @@ describe('Model Mapping', () => {
         ['k2', 'openrouter'],
 
         // Auto model
-        ['auto', 'openai']
+        ['auto', 'openai'],
       ];
 
       // Since we can't directly test mapModelToProvider, we verify the expected behavior
@@ -80,17 +80,17 @@ describe('Model Mapping', () => {
     it('should route slash models to OpenRouter if not in native provider', () => {
       // Models with slashes that don't exist in native providers should go to OpenRouter
       const openRouterModels = [
-        'anthropic/claude-4-opus',  // Doesn't exist yet
-        'anthropic/sonnet-4',       // Not a real model format
-        'google/gemini-3.0-ultra',  // Doesn't exist
-        'openai/gpt-5',             // Doesn't exist
-        'mistral/mega-large',       // Doesn't exist
-        'meta-llama/llama-3',       // Would go to OpenRouter
+        'anthropic/claude-4-opus', // Doesn't exist yet
+        'anthropic/sonnet-4', // Not a real model format
+        'google/gemini-3.0-ultra', // Doesn't exist
+        'openai/gpt-5', // Doesn't exist
+        'mistral/mega-large', // Doesn't exist
+        'meta-llama/llama-3', // Would go to OpenRouter
         'qwen/qwen3-235b-a22b-thinking-2507', // OpenRouter model
-        'moonshotai/kimi-k2'        // OpenRouter model
+        'moonshotai/kimi-k2', // OpenRouter model
       ];
 
-      openRouterModels.forEach(model => {
+      openRouterModels.forEach((model) => {
         expect(model).toContain('/');
       });
     });
@@ -101,11 +101,11 @@ describe('Model Mapping', () => {
         'openrouter auto',
         'auto router',
         'auto-router',
-        'openrouter-auto'
+        'openrouter-auto',
       ];
 
       // All these should be recognized as OpenRouter models
-      autoVariations.forEach(model => {
+      autoVariations.forEach((model) => {
         expect(typeof model).toBe('string');
       });
     });
@@ -129,23 +129,39 @@ describe('Model Mapping', () => {
       // Models that should exist in native providers
       expect(providers.openai.getModelConfig('gpt-4o')).toBeTruthy();
       expect(providers.openai.getModelConfig('o3')).toBeTruthy();
-      expect(providers.anthropic.getModelConfig('claude-3-5-sonnet-20241022')).toBeTruthy();
+      expect(
+        providers.anthropic.getModelConfig('claude-3-5-sonnet-20241022'),
+      ).toBeTruthy();
       expect(providers.google.getModelConfig('gemini-2.5-flash')).toBeTruthy();
 
       // Models that don't exist in native providers (should return null)
       expect(providers.openai.getModelConfig('openai/gpt-5')).toBeFalsy();
-      expect(providers.anthropic.getModelConfig('anthropic/claude-4-opus')).toBeFalsy();
+      expect(
+        providers.anthropic.getModelConfig('anthropic/claude-4-opus'),
+      ).toBeFalsy();
       expect(providers.google.getModelConfig('google/gemini-3.0')).toBeFalsy();
 
       // OpenRouter models
-      expect(providers.openrouter.getModelConfig('qwen/qwen3-235b-a22b-thinking-2507')).toBeTruthy();
-      expect(providers.openrouter.getModelConfig('moonshotai/kimi-k2')).toBeTruthy();
-      expect(providers.openrouter.getModelConfig('openrouter/auto')).toBeTruthy();
+      expect(
+        providers.openrouter.getModelConfig(
+          'qwen/qwen3-235b-a22b-thinking-2507',
+        ),
+      ).toBeTruthy();
+      expect(
+        providers.openrouter.getModelConfig('moonshotai/kimi-k2'),
+      ).toBeTruthy();
+      expect(
+        providers.openrouter.getModelConfig('openrouter/auto'),
+      ).toBeTruthy();
 
       // Test aliases
-      expect(providers.openrouter.getModelConfig('qwen3-thinking')).toBeTruthy();
+      expect(
+        providers.openrouter.getModelConfig('qwen3-thinking'),
+      ).toBeTruthy();
       expect(providers.openrouter.getModelConfig('kimi-k2')).toBeTruthy();
-      expect(providers.openrouter.getModelConfig('openrouter auto')).toBeTruthy();
+      expect(
+        providers.openrouter.getModelConfig('openrouter auto'),
+      ).toBeTruthy();
     });
   });
 
@@ -159,41 +175,45 @@ describe('Model Mapping', () => {
         {
           model: 'claude-3-5-sonnet-20241022',
           shouldExistIn: 'anthropic',
-          reason: 'Exact model exists in Anthropic provider'
+          reason: 'Exact model exists in Anthropic provider',
         },
         {
           model: 'anthropic/claude-4-opus',
           shouldNotExistIn: 'anthropic',
           shouldRouteTo: 'openrouter',
-          reason: 'Slash format but model does not exist in Anthropic'
+          reason: 'Slash format but model does not exist in Anthropic',
         },
         {
           model: 'gpt-4o',
           shouldExistIn: 'openai',
-          reason: 'Simple name exists in OpenAI'
+          reason: 'Simple name exists in OpenAI',
         },
         {
           model: 'openai/gpt-5',
           shouldNotExistIn: 'openai',
           shouldRouteTo: 'openrouter',
-          reason: 'Slash format but model does not exist in OpenAI'
+          reason: 'Slash format but model does not exist in OpenAI',
         },
         {
           model: 'qwen/qwen3-235b-a22b-thinking-2507',
           shouldExistIn: 'openrouter',
-          reason: 'OpenRouter-specific model'
-        }
+          reason: 'OpenRouter-specific model',
+        },
       ];
 
-      scenarios.forEach(scenario => {
+      scenarios.forEach((scenario) => {
         if (scenario.shouldExistIn) {
-          const config = providers[scenario.shouldExistIn].getModelConfig(scenario.model);
+          const config = providers[scenario.shouldExistIn].getModelConfig(
+            scenario.model,
+          );
           expect(config).toBeTruthy();
           expect(config.modelName).toBe(scenario.model);
         }
 
         if (scenario.shouldNotExistIn) {
-          const config = providers[scenario.shouldNotExistIn].getModelConfig(scenario.model);
+          const config = providers[scenario.shouldNotExistIn].getModelConfig(
+            scenario.model,
+          );
           expect(config).toBeFalsy();
         }
       });

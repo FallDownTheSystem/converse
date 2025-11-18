@@ -25,8 +25,16 @@ const SUPPORTED_MODELS = {
     supportsChatPrefixCompletion: true, // Beta
     supportsFIMCompletion: true, // Beta
     timeout: 300000,
-    description: 'DeepSeek-V3-0324 - Strong MoE model with 671B total/37B active parameters',
-    aliases: ['deepseek', 'chat', 'deepseek chat', 'deepseek-v3', 'deepseek-chat-v3', 'deepseek v3']
+    description:
+      'DeepSeek-V3-0324 - Strong MoE model with 671B total/37B active parameters',
+    aliases: [
+      'deepseek',
+      'chat',
+      'deepseek chat',
+      'deepseek-v3',
+      'deepseek-chat-v3',
+      'deepseek v3',
+    ],
   },
   'deepseek-reasoner': {
     modelName: 'deepseek-reasoner',
@@ -44,9 +52,18 @@ const SUPPORTED_MODELS = {
     supportsFIMCompletion: false, // Not supported
     supportsReasoning: true,
     timeout: 600000, // Longer timeout for reasoning
-    description: 'DeepSeek-R1-0528 - Advanced reasoning model with CoT capabilities',
-    aliases: ['deepseek reasoner', 'reasoner', 'r1', 'deepseek r1', 'deepseek-r1', 'deepseek-reasoner-r1', 'deepseek-r1-0528']
-  }
+    description:
+      'DeepSeek-R1-0528 - Advanced reasoning model with CoT capabilities',
+    aliases: [
+      'deepseek reasoner',
+      'reasoner',
+      'r1',
+      'deepseek r1',
+      'deepseek-r1',
+      'deepseek-reasoner-r1',
+      'deepseek-r1-0528',
+    ],
+  },
 };
 
 /**
@@ -97,7 +114,6 @@ export const deepseekProvider = createOpenAICompatibleProvider({
     // DeepSeek default parameters
     top_p: 0.95,
     frequency_penalty: 0,
-    presence_penalty: 0
-  }
+    presence_penalty: 0,
+  },
 });
-

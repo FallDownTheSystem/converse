@@ -24,6 +24,7 @@ npm test tests/integration/mcp-protocol/mcp-server.test.js
 ## Purpose
 
 These tests ensure:
+
 - MCP protocol compliance
 - Server lifecycle management
 - Client-server communication

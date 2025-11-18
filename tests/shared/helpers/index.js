@@ -34,7 +34,7 @@ export const paths = {
    */
   getProjectRoot() {
     return path.join(__dirname, '../../..');
-  }
+  },
 };
 
 /**
@@ -54,7 +54,7 @@ export const config = {
         mistral: 'test-mistral-key',
         deepseek: 'sk-test-deepseek',
         openrouter: 'sk-or-test-key',
-        ...overrides.apiKeys
+        ...overrides.apiKeys,
       },
       providers: {
         googleLocation: 'us-central1',
@@ -63,16 +63,16 @@ export const config = {
         mistralBaseUrl: 'https://api.mistral.ai',
         deepseekBaseUrl: 'https://api.deepseek.com',
         openrouterBaseUrl: 'https://openrouter.ai/api',
-        ...overrides.providers
+        ...overrides.providers,
       },
       server: {
         port: 3157,
         maxOutputTokens: 200000,
         logLevel: 'info',
         enableHttpTransport: true,
-        ...overrides.server
+        ...overrides.server,
       },
-      ...overrides
+      ...overrides,
     };
   },
 
@@ -85,9 +85,9 @@ export const config = {
       LOG_LEVEL: 'error',
       PORT: '3157',
       MAX_MCP_OUTPUT_TOKENS: '200000',
-      ...overrides
+      ...overrides,
     };
-  }
+  },
 };
 
 /**
@@ -103,7 +103,7 @@ export const logging = {
       error: vi.fn(),
       warn: vi.fn(),
       debug: vi.fn(),
-      trace: vi.fn()
+      trace: vi.fn(),
     };
   },
 
@@ -116,9 +116,9 @@ export const logging = {
       error: vi.spyOn(console, 'error').mockImplementation(() => {}),
       warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
       debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
-      trace: vi.spyOn(console, 'trace').mockImplementation(() => {})
+      trace: vi.spyOn(console, 'trace').mockImplementation(() => {}),
     };
-  }
+  },
 };
 
 /**
@@ -135,7 +135,7 @@ export const async = {
       if (await condition()) {
         return true;
       }
-      await new Promise(resolve => setTimeout(resolve, interval));
+      await new Promise((resolve) => setTimeout(resolve, interval));
     }
 
     throw new Error('Timeout waiting for condition');
@@ -158,7 +158,7 @@ export const async = {
    * Sleep for a specified duration
    */
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   },
 
   /**
@@ -170,7 +170,7 @@ export const async = {
     });
 
     return Promise.race([fn(), timeoutPromise]);
-  }
+  },
 };
 
 /**
@@ -203,7 +203,7 @@ export const filesystem = {
       }),
       mkdir: vi.fn().mockResolvedValue(),
       rmdir: vi.fn().mockResolvedValue(),
-      files
+      files,
     };
   },
 
@@ -227,9 +227,9 @@ export const filesystem = {
         } catch (err) {
           // Ignore cleanup errors
         }
-      }
+      },
     };
-  }
+  },
 };
 
 /**
@@ -252,12 +252,12 @@ export const stores = {
       exists: vi.fn().mockImplementation((id) => store.has(id)),
       getStats: vi.fn().mockReturnValue({
         size: store.size,
-        memoryUsage: store.size * 1000
+        memoryUsage: store.size * 1000,
       }),
       clear: vi.fn().mockImplementation(() => store.clear()),
-      _store: store
+      _store: store,
     };
-  }
+  },
 };
 
 /**
@@ -272,7 +272,7 @@ export const context = {
       processFiles: vi.fn().mockResolvedValue([]),
       processImages: vi.fn().mockResolvedValue([]),
       formatContext: vi.fn().mockReturnValue(''),
-      validatePaths: vi.fn().mockResolvedValue({ valid: true, errors: [] })
+      validatePaths: vi.fn().mockResolvedValue({ valid: true, errors: [] }),
     };
   },
 
@@ -284,11 +284,11 @@ export const context = {
       text: 'This is a test file content.',
       json: JSON.stringify({ test: true, data: 'mock' }),
       code: 'function test() { return "hello"; }',
-      markdown: '# Test\n\nThis is a test markdown file.'
+      markdown: '# Test\n\nThis is a test markdown file.',
     };
 
     return contents[type] || contents.text;
-  }
+  },
 };
 
 /**
@@ -319,7 +319,7 @@ export const assertions = {
     if (errorMessage) {
       expect(error.message).toContain(errorMessage);
     }
-  }
+  },
 };
 
 /**
@@ -342,22 +342,24 @@ export const generators = {
       object: 'chat.completion',
       created: Date.now(),
       model: 'mock-model',
-      choices: [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: 'Mock response content'
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Mock response content',
+          },
+          finish_reason: 'stop',
         },
-        finish_reason: 'stop'
-      }],
+      ],
       usage: {
         prompt_tokens: 10,
         completion_tokens: 20,
-        total_tokens: 30
+        total_tokens: 30,
       },
-      ...overrides
+      ...overrides,
     };
-  }
+  },
 };
 
 /**
@@ -394,9 +396,9 @@ export const setup = {
     return {
       restore: () => {
         process.env = originalEnv;
-      }
+      },
     };
-  }
+  },
 };
 
 /**
@@ -412,5 +414,5 @@ export default {
   context,
   assertions,
   generators,
-  setup
+  setup,
 };

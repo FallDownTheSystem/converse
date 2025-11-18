@@ -78,7 +78,7 @@ export class EventBus extends EventEmitter {
       tool: data.tool,
       options: data.options,
       timestamp: Date.now(),
-      ...data
+      ...data,
     });
   }
 
@@ -94,7 +94,7 @@ export class EventBus extends EventEmitter {
       status: data.status,
       providers: data.providers,
       timestamp: Date.now(),
-      ...data
+      ...data,
     });
   }
 
@@ -108,7 +108,7 @@ export class EventBus extends EventEmitter {
     return this._emitJobEvent(EVENT_TYPES.JOB_COMPLETED, jobId, {
       result,
       timestamp: Date.now(),
-      duration: this._calculateDuration(jobId)
+      duration: this._calculateDuration(jobId),
     });
   }
 
@@ -119,16 +119,19 @@ export class EventBus extends EventEmitter {
    * @returns {boolean} True if event was emitted
    */
   emitJobFailed(jobId, error) {
-    const errorData = error instanceof Error ? {
-      message: error.message,
-      code: error.code || 'UNKNOWN_ERROR',
-      stack: error.stack
-    } : { message: String(error) };
+    const errorData =
+      error instanceof Error
+        ? {
+          message: error.message,
+          code: error.code || 'UNKNOWN_ERROR',
+          stack: error.stack,
+        }
+        : { message: String(error) };
 
     return this._emitJobEvent(EVENT_TYPES.JOB_FAILED, jobId, {
       error: errorData,
       timestamp: Date.now(),
-      duration: this._calculateDuration(jobId)
+      duration: this._calculateDuration(jobId),
     });
   }
 
@@ -143,7 +146,7 @@ export class EventBus extends EventEmitter {
       reason: data.reason || 'User cancelled',
       partial_result: data.partial_result,
       timestamp: Date.now(),
-      ...data
+      ...data,
     });
   }
 
@@ -157,7 +160,7 @@ export class EventBus extends EventEmitter {
     return this._emitJobEvent(EVENT_TYPES.JOB_STARTED, jobId, {
       tool: data.tool,
       timestamp: Date.now(),
-      ...data
+      ...data,
     });
   }
 
@@ -171,14 +174,14 @@ export class EventBus extends EventEmitter {
     if (!Object.values(EVENT_TYPES).includes(eventType)) {
       throw new EventBusError(
         `Invalid event type: ${eventType}`,
-        'INVALID_EVENT_TYPE'
+        'INVALID_EVENT_TYPE',
       );
     }
 
     if (typeof listener !== 'function') {
       throw new EventBusError(
         'Listener must be a function',
-        'INVALID_LISTENER'
+        'INVALID_LISTENER',
       );
     }
 
@@ -218,7 +221,7 @@ export class EventBus extends EventEmitter {
       ...this.stats,
       totalListeners: this.listenerCount(),
       eventHistorySize: this.eventHistory.size,
-      memoryUsage: this._calculateMemoryUsage()
+      memoryUsage: this._calculateMemoryUsage(),
     };
   }
 
@@ -236,7 +239,7 @@ export class EventBus extends EventEmitter {
       if (!jobId || typeof jobId !== 'string') {
         throw new EventBusError(
           'Invalid job ID: must be a non-empty string',
-          'INVALID_JOB_ID'
+          'INVALID_JOB_ID',
         );
       }
 
@@ -245,7 +248,7 @@ export class EventBus extends EventEmitter {
         type: eventType,
         jobId,
         data,
-        timestamp: data.timestamp || Date.now()
+        timestamp: data.timestamp || Date.now(),
       };
 
       // Add to history
@@ -259,15 +262,17 @@ export class EventBus extends EventEmitter {
 
       debugLog(`EventBus: Emitted ${eventType} for job ${jobId}`);
       return hasListeners;
-
     } catch (error) {
-      debugError(`EventBus: Failed to emit event ${eventType} for job ${jobId}:`, error);
+      debugError(
+        `EventBus: Failed to emit event ${eventType} for job ${jobId}:`,
+        error,
+      );
       if (error instanceof EventBusError) {
         throw error;
       }
       throw new EventBusError(
         `Failed to emit event: ${error.message}`,
-        'EMISSION_ERROR'
+        'EMISSION_ERROR',
       );
     }
   }
@@ -304,7 +309,7 @@ export class EventBus extends EventEmitter {
       return null;
     }
 
-    const createEvent = history.find(e => e.type === EVENT_TYPES.JOB_CREATED);
+    const createEvent = history.find((e) => e.type === EVENT_TYPES.JOB_CREATED);
     if (!createEvent) {
       return null;
     }

@@ -10,8 +10,17 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { checkStatusTool } from '../../src/tools/checkStatus.js';
-import { getAsyncJobStore, JOB_STATUS, setAsyncJobStore, AsyncJobStoreInterface } from '../../src/async/asyncJobStore.js';
-import { getFileCache, setFileCache, FileCacheInterface } from '../../src/async/fileCache.js';
+import {
+  getAsyncJobStore,
+  JOB_STATUS,
+  setAsyncJobStore,
+  AsyncJobStoreInterface,
+} from '../../src/async/asyncJobStore.js';
+import {
+  getFileCache,
+  setFileCache,
+  FileCacheInterface,
+} from '../../src/async/fileCache.js';
 
 describe('Check Status Tool - Improvements', () => {
   let mockAsyncJobStore;
@@ -24,7 +33,7 @@ describe('Check Status Tool - Improvements', () => {
     originalDateNow = Date.now;
 
     // Mock AsyncJobStore
-    mockAsyncJobStore = new class extends AsyncJobStoreInterface {
+    mockAsyncJobStore = new (class extends AsyncJobStoreInterface {
       get = vi.fn();
       getAllJobs = vi.fn().mockResolvedValue([]);
       getStats = vi.fn().mockResolvedValue({ totalJobs: 0 });
@@ -34,16 +43,16 @@ describe('Check Status Tool - Improvements', () => {
       fail = vi.fn();
       exists = vi.fn();
       cleanup = vi.fn();
-    }();
+    })();
 
     // Mock FileCache
-    mockFileCache = new class extends FileCacheInterface {
+    mockFileCache = new (class extends FileCacheInterface {
       readSnapshot = vi.fn();
       writeJournalEvent = vi.fn();
       writeSnapshot = vi.fn();
       cleanup = vi.fn();
       stopCleanupTimer = vi.fn();
-    }();
+    })();
 
     mockConfig = {};
 
@@ -73,24 +82,25 @@ describe('Check Status Tool - Improvements', () => {
         updatedAt: jobCreatedAt + 2000,
         provider: 'openai',
         model: 'gpt-5',
-        accumulated_content: 'The capital of France is Paris, which is located...',
+        accumulated_content:
+          'The capital of France is Paris, which is located...',
         overall: {
           progress: 0.5, // This should be ignored for chat
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'chat-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -133,22 +143,22 @@ describe('Check Status Tool - Improvements', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map([
           ['openai', { status: 'completed', progress: 1.0 }],
           ['google', { status: 'completed', progress: 1.0 }],
-          ['xai', { status: 'running', progress: 0.5 }]
+          ['xai', { status: 'running', progress: 0.5 }],
         ]),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-job-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -185,21 +195,21 @@ describe('Check Status Tool - Improvements', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map([
           ['openai', { status: 'refined', progress: 1.0 }],
-          ['google', { status: 'refining', progress: 0.8 }]
+          ['google', { status: 'refining', progress: 0.8 }],
         ]),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-job-456' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -231,18 +241,18 @@ describe('Check Status Tool - Improvements', () => {
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-list-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -272,24 +282,25 @@ describe('Check Status Tool - Improvements', () => {
         updatedAt: jobCreatedAt + 2500,
         provider: 'openai',
         model: 'gpt-5',
-        accumulated_content: 'To implement a binary search tree in Python, you would start by defining a Node class that has a value and pointers to left and right children. Then you would create a BST class with methods for insertion, searching, and traversal...',
+        accumulated_content:
+          'To implement a binary search tree in Python, you would start by defining a Node class that has a value and pointers to left and right children. Then you would create a BST class with methods for insertion, searching, and traversal...',
         overall: {
           progress: 0.3,
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map(),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockChatJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'chat-stream-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -316,28 +327,30 @@ describe('Check Status Tool - Improvements', () => {
         updatedAt: jobCreatedAt + 4000,
         models_list: 'gpt-5, gemini-2.5-pro',
         consensus_progress: '2/2 initial',
-        provider_0_preview: 'The best approach would be to use a microservices architecture because it provides better scalability and maintainability...',
-        provider_1_preview: 'I recommend considering a monolithic architecture initially, as it simplifies development and deployment for smaller teams...',
+        provider_0_preview:
+          'The best approach would be to use a microservices architecture because it provides better scalability and maintainability...',
+        provider_1_preview:
+          'I recommend considering a monolithic architecture initially, as it simplifies development and deployment for smaller teams...',
         overall: {
           progress: 1.0,
           startedAt: jobCreatedAt + 100,
           endedAt: null,
           result: null,
-          error: null
+          error: null,
         },
         providers: new Map([
           ['openai', { status: 'completed', progress: 1.0 }],
-          ['google', { status: 'completed', progress: 1.0 }]
+          ['google', { status: 'completed', progress: 1.0 }],
         ]),
         events: [],
-        seq: 1
+        seq: 1,
       };
 
       mockAsyncJobStore.get.mockResolvedValueOnce(mockConsensusJob);
 
       const result = await checkStatusTool(
         { continuation_id: 'consensus-preview-123' },
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.isError).toBe(false);
@@ -350,8 +363,9 @@ describe('Check Status Tool - Improvements', () => {
       // Should show a preview from one of the providers
       expect(content).toContain('Preview: "');
       // Should be truncated to 80 chars
-      expect(content.match(/Preview: "[^"]+"/)[0].length).toBeLessThanOrEqual(100);
+      expect(content.match(/Preview: "[^"]+"/)[0].length).toBeLessThanOrEqual(
+        100,
+      );
     });
   });
-
 });

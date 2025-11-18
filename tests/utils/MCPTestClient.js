@@ -18,12 +18,12 @@ export class MCPTestClient {
       connectionTimeout: 15000,
       operationTimeout: 30000,
       debugMode: false,
-      ...options
+      ...options,
     };
 
     this.serverManager = new MCPServerManager({
       startupTimeout: this.options.connectionTimeout,
-      ...options.serverOptions
+      ...options.serverOptions,
     });
 
     this.isReady = false;
@@ -71,7 +71,9 @@ export class MCPTestClient {
       this.isReady = false;
 
       const duration = Date.now() - this.startTime;
-      this.log(`Test client stopped after ${duration}ms, ${this.operationCount} operations`);
+      this.log(
+        `Test client stopped after ${duration}ms, ${this.operationCount} operations`,
+      );
     } catch (error) {
       this.log('Error during stop:', error.message);
       // Still mark as stopped
@@ -104,10 +106,13 @@ export class MCPTestClient {
     const timeout = options.timeout || this.options.operationTimeout;
 
     return this.withRetry('callTool', async () => {
-      return await this.serverManager.executeToolCall({
-        name: toolName,
-        arguments: args
-      }, timeout);
+      return await this.serverManager.executeToolCall(
+        {
+          name: toolName,
+          arguments: args,
+        },
+        timeout,
+      );
     });
   }
 
@@ -120,7 +125,7 @@ export class MCPTestClient {
   async chat(prompt, options = {}) {
     return this.callTool('chat', {
       prompt,
-      ...options
+      ...options,
     });
   }
 
@@ -135,7 +140,7 @@ export class MCPTestClient {
     return this.callTool('consensus', {
       prompt,
       models,
-      ...options
+      ...options,
     });
   }
 
@@ -157,7 +162,7 @@ export class MCPTestClient {
       const chatStartTime = Date.now();
       const chatResult = await this.chat('Health check test', {
         model: 'auto',
-        temperature: 0
+        temperature: 0,
       });
       const chatTime = Date.now() - chatStartTime;
 
@@ -169,21 +174,21 @@ export class MCPTestClient {
         performance: {
           listToolsMs: listTime,
           chatCallMs: chatTime,
-          totalMs: totalTime
+          totalMs: totalTime,
         },
         tools: {
           count: tools.tools?.length || 0,
-          available: tools.tools?.map(t => t.name) || []
+          available: tools.tools?.map((t) => t.name) || [],
         },
         chatWorking: !chatResult.isError,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       return {
         status: 'unhealthy',
         error: error.message,
         server: this.serverManager.getHealthStatus(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -200,7 +205,9 @@ export class MCPTestClient {
     const maxConcurrency = options.maxConcurrency || operations.length;
     const timeout = options.timeout || this.options.operationTimeout;
 
-    this.log(`Executing ${operations.length} operations with max concurrency ${maxConcurrency}`);
+    this.log(
+      `Executing ${operations.length} operations with max concurrency ${maxConcurrency}`,
+    );
 
     // Simple Promise.all for now, could implement proper concurrency limiting
     const promises = operations.map(async (operation, index) => {
@@ -208,8 +215,11 @@ export class MCPTestClient {
         const result = await Promise.race([
           operation(this),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Operation ${index} timeout`)), timeout)
-          )
+            setTimeout(
+              () => reject(new Error(`Operation ${index} timeout`)),
+              timeout,
+            ),
+          ),
         ]);
         return { index, success: true, result };
       } catch (error) {
@@ -232,7 +242,7 @@ export class MCPTestClient {
       uptime: this.startTime ? Date.now() - this.startTime : 0,
       server: this.serverManager.getHealthStatus(),
       serverLogs: this.serverManager.getStderrOutput().slice(-10), // Last 10 log entries
-      options: { ...this.options, serverOptions: undefined } // Don't expose server options
+      options: { ...this.options, serverOptions: undefined }, // Don't expose server options
     };
   }
 
@@ -267,7 +277,9 @@ export class MCPTestClient {
       }
     }
 
-    throw new Error(`${operationName} failed after ${this.options.maxRetries} attempts: ${this.lastError?.message}`);
+    throw new Error(
+      `${operationName} failed after ${this.options.maxRetries} attempts: ${this.lastError?.message}`,
+    );
   }
 
   /**
@@ -305,7 +317,7 @@ export class MCPTestClient {
    * @private
    */
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -366,7 +378,7 @@ export async function createMultipleTestClients(count, options = {}) {
         serverOptions: {
           ...options.serverOptions,
           // Use different ports if needed in the future
-        }
+        },
       });
       await client.start();
       clients.push(client);
@@ -375,7 +387,7 @@ export async function createMultipleTestClients(count, options = {}) {
     return clients;
   } catch (error) {
     // Cleanup any clients that were created
-    await Promise.all(clients.map(client => client.stop().catch(() => {})));
+    await Promise.all(clients.map((client) => client.stop().catch(() => {})));
     throw error;
   }
 }
@@ -386,5 +398,5 @@ export async function createMultipleTestClients(count, options = {}) {
  * @returns {Promise<void>}
  */
 export async function stopMultipleTestClients(clients) {
-  await Promise.all(clients.map(client => client.stop().catch(() => {})));
+  await Promise.all(clients.map((client) => client.stop().catch(() => {})));
 }

@@ -29,25 +29,25 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
  */
 const STOP_REASON_MAP = {
   // Standard OpenAI reasons
-  'stop': StopReasons.STOP,
-  'length': StopReasons.LENGTH,
-  'max_tokens': StopReasons.LENGTH,
-  'tool_calls': StopReasons.TOOL_USE,
-  'function_call': StopReasons.TOOL_USE,
-  'content_filter': StopReasons.CONTENT_FILTER,
+  stop: StopReasons.STOP,
+  length: StopReasons.LENGTH,
+  max_tokens: StopReasons.LENGTH,
+  tool_calls: StopReasons.TOOL_USE,
+  function_call: StopReasons.TOOL_USE,
+  content_filter: StopReasons.CONTENT_FILTER,
 
   // Provider-specific variations
-  'finish': StopReasons.STOP,
-  'complete': StopReasons.STOP,
-  'completed': StopReasons.STOP,
-  'token_limit': StopReasons.LENGTH,
-  'token_limit_reached': StopReasons.LENGTH,
-  'safety': StopReasons.SAFETY,
-  'filtered': StopReasons.CONTENT_FILTER,
+  finish: StopReasons.STOP,
+  complete: StopReasons.STOP,
+  completed: StopReasons.STOP,
+  token_limit: StopReasons.LENGTH,
+  token_limit_reached: StopReasons.LENGTH,
+  safety: StopReasons.SAFETY,
+  filtered: StopReasons.CONTENT_FILTER,
 
   // Default
-  'null': StopReasons.STOP,
-  'undefined': StopReasons.STOP
+  null: StopReasons.STOP,
+  undefined: StopReasons.STOP,
 };
 
 /**
@@ -71,22 +71,34 @@ function defaultValidateApiKey(apiKey) {
  */
 function convertMessages(messages, providerName) {
   if (!Array.isArray(messages)) {
-    throw new ProviderError('Messages must be an array', ErrorCodes.INVALID_MESSAGES);
+    throw new ProviderError(
+      'Messages must be an array',
+      ErrorCodes.INVALID_MESSAGES,
+    );
   }
 
   return messages.map((msg, index) => {
     if (!msg || typeof msg !== 'object') {
-      throw new ProviderError(`Message at index ${index} must be an object`, ErrorCodes.INVALID_MESSAGE);
+      throw new ProviderError(
+        `Message at index ${index} must be an object`,
+        ErrorCodes.INVALID_MESSAGE,
+      );
     }
 
     const { role, content } = msg;
 
     if (!role || !['system', 'user', 'assistant'].includes(role)) {
-      throw new ProviderError(`Invalid role "${role}" at message index ${index}`, ErrorCodes.INVALID_ROLE);
+      throw new ProviderError(
+        `Invalid role "${role}" at message index ${index}`,
+        ErrorCodes.INVALID_ROLE,
+      );
     }
 
     if (!content) {
-      throw new ProviderError(`Message content is required at index ${index}`, ErrorCodes.MISSING_CONTENT);
+      throw new ProviderError(
+        `Message content is required at index ${index}`,
+        ErrorCodes.MISSING_CONTENT,
+      );
     }
 
     // Handle complex content structure (array with text and images)
@@ -97,7 +109,7 @@ function convertMessages(messages, providerName) {
         if (item.type === 'text') {
           convertedContent.push({
             type: 'text',
-            text: item.text
+            text: item.text,
           });
         } else if (item.type === 'image' && item.source) {
           // Convert Anthropic/Claude format to OpenAI format
@@ -105,10 +117,12 @@ function convertMessages(messages, providerName) {
             type: 'image_url',
             image_url: {
               url: `data:${item.source.media_type};base64,${item.source.data}`,
-              detail: 'auto'
-            }
+              detail: 'auto',
+            },
           });
-          debugLog(`[${providerName}] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+          debugLog(
+            `[${providerName}] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`,
+          );
         }
       }
 
@@ -154,33 +168,90 @@ function resolveModelName(modelName, supportedModels) {
 function handleApiError(error, providerName, resolvedModel) {
   // Extract error details from different error formats
   const status = error.response?.status || error.status;
-  const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
+  const errorMessage =
+    error.response?.data?.error?.message || error.message || 'Unknown error';
   const errorCode = error.response?.data?.error?.code || error.code;
 
   // Map common error codes and status codes
-  if (status === 401 || errorCode === 'invalid_api_key' || errorMessage?.includes('Invalid API key')) {
-    throw new ProviderError(`Invalid ${providerName} API key`, ErrorCodes.INVALID_API_KEY, error);
-  } else if (status === 429 || error.type === 'rate_limit_error' || errorCode === 'rate_limit_exceeded' || errorMessage?.includes('Rate limit exceeded')) {
-    throw new ProviderError(`${providerName} rate limit exceeded`, ErrorCodes.RATE_LIMIT_EXCEEDED, error);
-  } else if (status === 403 || errorCode === 'insufficient_quota' || errorMessage?.includes('quota exceeded')) {
-    throw new ProviderError(`${providerName} API quota exceeded`, ErrorCodes.QUOTA_EXCEEDED, error);
-  } else if (status === 404 || errorCode === 'model_not_found' || errorMessage?.includes('Model') && errorMessage?.includes('not found')) {
-    throw new ProviderError(`Model ${resolvedModel} not found`, ErrorCodes.MODEL_NOT_FOUND, error);
-  } else if (status === 400 && (errorMessage?.includes('Context length exceeded') || errorMessage?.includes('context'))) {
-    throw new ProviderError('Context length exceeded for model', ErrorCodes.CONTEXT_LENGTH_EXCEEDED, error);
-  } else if (error.type === 'invalid_request_error' || (status === 400 && !errorMessage?.includes('context'))) {
-    throw new ProviderError(`Invalid request: ${errorMessage}`, ErrorCodes.INVALID_REQUEST, error);
+  if (
+    status === 401 ||
+    errorCode === 'invalid_api_key' ||
+    errorMessage?.includes('Invalid API key')
+  ) {
+    throw new ProviderError(
+      `Invalid ${providerName} API key`,
+      ErrorCodes.INVALID_API_KEY,
+      error,
+    );
+  } else if (
+    status === 429 ||
+    error.type === 'rate_limit_error' ||
+    errorCode === 'rate_limit_exceeded' ||
+    errorMessage?.includes('Rate limit exceeded')
+  ) {
+    throw new ProviderError(
+      `${providerName} rate limit exceeded`,
+      ErrorCodes.RATE_LIMIT_EXCEEDED,
+      error,
+    );
+  } else if (
+    status === 403 ||
+    errorCode === 'insufficient_quota' ||
+    errorMessage?.includes('quota exceeded')
+  ) {
+    throw new ProviderError(
+      `${providerName} API quota exceeded`,
+      ErrorCodes.QUOTA_EXCEEDED,
+      error,
+    );
+  } else if (
+    status === 404 ||
+    errorCode === 'model_not_found' ||
+    (errorMessage?.includes('Model') && errorMessage?.includes('not found'))
+  ) {
+    throw new ProviderError(
+      `Model ${resolvedModel} not found`,
+      ErrorCodes.MODEL_NOT_FOUND,
+      error,
+    );
+  } else if (
+    status === 400 &&
+    (errorMessage?.includes('Context length exceeded') ||
+      errorMessage?.includes('context'))
+  ) {
+    throw new ProviderError(
+      'Context length exceeded for model',
+      ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
+      error,
+    );
+  } else if (
+    error.type === 'invalid_request_error' ||
+    (status === 400 && !errorMessage?.includes('context'))
+  ) {
+    throw new ProviderError(
+      `Invalid request: ${errorMessage}`,
+      ErrorCodes.INVALID_REQUEST,
+      error,
+    );
   } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-    throw new ProviderError(`${providerName} request timeout`, ErrorCodes.TIMEOUT_ERROR, error);
+    throw new ProviderError(
+      `${providerName} request timeout`,
+      ErrorCodes.TIMEOUT_ERROR,
+      error,
+    );
   } else if (error.code?.startsWith('E') || errorMessage?.includes('network')) {
-    throw new ProviderError(`${providerName} network error: ${errorMessage}`, ErrorCodes.NETWORK_ERROR, error);
+    throw new ProviderError(
+      `${providerName} network error: ${errorMessage}`,
+      ErrorCodes.NETWORK_ERROR,
+      error,
+    );
   }
 
   // Generic error
   throw new ProviderError(
     `${providerName} API error: ${error.message || 'Unknown error'}`,
     ErrorCodes.API_ERROR,
-    error
+    error,
   );
 }
 
@@ -199,7 +270,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
     validateApiKey = defaultValidateApiKey,
     transformRequest,
     transformResponse,
-    defaultParams = {}
+    defaultParams = {},
   } = providerConfig;
 
   // Create custom error class for this provider
@@ -230,15 +301,22 @@ export function createOpenAICompatibleProvider(providerConfig) {
       } = options;
 
       // Get API key from config or use provider default
-      const effectiveApiKey = config?.apiKeys?.[providerName.toLowerCase()] || apiKey;
+      const effectiveApiKey =
+        config?.apiKeys?.[providerName.toLowerCase()] || apiKey;
 
       // Validate API key
       if (!effectiveApiKey) {
-        throw new CustomProviderError(`${providerName} API key not configured`, ErrorCodes.MISSING_API_KEY);
+        throw new CustomProviderError(
+          `${providerName} API key not configured`,
+          ErrorCodes.MISSING_API_KEY,
+        );
       }
 
       if (!validateApiKey(effectiveApiKey)) {
-        throw new CustomProviderError(`Invalid ${providerName} API key format`, ErrorCodes.INVALID_API_KEY);
+        throw new CustomProviderError(
+          `Invalid ${providerName} API key format`,
+          ErrorCodes.INVALID_API_KEY,
+        );
       }
 
       // Initialize OpenAI client with custom configuration
@@ -248,8 +326,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
         defaultHeaders: {
           ...customHeaders,
           // Support dynamic headers from provider config
-          ...(config?.providers?._customHeaders || {})
-        }
+          ...(config?.providers?._customHeaders || {}),
+        },
       };
 
       // Add timeout if specified in model config
@@ -265,15 +343,16 @@ export function createOpenAICompatibleProvider(providerConfig) {
       const openaiMessages = convertMessages(messages, providerName);
 
       // Check if messages contain images and if model supports them
-      const hasImages = messages.some(msg =>
-        Array.isArray(msg.content) &&
-        msg.content.some(item => item.type === 'image')
+      const hasImages = messages.some(
+        (msg) =>
+          Array.isArray(msg.content) &&
+          msg.content.some((item) => item.type === 'image'),
       );
 
       if (hasImages && modelConfig.supportsImages === false) {
         throw new CustomProviderError(
           `Model ${resolvedModel} does not support images`,
-          ErrorCodes.INVALID_REQUEST
+          ErrorCodes.INVALID_REQUEST,
         );
       }
 
@@ -283,17 +362,24 @@ export function createOpenAICompatibleProvider(providerConfig) {
         messages: openaiMessages,
         stream,
         ...defaultParams,
-        ...otherOptions
+        ...otherOptions,
       };
 
       // Add temperature if model supports it and not already set by defaultParams
-      if (modelConfig.supportsTemperature !== false && temperature !== undefined && !defaultParams.temperature) {
+      if (
+        modelConfig.supportsTemperature !== false &&
+        temperature !== undefined &&
+        !defaultParams.temperature
+      ) {
         requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
       // Add max tokens if specified
       if (maxTokens) {
-        requestPayload.max_tokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 100000);
+        requestPayload.max_tokens = Math.min(
+          maxTokens,
+          modelConfig.maxOutputTokens || 100000,
+        );
       }
 
       // Add usage reporting for streaming mode
@@ -306,16 +392,27 @@ export function createOpenAICompatibleProvider(providerConfig) {
 
       // Apply custom request transformation if provided
       if (transformRequest) {
-        requestPayload = await transformRequest(requestPayload, { model: resolvedModel, modelConfig });
+        requestPayload = await transformRequest(requestPayload, {
+          model: resolvedModel,
+          modelConfig,
+        });
       }
 
       // Handle streaming requests
       if (stream && requestPayload.stream !== false) {
-        return this._createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, signal);
+        return this._createStreamingGenerator(
+          openai,
+          requestPayload,
+          resolvedModel,
+          modelConfig,
+          signal,
+        );
       }
 
       try {
-        debugLog(`[${providerName}] Calling ${resolvedModel} with ${openaiMessages.length} messages`);
+        debugLog(
+          `[${providerName}] Calling ${resolvedModel} with ${openaiMessages.length} messages`,
+        );
 
         // Check if already aborted before making request
         if (signal?.aborted) {
@@ -329,7 +426,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
         if (signal) {
           requestWithSignal.signal = signal;
         }
-        const response = await openai.chat.completions.create(requestWithSignal);
+        const response =
+          await openai.chat.completions.create(requestWithSignal);
 
         const responseTime = Date.now() - startTime;
         debugLog(`[${providerName}] Response received in ${responseTime}ms`);
@@ -337,12 +435,18 @@ export function createOpenAICompatibleProvider(providerConfig) {
         // Extract response data
         const choice = response.choices?.[0];
         if (!choice) {
-          throw new CustomProviderError('No response choice received', ErrorCodes.NO_RESPONSE_CHOICE);
+          throw new CustomProviderError(
+            'No response choice received',
+            ErrorCodes.NO_RESPONSE_CHOICE,
+          );
         }
 
         const content = choice.message?.content;
         if (!content) {
-          throw new CustomProviderError('No content in response', ErrorCodes.NO_RESPONSE_CONTENT);
+          throw new CustomProviderError(
+            'No content in response',
+            ErrorCodes.NO_RESPONSE_CONTENT,
+          );
         }
 
         // Extract and normalize finish reason
@@ -361,13 +465,14 @@ export function createOpenAICompatibleProvider(providerConfig) {
             model: response.model || resolvedModel,
             usage: {
               input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
-              output_tokens: usage.completion_tokens || usage.output_tokens || 0,
-              total_tokens: usage.total_tokens || 0
+              output_tokens:
+                usage.completion_tokens || usage.output_tokens || 0,
+              total_tokens: usage.total_tokens || 0,
             },
             response_time_ms: responseTime,
             finish_reason: finishReason,
-            provider: providerName.toLowerCase()
-          }
+            provider: providerName.toLowerCase(),
+          },
         };
 
         // Apply custom response transformation if provided
@@ -376,7 +481,6 @@ export function createOpenAICompatibleProvider(providerConfig) {
         }
 
         return result;
-
       } catch (error) {
         debugError(`[${providerName}] Error during API call:`, error);
 
@@ -398,8 +502,16 @@ export function createOpenAICompatibleProvider(providerConfig) {
      * @param {Object} modelConfig - Model configuration
      * @returns {AsyncGenerator} - Streaming generator yielding events
      */
-    async *_createStreamingGenerator(openai, requestPayload, resolvedModel, modelConfig, signal) {
-      debugLog(`[${providerName}] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`);
+    async *_createStreamingGenerator(
+      openai,
+      requestPayload,
+      resolvedModel,
+      modelConfig,
+      signal,
+    ) {
+      debugLog(
+        `[${providerName}] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`,
+      );
 
       const startTime = Date.now();
       let totalContent = '';
@@ -418,7 +530,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
           type: 'start',
           timestamp: new Date().toISOString(),
           model: resolvedModel,
-          provider: providerName.toLowerCase()
+          provider: providerName.toLowerCase(),
         };
 
         // Create streaming request with abort signal support
@@ -433,7 +545,9 @@ export function createOpenAICompatibleProvider(providerConfig) {
           try {
             // Check for cancellation during stream processing
             if (signal?.aborted) {
-              debugLog(`[${providerName}] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+              debugLog(
+                `[${providerName}] Stream aborted during processing: ${signal.reason || 'Cancelled'}`,
+              );
               break;
             }
             const choice = chunk.choices?.[0];
@@ -446,7 +560,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
                 yield {
                   type: 'delta',
                   content,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
 
@@ -455,7 +569,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
                 yield {
                   type: 'thinking',
                   content: choice.delta.reasoning,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
                 };
               }
 
@@ -474,15 +588,18 @@ export function createOpenAICompatibleProvider(providerConfig) {
               finalModel = chunk.model;
             }
           } catch (chunkError) {
-            debugError(`[${providerName}] Error processing stream chunk:`, chunkError);
+            debugError(
+              `[${providerName}] Error processing stream chunk:`,
+              chunkError,
+            );
             yield {
               type: 'error',
               error: {
                 message: `Chunk processing error: ${chunkError.message}`,
                 code: 'CHUNK_PROCESSING_ERROR',
-                recoverable: true
+                recoverable: true,
               },
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             };
           }
         }
@@ -495,11 +612,13 @@ export function createOpenAICompatibleProvider(providerConfig) {
           yield {
             type: 'usage',
             usage: {
-              input_tokens: lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
-              output_tokens: lastUsage.completion_tokens || lastUsage.output_tokens || 0,
-              total_tokens: lastUsage.total_tokens || 0
+              input_tokens:
+                lastUsage.prompt_tokens || lastUsage.input_tokens || 0,
+              output_tokens:
+                lastUsage.completion_tokens || lastUsage.output_tokens || 0,
+              total_tokens: lastUsage.total_tokens || 0,
             },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
 
@@ -510,21 +629,23 @@ export function createOpenAICompatibleProvider(providerConfig) {
           metadata: {
             model: finalModel,
             usage: {
-              input_tokens: lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
-              output_tokens: lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
-              total_tokens: lastUsage?.total_tokens || 0
+              input_tokens:
+                lastUsage?.prompt_tokens || lastUsage?.input_tokens || 0,
+              output_tokens:
+                lastUsage?.completion_tokens || lastUsage?.output_tokens || 0,
+              total_tokens: lastUsage?.total_tokens || 0,
             },
             response_time_ms: responseTime,
             finish_reason: finishReason || 'stop',
-            provider: providerName.toLowerCase()
-          }
+            provider: providerName.toLowerCase(),
+          },
         };
 
         if (transformResponse) {
           const mockRawResponse = {
             choices: [{ finish_reason: finishReason }],
             usage: lastUsage,
-            model: finalModel
+            model: finalModel,
           };
           finalResult = await transformResponse(finalResult, mockRawResponse);
         }
@@ -535,9 +656,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
           content: totalContent,
           stop_reason: finalResult.stop_reason,
           metadata: finalResult.metadata,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
-
       } catch (error) {
         debugError(`[${providerName}] Streaming error:`, error);
 
@@ -550,10 +670,14 @@ export function createOpenAICompatibleProvider(providerConfig) {
             error: {
               message: handledError.message,
               code: handledError.code || 'STREAMING_ERROR',
-              recoverable: [ErrorCodes.RATE_LIMIT_EXCEEDED, ErrorCodes.TIMEOUT_ERROR, ErrorCodes.NETWORK_ERROR].includes(handledError.code),
-              originalError: error
+              recoverable: [
+                ErrorCodes.RATE_LIMIT_EXCEEDED,
+                ErrorCodes.TIMEOUT_ERROR,
+                ErrorCodes.NETWORK_ERROR,
+              ].includes(handledError.code),
+              originalError: error,
             },
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
 
           // Re-throw to maintain existing error handling behavior
@@ -566,7 +690,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
      * Validate configuration
      */
     validateConfig(config) {
-      const effectiveApiKey = config?.apiKeys?.[providerName.toLowerCase()] || apiKey;
+      const effectiveApiKey =
+        config?.apiKeys?.[providerName.toLowerCase()] || apiKey;
       return !!(effectiveApiKey && validateApiKey(effectiveApiKey));
     },
 
@@ -590,14 +715,18 @@ export function createOpenAICompatibleProvider(providerConfig) {
     getModelConfig(modelName) {
       const resolved = resolveModelName(modelName, supportedModels);
       return supportedModels[resolved] || null;
-    }
+    },
   };
 }
 
 /**
  * Retry helper for rate-limited requests
  */
-export async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
+export async function retryWithBackoff(
+  fn,
+  maxRetries = 3,
+  initialDelay = 1000,
+) {
   let lastError;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -607,19 +736,27 @@ export async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) 
       lastError = error;
 
       // Don't retry on non-retryable errors
-      if (error.code && ![ErrorCodes.RATE_LIMIT_EXCEEDED, ErrorCodes.TIMEOUT_ERROR, ErrorCodes.NETWORK_ERROR].includes(error.code)) {
+      if (
+        error.code &&
+        ![
+          ErrorCodes.RATE_LIMIT_EXCEEDED,
+          ErrorCodes.TIMEOUT_ERROR,
+          ErrorCodes.NETWORK_ERROR,
+        ].includes(error.code)
+      ) {
         throw error;
       }
 
       // Wait before retrying
       if (attempt < maxRetries - 1) {
         const delay = initialDelay * Math.pow(2, attempt);
-        debugLog(`Retrying after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        debugLog(
+          `Retrying after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
 
   throw lastError;
 }
-

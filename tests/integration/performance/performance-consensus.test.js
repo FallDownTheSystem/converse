@@ -17,34 +17,51 @@ describe('Consensus Performance Tests', () => {
     } catch (parseError) {
       // Check if this is a response that starts with continuation_id followed by JSON
       const responseText = result.content[0].text || '';
-      if (responseText.includes('continuation_id:') && responseText.includes('{')) {
+      if (
+        responseText.includes('continuation_id:') &&
+        responseText.includes('{')
+      ) {
         // Try to extract the JSON part after the continuation_id line
         const lines = responseText.split('\n');
-        const jsonStartIndex = lines.findIndex(line => line.trim().startsWith('{'));
+        const jsonStartIndex = lines.findIndex((line) =>
+          line.trim().startsWith('{'),
+        );
         if (jsonStartIndex >= 0) {
           const jsonText = lines.slice(jsonStartIndex).join('\n');
           try {
-            console.log(`DEBUG: Extracting JSON from continuation response in ${testName}`);
+            console.log(
+              `DEBUG: Extracting JSON from continuation response in ${testName}`,
+            );
             return JSON.parse(jsonText);
           } catch (jsonParseError) {
-            console.log(`DEBUG: Failed to parse extracted JSON in ${testName}:`, {
-              error: jsonParseError.message,
-              extractedText: jsonText.substring(0, 200) + '...'
-            });
+            console.log(
+              `DEBUG: Failed to parse extracted JSON in ${testName}:`,
+              {
+                error: jsonParseError.message,
+                extractedText: jsonText.substring(0, 200) + '...',
+              },
+            );
           }
         }
       }
 
-      console.log(`DEBUG: Failed to parse consensus response as JSON in ${testName}:`, {
-        error: parseError.message,
-        responseText: responseText.substring(0, 200) + '...',
-        isError: result.isError
-      });
+      console.log(
+        `DEBUG: Failed to parse consensus response as JSON in ${testName}:`,
+        {
+          error: parseError.message,
+          responseText: responseText.substring(0, 200) + '...',
+          isError: result.isError,
+        },
+      );
 
       // If this appears to be an async job response, skip the test
       if (responseText.includes('continuation_id:')) {
-        console.log(`DEBUG: Detected async job response in ${testName} - skipping performance assertions`);
-        throw new Error(`SKIP: Test ${testName} got async response instead of sync JSON - system may be overloaded`);
+        console.log(
+          `DEBUG: Detected async job response in ${testName} - skipping performance assertions`,
+        );
+        throw new Error(
+          `SKIP: Test ${testName} got async response instead of sync JSON - system may be overloaded`,
+        );
       }
 
       throw parseError;
@@ -59,15 +76,15 @@ describe('Consensus Performance Tests', () => {
       server = new Server(
         {
           name: config.mcp.serverName,
-          version: config.mcp.serverVersion
+          version: config.mcp.serverVersion,
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       // Create router with server and config
@@ -81,19 +98,28 @@ describe('Consensus Performance Tests', () => {
         anthropic: config?.apiKeys?.anthropic,
         deepseek: config?.apiKeys?.deepseek,
         mistral: config?.apiKeys?.mistral,
-        openrouter: config?.apiKeys?.openrouter
+        openrouter: config?.apiKeys?.openrouter,
       };
 
-      console.log('[performance-consensus-test] Available providers:', Object.entries(providers).filter(([k, v]) => v).map(([k]) => k));
+      console.log(
+        '[performance-consensus-test] Available providers:',
+        Object.entries(providers)
+          .filter(([k, v]) => v)
+          .map(([k]) => k),
+      );
 
       const providerCount = Object.values(providers).filter(Boolean).length;
 
       hasMultipleProviders = providerCount >= 2;
 
       if (!hasMultipleProviders) {
-        logger.warn('[performance-consensus-test] Less than 2 providers available - some tests will be skipped');
+        logger.warn(
+          '[performance-consensus-test] Less than 2 providers available - some tests will be skipped',
+        );
       } else {
-        logger.info(`[performance-consensus-test] ${providerCount} providers available for performance testing`);
+        logger.info(
+          `[performance-consensus-test] ${providerCount} providers available for performance testing`,
+        );
       }
     } catch (error) {
       logger.error('[performance-consensus-test] Setup failed:', error);
@@ -102,7 +128,9 @@ describe('Consensus Performance Tests', () => {
   });
 
   afterAll(async () => {
-    logger.info('[performance-consensus-test] Consensus performance test cleanup completed');
+    logger.info(
+      '[performance-consensus-test] Consensus performance test cleanup completed',
+    );
   });
 
   describe('Parallel Execution Performance', () => {
@@ -110,7 +138,7 @@ describe('Consensus Performance Tests', () => {
       const models = [
         { model: 'gpt-4o-mini' },
         { model: 'gpt-4o-mini' },
-        { model: 'gpt-4o-mini' }
+        { model: 'gpt-4o-mini' },
       ];
 
       const testPrompt = 'What is 2+2? Answer with just the number.';
@@ -124,18 +152,22 @@ describe('Consensus Performance Tests', () => {
           prompt: testPrompt,
           models,
           enable_cross_feedback: false,
-          temperature: 0
-        }
+          temperature: 0,
+        },
       });
       const parallelDuration = Date.now() - parallelStartTime;
       console.log(`DEBUG: Parallel consensus took ${parallelDuration}ms`);
 
       expect(parallelResult.isError).toBe(false);
-      const consensusData = parseConsensusResponse(parallelResult, 'parallel vs sequential');
+      const consensusData = parseConsensusResponse(
+        parallelResult,
+        'parallel vs sequential',
+      );
       console.log('DEBUG: Consensus data:', {
         models_consulted: consensusData.models_consulted,
-        successful_initial_responses: consensusData.successful_initial_responses,
-        failed_responses: consensusData.failed_responses
+        successful_initial_responses:
+          consensusData.successful_initial_responses,
+        failed_responses: consensusData.failed_responses,
       });
 
       // Test sequential execution (individual chat calls)
@@ -152,8 +184,8 @@ describe('Consensus Performance Tests', () => {
           arguments: {
             prompt: testPrompt,
             model: model.model,
-            temperature: 0
-          }
+            temperature: 0,
+          },
         });
         const callEnd = Date.now();
         const callDuration = callEnd - callStart;
@@ -162,10 +194,10 @@ describe('Consensus Performance Tests', () => {
           callIndex: i + 1,
           startTime: callStart,
           endTime: callEnd,
-          duration: callDuration
+          duration: callDuration,
         });
 
-        console.log(`DEBUG: Sequential call ${i+1} took ${callDuration}ms`);
+        console.log(`DEBUG: Sequential call ${i + 1} took ${callDuration}ms`);
         sequentialResults.push(result);
       }
       const sequentialDuration = Date.now() - sequentialStartTime;
@@ -177,7 +209,9 @@ describe('Consensus Performance Tests', () => {
         const currentCall = callTimings[i];
 
         expect(currentCall.startTime).toBeGreaterThanOrEqual(prevCall.endTime);
-        console.log(`DEBUG: Verified call ${currentCall.callIndex} started at ${currentCall.startTime}ms after call ${prevCall.callIndex} ended at ${prevCall.endTime}ms`);
+        console.log(
+          `DEBUG: Verified call ${currentCall.callIndex} started at ${currentCall.startTime}ms after call ${prevCall.callIndex} ended at ${prevCall.endTime}ms`,
+        );
       }
 
       // Parallel should be faster than sequential
@@ -187,17 +221,22 @@ describe('Consensus Performance Tests', () => {
       const efficiency = sequentialDuration / parallelDuration;
       const efficiencyDisplay = efficiency.toFixed(2);
 
-      logger.info(`[performance-consensus-test] Parallel: ${parallelDuration}ms, Sequential: ${sequentialDuration}ms, Efficiency: ${efficiencyDisplay}x`);
+      logger.info(
+        `[performance-consensus-test] Parallel: ${parallelDuration}ms, Sequential: ${sequentialDuration}ms, Efficiency: ${efficiencyDisplay}x`,
+      );
     }, 120000);
 
     it('should maintain performance with increasing model count', async () => {
-      const testPrompt = 'What is the capital of France? Answer with just the city name.';
+      const testPrompt =
+        'What is the capital of France? Answer with just the city name.';
       const modelCounts = [1, 2, 3];
       const results = [];
 
       for (const count of modelCounts) {
         // Use the same model multiple times
-        const models = Array(count).fill(null).map(() => ({ model: 'gpt-4o-mini' }));
+        const models = Array(count)
+          .fill(null)
+          .map(() => ({ model: 'gpt-4o-mini' }));
 
         const startTime = Date.now();
         const result = await router.callTool({
@@ -206,8 +245,8 @@ describe('Consensus Performance Tests', () => {
             prompt: testPrompt,
             models,
             enable_cross_feedback: false,
-            temperature: 0
-          }
+            temperature: 0,
+          },
         });
         const duration = Date.now() - startTime;
 
@@ -216,10 +255,12 @@ describe('Consensus Performance Tests', () => {
         results.push({
           modelCount: count,
           duration,
-          result
+          result,
         });
 
-        logger.info(`[performance-consensus-test] ${count} models: ${duration}ms`);
+        logger.info(
+          `[performance-consensus-test] ${count} models: ${duration}ms`,
+        );
       }
 
       // Performance should scale reasonably
@@ -234,14 +275,13 @@ describe('Consensus Performance Tests', () => {
       // Just verify that it scales reasonably (not linearly worse)
       expect(performanceRatio).toBeLessThan(15.0); // Very generous threshold for real API testing
 
-      logger.info(`[performance-consensus-test] Performance ratio (${modelCounts[modelCounts.length - 1]} vs 1 model): ${performanceRatio.toFixed(2)}x`);
+      logger.info(
+        `[performance-consensus-test] Performance ratio (${modelCounts[modelCounts.length - 1]} vs 1 model): ${performanceRatio.toFixed(2)}x`,
+      );
     }, 300000); // 5 minute timeout for multiple calls
 
     it('should handle cross-feedback performance correctly', async () => {
-      const models = [
-        { model: 'gpt-4o-mini' },
-        { model: 'gemini-2.5-flash' }
-      ];
+      const models = [{ model: 'gpt-4o-mini' }, { model: 'gemini-2.5-flash' }];
 
       const testPrompt = 'What are the benefits of renewable energy?';
 
@@ -253,8 +293,8 @@ describe('Consensus Performance Tests', () => {
           prompt: testPrompt,
           models,
           enable_cross_feedback: false,
-          temperature: 0.1
-        }
+          temperature: 0.1,
+        },
       });
       const noCrossFeedbackDuration = Date.now() - noCrossFeedbackStart;
 
@@ -268,8 +308,8 @@ describe('Consensus Performance Tests', () => {
           prompt: testPrompt,
           models,
           enable_cross_feedback: true,
-          temperature: 0.1
-        }
+          temperature: 0.1,
+        },
       });
       const crossFeedbackDuration = Date.now() - crossFeedbackStart;
 
@@ -281,10 +321,15 @@ describe('Consensus Performance Tests', () => {
       expect(ratio).toBeGreaterThan(0.8); // Sometimes cross-feedback can be faster due to caching
       expect(ratio).toBeLessThan(6.0); // But not excessively longer - generous threshold
 
-      logger.info(`[performance-consensus-test] No cross-feedback: ${noCrossFeedbackDuration}ms, With cross-feedback: ${crossFeedbackDuration}ms, Ratio: ${ratio.toFixed(2)}x`);
+      logger.info(
+        `[performance-consensus-test] No cross-feedback: ${noCrossFeedbackDuration}ms, With cross-feedback: ${crossFeedbackDuration}ms, Ratio: ${ratio.toFixed(2)}x`,
+      );
 
       // Verify we got refinements
-      const crossFeedbackData = parseConsensusResponse(crossFeedbackResult, 'cross-feedback performance');
+      const crossFeedbackData = parseConsensusResponse(
+        crossFeedbackResult,
+        'cross-feedback performance',
+      );
       expect(crossFeedbackData.phases.refined).toBeDefined();
       expect(crossFeedbackData.refined_responses).toBeGreaterThan(0);
     }, 180000); // 3 minute timeout
@@ -293,10 +338,7 @@ describe('Consensus Performance Tests', () => {
   describe('Concurrent Consensus Performance', () => {
     it('should handle multiple concurrent consensus requests', async () => {
       const concurrentRequests = 3;
-      const models = [
-        { model: 'auto' },
-        { model: 'auto' }
-      ];
+      const models = [{ model: 'auto' }, { model: 'auto' }];
 
       const requests = [];
       const startTime = Date.now();
@@ -310,9 +352,9 @@ describe('Consensus Performance Tests', () => {
               prompt: `Concurrent consensus test ${i + 1}: What is ${i + 2} + ${i + 3}?`,
               models,
               enable_cross_feedback: false,
-              temperature: 0
-            }
-          })
+              temperature: 0,
+            },
+          }),
         );
       }
 
@@ -322,7 +364,10 @@ describe('Consensus Performance Tests', () => {
       // All should succeed
       results.forEach((result, index) => {
         expect(result.isError).toBe(false);
-        const consensusData = parseConsensusResponse(result, `concurrent request ${index}`);
+        const consensusData = parseConsensusResponse(
+          result,
+          `concurrent request ${index}`,
+        );
         expect(consensusData.status).toBe('consensus_complete');
         expect(consensusData.models_consulted).toBe(models.length);
       });
@@ -331,11 +376,13 @@ describe('Consensus Performance Tests', () => {
       const avgDurationPerRequest = totalDuration / concurrentRequests;
       expect(avgDurationPerRequest).toBeLessThan(60000); // 1 minute per request on average
 
-      logger.info(`[performance-consensus-test] ${concurrentRequests} concurrent consensus requests completed in ${totalDuration}ms (avg: ${avgDurationPerRequest}ms per request)`);
+      logger.info(
+        `[performance-consensus-test] ${concurrentRequests} concurrent consensus requests completed in ${totalDuration}ms (avg: ${avgDurationPerRequest}ms per request)`,
+      );
     }, 180000);
 
     it('should maintain quality under concurrent load', async () => {
-      const concurrentRequests = 3;  // Reduce concurrent load to avoid rate limiting
+      const concurrentRequests = 3; // Reduce concurrent load to avoid rate limiting
       const models = ['gpt-4o-mini'];
       const testPrompt = 'What is the square root of 16?';
 
@@ -349,9 +396,9 @@ describe('Consensus Performance Tests', () => {
               prompt: testPrompt,
               models,
               enable_cross_feedback: false,
-              temperature: 0
-            }
-          })
+              temperature: 0,
+            },
+          }),
         );
       }
 
@@ -361,7 +408,10 @@ describe('Consensus Performance Tests', () => {
       results.forEach((result, index) => {
         expect(result.isError).toBe(false);
 
-        const consensusData = parseConsensusResponse(result, `quality test ${index}`);
+        const consensusData = parseConsensusResponse(
+          result,
+          `quality test ${index}`,
+        );
         expect(consensusData.successful_initial_responses).toBe(1);
 
         // Should contain correct answer (4)
@@ -369,7 +419,9 @@ describe('Consensus Performance Tests', () => {
         expect(response).toContain('4');
       });
 
-      logger.info(`[performance-consensus-test] ${concurrentRequests} concurrent requests maintained quality`);
+      logger.info(
+        `[performance-consensus-test] ${concurrentRequests} concurrent requests maintained quality`,
+      );
     }, 120000);
   });
 
@@ -383,11 +435,12 @@ describe('Consensus Performance Tests', () => {
       const result = await router.callTool({
         name: 'consensus',
         arguments: {
-          prompt: 'Explain the importance of parallel processing in modern computing.',
+          prompt:
+            'Explain the importance of parallel processing in modern computing.',
           models,
           enable_cross_feedback: true,
-          temperature: 0.2
-        }
+          temperature: 0.2,
+        },
       });
 
       const finalMemory = process.memoryUsage();
@@ -398,11 +451,15 @@ describe('Consensus Performance Tests', () => {
       // Memory increase should be reasonable (less than 50MB)
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024);
 
-      logger.info(`[performance-consensus-test] Memory increase during consensus: ${Math.round(memoryIncrease / 1024 / 1024)}MB`);
+      logger.info(
+        `[performance-consensus-test] Memory increase during consensus: ${Math.round(memoryIncrease / 1024 / 1024)}MB`,
+      );
     }, 120000);
 
     it('should handle resource cleanup correctly', async () => {
-      const { getContinuationStore } = await import('../../../src/continuationStore.js');
+      const { getContinuationStore } = await import(
+        '../../../src/continuationStore.js'
+      );
       const store = getContinuationStore();
 
       const initialStats = await store.getStats();
@@ -416,8 +473,8 @@ describe('Consensus Performance Tests', () => {
           arguments: {
             prompt: `Resource cleanup test ${i + 1}`,
             models: ['auto'],
-            enable_cross_feedback: false
-          }
+            enable_cross_feedback: false,
+          },
         });
 
         // Handle both sync and async responses for continuation ID
@@ -455,23 +512,23 @@ describe('Consensus Performance Tests', () => {
         apiKeys: {
           openai: null,
           xai: null,
-          google: null
-        }
+          google: null,
+        },
       };
 
       // Create temporary server for empty config test
       const tempServer = new Server(
         {
           name: 'test-server',
-          version: '1.0.0'
+          version: '1.0.0',
         },
         {
           capabilities: {
             tools: {},
             prompts: {},
-            resources: {}
-          }
-        }
+            resources: {},
+          },
+        },
       );
 
       const emptyRouter = await createRouter(tempServer, emptyConfig);
@@ -481,8 +538,8 @@ describe('Consensus Performance Tests', () => {
         name: 'consensus',
         arguments: {
           prompt: 'This should fail fast',
-          models: ['auto']
-        }
+          models: ['auto'],
+        },
       });
       const duration = Date.now() - startTime;
 
@@ -490,14 +547,16 @@ describe('Consensus Performance Tests', () => {
       // Should fail quickly (within 5 seconds)
       expect(duration).toBeLessThan(5000);
 
-      logger.info(`[performance-consensus-test] Fast failure completed in ${duration}ms`);
+      logger.info(
+        `[performance-consensus-test] Fast failure completed in ${duration}ms`,
+      );
     }, 15000);
 
     it('should handle partial provider failures efficiently', async () => {
       const models = [
-        { model: 'gpt-4o-mini' },  // Should work
+        { model: 'gpt-4o-mini' }, // Should work
         { model: 'definitely-nonexistent-model-xyz' }, // Should fail
-        { model: 'gemini-2.5-flash' }  // Should work
+        { model: 'gemini-2.5-flash' }, // Should work
       ];
 
       const startTime = Date.now();
@@ -507,8 +566,8 @@ describe('Consensus Performance Tests', () => {
           prompt: 'Partial failure test',
           models,
           enable_cross_feedback: false,
-          temperature: 0
-        }
+          temperature: 0,
+        },
       });
       const duration = Date.now() - startTime;
 
@@ -521,40 +580,62 @@ describe('Consensus Performance Tests', () => {
       // Should complete in reasonable time
       expect(duration).toBeLessThan(60000);
 
-      logger.info(`[performance-consensus-test] Partial failure handling completed in ${duration}ms`);
+      logger.info(
+        `[performance-consensus-test] Partial failure handling completed in ${duration}ms`,
+      );
     }, 90000);
   });
 
   describe('Scalability Testing', () => {
     it('should scale with real multiple providers', async () => {
       if (!hasMultipleProviders) {
-        console.log('[performance-consensus-test] Skipping test - hasMultipleProviders:', hasMultipleProviders);
+        console.log(
+          '[performance-consensus-test] Skipping test - hasMultipleProviders:',
+          hasMultipleProviders,
+        );
         return;
       }
       const availableModels = [];
 
-      if (config?.apiKeys?.openai) availableModels.push({ model: 'gpt-4o-mini' });
-      if (config?.apiKeys?.mistral) availableModels.push({ model: 'magistral-small-2506' });
-      if (config?.apiKeys?.google) availableModels.push({ model: 'gemini-2.5-flash' });
-      if (config?.apiKeys?.anthropic) availableModels.push({ model: 'claude-3-5-haiku-20241022' });
-      if (config?.apiKeys?.deepseek) availableModels.push({ model: 'deepseek-chat' });
+      if (config?.apiKeys?.openai)
+        availableModels.push({ model: 'gpt-4o-mini' });
+      if (config?.apiKeys?.mistral)
+        availableModels.push({ model: 'magistral-small-2506' });
+      if (config?.apiKeys?.google)
+        availableModels.push({ model: 'gemini-2.5-flash' });
+      if (config?.apiKeys?.anthropic)
+        availableModels.push({ model: 'claude-3-5-haiku-20241022' });
+      if (config?.apiKeys?.deepseek)
+        availableModels.push({ model: 'deepseek-chat' });
       if (config?.apiKeys?.xai) availableModels.push({ model: 'grok-4' });
-      if (config?.apiKeys?.openrouter) availableModels.push({ model: 'openai/gpt-4o-mini' });
+      if (config?.apiKeys?.openrouter)
+        availableModels.push({ model: 'openai/gpt-4o-mini' });
 
-      console.log('[performance-consensus-test] Test available models:', availableModels);
+      console.log(
+        '[performance-consensus-test] Test available models:',
+        availableModels,
+      );
 
-      const testPrompt = 'What is the speed of light? Answer with just the number and unit.';
+      const testPrompt =
+        'What is the speed of light? Answer with just the number and unit.';
 
       // Test with a limited number of providers to avoid timeout
       const maxProvidersToTest = Math.min(3, availableModels.length);
-      console.log(`[performance-consensus-test] Will test with up to ${maxProvidersToTest} providers`);
+      console.log(
+        `[performance-consensus-test] Will test with up to ${maxProvidersToTest} providers`,
+      );
 
       for (let count = 1; count <= maxProvidersToTest; count++) {
         const models = availableModels.slice(0, count);
-        console.log(`[performance-consensus-test] Starting test ${count}/${maxProvidersToTest} with models:`, models);
+        console.log(
+          `[performance-consensus-test] Starting test ${count}/${maxProvidersToTest} with models:`,
+          models,
+        );
 
         const startTime = Date.now();
-        console.log(`[performance-consensus-test] Calling consensus tool at ${new Date().toISOString()}`);
+        console.log(
+          `[performance-consensus-test] Calling consensus tool at ${new Date().toISOString()}`,
+        );
 
         const result = await router.callTool({
           name: 'consensus',
@@ -562,29 +643,40 @@ describe('Consensus Performance Tests', () => {
             prompt: testPrompt,
             models,
             enable_cross_feedback: false,
-            temperature: 0
-          }
+            temperature: 0,
+          },
         });
         const duration = Date.now() - startTime;
-        console.log(`[performance-consensus-test] Consensus call completed in ${duration}ms at ${new Date().toISOString()}`);
+        console.log(
+          `[performance-consensus-test] Consensus call completed in ${duration}ms at ${new Date().toISOString()}`,
+        );
 
         if (result.isError) {
-          console.error('[performance-consensus-test] Error in consensus call:', result);
+          console.error(
+            '[performance-consensus-test] Error in consensus call:',
+            result,
+          );
         }
         expect(result.isError).toBe(false);
 
-        const consensusData = parseConsensusResponse(result, 'memory usage test');
+        const consensusData = parseConsensusResponse(
+          result,
+          'memory usage test',
+        );
         console.log('[performance-consensus-test] Consensus results:', {
           models_consulted: consensusData.models_consulted,
-          successful_initial_responses: consensusData.successful_initial_responses,
+          successful_initial_responses:
+            consensusData.successful_initial_responses,
           failed_responses: consensusData.failed_responses,
-          status: consensusData.status
+          status: consensusData.status,
         });
 
         expect(consensusData.models_consulted).toBe(count);
         expect(consensusData.successful_initial_responses).toBeGreaterThan(0);
 
-        logger.info(`[performance-consensus-test] ${count} real providers: ${duration}ms`);
+        logger.info(
+          `[performance-consensus-test] ${count} real providers: ${duration}ms`,
+        );
       }
     }, 300000); // Increased to 5 minutes
 
@@ -604,9 +696,9 @@ describe('Consensus Performance Tests', () => {
               prompt: `High frequency test ${i}`,
               models,
               enable_cross_feedback: false,
-              temperature: 0
-            }
-          })
+              temperature: 0,
+            },
+          }),
         );
       }
 
@@ -614,16 +706,22 @@ describe('Consensus Performance Tests', () => {
       const totalDuration = Date.now() - startTime;
 
       // Count successes
-      const successful = results.filter(r => r.status === 'fulfilled' && !r.value.isError);
+      const successful = results.filter(
+        (r) => r.status === 'fulfilled' && !r.value.isError,
+      );
       const failed = results.length - successful.length;
 
       expect(successful.length).toBeGreaterThan(requestCount * 0.8); // At least 80% success rate
 
       const avgDuration = totalDuration / requestCount;
-      logger.info(`[performance-consensus-test] High frequency: ${successful.length}/${requestCount} successful, avg ${avgDuration}ms per request`);
+      logger.info(
+        `[performance-consensus-test] High frequency: ${successful.length}/${requestCount} successful, avg ${avgDuration}ms per request`,
+      );
 
       if (failed > 0) {
-        logger.info(`[performance-consensus-test] ${failed} requests failed (rate limiting or provider issues)`);
+        logger.info(
+          `[performance-consensus-test] ${failed} requests failed (rate limiting or provider issues)`,
+        );
       }
     }, 300000); // 5 minute timeout
   });
@@ -636,22 +734,22 @@ describe('Consensus Performance Tests', () => {
           models: ['auto'],
           prompt: 'What is 1+1?',
           maxTime: 30000, // 30 seconds
-          crossFeedback: false
+          crossFeedback: false,
         },
         {
           name: 'Medium complexity - 2 models',
           models: ['auto', 'auto'],
           prompt: 'Explain the concept of machine learning briefly.',
           maxTime: 60000, // 1 minute
-          crossFeedback: false
+          crossFeedback: false,
         },
         {
           name: 'Complex with cross-feedback - 2 models',
           models: ['auto', 'auto'],
           prompt: 'Compare the advantages of renewable vs fossil fuels.',
           maxTime: 120000, // 2 minutes
-          crossFeedback: true
-        }
+          crossFeedback: true,
+        },
       ];
 
       for (const benchmark of benchmarks) {
@@ -663,8 +761,8 @@ describe('Consensus Performance Tests', () => {
             prompt: benchmark.prompt,
             models: benchmark.models,
             enable_cross_feedback: benchmark.crossFeedback,
-            temperature: 0.1
-          }
+            temperature: 0.1,
+          },
         });
 
         const duration = Date.now() - startTime;
@@ -672,10 +770,15 @@ describe('Consensus Performance Tests', () => {
         expect(result.isError).toBe(false);
         expect(duration).toBeLessThan(benchmark.maxTime);
 
-        const consensusData = parseConsensusResponse(result, `performance benchmark ${benchmark.name}`);
+        const consensusData = parseConsensusResponse(
+          result,
+          `performance benchmark ${benchmark.name}`,
+        );
         expect(consensusData.models_consulted).toBe(benchmark.models.length);
 
-        logger.info(`[performance-consensus-test] ${benchmark.name}: ${duration}ms (limit: ${benchmark.maxTime}ms)`);
+        logger.info(
+          `[performance-consensus-test] ${benchmark.name}: ${duration}ms (limit: ${benchmark.maxTime}ms)`,
+        );
       }
     }, 300000); // 5 minute timeout for all benchmarks
   });

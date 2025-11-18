@@ -17,18 +17,18 @@ The mock provider system consists of:
 ### Basic Usage
 
 ```javascript
-import { createMockProvider, mockOpenAIProvider } from '../mocks/providers';
+import { createMockProvider, mockOpenAIProvider } from "../mocks/providers";
 
 // Use pre-configured mock
 const provider = mockOpenAIProvider;
 
 // Or create a custom mock
 const customProvider = createMockProvider({
-  name: 'custom-provider',
+  name: "custom-provider",
   invoke: vi.fn().mockResolvedValue({
-    content: 'Custom response',
-    stop_reason: 'stop'
-  })
+    content: "Custom response",
+    stop_reason: "stop",
+  }),
 });
 ```
 
@@ -44,8 +44,8 @@ import {
   mockAnthropicProvider,
   mockOpenRouterProvider,
   mockMistralProvider,
-  mockDeepSeekProvider
-} from '../mocks/providers';
+  mockDeepSeekProvider,
+} from "../mocks/providers";
 
 // Each mock implements the complete provider interface
 const response = await mockOpenAIProvider.invoke(messages, options);
@@ -56,13 +56,13 @@ const response = await mockOpenAIProvider.invoke(messages, options);
 Use the `MockResponseBuilder` for consistent response creation:
 
 ```javascript
-import { MockResponseBuilder } from '../mocks/providers';
+import { MockResponseBuilder } from "../mocks/providers";
 
 const response = new MockResponseBuilder()
-  .withContent('Hello, world!')
-  .withModel('gpt-4')
+  .withContent("Hello, world!")
+  .withModel("gpt-4")
   .withUsage({ input_tokens: 10, output_tokens: 20 })
-  .withProvider('openai')
+  .withProvider("openai")
   .build();
 ```
 
@@ -71,7 +71,7 @@ const response = new MockResponseBuilder()
 Configure mock behavior for different scenarios:
 
 ```javascript
-import { createMockProvider } from '../mocks/providers';
+import { createMockProvider } from "../mocks/providers";
 
 const provider = createMockProvider();
 
@@ -80,14 +80,14 @@ provider.behavior.addDelay(500); // 500ms delay
 
 // Add errors on specific calls
 provider.behavior.addError(
-  new ProviderError('Rate limit', ErrorCodes.RATE_LIMIT_EXCEEDED),
-  2 // Throw on second call
+  new ProviderError("Rate limit", ErrorCodes.RATE_LIMIT_EXCEEDED),
+  2, // Throw on second call
 );
 
 // Add custom responses
 provider.behavior.addResponse(
-  new MockResponseBuilder().withContent('Custom').build(),
-  1 // Return on first call
+  new MockResponseBuilder().withContent("Custom").build(),
+  1, // Return on first call
 );
 ```
 
@@ -103,8 +103,8 @@ await provider.invoke(messages, options);
 await provider.validateConfig(config);
 
 // Assert on calls
-expect(provider.tracker.getCallCount('invoke')).toBe(1);
-expect(provider.tracker.getLastCall('invoke').args.options.model).toBe('gpt-4');
+expect(provider.tracker.getCallCount("invoke")).toBe(1);
+expect(provider.tracker.getLastCall("invoke").args.options.model).toBe("gpt-4");
 
 // Reset tracking
 provider.tracker.reset();
@@ -115,18 +115,18 @@ provider.tracker.reset();
 Simulate various error conditions:
 
 ```javascript
-import { createMockProviderWithError, ErrorCodes } from '../mocks/providers';
+import { createMockProviderWithError, ErrorCodes } from "../mocks/providers";
 
 // Create provider that always throws
 const errorProvider = createMockProviderWithError({
-  message: 'API key invalid',
-  code: ErrorCodes.INVALID_API_KEY
+  message: "API key invalid",
+  code: ErrorCodes.INVALID_API_KEY,
 });
 
 // Provider-specific errors
-import { createMockOpenAIError } from '../mocks/providers';
+import { createMockOpenAIError } from "../mocks/providers";
 
-const openAIError = createMockOpenAIError('rate_limit');
+const openAIError = createMockOpenAIError("rate_limit");
 ```
 
 ### Streaming Responses
@@ -134,9 +134,9 @@ const openAIError = createMockOpenAIError('rate_limit');
 Test streaming behavior:
 
 ```javascript
-import { createMockProviderWithStreaming } from '../mocks/providers';
+import { createMockProviderWithStreaming } from "../mocks/providers";
 
-const streamProvider = createMockProviderWithStreaming(['Hello', ' ', 'world']);
+const streamProvider = createMockProviderWithStreaming(["Hello", " ", "world"]);
 
 const response = await streamProvider.invoke(messages, { stream: true });
 for await (const chunk of response) {
@@ -149,7 +149,7 @@ for await (const chunk of response) {
 Test rate limit handling:
 
 ```javascript
-import { createMockProviderWithRateLimit } from '../mocks/providers';
+import { createMockProviderWithRateLimit } from "../mocks/providers";
 
 const rateLimitedProvider = createMockProviderWithRateLimit(3);
 
@@ -159,8 +159,9 @@ await rateLimitedProvider.invoke(messages);
 await rateLimitedProvider.invoke(messages);
 
 // Fourth call throws rate limit error
-await expect(rateLimitedProvider.invoke(messages))
-  .rejects.toThrow('Rate limit exceeded');
+await expect(rateLimitedProvider.invoke(messages)).rejects.toThrow(
+  "Rate limit exceeded",
+);
 ```
 
 ## Provider-Specific Features
@@ -174,9 +175,9 @@ await expect(rateLimitedProvider.invoke(messages))
 ```javascript
 const provider = createMockOpenAIProvider();
 const response = await provider.invoke(messages, {
-  model: 'o1',
-  reasoning_effort: 'high',
-  config: { apiKeys: { openai: 'key' } }
+  model: "o1",
+  reasoning_effort: "high",
+  config: { apiKeys: { openai: "key" } },
 });
 
 expect(response.metadata.usage.reasoning_tokens).toBe(5000);
@@ -191,8 +192,8 @@ expect(response.metadata.usage.reasoning_tokens).toBe(5000);
 ```javascript
 const provider = createMockGoogleProvider();
 const response = await provider.invoke(messages, {
-  model: 'gemini-2.0-flash-thinking-exp',
-  config: { apiKeys: { google: 'key' } }
+  model: "gemini-2.0-flash-thinking-exp",
+  config: { apiKeys: { google: "key" } },
 });
 ```
 
@@ -204,9 +205,9 @@ const response = await provider.invoke(messages, {
 ```javascript
 const provider = createMockXAIProvider();
 const response = await provider.invoke(messages, {
-  model: 'grok-4',
+  model: "grok-4",
   use_websearch: true,
-  config: { apiKeys: { xai: 'key' } }
+  config: { apiKeys: { xai: "key" } },
 });
 
 expect(response.rawResponse.extra.live_search).toBe(true);
@@ -221,8 +222,8 @@ expect(response.rawResponse.extra.live_search).toBe(true);
 ```javascript
 const provider = createMockAnthropicProvider();
 const response = await provider.invoke(messages, {
-  model: 'claude-3-5-sonnet-20241022',
-  config: { apiKeys: { anthropic: 'key' } }
+  model: "claude-3-5-sonnet-20241022",
+  config: { apiKeys: { anthropic: "key" } },
 });
 ```
 
@@ -237,8 +238,8 @@ const provider = createMockOpenRouterProvider();
 
 // Dynamic model
 const response = await provider.invoke(messages, {
-  model: 'custom/new-model',
-  config: { apiKeys: { openrouter: 'key' } }
+  model: "custom/new-model",
+  config: { apiKeys: { openrouter: "key" } },
 });
 
 // Refresh model list
@@ -253,8 +254,8 @@ const models = await provider.refreshModelList();
 ```javascript
 const provider = createMockMistralProvider();
 const response = await provider.invoke(messages, {
-  model: 'codestral-latest',
-  config: { apiKeys: { mistral: 'key' } }
+  model: "codestral-latest",
+  config: { apiKeys: { mistral: "key" } },
 });
 ```
 
@@ -266,9 +267,9 @@ const response = await provider.invoke(messages, {
 ```javascript
 const provider = createMockDeepSeekProvider();
 const response = await provider.invoke(messages, {
-  model: 'deepseek-reasoner',
-  reasoning_effort: 'high',
-  config: { apiKeys: { deepseek: 'key' } }
+  model: "deepseek-reasoner",
+  reasoning_effort: "high",
+  config: { apiKeys: { deepseek: "key" } },
 });
 
 expect(response.metadata.usage.reasoning_tokens).toBe(15000);
@@ -279,32 +280,32 @@ expect(response.metadata.usage.reasoning_tokens).toBe(15000);
 ### Unit Test Example
 
 ```javascript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockProvider } from '../mocks/providers';
+import { describe, it, expect, beforeEach } from "vitest";
+import { createMockProvider } from "../mocks/providers";
 
-describe('MyComponent', () => {
+describe("MyComponent", () => {
   let mockProvider;
-  
+
   beforeEach(() => {
     mockProvider = createMockProvider();
   });
-  
-  it('should handle provider responses', async () => {
+
+  it("should handle provider responses", async () => {
     // Configure response
     mockProvider.invoke.mockResolvedValue({
-      content: 'Test response',
-      stop_reason: 'stop'
+      content: "Test response",
+      stop_reason: "stop",
     });
-    
+
     // Test your component
     const result = await myComponent.process(mockProvider);
-    
+
     // Assert
     expect(mockProvider.invoke).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ model: 'gpt-4' })
+      expect.objectContaining({ model: "gpt-4" }),
     );
-    expect(result).toBe('Test response');
+    expect(result).toBe("Test response");
   });
 });
 ```
@@ -312,25 +313,25 @@ describe('MyComponent', () => {
 ### Integration Test Example
 
 ```javascript
-import { createMockProviderRegistry } from '../mocks/providers';
+import { createMockProviderRegistry } from "../mocks/providers";
 
-describe('Tool Integration', () => {
+describe("Tool Integration", () => {
   let registry;
-  
+
   beforeEach(() => {
     registry = createMockProviderRegistry();
   });
-  
+
   afterEach(() => {
     registry.reset();
   });
-  
-  it('should work with multiple providers', async () => {
-    const config = { apiKeys: { openai: 'key', google: 'key' } };
+
+  it("should work with multiple providers", async () => {
+    const config = { apiKeys: { openai: "key", google: "key" } };
     const available = registry.getAvailable(config);
-    
-    expect(available).toHaveProperty('openai');
-    expect(available).toHaveProperty('google');
+
+    expect(available).toHaveProperty("openai");
+    expect(available).toHaveProperty("google");
   });
 });
 ```

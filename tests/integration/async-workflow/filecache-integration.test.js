@@ -12,7 +12,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { getFileCache, setFileCache } from '../../../src/async/fileCache.js';
-import { getAsyncJobStore, setAsyncJobStore } from '../../../src/async/asyncJobStore.js';
+import {
+  getAsyncJobStore,
+  setAsyncJobStore,
+} from '../../../src/async/asyncJobStore.js';
 import { getJobRunner, setJobRunner } from '../../../src/async/jobRunner.js';
 import { getEventBus } from '../../../src/async/eventBus.js';
 import { checkStatusTool } from '../../../src/tools/checkStatus.js';
@@ -50,7 +53,7 @@ describe('FileCache Integration Tests', () => {
     // Initialize FileCache with test directory
     fileCache = getFileCache({
       baseDir: testCacheDir,
-      maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
     });
 
     // Initialize AsyncJobStore
@@ -63,7 +66,7 @@ describe('FileCache Integration Tests', () => {
     jobRunner = getJobRunner({
       asyncJobStore,
       eventBus,
-      fileCache // Pass FileCache to JobRunner
+      fileCache, // Pass FileCache to JobRunner
     });
 
     // Set up dependencies
@@ -79,7 +82,7 @@ describe('FileCache Integration Tests', () => {
       asyncJobStore,
       jobRunner,
       fileCache,
-      providerStreamNormalizer
+      providerStreamNormalizer,
     };
   });
 
@@ -109,26 +112,26 @@ describe('FileCache Integration Tests', () => {
       // Submit a simple job
       const testJobId = `test_job_${Date.now()}`;
       const jobSpec = {
-        tool: 'chat',  // Must be 'chat' or 'consensus'
+        tool: 'chat', // Must be 'chat' or 'consensus'
         sessionId: 'test-session',
         options: {
-          jobId: testJobId,  // Required by JobRunner
+          jobId: testJobId, // Required by JobRunner
           provider: 'openai',
           model: 'gpt-5-nano',
-          title: 'Test Job Title'
-        }
+          title: 'Test Job Title',
+        },
       };
 
       const runFunction = async (context) => {
         // Simulate some work
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return { success: true, message: 'Job completed' };
       };
 
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for job to complete
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Check that snapshot was written to FileCache
       const snapshot = await fileCache.readSnapshot(jobId);
@@ -136,7 +139,10 @@ describe('FileCache Integration Tests', () => {
       expect(snapshot.jobId).toBe(jobId);
       expect(snapshot.status).toBe('completed');
       expect(snapshot.tool).toBe('chat');
-      expect(snapshot.result).toEqual({ success: true, message: 'Job completed' });
+      expect(snapshot.result).toEqual({
+        success: true,
+        message: 'Job completed',
+      });
       expect(snapshot.provider).toBe('openai');
       expect(snapshot.model).toBe('gpt-5-nano');
       expect(snapshot.title).toBe('Test Job Title');
@@ -145,14 +151,14 @@ describe('FileCache Integration Tests', () => {
     it('should write snapshot when job fails', async () => {
       const testJobId = `test_fail_${Date.now()}`;
       const jobSpec = {
-        tool: 'consensus',  // Must be 'chat' or 'consensus'
+        tool: 'consensus', // Must be 'chat' or 'consensus'
         sessionId: 'test-session',
         options: {
-          jobId: testJobId,  // Required by JobRunner
+          jobId: testJobId, // Required by JobRunner
           provider: 'google',
           model: 'gemini-2.5-flash',
-          title: 'Test Failed Job'
-        }
+          title: 'Test Failed Job',
+        },
       };
 
       const runFunction = async (context) => {
@@ -162,7 +168,7 @@ describe('FileCache Integration Tests', () => {
       const jobId = await jobRunner.submit(jobSpec, runFunction);
 
       // Wait for job to fail
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Check that snapshot was written to FileCache
       const snapshot = await fileCache.readSnapshot(jobId);
@@ -178,14 +184,14 @@ describe('FileCache Integration Tests', () => {
     it('should write snapshot when job is cancelled', async () => {
       const testJobId = `test_cancel_${Date.now()}`;
       const jobSpec = {
-        tool: 'chat',  // Must be 'chat' or 'consensus'
+        tool: 'chat', // Must be 'chat' or 'consensus'
         sessionId: 'test-session',
         options: {
-          jobId: testJobId,  // Required by JobRunner
+          jobId: testJobId, // Required by JobRunner
           provider: 'xai',
           model: 'grok-4',
-          title: 'Test Cancelled Job'
-        }
+          title: 'Test Cancelled Job',
+        },
       };
 
       const runFunction = async (context) => {
@@ -208,7 +214,7 @@ describe('FileCache Integration Tests', () => {
       }, 100);
 
       // Wait for cancellation to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Check that snapshot was written to FileCache
       const snapshot = await fileCache.readSnapshot(jobId);
@@ -236,7 +242,7 @@ describe('FileCache Integration Tests', () => {
           provider: 'openai',
           model: 'gpt-5',
           title: 'Test Chat 1',
-          final_summary: 'Completed test chat'
+          final_summary: 'Completed test chat',
         },
         {
           jobId: 'test_job_2',
@@ -248,7 +254,7 @@ describe('FileCache Integration Tests', () => {
           startedAt: Date.now() - 10000,
           provider: 'google',
           model: 'gemini-2.5-pro',
-          title: 'Test Consensus Failed'
+          title: 'Test Consensus Failed',
         },
         {
           jobId: 'test_job_3',
@@ -260,8 +266,8 @@ describe('FileCache Integration Tests', () => {
           startedAt: Date.now() - 35000,
           provider: 'xai',
           model: 'grok-4',
-          title: 'Test Chat 3'
-        }
+          title: 'Test Chat 3',
+        },
       ];
 
       // Write snapshots to FileCache
@@ -277,7 +283,7 @@ describe('FileCache Integration Tests', () => {
 
       // Parse the result - handle MCP format
       const content = Array.isArray(result.content)
-        ? result.content.find(c => c.type === 'text')?.text || ''
+        ? result.content.find((c) => c.type === 'text')?.text || ''
         : result.content;
       expect(content).toContain('test_job_1');
       expect(content).toContain('test_job_2');
@@ -295,7 +301,7 @@ describe('FileCache Integration Tests', () => {
         tool: 'chat',
         result: {
           content: 'This is a specific test response',
-          continuation_id: 'conv_specific_test'
+          continuation_id: 'conv_specific_test',
         },
         completedAt: Date.now() - 1000,
         createdAt: Date.now() - 5000,
@@ -303,7 +309,7 @@ describe('FileCache Integration Tests', () => {
         provider: 'openai',
         model: 'gpt-5',
         title: 'Specific Test Job',
-        final_summary: 'Successfully completed specific test'
+        final_summary: 'Successfully completed specific test',
       };
 
       // Write snapshot to FileCache
@@ -315,19 +321,19 @@ describe('FileCache Integration Tests', () => {
         jobId: 'conv_specific_test',
         provider: 'openai',
         model: 'gpt-5',
-        title: 'Specific Test Job'
+        title: 'Specific Test Job',
       });
       await asyncJobStore.complete('conv_specific_test', testJob.result);
 
       // Retrieve specific job by continuation_id
       const result = await checkStatusTool(
         { continuation_id: 'conv_specific_test' },
-        dependencies
+        dependencies,
       );
 
       // Check result contains the specific job - handle MCP format
       const content = Array.isArray(result.content)
-        ? result.content.find(c => c.type === 'text')?.text || ''
+        ? result.content.find((c) => c.type === 'text')?.text || ''
         : result.content;
       expect(content).toContain('conv_specific_test');
       expect(content).toContain('Specific Test Job');
@@ -340,129 +346,137 @@ describe('FileCache Integration Tests', () => {
   describe('End-to-End Async Flow with FileCache', () => {
     const testWithAnyKey = hasAnyApiKey() ? it : it.skip;
 
-    testWithAnyKey('should persist async chat job to FileCache', async () => {
-      // Submit an async chat request
-      const chatArgs = {
-        prompt: 'What is 2+2?',
-        async: true,
-        model: 'gpt-5-nano'
-      };
+    testWithAnyKey(
+      'should persist async chat job to FileCache',
+      async () => {
+        // Submit an async chat request
+        const chatArgs = {
+          prompt: 'What is 2+2?',
+          async: true,
+          model: 'gpt-5-nano',
+        };
 
-      const response = await chatTool(chatArgs, dependencies);
+        const response = await chatTool(chatArgs, dependencies);
 
-      // Extract continuation_id from response
-      // The response.content might be an array in MCP format
-      const content = Array.isArray(response.content)
-        ? response.content.find(c => c.type === 'text')?.text || ''
-        : response.content;
-      expect(content).toContain('continuation_id:');
-      const continuationId = content
-        .split('continuation_id: ')[1]
-        .split('\n')[0]
-        .trim();
+        // Extract continuation_id from response
+        // The response.content might be an array in MCP format
+        const content = Array.isArray(response.content)
+          ? response.content.find((c) => c.type === 'text')?.text || ''
+          : response.content;
+        expect(content).toContain('continuation_id:');
+        const continuationId = content
+          .split('continuation_id: ')[1]
+          .split('\n')[0]
+          .trim();
 
-      // Wait for job to complete or fail
-      await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for job to complete or fail
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      // Check snapshot was written
-      const snapshot = await fileCache.readSnapshot(continuationId);
-      expect(snapshot).toBeDefined();
-      expect(snapshot.jobId).toBe(continuationId);
-      expect(snapshot.tool).toBe('chat');
-      // Accept both completed and failed status (API might fail)
-      expect(['completed', 'failed']).toContain(snapshot.status);
+        // Check snapshot was written
+        const snapshot = await fileCache.readSnapshot(continuationId);
+        expect(snapshot).toBeDefined();
+        expect(snapshot.jobId).toBe(continuationId);
+        expect(snapshot.tool).toBe('chat');
+        // Accept both completed and failed status (API might fail)
+        expect(['completed', 'failed']).toContain(snapshot.status);
 
-      // Clear in-memory store to test retrieval from FileCache
-      // Note: AsyncJobStore doesn't have a clear method, so we'll just rely on it being empty
+        // Clear in-memory store to test retrieval from FileCache
+        // Note: AsyncJobStore doesn't have a clear method, so we'll just rely on it being empty
 
-      // Retrieve from FileCache using check_status
-      const statusResult = await checkStatusTool(
-        { continuation_id: continuationId },
-        dependencies
-      );
+        // Retrieve from FileCache using check_status
+        const statusResult = await checkStatusTool(
+          { continuation_id: continuationId },
+          dependencies,
+        );
 
-      // Handle MCP format
-      const statusContent = Array.isArray(statusResult.content)
-        ? statusResult.content.find(c => c.type === 'text')?.text || ''
-        : statusResult.content;
-      expect(statusContent).toContain(continuationId);
-      // Check that the job was persisted (either completed or failed due to API)
-      expect(statusContent).toMatch(/COMPLETED|FAILED/);
+        // Handle MCP format
+        const statusContent = Array.isArray(statusResult.content)
+          ? statusResult.content.find((c) => c.type === 'text')?.text || ''
+          : statusResult.content;
+        expect(statusContent).toContain(continuationId);
+        // Check that the job was persisted (either completed or failed due to API)
+        expect(statusContent).toMatch(/COMPLETED|FAILED/);
 
-      // If it failed due to API, verify it's the expected error
-      if (statusContent.includes('FAILED')) {
-        expect(statusContent).toMatch(/Provider.*not available|API key/);
-      }
-    }, 10000);
-
-    testWithAnyKey('should list mixed jobs from memory and FileCache', async () => {
-      // Add some old jobs directly to FileCache
-      const oldJobs = [
-        {
-          jobId: 'old_job_1',
-          status: 'completed',
-          tool: 'chat',
-          result: { content: 'Old job 1' },
-          completedAt: Date.now() - 3600000,
-          createdAt: Date.now() - 3700000,
-          provider: 'openai',
-          model: 'gpt-4',
-          title: 'Old Chat 1'
-        },
-        {
-          jobId: 'old_job_2',
-          status: 'completed',
-          tool: 'consensus',
-          result: { content: 'Old job 2' },
-          completedAt: Date.now() - 7200000,
-          createdAt: Date.now() - 7300000,
-          provider: 'google',
-          model: 'gemini-pro',
-          title: 'Old Consensus 2'
+        // If it failed due to API, verify it's the expected error
+        if (statusContent.includes('FAILED')) {
+          expect(statusContent).toMatch(/Provider.*not available|API key/);
         }
-      ];
+      },
+      10000,
+    );
 
-      for (const job of oldJobs) {
-        await fileCache.writeSnapshot(job.jobId, job);
-      }
+    testWithAnyKey(
+      'should list mixed jobs from memory and FileCache',
+      async () => {
+        // Add some old jobs directly to FileCache
+        const oldJobs = [
+          {
+            jobId: 'old_job_1',
+            status: 'completed',
+            tool: 'chat',
+            result: { content: 'Old job 1' },
+            completedAt: Date.now() - 3600000,
+            createdAt: Date.now() - 3700000,
+            provider: 'openai',
+            model: 'gpt-4',
+            title: 'Old Chat 1',
+          },
+          {
+            jobId: 'old_job_2',
+            status: 'completed',
+            tool: 'consensus',
+            result: { content: 'Old job 2' },
+            completedAt: Date.now() - 7200000,
+            createdAt: Date.now() - 7300000,
+            provider: 'google',
+            model: 'gemini-pro',
+            title: 'Old Consensus 2',
+          },
+        ];
 
-      // Submit a new async job
-      const chatArgs = {
-        prompt: 'What is the weather today?',
-        async: true,
-        model: 'gpt-5-nano'
-      };
+        for (const job of oldJobs) {
+          await fileCache.writeSnapshot(job.jobId, job);
+        }
 
-      const response = await chatTool(chatArgs, dependencies);
-      // The response.content might be an array in MCP format
-      const content = Array.isArray(response.content)
-        ? response.content.find(c => c.type === 'text')?.text || ''
-        : response.content;
-      const newJobId = content
-        .split('continuation_id: ')[1]
-        .split('\n')[0]
-        .trim();
+        // Submit a new async job
+        const chatArgs = {
+          prompt: 'What is the weather today?',
+          async: true,
+          model: 'gpt-5-nano',
+        };
 
-      // Wait for it to complete
-      await new Promise(resolve => setTimeout(resolve, 3000));
+        const response = await chatTool(chatArgs, dependencies);
+        // The response.content might be an array in MCP format
+        const content = Array.isArray(response.content)
+          ? response.content.find((c) => c.type === 'text')?.text || ''
+          : response.content;
+        const newJobId = content
+          .split('continuation_id: ')[1]
+          .split('\n')[0]
+          .trim();
 
-      // List all jobs (should include both memory and FileCache)
-      const statusResult = await checkStatusTool({}, dependencies);
+        // Wait for it to complete
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      // Handle MCP format
-      const statusContent = Array.isArray(statusResult.content)
-        ? statusResult.content.find(c => c.type === 'text')?.text || ''
-        : statusResult.content;
+        // List all jobs (should include both memory and FileCache)
+        const statusResult = await checkStatusTool({}, dependencies);
 
-      // Should include new job from memory
-      expect(statusContent).toContain(newJobId);
+        // Handle MCP format
+        const statusContent = Array.isArray(statusResult.content)
+          ? statusResult.content.find((c) => c.type === 'text')?.text || ''
+          : statusResult.content;
 
-      // Should include old jobs from FileCache
-      expect(statusContent).toContain('old_job_1');
-      expect(statusContent).toContain('old_job_2');
-      expect(statusContent).toContain('Old Chat 1');
-      expect(statusContent).toContain('Old Consensus 2');
-    }, 10000);
+        // Should include new job from memory
+        expect(statusContent).toContain(newJobId);
+
+        // Should include old jobs from FileCache
+        expect(statusContent).toContain('old_job_1');
+        expect(statusContent).toContain('old_job_2');
+        expect(statusContent).toContain('Old Chat 1');
+        expect(statusContent).toContain('Old Consensus 2');
+      },
+      10000,
+    );
   });
 
   describe('FileCache Directory Structure', () => {
@@ -473,7 +487,7 @@ describe('FileCache Integration Tests', () => {
         tool: 'chat',
         result: { content: 'Test' },
         completedAt: Date.now(),
-        createdAt: Date.now() - 1000
+        createdAt: Date.now() - 1000,
       };
 
       await fileCache.writeSnapshot(testJob.jobId, testJob);
@@ -483,7 +497,8 @@ describe('FileCache Integration Tests', () => {
       const expectedDir = path.join(testCacheDir, today, 'date_test_job');
       const expectedFile = path.join(expectedDir, 'result.json');
 
-      const fileExists = await fs.access(expectedFile)
+      const fileExists = await fs
+        .access(expectedFile)
         .then(() => true)
         .catch(() => false);
 
@@ -503,26 +518,32 @@ describe('FileCache Integration Tests', () => {
       await fileCache.writeJournalEvent(jobId, {
         type: 'job.started',
         timestamp: Date.now(),
-        tool: 'chat'
+        tool: 'chat',
       });
 
       await fileCache.writeJournalEvent(jobId, {
         type: 'job.progress',
         timestamp: Date.now(),
-        progress: 50
+        progress: 50,
       });
 
       await fileCache.writeJournalEvent(jobId, {
         type: 'job.completed',
         timestamp: Date.now(),
-        result: 'success'
+        result: 'success',
       });
 
       // Check journal file exists
       const today = new Date().toISOString().split('T')[0];
-      const journalPath = path.join(testCacheDir, today, jobId, 'journal.ndjson');
+      const journalPath = path.join(
+        testCacheDir,
+        today,
+        jobId,
+        'journal.ndjson',
+      );
 
-      const fileExists = await fs.access(journalPath)
+      const fileExists = await fs
+        .access(journalPath)
         .then(() => true)
         .catch(() => false);
 

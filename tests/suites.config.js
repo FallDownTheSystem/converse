@@ -17,19 +17,14 @@ export const testSuites = {
    * Execution time: ~30 seconds
    */
   unit: {
-    include: [
-      'tests/unit/providers/**/*.test.js',
-      'tests/tools/**/*.test.js'
-    ],
-    exclude: [
-      'tests/integration/**/*'
-    ],
+    include: ['tests/unit/providers/**/*.test.js', 'tests/tools/**/*.test.js'],
+    exclude: ['tests/integration/**/*'],
     testTimeout: 10000, // 10 seconds
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'error'
-    }
+      LOG_LEVEL: 'error',
+    },
   },
 
   /**
@@ -43,17 +38,15 @@ export const testSuites = {
       'tests/integration/mcp-protocol/**/*.test.js',
       'tests/integration/tools/**/*.test.js',
       'tests/integration/general/**/*.test.js',
-      'tests/integration/performance/**/*.test.js'
+      'tests/integration/performance/**/*.test.js',
     ],
-    exclude: [
-      'tests/integration/providers/**/*.test.js'
-    ],
+    exclude: ['tests/integration/providers/**/*.test.js'],
     testTimeout: 45000, // 45 seconds for HTTP transport
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'error'
-    }
+      LOG_LEVEL: 'error',
+    },
   },
 
   /**
@@ -63,16 +56,14 @@ export const testSuites = {
    * Execution time: ~15 seconds
    */
   providers: {
-    include: [
-      'tests/unit/providers/**/*.test.js'
-    ],
+    include: ['tests/unit/providers/**/*.test.js'],
     exclude: [],
     testTimeout: 10000, // 10 seconds
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'error'
-    }
+      LOG_LEVEL: 'error',
+    },
   },
 
   /**
@@ -85,17 +76,15 @@ export const testSuites = {
     include: [
       'tests/integration/providers/**/*-api.test.js',
       'tests/integration/providers/**/*-features.test.js',
-      'tests/integration/providers/multi-provider.test.js'
+      'tests/integration/providers/multi-provider.test.js',
     ],
-    exclude: [
-      'tests/integration/providers/_archived/**/*'
-    ],
+    exclude: ['tests/integration/providers/_archived/**/*'],
     testTimeout: 60000, // 1 minute per test
     setupFiles: ['tests/setup/api-keys-check.js'],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'warn'
-    }
+      LOG_LEVEL: 'warn',
+    },
   },
 
   /**
@@ -108,11 +97,9 @@ export const testSuites = {
     include: [
       'tests/integration/mcp-protocol/**/*.test.js',
       'tests/utils/HTTPMCPServerManager.test.js',
-      'tests/utils/HTTPMCPTestClient.test.js'
+      'tests/utils/HTTPMCPTestClient.test.js',
     ],
-    exclude: [
-      'tests/integration/providers/**/*.test.js'
-    ],
+    exclude: ['tests/integration/providers/**/*.test.js'],
     testTimeout: 45000, // 45 seconds for HTTP transport
     setupFiles: ['tests/setup/mcp-client-setup.js'],
     env: {
@@ -121,8 +108,8 @@ export const testSuites = {
       TEST_SUITE: 'mcp-client',
       HTTP_PORT: '0',
       HTTP_SESSION_TIMEOUT: '60000',
-      HTTP_MAX_CONCURRENT_SESSIONS: '10'
-    }
+      HTTP_MAX_CONCURRENT_SESSIONS: '10',
+    },
   },
 
   /**
@@ -132,16 +119,14 @@ export const testSuites = {
    * Execution time: ~5-15 minutes
    */
   performance: {
-    include: [
-      'tests/integration/performance/**/*.test.js'
-    ],
+    include: ['tests/integration/performance/**/*.test.js'],
     exclude: [],
     testTimeout: 300000, // 5 minutes per test
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'info'
-    }
+      LOG_LEVEL: 'info',
+    },
   },
 
   /**
@@ -161,15 +146,15 @@ export const testSuites = {
     ],
     exclude: [
       'tests/integration/providers/**/*.test.js',
-      'tests/integration/performance/**/*.test.js'
+      'tests/integration/performance/**/*.test.js',
     ],
     testTimeout: 45000, // 45 seconds for HTTP transport
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
       LOG_LEVEL: 'error',
-      CI: 'true'
-    }
+      CI: 'true',
+    },
   },
 
   /**
@@ -179,17 +164,15 @@ export const testSuites = {
    * Execution time: ~15-20 minutes
    */
   all: {
-    include: [
-      'tests/**/*.test.js'
-    ],
+    include: ['tests/**/*.test.js'],
     exclude: [],
     testTimeout: 300000, // 5 minutes per test
     setupFiles: [],
     env: {
       NODE_ENV: 'test',
-      LOG_LEVEL: 'info'
-    }
-  }
+      LOG_LEVEL: 'info',
+    },
+  },
 };
 
 /**
@@ -211,9 +194,9 @@ export function getTestConfig(suiteName) {
       setupFiles: suite.setupFiles,
       env: {
         ...suite.env,
-        TEST_SUITE: suiteName
-      }
-    }
+        TEST_SUITE: suiteName,
+      },
+    },
   };
 }
 
@@ -245,7 +228,7 @@ export function validateSuiteEnvironment(suiteName) {
     const apiKeys = {
       openai: process.env.OPENAI_API_KEY,
       xai: process.env.XAI_API_KEY,
-      google: process.env.GOOGLE_API_KEY
+      google: process.env.GOOGLE_API_KEY,
     };
 
     const missingKeys = Object.entries(apiKeys)
@@ -255,7 +238,9 @@ export function validateSuiteEnvironment(suiteName) {
     if (missingKeys.length === 3) {
       errors.push('No API keys found. Real API tests will be skipped.');
     } else if (missingKeys.length > 0) {
-      warnings.push(`Missing API keys: ${missingKeys.join(', ')}. Some tests may be skipped.`);
+      warnings.push(
+        `Missing API keys: ${missingKeys.join(', ')}. Some tests may be skipped.`,
+      );
     }
   }
 
@@ -263,7 +248,9 @@ export function validateSuiteEnvironment(suiteName) {
   const nodeVersion = process.version;
   const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
   if (majorVersion < 18) {
-    warnings.push(`Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`);
+    warnings.push(
+      `Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`,
+    );
   }
 
   // Check memory for performance tests
@@ -271,14 +258,16 @@ export function validateSuiteEnvironment(suiteName) {
     const memLimit = process.memoryUsage().heapTotal;
     const memLimitMB = memLimit / 1024 / 1024;
     if (memLimitMB < 512) {
-      warnings.push(`Low memory detected (${Math.round(memLimitMB)}MB). Performance tests may be affected.`);
+      warnings.push(
+        `Low memory detected (${Math.round(memLimitMB)}MB). Performance tests may be affected.`,
+      );
     }
   }
 
   return {
     valid: errors.length === 0,
     warnings,
-    errors
+    errors,
   };
 }
 

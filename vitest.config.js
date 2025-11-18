@@ -13,13 +13,13 @@ export default defineConfig(({ mode }) => ({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{js,ts}'],
       exclude: [
-        'node_modules/**',
         'tests/**',
         'dev-server.js',
         'scripts/**',
-        '**/*.config.js',
-        '**/*.config.ts'
+        '**/*.config.{js,ts}',
+        'bin/**'
       ]
     },
     
@@ -41,12 +41,7 @@ export default defineConfig(({ mode }) => ({
     
     // Parallel execution for faster test runs
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 4,
-        minThreads: 1
-      }
-    },
+    maxWorkers: 4,
     
     // Reporter configuration
     reporters: ['verbose'],

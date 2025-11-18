@@ -12,12 +12,12 @@ describe('MCP Server Integration Tests', () => {
         expect(Array.isArray(result.tools)).toBe(true);
 
         // Should have both chat and consensus tools
-        const toolNames = result.tools.map(tool => tool.name);
+        const toolNames = result.tools.map((tool) => tool.name);
         expect(toolNames).toContain('chat');
         expect(toolNames).toContain('consensus');
 
         // Each tool should have proper structure
-        result.tools.forEach(tool => {
+        result.tools.forEach((tool) => {
           expect(tool).toHaveProperty('name');
           expect(tool).toHaveProperty('description');
           expect(tool).toHaveProperty('inputSchema');
@@ -33,38 +33,38 @@ describe('MCP Server Integration Tests', () => {
           {
             toolName: 'chat',
             args: { prompt: 'Hello' },
-            shouldPass: true
+            shouldPass: true,
           },
           {
             toolName: 'chat',
-            args: { }, // Missing required prompt
-            shouldPass: false
+            args: {}, // Missing required prompt
+            shouldPass: false,
           },
           {
             toolName: 'consensus',
             args: {
               prompt: 'Test question',
-              models: ['flash']
+              models: ['flash'],
             },
-            shouldPass: true
+            shouldPass: true,
           },
           {
             toolName: 'consensus',
             args: { prompt: 'Test' }, // Missing models array
-            shouldPass: false
+            shouldPass: false,
           },
           {
             toolName: 'nonexistent',
             args: { prompt: 'Test' },
-            shouldPass: false
-          }
+            shouldPass: false,
+          },
         ];
 
         for (const test of validationTests) {
           try {
             const result = await client.callTool({
               name: test.toolName,
-              arguments: test.args
+              arguments: test.args,
             });
 
             if (test.shouldPass) {
@@ -78,7 +78,9 @@ describe('MCP Server Integration Tests', () => {
           } catch (error) {
             if (test.shouldPass) {
               // If it should pass but throws, check if it's an API/provider error (acceptable)
-              expect(error.message).toMatch(/(API key|provider|configuration)/i);
+              expect(error.message).toMatch(
+                /(API key|provider|configuration)/i,
+              );
             } else {
               // Should throw for invalid arguments
               expect(error).toBeDefined();
@@ -93,7 +95,7 @@ describe('MCP Server Integration Tests', () => {
         // Test invalid tool name - HTTP transport returns structured errors
         const invalidToolResult = await manager.executeToolCall({
           name: 'invalid-tool',
-          arguments: { prompt: 'test' }
+          arguments: { prompt: 'test' },
         });
 
         expect(invalidToolResult.isError).toBe(true);
@@ -106,13 +108,13 @@ describe('MCP Server Integration Tests', () => {
         const operations = [
           async (client) => client.listTools(),
           async (client) => client.listTools(),
-          async (client) => client.listTools()
+          async (client) => client.listTools(),
         ];
 
         const results = await manager.executeConcurrent(operations);
 
         expect(results).toHaveLength(3);
-        expect(results.every(r => r.success)).toBe(true);
+        expect(results.every((r) => r.success)).toBe(true);
       });
     });
 

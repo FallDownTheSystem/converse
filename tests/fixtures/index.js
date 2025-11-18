@@ -14,11 +14,21 @@ import { fileURLToPath } from 'url';
 // Load JSON files using readFileSync for compatibility
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const sampleResponses = JSON.parse(readFileSync(join(__dirname, 'data', 'sample-responses.json'), 'utf8'));
-const providerResponses = JSON.parse(readFileSync(join(__dirname, 'data', 'provider-responses.json'), 'utf8'));
-const toolFixtures = JSON.parse(readFileSync(join(__dirname, 'data', 'tool-fixtures.json'), 'utf8'));
-const errorScenarios = JSON.parse(readFileSync(join(__dirname, 'data', 'error-scenarios.json'), 'utf8'));
-const edgeCases = JSON.parse(readFileSync(join(__dirname, 'data', 'edge-cases.json'), 'utf8'));
+const sampleResponses = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'sample-responses.json'), 'utf8'),
+);
+const providerResponses = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'provider-responses.json'), 'utf8'),
+);
+const toolFixtures = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'tool-fixtures.json'), 'utf8'),
+);
+const errorScenarios = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'error-scenarios.json'), 'utf8'),
+);
+const edgeCases = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'edge-cases.json'), 'utf8'),
+);
 
 // Export fixture data
 export {
@@ -26,7 +36,7 @@ export {
   providerResponses,
   toolFixtures,
   errorScenarios,
-  edgeCases
+  edgeCases,
 };
 
 // Export fixture paths
@@ -56,7 +66,7 @@ export const FIXTURE_PATHS = {
   providerResponses: './data/provider-responses.json',
   toolFixtures: './data/tool-fixtures.json',
   errorScenarios: './data/error-scenarios.json',
-  edgeCases: './data/edge-cases.json'
+  edgeCases: './data/edge-cases.json',
 };
 
 /**
@@ -98,7 +108,9 @@ export function getFixturePath(fixturePath) {
  * @returns {Object} Mock response
  */
 export function createMockResponse(provider, model, content, options = {}) {
-  const template = providerResponses[provider]?.models[model] || providerResponses[provider]?.default;
+  const template =
+    providerResponses[provider]?.models[model] ||
+    providerResponses[provider]?.default;
   if (!template) {
     throw new Error(`No response template found for ${provider}/${model}`);
   }
@@ -121,7 +133,10 @@ export function createMockResponse(provider, model, content, options = {}) {
   case 'google':
     response.candidates[0].content.parts[0].text = content;
     if (options.usage) {
-      response.usageMetadata = { ...response.usageMetadata, ...options.usage };
+      response.usageMetadata = {
+        ...response.usageMetadata,
+        ...options.usage,
+      };
     }
     break;
   case 'anthropic':
@@ -162,7 +177,10 @@ export function createStreamingResponse(provider, chunks) {
       break;
     case 'anthropic':
       if (index === 0) {
-        return { type: 'message_start', message: { id: 'msg_test', model: 'claude-3-5-sonnet-20241022' } };
+        return {
+          type: 'message_start',
+          message: { id: 'msg_test', model: 'claude-3-5-sonnet-20241022' },
+        };
       } else if (index === chunks.length - 1) {
         return { type: 'message_delta', delta: { stop_reason: 'end_turn' } };
       }
@@ -228,9 +246,9 @@ export function createTestMatrix(options = {}) {
       openai: ['gpt-4', 'gpt-3.5-turbo'],
       google: ['gemini-2.5-pro', 'gemini-2.5-flash'],
       xai: ['grok-4', 'grok-2'],
-      anthropic: ['claude-3-5-sonnet-20241022']
+      anthropic: ['claude-3-5-sonnet-20241022'],
     },
-    scenarios = ['success', 'error', 'streaming']
+    scenarios = ['success', 'error', 'streaming'],
   } = options;
 
   const matrix = [];
@@ -243,7 +261,7 @@ export function createTestMatrix(options = {}) {
           provider,
           model,
           scenario,
-          key: `${provider}-${model}-${scenario}`
+          key: `${provider}-${model}-${scenario}`,
         });
       }
     }
@@ -268,5 +286,5 @@ export default {
   getErrorResponse,
   getToolFixture,
   getEdgeCase,
-  createTestMatrix
+  createTestMatrix,
 };

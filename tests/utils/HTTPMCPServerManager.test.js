@@ -6,7 +6,11 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { HTTPMCPServerManager, createHTTPTestServer, withHTTPTestServer } from './HTTPMCPServerManager.js';
+import {
+  HTTPMCPServerManager,
+  createHTTPTestServer,
+  withHTTPTestServer,
+} from './HTTPMCPServerManager.js';
 
 describe('HTTPMCPServerManager', () => {
   let manager;
@@ -14,7 +18,7 @@ describe('HTTPMCPServerManager', () => {
   beforeEach(() => {
     manager = new HTTPMCPServerManager({
       port: 0, // Use random port for each test
-      debugMode: false
+      debugMode: false,
     });
   });
 
@@ -53,7 +57,7 @@ describe('HTTPMCPServerManager', () => {
     test('should timeout if startup takes too long', async () => {
       const slowManager = new HTTPMCPServerManager({
         port: 0,
-        startupTimeout: 1 // Very short timeout (1ms)
+        startupTimeout: 1, // Very short timeout (1ms)
       });
 
       // This should timeout because the startup process takes longer than 1ms
@@ -93,7 +97,7 @@ describe('HTTPMCPServerManager', () => {
       expect(tools.tools.length).toBeGreaterThan(0);
 
       // Check for expected tools
-      const toolNames = tools.tools.map(t => t.name);
+      const toolNames = tools.tools.map((t) => t.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
     });
@@ -103,8 +107,8 @@ describe('HTTPMCPServerManager', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test message',
-          model: 'auto'
-        }
+          model: 'auto',
+        },
       });
 
       expect(result).toBeDefined();
@@ -115,20 +119,23 @@ describe('HTTPMCPServerManager', () => {
 
     test('should handle tool call timeout', async () => {
       await expect(
-        manager.executeToolCall({
-          name: 'chat',
-          arguments: {
-            prompt: 'Test message',
-            model: 'auto'
-          }
-        }, 1) // 1ms timeout
+        manager.executeToolCall(
+          {
+            name: 'chat',
+            arguments: {
+              prompt: 'Test message',
+              model: 'auto',
+            },
+          },
+          1,
+        ), // 1ms timeout
       ).rejects.toThrow('timeout');
     });
 
     test('should handle invalid tool calls', async () => {
       const result = await manager.executeToolCall({
         name: 'nonexistent-tool',
-        arguments: {}
+        arguments: {},
       });
 
       // Should return an error response rather than throwing
@@ -182,24 +189,27 @@ describe('HTTPMCPServerManager', () => {
 
     test('should handle concurrent operations', async () => {
       const operations = [
-        async (client) => client.callTool({
-          name: 'chat',
-          arguments: { prompt: 'Test 1', model: 'auto' }
-        }),
-        async (client) => client.callTool({
-          name: 'chat',
-          arguments: { prompt: 'Test 2', model: 'auto' }
-        }),
-        async (client) => client.callTool({
-          name: 'chat',
-          arguments: { prompt: 'Test 3', model: 'auto' }
-        })
+        async (client) =>
+          client.callTool({
+            name: 'chat',
+            arguments: { prompt: 'Test 1', model: 'auto' },
+          }),
+        async (client) =>
+          client.callTool({
+            name: 'chat',
+            arguments: { prompt: 'Test 2', model: 'auto' },
+          }),
+        async (client) =>
+          client.callTool({
+            name: 'chat',
+            arguments: { prompt: 'Test 3', model: 'auto' },
+          }),
       ];
 
       const results = await manager.executeConcurrent(operations);
 
       expect(results).toHaveLength(3);
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
     }, 60000);
   });
 
@@ -248,7 +258,7 @@ describe('HTTPMCPServerManager', () => {
     test('should cleanup resources on error', async () => {
       // Use invalid configuration to trigger error
       const badManager = new HTTPMCPServerManager({
-        port: -1 // Invalid port
+        port: -1, // Invalid port
       });
 
       await expect(badManager.startServer()).rejects.toThrow();
@@ -288,7 +298,7 @@ describe('HTTPMCPServerManager', () => {
     test('should respect custom host and port', async () => {
       const customManager = new HTTPMCPServerManager({
         host: '127.0.0.1',
-        port: 0
+        port: 0,
       });
 
       await customManager.startServer();
@@ -306,8 +316,8 @@ describe('HTTPMCPServerManager', () => {
       const envManager = new HTTPMCPServerManager({
         env: {
           LOG_LEVEL: 'debug',
-          TEST_VALUE: 'test123'
-        }
+          TEST_VALUE: 'test123',
+        },
       });
 
       await envManager.startServer();

@@ -12,7 +12,7 @@ import {
   withHTTPTestClient,
   createMultipleHTTPTestClients,
   stopMultipleHTTPTestClients,
-  testHTTPConcurrency
+  testHTTPConcurrency,
 } from './HTTPMCPTestClient.js';
 
 describe('HTTPMCPTestClient', () => {
@@ -21,7 +21,7 @@ describe('HTTPMCPTestClient', () => {
   beforeEach(() => {
     client = new HTTPMCPTestClient({
       port: 0, // Use random port for each test
-      debugMode: false
+      debugMode: false,
     });
   });
 
@@ -68,7 +68,7 @@ describe('HTTPMCPTestClient', () => {
       expect(tools.tools).toBeInstanceOf(Array);
       expect(tools.tools.length).toBeGreaterThan(0);
 
-      const toolNames = tools.tools.map(t => t.name);
+      const toolNames = tools.tools.map((t) => t.name);
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('consensus');
     });
@@ -76,7 +76,7 @@ describe('HTTPMCPTestClient', () => {
     test('should call tools with simplified interface', async () => {
       const result = await client.callTool('chat', {
         prompt: 'Test message',
-        model: 'auto'
+        model: 'auto',
       });
 
       expect(result).toBeDefined();
@@ -95,7 +95,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should use consensus helper method', async () => {
       const models = [
-        { model: 'auto' } // Use single auto model to avoid timeout issues
+        { model: 'auto' }, // Use single auto model to avoid timeout issues
       ];
 
       try {
@@ -186,13 +186,13 @@ describe('HTTPMCPTestClient', () => {
       const operations = [
         async () => client.chat('Test 1', { model: 'auto' }),
         async () => client.chat('Test 2', { model: 'auto' }),
-        async () => client.chat('Test 3', { model: 'auto' })
+        async () => client.chat('Test 3', { model: 'auto' }),
       ];
 
       const results = await client.executeConcurrent(operations);
 
       expect(results).toHaveLength(3);
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
     }, 120000);
 
     test('should test session isolation', async () => {
@@ -246,7 +246,7 @@ describe('HTTPMCPTestClient', () => {
       const retryClient = new HTTPMCPTestClient({
         maxRetries: 2,
         retryDelay: 100,
-        debugMode: true
+        debugMode: true,
       });
 
       await retryClient.start();
@@ -316,17 +316,15 @@ describe('HTTPMCPTestClient', () => {
 
       try {
         expect(clients).toHaveLength(2);
-        expect(clients.every(c => c.isReady)).toBe(true);
+        expect(clients.every((c) => c.isReady)).toBe(true);
 
         // Each client should have different ports
-        const ports = clients.map(c => c.getConnectionInfo().port);
+        const ports = clients.map((c) => c.getConnectionInfo().port);
         expect(new Set(ports).size).toBe(2); // All unique ports
 
         // Test that all clients work
-        const results = await Promise.all(
-          clients.map(c => c.listTools())
-        );
-        expect(results.every(r => r.tools.length > 0)).toBe(true);
+        const results = await Promise.all(clients.map((c) => c.listTools()));
+        expect(results.every((r) => r.tools.length > 0)).toBe(true);
       } finally {
         await stopMultipleHTTPTestClients(clients);
       }
@@ -347,7 +345,7 @@ describe('HTTPMCPTestClient', () => {
   describe('Error Handling', () => {
     test('should handle startup failures gracefully', async () => {
       const badClient = new HTTPMCPTestClient({
-        port: -1 // Invalid port
+        port: -1, // Invalid port
       });
 
       await expect(badClient.start()).rejects.toThrow();
@@ -383,8 +381,8 @@ describe('HTTPMCPTestClient', () => {
         operationTimeout: 60000,
         clientConfig: {
           name: 'custom-test-client',
-          version: '2.0.0'
-        }
+          version: '2.0.0',
+        },
       });
 
       await customClient.start();

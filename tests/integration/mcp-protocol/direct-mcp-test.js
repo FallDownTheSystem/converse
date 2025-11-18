@@ -71,7 +71,12 @@ class DirectMCPTest {
     } catch (error) {
       const duration = Date.now() - startTime;
       this.log(`✗ ${name} (${duration}ms): ${error.message}`, 'FAIL');
-      this.results.push({ name, success: false, duration, error: error.message });
+      this.results.push({
+        name,
+        success: false,
+        duration,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -83,10 +88,13 @@ class DirectMCPTest {
       throw new Error('Chat tool not available');
     }
 
-    const result = await chatTool({
-      prompt: 'Say exactly: "Direct chat test successful"',
-      model: 'openai:gpt-4o-mini'
-    }, this.dependencies);
+    const result = await chatTool(
+      {
+        prompt: 'Say exactly: "Direct chat test successful"',
+        model: 'openai:gpt-4o-mini',
+      },
+      this.dependencies,
+    );
 
     if (!result.content?.[0]?.text) {
       throw new Error('Invalid chat response format');
@@ -95,7 +103,7 @@ class DirectMCPTest {
     return {
       hasContent: true,
       responseLength: result.content[0].text.length,
-      toolName: 'chat'
+      toolName: 'chat',
     };
   }
 
@@ -104,26 +112,32 @@ class DirectMCPTest {
     const chatTool = this.tools.chat;
 
     // First message
-    const first = await chatTool({
-      prompt: 'Remember this code: ABC123. Just say "I remember ABC123"',
-      model: 'openai:gpt-4o-mini'
-    }, this.dependencies);
+    const first = await chatTool(
+      {
+        prompt: 'Remember this code: ABC123. Just say "I remember ABC123"',
+        model: 'openai:gpt-4o-mini',
+      },
+      this.dependencies,
+    );
 
     if (!first.continuation?.id) {
       throw new Error('No continuation in first response');
     }
 
     // Second message using continuation
-    const second = await chatTool({
-      prompt: 'What code did I ask you to remember?',
-      continuation: first.continuation.id,
-      model: 'openai:gpt-4o-mini'
-    }, this.dependencies);
+    const second = await chatTool(
+      {
+        prompt: 'What code did I ask you to remember?',
+        continuation: first.continuation.id,
+        model: 'openai:gpt-4o-mini',
+      },
+      this.dependencies,
+    );
 
     return {
       conversationId: first.continuation.id,
       conversationMaintained: second.continuation.id === first.continuation.id,
-      messageCount: second.continuation.messageCount
+      messageCount: second.continuation.messageCount,
     };
   }
 
@@ -134,13 +148,13 @@ class DirectMCPTest {
       throw new Error('Consensus tool not available');
     }
 
-    const result = await consensusTool({
-      prompt: 'What is 3 + 3? Answer with just the number.',
-      models: [
-        { model: 'openai:gpt-4o-mini' },
-        { model: 'google:flash' }
-      ]
-    }, this.dependencies);
+    const result = await consensusTool(
+      {
+        prompt: 'What is 3 + 3? Answer with just the number.',
+        models: [{ model: 'openai:gpt-4o-mini' }, { model: 'google:flash' }],
+      },
+      this.dependencies,
+    );
 
     if (!result.content?.[0]?.text) {
       throw new Error('Invalid consensus response format');
@@ -150,7 +164,7 @@ class DirectMCPTest {
     return {
       hasInitialResponses: text.includes('Initial Responses'),
       hasRefinedResponses: text.includes('Refined Responses'),
-      responseLength: text.length
+      responseLength: text.length,
     };
   }
 
@@ -160,14 +174,20 @@ class DirectMCPTest {
 
     // Create a test file
     const testFile = path.join(process.cwd(), 'test-context-file.txt');
-    await fs.writeFile(testFile, 'This is test content for context processing.\nSecond line of test.');
+    await fs.writeFile(
+      testFile,
+      'This is test content for context processing.\nSecond line of test.',
+    );
 
     try {
-      const result = await chatTool({
-        prompt: 'What is in the provided file? Summarize briefly.',
-        model: 'openai:gpt-4o-mini',
-        files: [testFile]
-      }, this.dependencies);
+      const result = await chatTool(
+        {
+          prompt: 'What is in the provided file? Summarize briefly.',
+          model: 'openai:gpt-4o-mini',
+          files: [testFile],
+        },
+        this.dependencies,
+      );
 
       if (!result.content?.[0]?.text) {
         throw new Error('No response content for file context test');
@@ -175,14 +195,17 @@ class DirectMCPTest {
 
       return {
         fileProcessed: true,
-        responseLength: result.content[0].text.length
+        responseLength: result.content[0].text.length,
       };
     } finally {
       // Cleanup
       try {
         await fs.unlink(testFile);
       } catch (error) {
-        this.log(`Warning: Could not delete test file: ${error.message}`, 'WARN');
+        this.log(
+          `Warning: Could not delete test file: ${error.message}`,
+          'WARN',
+        );
       }
     }
   }
@@ -192,14 +215,20 @@ class DirectMCPTest {
     const chatTool = this.tools.chat;
 
     try {
-      await chatTool({
-        // Missing required prompt
-        model: 'openai:gpt-4o-mini'
-      }, this.dependencies);
+      await chatTool(
+        {
+          // Missing required prompt
+          model: 'openai:gpt-4o-mini',
+        },
+        this.dependencies,
+      );
 
       throw new Error('Expected error for missing prompt, but call succeeded');
     } catch (error) {
-      if (error.message.includes('prompt') || error.message.includes('required')) {
+      if (
+        error.message.includes('prompt') ||
+        error.message.includes('required')
+      ) {
         return { errorHandled: true, errorMessage: error.message };
       }
       throw error;
@@ -212,25 +241,30 @@ class DirectMCPTest {
 
     for (const [name, provider] of Object.entries(this.providers)) {
       try {
-        const response = await provider.invoke([
-          { role: 'user', content: 'Say "Provider test for ' + name + '"' }
-        ], {
-          model: name === 'openai' ? 'gpt-4o-mini' :
-            name === 'google' ? 'flash' : 'grok-beta',
-          max_tokens: 50
-        });
+        const response = await provider.invoke(
+          [{ role: 'user', content: 'Say "Provider test for ' + name + '"' }],
+          {
+            model:
+              name === 'openai'
+                ? 'gpt-4o-mini'
+                : name === 'google'
+                  ? 'flash'
+                  : 'grok-beta',
+            max_tokens: 50,
+          },
+        );
 
         results[name] = {
           success: true,
           hasContent: !!response.content,
-          responseLength: response.content?.length || 0
+          responseLength: response.content?.length || 0,
         };
 
         this.log(`Provider ${name}: ✓`);
       } catch (error) {
         results[name] = {
           success: false,
-          error: error.message
+          error: error.message,
         };
         this.log(`Provider ${name}: ✗ ${error.message}`, 'WARN');
       }
@@ -245,50 +279,64 @@ class DirectMCPTest {
 
       // Core functionality tests
       await this.runTest('Chat Tool Direct', () => this.testChatDirect());
-      await this.runTest('Chat Continuation', () => this.testChatContinuation());
-      await this.runTest('Consensus Tool Direct', () => this.testConsensusDirect());
+      await this.runTest('Chat Continuation', () =>
+        this.testChatContinuation(),
+      );
+      await this.runTest('Consensus Tool Direct', () =>
+        this.testConsensusDirect(),
+      );
 
       // Feature tests
-      await this.runTest('File Context Processing', () => this.testFileContext());
+      await this.runTest('File Context Processing', () =>
+        this.testFileContext(),
+      );
       await this.runTest('Error Handling', () => this.testErrorHandling());
 
       // Provider tests
       await this.runTest('Provider Functionality', () => this.testProviders());
-
     } catch (error) {
       this.log(`Test initialization failed: ${error.message}`, 'ERROR');
       throw error;
     }
 
     // Print results summary
-    const passed = this.results.filter(r => r.success).length;
+    const passed = this.results.filter((r) => r.success).length;
     const total = this.results.length;
 
     console.log('\n' + '='.repeat(60));
     console.log('DIRECT MCP FUNCTIONALITY TEST RESULTS');
     console.log('='.repeat(60));
-    console.log(`Passed: ${passed}/${total} (${Math.round((passed/total)*100)}%)`);
+    console.log(
+      `Passed: ${passed}/${total} (${Math.round((passed / total) * 100)}%)`,
+    );
 
     if (passed < total) {
       console.log('\nFailed Tests:');
-      this.results.filter(r => !r.success).forEach(r => {
-        console.log(`  ✗ ${r.name}: ${r.error}`);
-      });
+      this.results
+        .filter((r) => !r.success)
+        .forEach((r) => {
+          console.log(`  ✗ ${r.name}: ${r.error}`);
+        });
     }
 
     console.log('\nPassed Tests:');
-    this.results.filter(r => r.success).forEach(r => {
-      console.log(`  ✓ ${r.name} (${r.duration}ms)`);
-    });
+    this.results
+      .filter((r) => r.success)
+      .forEach((r) => {
+        console.log(`  ✓ ${r.name} (${r.duration}ms)`);
+      });
 
     // Save detailed results
     const report = {
       timestamp: new Date().toISOString(),
       summary: { total, passed, failed: total - passed },
-      results: this.results
+      results: this.results,
     };
 
-    await fs.writeFile('direct-test-results.json', JSON.stringify(report, null, 2));
+    await fs.writeFile(
+      'direct-test-results.json',
+      JSON.stringify(report, null, 2),
+    );
     this.log('Detailed results saved to direct-test-results.json');
 
     return report;
@@ -299,7 +347,8 @@ class DirectMCPTest {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new DirectMCPTest();
 
-  testSuite.runAllTests()
+  testSuite
+    .runAllTests()
     .then((report) => {
       process.exit(report.summary.passed === report.summary.total ? 0 : 1);
     })

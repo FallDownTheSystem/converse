@@ -3,7 +3,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { helpPromptHandler, helpPromptMetadata } from '../../src/prompts/helpPrompt.js';
+import {
+  helpPromptHandler,
+  helpPromptMetadata,
+} from '../../src/prompts/helpPrompt.js';
 
 describe('Help Prompt', () => {
   it('should have correct metadata', () => {
@@ -14,7 +17,9 @@ describe('Help Prompt', () => {
   });
 
   it('should have topic argument', () => {
-    const topicArg = helpPromptMetadata.arguments.find(arg => arg.name === 'topic');
+    const topicArg = helpPromptMetadata.arguments.find(
+      (arg) => arg.name === 'topic',
+    );
     expect(topicArg).toBeTruthy();
     expect(topicArg.required).toBe(false);
     expect(topicArg.description).toContain('topic');

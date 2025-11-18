@@ -21,11 +21,16 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
 
   // Summary line - include cancelled jobs if any
   const summaryParts = [];
-  if (jobsList.summary.active_jobs > 0) summaryParts.push(`${jobsList.summary.active_jobs} active`);
-  if (jobsList.summary.completed_jobs > 0) summaryParts.push(`${jobsList.summary.completed_jobs} completed`);
-  if (jobsList.summary.failed_jobs > 0) summaryParts.push(`${jobsList.summary.failed_jobs} failed`);
-  if (jobsList.summary.cancelled_jobs > 0) summaryParts.push(`${jobsList.summary.cancelled_jobs} cancelled`);
-  const summaryStr = summaryParts.length > 0 ? summaryParts.join(', ') : '0 jobs';
+  if (jobsList.summary.active_jobs > 0)
+    summaryParts.push(`${jobsList.summary.active_jobs} active`);
+  if (jobsList.summary.completed_jobs > 0)
+    summaryParts.push(`${jobsList.summary.completed_jobs} completed`);
+  if (jobsList.summary.failed_jobs > 0)
+    summaryParts.push(`${jobsList.summary.failed_jobs} failed`);
+  if (jobsList.summary.cancelled_jobs > 0)
+    summaryParts.push(`${jobsList.summary.cancelled_jobs} cancelled`);
+  const summaryStr =
+    summaryParts.length > 0 ? summaryParts.join(', ') : '0 jobs';
   parts.push(`📊 Jobs Summary: ${summaryStr}`);
 
   if (jobsList.jobs.length === 0) {
@@ -37,23 +42,28 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
 
   // List each job
   for (const job of jobsList.jobs) {
-    const timeStr = job.elapsed_seconds >= 60
-      ? `${Math.floor(job.elapsed_seconds / 60)}m${Math.round(job.elapsed_seconds % 60)}s`
-      : `${job.elapsed_seconds.toFixed(1)}s`;
+    const timeStr =
+      job.elapsed_seconds >= 60
+        ? `${Math.floor(job.elapsed_seconds / 60)}m${Math.round(job.elapsed_seconds % 60)}s`
+        : `${job.elapsed_seconds.toFixed(1)}s`;
 
-    const statusEmoji = {
-      'queued': '⏳',
-      'running': '🔄',
-      'completed': '✅',
-      'failed': '❌',
-      'cancelled': '⛔',
-      'completed_with_errors': '⚠️'
-    }[job.status] || '❓';
+    const statusEmoji =
+      {
+        queued: '⏳',
+        running: '🔄',
+        completed: '✅',
+        failed: '❌',
+        cancelled: '⛔',
+        completed_with_errors: '⚠️',
+      }[job.status] || '❓';
 
-    const provider = job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
+    const provider =
+      job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
 
     // Format start time as readable date/time
-    const startTime = job.created_at ? new Date(job.created_at).toLocaleString() : 'unknown';
+    const startTime = job.created_at
+      ? new Date(job.created_at).toLocaleString()
+      : 'unknown';
 
     // Format: emoji STATUS | TOOL | id | sequence | started | time | [progress for consensus only] | provider
     const sequenceStr = '1/1';
@@ -78,9 +88,10 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
     // Add final summary snippet for completed jobs
     if (job.status === 'completed' && job.final_summary) {
       // Indent and truncate summary for list view
-      const summarySnippet = job.final_summary.length > 100
-        ? job.final_summary.substring(0, 100) + '...'
-        : job.final_summary;
+      const summarySnippet =
+        job.final_summary.length > 100
+          ? job.final_summary.substring(0, 100) + '...'
+          : job.final_summary;
       parts.push(`  └─ ${summarySnippet}`);
     }
   }
@@ -97,7 +108,11 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
  * @param {object} dependencies - Dependencies object with config and providers
  * @returns {Promise<string>} Human-readable status text
  */
-export async function formatHumanReadableStatus(jobStatus, options = {}, dependencies = {}) {
+export async function formatHumanReadableStatus(
+  jobStatus,
+  options = {},
+  dependencies = {},
+) {
   const parts = [];
 
   // Format elapsed time
@@ -111,17 +126,20 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
   }
 
   // Build status line based on status
-  const statusEmoji = {
-    'queued': '⏳',
-    'running': '🔄',
-    'completed': '✅',
-    'failed': '❌',
-    'cancelled': '⛔',
-    'completed_with_errors': '⚠️'
-  }[jobStatus.status] || '❓';
+  const statusEmoji =
+    {
+      queued: '⏳',
+      running: '🔄',
+      completed: '✅',
+      failed: '❌',
+      cancelled: '⛔',
+      completed_with_errors: '⚠️',
+    }[jobStatus.status] || '❓';
 
   // Format start time as readable date/time
-  const startTime = jobStatus.created_at ? new Date(jobStatus.created_at).toLocaleString() : 'unknown';
+  const startTime = jobStatus.created_at
+    ? new Date(jobStatus.created_at).toLocaleString()
+    : 'unknown';
 
   // Add sequence info if provided
   const sequenceStr = options.sequence ? ` | ${options.sequence}` : '';
@@ -141,8 +159,9 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
     } else if (jobStatus.providers) {
       // Calculate progress from provider states
       const providerEntries = Object.entries(jobStatus.providers);
-      const completed = providerEntries.filter(([_, state]) =>
-        state.status === 'completed' || state.status === 'refined'
+      const completed = providerEntries.filter(
+        ([_, state]) =>
+          state.status === 'completed' || state.status === 'refined',
       ).length;
       const total = providerEntries.length;
       statusLine += ` | ${completed}/${total} responded`;
@@ -163,56 +182,83 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
   parts.push(statusLine);
 
   // Show reasoning summary for running jobs from OpenAI reasoning models
-  if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.reasoning_summary) {
-    debugLog(`[FormatStatus] *** SHOWING REASONING SUMMARY: "${jobStatus.reasoning_summary.substring(0, 100)}..."`);
+  if (
+    jobStatus.status === 'running' &&
+    !jobStatus.accumulated_content &&
+    jobStatus.reasoning_summary
+  ) {
+    debugLog(
+      `[FormatStatus] *** SHOWING REASONING SUMMARY: "${jobStatus.reasoning_summary.substring(0, 100)}..."`,
+    );
     parts.push(`Thinking: ${jobStatus.reasoning_summary}`);
-  } else if (jobStatus.status === 'running' && !jobStatus.accumulated_content && jobStatus.elapsed_seconds > 5) {
+  } else if (
+    jobStatus.status === 'running' &&
+    !jobStatus.accumulated_content &&
+    jobStatus.elapsed_seconds > 5
+  ) {
     // Fallback thinking status for jobs without reasoning summaries
     const thinkingTime = Math.floor(jobStatus.elapsed_seconds);
-    debugLog('[FormatStatus] *** FALLBACK THINKING (no reasoning_summary available)');
-    parts.push('Thinking: Model is processing your request (' + thinkingTime + 's elapsed)');
+    debugLog(
+      '[FormatStatus] *** FALLBACK THINKING (no reasoning_summary available)',
+    );
+    parts.push(
+      'Thinking: Model is processing your request (' +
+        thinkingTime +
+        's elapsed)',
+    );
   }
 
   // Generate streaming summary for running jobs if accumulated content available
   if (jobStatus.status === 'running' && jobStatus.accumulated_content) {
     try {
       if (dependencies.config && dependencies.providers) {
-        const summarizationService = new SummarizationService(dependencies.providers, dependencies.config);
+        const summarizationService = new SummarizationService(
+          dependencies.providers,
+          dependencies.config,
+        );
 
         // Extract the last 500 characters as the current focus area
         const contentLength = jobStatus.accumulated_content.length;
-        const currentFocus = contentLength > 500
-          ? jobStatus.accumulated_content.substring(contentLength - 500)
-          : jobStatus.accumulated_content;
+        const currentFocus =
+          contentLength > 500
+            ? jobStatus.accumulated_content.substring(contentLength - 500)
+            : jobStatus.accumulated_content;
 
         // Generate streaming summary
-        const streamingSummary = await summarizationService.generateStreamingSummary(
-          jobStatus.accumulated_content,
-          currentFocus
-        );
+        const streamingSummary =
+          await summarizationService.generateStreamingSummary(
+            jobStatus.accumulated_content,
+            currentFocus,
+          );
 
         if (streamingSummary) {
           parts.push(`Status: ${streamingSummary}`);
         } else {
           // Fallback: show truncated accumulated content as streaming preview
-          const preview = jobStatus.accumulated_content.length > 200
-            ? jobStatus.accumulated_content.substring(0, 200) + '...'
-            : jobStatus.accumulated_content;
+          const preview =
+            jobStatus.accumulated_content.length > 200
+              ? jobStatus.accumulated_content.substring(0, 200) + '...'
+              : jobStatus.accumulated_content;
           parts.push(`Streaming: "${preview}"`);
         }
       } else {
         // Fallback when summarization unavailable: show truncated accumulated content
-        const preview = jobStatus.accumulated_content.length > 200
-          ? jobStatus.accumulated_content.substring(0, 200) + '...'
-          : jobStatus.accumulated_content;
+        const preview =
+          jobStatus.accumulated_content.length > 200
+            ? jobStatus.accumulated_content.substring(0, 200) + '...'
+            : jobStatus.accumulated_content;
         parts.push(`Streaming: "${preview}"`);
       }
     } catch (error) {
-      debugError('formatHumanReadableStatus: Failed to generate streaming summary', error);
+      debugError(
+        'formatHumanReadableStatus: Failed to generate streaming summary',
+        error,
+      );
       // Fall back to showing truncated accumulated content
-      const preview = jobStatus.accumulated_content.length > 200
-        ? jobStatus.accumulated_content.substring(0, 200) + '...'
-        : jobStatus.accumulated_content;
+      const preview =
+        jobStatus.accumulated_content.length > 200
+          ? jobStatus.accumulated_content.substring(0, 200) + '...'
+          : jobStatus.accumulated_content;
       parts.push(`Streaming: "${preview}"`);
     }
   }
@@ -225,7 +271,10 @@ export async function formatHumanReadableStatus(jobStatus, options = {}, depende
       // Optionally show first provider's preview
       const firstPreview = Object.values(jobStatus.provider_previews)[0];
       if (firstPreview) {
-        const truncated = firstPreview.length > 80 ? firstPreview.substring(0, 80) + '...' : firstPreview;
+        const truncated =
+          firstPreview.length > 80
+            ? firstPreview.substring(0, 80) + '...'
+            : firstPreview;
         parts.push(`Preview: "${truncated}"`);
       }
     }
@@ -293,13 +342,14 @@ export function formatJobStatus(job, options = {}) {
     accumulated_content: job.accumulated_content || null,
     title: job.title || null,
     final_summary: job.final_summary || null,
-    reasoning_summary: job.reasoning_summary || null
+    reasoning_summary: job.reasoning_summary || null,
   };
 
   // For consensus, gather provider previews
   if (job.tool === 'consensus') {
     const providerPreviews = {};
-    for (let i = 0; i < 10; i++) { // Check up to 10 providers
+    for (let i = 0; i < 10; i++) {
+      // Check up to 10 providers
       if (job[`provider_${i}_preview`]) {
         providerPreviews[`provider_${i}`] = job[`provider_${i}_preview`];
       }
@@ -321,7 +371,7 @@ export function formatJobStatus(job, options = {}) {
       formatted.providers[providerId] = {
         status: providerState.status || 'unknown',
         progress: providerState.progress || 0,
-        updated_at: providerState.updatedAt || null
+        updated_at: providerState.updatedAt || null,
       };
     }
   }
@@ -346,7 +396,11 @@ export function formatJobStatus(job, options = {}) {
  * @param {object} dependencies - Dependencies object with config and providers
  * @returns {Promise<string>} Human-readable conversation history
  */
-export async function formatConversationHistory(jobStatus, continuationId, dependencies = {}) {
+export async function formatConversationHistory(
+  jobStatus,
+  continuationId,
+  dependencies = {},
+) {
   const parts = [];
 
   parts.push(`📊 Conversation History for ${continuationId}:`);
@@ -355,7 +409,11 @@ export async function formatConversationHistory(jobStatus, continuationId, depen
 
   // For now, show the single job with sequence 1/1
   // TODO: Implement proper conversation tracking when multi-job conversations are supported
-  const statusLine = await formatHumanReadableStatus(jobStatus, { sequence: '1/1', skipContent: false }, dependencies);
+  const statusLine = await formatHumanReadableStatus(
+    jobStatus,
+    { sequence: '1/1', skipContent: false },
+    dependencies,
+  );
   parts.push(statusLine);
 
   return parts.join('\n');

@@ -22,8 +22,15 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     maxThinkingTokens: 0,
     timeout: 300000,
-    description: 'Gemini 2.0 Flash (1M context) - Latest fast model, supports audio/video input and grounding',
-    aliases: ['flash-2.0', 'flash2', 'flash 2.0', 'gemini flash 2.0', 'gemini-2.0-flash-latest']
+    description:
+      'Gemini 2.0 Flash (1M context) - Latest fast model, supports audio/video input and grounding',
+    aliases: [
+      'flash-2.0',
+      'flash2',
+      'flash 2.0',
+      'gemini flash 2.0',
+      'gemini-2.0-flash-latest',
+    ],
   },
   'gemini-2.0-flash-lite': {
     modelName: 'gemini-2.0-flash-lite',
@@ -37,8 +44,16 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     maxThinkingTokens: 0,
     timeout: 300000,
-    description: 'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only with grounding',
-    aliases: ['flashlite', 'flash-lite', 'flash lite', 'flash-lite-2.0', 'gemini flash lite', 'gemini-2.0-flash-lite-latest']
+    description:
+      'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only with grounding',
+    aliases: [
+      'flashlite',
+      'flash-lite',
+      'flash lite',
+      'flash-lite-2.0',
+      'gemini flash lite',
+      'gemini-2.0-flash-lite-latest',
+    ],
   },
   'gemini-2.5-flash': {
     modelName: 'gemini-flash-latest',
@@ -52,8 +67,19 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
     timeout: 300000,
-    description: 'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
-    aliases: ['flash', 'flash2.5', 'gemini-flash', 'gemini-flash-2.5', 'flash 2.5', 'gemini flash 2.5', 'gemini-2.5-flash', 'gemini-2.5-flash-preview-09-2025', 'gemini-2.5-flash-latest']
+    description:
+      'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
+    aliases: [
+      'flash',
+      'flash2.5',
+      'gemini-flash',
+      'gemini-flash-2.5',
+      'flash 2.5',
+      'gemini flash 2.5',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-preview-09-2025',
+      'gemini-2.5-flash-latest',
+    ],
   },
   'gemini-2.5-flash-lite': {
     modelName: 'gemini-flash-lite-latest',
@@ -67,8 +93,17 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
     timeout: 300000,
-    description: 'Lightweight fast model (1M context) - Efficient quick responses with grounding',
-    aliases: ['flashlite2.5', 'flash-lite', 'flash lite', 'gemini-flash-lite', 'gemini flash lite', 'gemini-2.5-flash-lite-preview-09-2025', 'gemini-2.5-flash-lite-latest']
+    description:
+      'Lightweight fast model (1M context) - Efficient quick responses with grounding',
+    aliases: [
+      'flashlite2.5',
+      'flash-lite',
+      'flash lite',
+      'gemini-flash-lite',
+      'gemini flash lite',
+      'gemini-2.5-flash-lite-preview-09-2025',
+      'gemini-2.5-flash-lite-latest',
+    ],
   },
   'gemini-2.5-pro': {
     modelName: 'gemini-2.5-pro',
@@ -82,9 +117,39 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     maxThinkingTokens: 32768,
     timeout: 300000,
-    description: 'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
-    aliases: ['pro', 'gemini pro', 'gemini-pro', 'gemini', 'pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest']
-  }
+    description:
+      'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
+    aliases: [
+      'pro 2.5',
+      'gemini pro 2.5',
+      'gemini-2.5-pro-latest',
+    ],
+  },
+  'gemini-3-pro-preview': {
+    modelName: 'gemini-3-pro-preview',
+    friendlyName: 'Gemini (Pro 3.0)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 64000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsThinking: true, // Always enabled for Gemini 3.0
+    supportsWebSearch: true,
+    thinkingMode: 'level', // Distinguishes from 2.5's budget mode
+    timeout: 300000,
+    description:
+      'Gemini 3.0 Pro - Enhanced reasoning with dynamic thinking levels (1M context)',
+    aliases: [
+      'gemini-3',
+      'gemini3',
+      'gemini-3-pro',
+      '3-pro',
+      'gemini', // Moving from 2.5 Pro
+      'gemini pro', // Moving from 2.5 Pro
+      'gemini-pro', // Moving from 2.5 Pro
+      'pro', // Moving from 2.5 Pro
+    ],
+  },
 };
 
 // Thinking mode budget percentages
@@ -93,7 +158,7 @@ const THINKING_BUDGETS = {
   low: 0.08, // 8% of max - light reasoning tasks
   medium: 0.33, // 33% of max - balanced reasoning (default)
   high: 0.67, // 67% of max - complex analysis
-  max: 1.0 // 100% of max - full thinking budget
+  max: 1.0, // 100% of max - full thinking budget
 };
 
 /**
@@ -159,7 +224,10 @@ function validateApiKey(apiKey) {
  */
 function convertMessagesToGemini(messages) {
   if (!Array.isArray(messages)) {
-    throw new GoogleProviderError('Messages must be an array', 'INVALID_MESSAGES');
+    throw new GoogleProviderError(
+      'Messages must be an array',
+      'INVALID_MESSAGES',
+    );
   }
 
   const contents = [];
@@ -167,17 +235,26 @@ function convertMessagesToGemini(messages) {
 
   for (const [index, msg] of messages.entries()) {
     if (!msg || typeof msg !== 'object') {
-      throw new GoogleProviderError(`Message at index ${index} must be an object`, 'INVALID_MESSAGE');
+      throw new GoogleProviderError(
+        `Message at index ${index} must be an object`,
+        'INVALID_MESSAGE',
+      );
     }
 
     const { role, content } = msg;
 
     if (!role || !['system', 'user', 'assistant'].includes(role)) {
-      throw new GoogleProviderError(`Invalid role "${role}" at message index ${index}`, 'INVALID_ROLE');
+      throw new GoogleProviderError(
+        `Invalid role "${role}" at message index ${index}`,
+        'INVALID_ROLE',
+      );
     }
 
     if (!content) {
-      throw new GoogleProviderError(`Message content is required at index ${index}`, 'MISSING_CONTENT');
+      throw new GoogleProviderError(
+        `Message content is required at index ${index}`,
+        'MISSING_CONTENT',
+      );
     }
 
     if (role === 'system') {
@@ -198,27 +275,33 @@ function convertMessagesToGemini(messages) {
             parts.push({
               inlineData: {
                 mimeType: item.source.media_type,
-                data: item.source.data
-              }
+                data: item.source.data,
+              },
             });
-            debugLog(`[Google] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`);
+            debugLog(
+              `[Google] Converting image: ${item.source.media_type}, data length: ${item.source.data.length}`,
+            );
           }
         }
 
         // Combine system prompt with text content if present
-        const finalTextContent = systemPrompt ? `${systemPrompt}\n\n${textContent}` : textContent;
+        const finalTextContent = systemPrompt
+          ? `${systemPrompt}\n\n${textContent}`
+          : textContent;
         if (finalTextContent) {
           parts.unshift({ text: finalTextContent });
         }
       } else {
         // Simple string content
-        const userContent = systemPrompt ? `${systemPrompt}\n\n${content}` : content;
+        const userContent = systemPrompt
+          ? `${systemPrompt}\n\n${content}`
+          : content;
         parts.push({ text: userContent });
       }
 
       contents.push({
         role: 'user',
-        parts
+        parts,
       });
       systemPrompt = null; // Only use system prompt once
     } else if (role === 'assistant') {
@@ -233,12 +316,12 @@ function convertMessagesToGemini(messages) {
         }
         contents.push({
           role: 'model', // Google uses 'model' instead of 'assistant'
-          parts
+          parts,
         });
       } else {
         contents.push({
           role: 'model',
-          parts: [{ text: content }]
+          parts: [{ text: content }],
         });
       }
     }
@@ -279,10 +362,12 @@ function isErrorRetryable(error) {
     'read timeout',
     'timeout error',
     '408',
-    'deadline exceeded'
+    'deadline exceeded',
   ];
 
-  if (nonRetryableIndicators.some(indicator => errorStr.includes(indicator))) {
+  if (
+    nonRetryableIndicators.some((indicator) => errorStr.includes(indicator))
+  ) {
     return false;
   }
 
@@ -300,10 +385,10 @@ function isErrorRetryable(error) {
     '503',
     '504',
     'ssl',
-    'handshake'
+    'handshake',
   ];
 
-  return retryableIndicators.some(indicator => errorStr.includes(indicator));
+  return retryableIndicators.some((indicator) => errorStr.includes(indicator));
 }
 
 /**
@@ -326,8 +411,11 @@ async function retryWithBackoff(fn, maxRetries = 4) {
 
       // Wait before retrying
       const delay = retryDelays[attempt];
-      debugLog(`[Google] Retrying after ${delay}ms (attempt ${attempt + 1}/${maxRetries}):`, error.message);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      debugLog(
+        `[Google] Retrying after ${delay}ms (attempt ${attempt + 1}/${maxRetries}):`,
+        error.message,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -352,6 +440,7 @@ export const googleProvider = {
       stream = false,
       reasoning_effort = 'medium',
       use_websearch = false,
+      media_resolution = null,
       signal,
       config,
       ..._otherOptions
@@ -370,18 +459,20 @@ export const googleProvider = {
       if (!vertexProject || !vertexLocation) {
         throw new GoogleProviderError(
           'Vertex AI requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION',
-          'MISSING_VERTEX_CONFIG'
+          'MISSING_VERTEX_CONFIG',
         );
       }
 
-      debugLog(`[Google] Using Vertex AI: project=${vertexProject}, location=${vertexLocation}, apiVersion=${apiVersion}`);
+      debugLog(
+        `[Google] Using Vertex AI: project=${vertexProject}, location=${vertexLocation}, apiVersion=${apiVersion}`,
+      );
 
       // Initialize with Vertex AI configuration
       genAI = new GoogleGenAI({
         vertexai: true,
         project: vertexProject,
         location: vertexLocation,
-        apiVersion
+        apiVersion,
       });
     } else {
       // Use Gemini Developer API with API key
@@ -390,20 +481,25 @@ export const googleProvider = {
       if (!apiKey || apiKey === 'VERTEX_AI') {
         throw new GoogleProviderError(
           'Google API key not configured. Set GOOGLE_API_KEY or GEMINI_API_KEY, or configure Vertex AI',
-          'MISSING_API_KEY'
+          'MISSING_API_KEY',
         );
       }
 
       if (!validateApiKey(apiKey)) {
-        throw new GoogleProviderError('Invalid Google API key format', 'INVALID_API_KEY');
+        throw new GoogleProviderError(
+          'Invalid Google API key format',
+          'INVALID_API_KEY',
+        );
       }
 
-      debugLog(`[Google] Using Gemini Developer API with configured API key, apiVersion=${apiVersion}`);
+      debugLog(
+        `[Google] Using Gemini Developer API with configured API key, apiVersion=${apiVersion}`,
+      );
 
       // Initialize with API key - SDK will use GOOGLE_API_KEY as the actual key name
       genAI = new GoogleGenAI({
         apiKey,
-        apiVersion
+        apiVersion,
       });
     }
 
@@ -420,21 +516,51 @@ export const googleProvider = {
     const generationConfig = {};
 
     // Add temperature if model supports it
-    if (modelConfig.supportsTemperature !== false && temperature !== undefined) {
+    if (
+      modelConfig.supportsTemperature !== false &&
+      temperature !== undefined
+    ) {
       generationConfig.temperature = Math.max(0, Math.min(2, temperature));
     }
 
     // Add max tokens if specified
     if (maxTokens) {
-      generationConfig.maxOutputTokens = Math.min(maxTokens, modelConfig.maxOutputTokens || 65536);
+      generationConfig.maxOutputTokens = Math.min(
+        maxTokens,
+        modelConfig.maxOutputTokens || 65536,
+      );
     }
 
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
-      const thinkingBudget = calculateThinkingBudget(modelConfig, reasoning_effort);
-      if (thinkingBudget > 0) {
-        generationConfig.thinkingConfig = { thinkingBudget };
+      if (modelConfig.thinkingMode === 'level') {
+        // Gemini 3.0: Use thinking level (low/high)
+        const thinkingLevel = ['minimal', 'low'].includes(reasoning_effort)
+          ? 'low'
+          : 'high';
+        generationConfig.thinkingConfig = { thinkingLevel };
+      } else {
+        // Gemini 2.5: Use thinking budget (token count)
+        const thinkingBudget = calculateThinkingBudget(
+          modelConfig,
+          reasoning_effort,
+        );
+        if (thinkingBudget > 0) {
+          generationConfig.thinkingConfig = { thinkingBudget };
+        }
       }
+    }
+
+    // Add media resolution for Gemini 3.0 models
+    if (modelConfig.thinkingMode === 'level') {
+      // Default to "high" for Gemini 3.0 if not specified
+      const resolution = media_resolution || 'high';
+      if (['low', 'medium', 'high'].includes(resolution)) {
+        generationConfig.mediaResolution = resolution;
+      }
+    } else if (media_resolution && ['low', 'medium', 'high'].includes(media_resolution)) {
+      // For other models, only add if explicitly specified
+      generationConfig.mediaResolution = media_resolution;
     }
 
     // Add web search grounding if requested and model supports it
@@ -446,14 +572,27 @@ export const googleProvider = {
     if (stream) {
       // Check if model supports streaming
       if (modelConfig.supportsStreaming === false) {
-        debugLog(`[Google] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`);
+        debugLog(
+          `[Google] Model ${resolvedModel} doesn't support streaming, falling back to non-streaming mode`,
+        );
       } else {
-        return this._createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch, signal);
+        return this._createStreamingGenerator(
+          genAI,
+          resolvedModel,
+          geminiContents,
+          generationConfig,
+          modelConfig,
+          reasoning_effort,
+          use_websearch,
+          signal,
+        );
       }
     }
 
     try {
-      debugLog(`[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
+      debugLog(
+        `[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
+      );
 
       // Check if already aborted before making request
       if (signal?.aborted) {
@@ -471,7 +610,7 @@ export const googleProvider = {
         return await genAI.models.generateContent({
           model: resolvedModel,
           contents: geminiContents,
-          config: generationConfig
+          config: generationConfig,
         });
       });
 
@@ -481,14 +620,17 @@ export const googleProvider = {
       // Extract response data using the new SDK format
       const content = response.text;
       if (!content) {
-        throw new GoogleProviderError('No text content received from Google', 'NO_RESPONSE_CONTENT');
+        throw new GoogleProviderError(
+          'No text content received from Google',
+          'NO_RESPONSE_CONTENT',
+        );
       }
 
       // Extract usage information from the new SDK format
       const usage = {
         input_tokens: response.usageMetadata?.promptTokenCount || 0,
         output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
-        total_tokens: response.usageMetadata?.totalTokenCount || 0
+        total_tokens: response.usageMetadata?.totalTokenCount || 0,
       };
 
       // Extract finish reason from candidates
@@ -504,36 +646,67 @@ export const googleProvider = {
           usage,
           response_time_ms: responseTime,
           finish_reason: finishReason,
-          reasoning_effort: modelConfig.supportsThinking ? reasoning_effort : null,
+          reasoning_effort: modelConfig.supportsThinking
+            ? reasoning_effort
+            : null,
           provider: 'google',
           web_search_used: use_websearch && modelConfig.supportsWebSearch,
-          grounding_metadata: response.groundingMetadata || null
-        }
+          grounding_metadata: response.groundingMetadata || null,
+        },
       };
-
     } catch (error) {
       debugError('[Google] Error during API call:', error);
 
       // Handle specific Google errors
-      if (error.message?.includes('quota') || error.message?.includes('QUOTA_EXCEEDED')) {
-        throw new GoogleProviderError('Google API quota exceeded', 'QUOTA_EXCEEDED', error);
-      } else if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid api key')) {
-        throw new GoogleProviderError('Invalid Google API key', 'INVALID_API_KEY', error);
+      if (
+        error.message?.includes('quota') ||
+        error.message?.includes('QUOTA_EXCEEDED')
+      ) {
+        throw new GoogleProviderError(
+          'Google API quota exceeded',
+          'QUOTA_EXCEEDED',
+          error,
+        );
+      } else if (
+        error.message?.includes('API_KEY_INVALID') ||
+        error.message?.includes('invalid api key')
+      ) {
+        throw new GoogleProviderError(
+          'Invalid Google API key',
+          'INVALID_API_KEY',
+          error,
+        );
       } else if (error.message?.includes('MODEL_NOT_FOUND')) {
-        throw new GoogleProviderError(`Model ${resolvedModel} not found`, 'MODEL_NOT_FOUND', error);
+        throw new GoogleProviderError(
+          `Model ${resolvedModel} not found`,
+          'MODEL_NOT_FOUND',
+          error,
+        );
       } else if (error.message?.includes('CONTEXT_LENGTH_EXCEEDED')) {
-        throw new GoogleProviderError('Context length exceeded for model', 'CONTEXT_LENGTH_EXCEEDED', error);
+        throw new GoogleProviderError(
+          'Context length exceeded for model',
+          'CONTEXT_LENGTH_EXCEEDED',
+          error,
+        );
       } else if (error.message?.includes('SAFETY')) {
-        throw new GoogleProviderError('Content blocked by safety filters', 'SAFETY_ERROR', error);
+        throw new GoogleProviderError(
+          'Content blocked by safety filters',
+          'SAFETY_ERROR',
+          error,
+        );
       } else if (error.message?.includes('RATE_LIMIT_EXCEEDED')) {
-        throw new GoogleProviderError('Google rate limit exceeded', 'RATE_LIMIT_EXCEEDED', error);
+        throw new GoogleProviderError(
+          'Google rate limit exceeded',
+          'RATE_LIMIT_EXCEEDED',
+          error,
+        );
       }
 
       // Generic error handling
       throw new GoogleProviderError(
         `Google API error: ${error.message || 'Unknown error'}`,
         'API_ERROR',
-        error
+        error,
       );
     }
   },
@@ -549,8 +722,19 @@ export const googleProvider = {
    * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding chunks
    */
-  async *_createStreamingGenerator(genAI, resolvedModel, geminiContents, generationConfig, modelConfig, reasoning_effort, use_websearch, signal) {
-    debugLog(`[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`);
+  async *_createStreamingGenerator(
+    genAI,
+    resolvedModel,
+    geminiContents,
+    generationConfig,
+    modelConfig,
+    reasoning_effort,
+    use_websearch,
+    signal,
+  ) {
+    debugLog(
+      `[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
+    );
 
     const startTime = Date.now();
     let totalContent = '';
@@ -571,7 +755,7 @@ export const googleProvider = {
         model: resolvedModel,
         provider: 'google',
         thinking_mode: modelConfig.supportsThinking && reasoning_effort,
-        web_search: use_websearch && modelConfig.supportsWebSearch
+        web_search: use_websearch && modelConfig.supportsWebSearch,
       };
 
       // Create streaming request with retry logic and abort signal support
@@ -585,7 +769,7 @@ export const googleProvider = {
         return await genAI.models.generateContentStream({
           model: resolvedModel,
           contents: geminiContents,
-          config: generationConfig
+          config: generationConfig,
         });
       });
 
@@ -594,7 +778,9 @@ export const googleProvider = {
         try {
           // Check for cancellation during stream processing
           if (signal?.aborted) {
-            debugLog(`[Google] Stream aborted during processing: ${signal.reason || 'Cancelled'}`);
+            debugLog(
+              `[Google] Stream aborted during processing: ${signal.reason || 'Cancelled'}`,
+            );
             break;
           }
           const content = chunk.text || '';
@@ -607,7 +793,7 @@ export const googleProvider = {
               content,
               timestamp: new Date().toISOString(),
               model: resolvedModel,
-              provider: 'google'
+              provider: 'google',
             };
           }
 
@@ -615,13 +801,12 @@ export const googleProvider = {
           if (chunk.candidates?.[0]?.finishReason) {
             finishReason = chunk.candidates[0].finishReason;
           }
-
         } catch (chunkError) {
           debugError('[Google] Error processing streaming chunk:', chunkError);
           yield {
             type: 'error',
             error: chunkError.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
       }
@@ -634,7 +819,7 @@ export const googleProvider = {
         finalUsage = {
           input_tokens: finalResponse.usageMetadata?.promptTokenCount || 0,
           output_tokens: finalResponse.usageMetadata?.candidatesTokenCount || 0,
-          total_tokens: finalResponse.usageMetadata?.totalTokenCount || 0
+          total_tokens: finalResponse.usageMetadata?.totalTokenCount || 0,
         };
 
         // Extract grounding metadata if web search was used
@@ -646,9 +831,11 @@ export const googleProvider = {
         if (!finishReason && finalResponse.candidates?.[0]?.finishReason) {
           finishReason = finalResponse.candidates[0].finishReason;
         }
-
       } catch (finalResponseError) {
-        debugError('[Google] Error getting final response metadata:', finalResponseError);
+        debugError(
+          '[Google] Error getting final response metadata:',
+          finalResponseError,
+        );
       }
 
       const responseTime = Date.now() - startTime;
@@ -661,19 +848,28 @@ export const googleProvider = {
         timestamp: new Date().toISOString(),
         metadata: {
           model: resolvedModel,
-          usage: finalUsage || { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
+          usage: finalUsage || {
+            input_tokens: 0,
+            output_tokens: 0,
+            total_tokens: 0,
+          },
           response_time_ms: responseTime,
           finish_reason: finishReason || 'STOP',
-          reasoning_effort: modelConfig.supportsThinking ? reasoning_effort : null,
+          reasoning_effort: modelConfig.supportsThinking
+            ? reasoning_effort
+            : null,
           provider: 'google',
           web_search_used: use_websearch && modelConfig.supportsWebSearch,
           grounding_metadata: groundingMetadata,
-          thinking_mode_enabled: !!(modelConfig.supportsThinking && reasoning_effort)
-        }
+          thinking_mode_enabled: !!(
+            modelConfig.supportsThinking && reasoning_effort
+          ),
+        },
       };
 
-      debugLog(`[Google] Streaming completed in ${responseTime}ms, ${finalUsage?.total_tokens || 0} total tokens`);
-
+      debugLog(
+        `[Google] Streaming completed in ${responseTime}ms, ${finalUsage?.total_tokens || 0} total tokens`,
+      );
     } catch (error) {
       debugError('[Google] Streaming error:', error);
 
@@ -682,29 +878,59 @@ export const googleProvider = {
         type: 'error',
         error: error.message || 'Unknown streaming error',
         timestamp: new Date().toISOString(),
-        provider: 'google'
+        provider: 'google',
       };
 
       // Re-throw with proper error handling
-      if (error.message?.includes('quota') || error.message?.includes('QUOTA_EXCEEDED')) {
-        throw new GoogleProviderError('Google API quota exceeded', 'QUOTA_EXCEEDED', error);
-      } else if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid api key')) {
-        throw new GoogleProviderError('Invalid Google API key', 'INVALID_API_KEY', error);
+      if (
+        error.message?.includes('quota') ||
+        error.message?.includes('QUOTA_EXCEEDED')
+      ) {
+        throw new GoogleProviderError(
+          'Google API quota exceeded',
+          'QUOTA_EXCEEDED',
+          error,
+        );
+      } else if (
+        error.message?.includes('API_KEY_INVALID') ||
+        error.message?.includes('invalid api key')
+      ) {
+        throw new GoogleProviderError(
+          'Invalid Google API key',
+          'INVALID_API_KEY',
+          error,
+        );
       } else if (error.message?.includes('MODEL_NOT_FOUND')) {
-        throw new GoogleProviderError(`Model ${resolvedModel} not found`, 'MODEL_NOT_FOUND', error);
+        throw new GoogleProviderError(
+          `Model ${resolvedModel} not found`,
+          'MODEL_NOT_FOUND',
+          error,
+        );
       } else if (error.message?.includes('CONTEXT_LENGTH_EXCEEDED')) {
-        throw new GoogleProviderError('Context length exceeded for model', 'CONTEXT_LENGTH_EXCEEDED', error);
+        throw new GoogleProviderError(
+          'Context length exceeded for model',
+          'CONTEXT_LENGTH_EXCEEDED',
+          error,
+        );
       } else if (error.message?.includes('SAFETY')) {
-        throw new GoogleProviderError('Content blocked by safety filters', 'SAFETY_ERROR', error);
+        throw new GoogleProviderError(
+          'Content blocked by safety filters',
+          'SAFETY_ERROR',
+          error,
+        );
       } else if (error.message?.includes('RATE_LIMIT_EXCEEDED')) {
-        throw new GoogleProviderError('Google rate limit exceeded', 'RATE_LIMIT_EXCEEDED', error);
+        throw new GoogleProviderError(
+          'Google rate limit exceeded',
+          'RATE_LIMIT_EXCEEDED',
+          error,
+        );
       }
 
       // Generic error handling
       throw new GoogleProviderError(
         `Google streaming error: ${error.message || 'Unknown error'}`,
         'STREAMING_ERROR',
-        error
+        error,
       );
     }
   },
@@ -716,12 +942,16 @@ export const googleProvider = {
    */
   validateConfig(config) {
     // Check for Vertex AI configuration
-    const hasVertexAI = !!(config?.providers?.googlegenaiusevertexai &&
-                          config?.providers?.googlecloudproject &&
-                          config?.providers?.googlecloudlocation);
+    const hasVertexAI = !!(
+      config?.providers?.googlegenaiusevertexai &&
+      config?.providers?.googlecloudproject &&
+      config?.providers?.googlecloudlocation
+    );
 
     // Check for API key configuration
-    const hasApiKey = !!(config?.apiKeys?.google && validateApiKey(config.apiKeys.google));
+    const hasApiKey = !!(
+      config?.apiKeys?.google && validateApiKey(config.apiKeys.google)
+    );
 
     return hasVertexAI || hasApiKey;
   },
@@ -751,5 +981,5 @@ export const googleProvider = {
   getModelConfig(modelName) {
     const resolved = resolveModelName(modelName);
     return SUPPORTED_MODELS[resolved] || null;
-  }
+  },
 };

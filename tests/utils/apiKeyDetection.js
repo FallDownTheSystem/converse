@@ -29,44 +29,44 @@ const API_KEY_CONFIGS = {
     envVar: 'OPENAI_API_KEY',
     prefix: 'sk-',
     minLength: 20,
-    providerName: 'OpenAI'
+    providerName: 'OpenAI',
   },
   XAI: {
     envVar: 'XAI_API_KEY',
     prefix: 'xai-',
     minLength: 20,
-    providerName: 'XAI'
+    providerName: 'XAI',
   },
   GOOGLE: {
     envVar: 'GOOGLE_API_KEY',
-    alternateEnvVar: 'GEMINI_API_KEY',  // Also check GEMINI_API_KEY
+    alternateEnvVar: 'GEMINI_API_KEY', // Also check GEMINI_API_KEY
     prefix: null,
     minLength: 20,
-    providerName: 'Google'
+    providerName: 'Google',
   },
   ANTHROPIC: {
     envVar: 'ANTHROPIC_API_KEY',
     prefix: 'sk-ant-',
     minLength: 20,
-    providerName: 'Anthropic'
+    providerName: 'Anthropic',
   },
   MISTRAL: {
     envVar: 'MISTRAL_API_KEY',
     prefix: null,
     minLength: 20,
-    providerName: 'Mistral'
+    providerName: 'Mistral',
   },
   DEEPSEEK: {
     envVar: 'DEEPSEEK_API_KEY',
     prefix: null,
     minLength: 20,
-    providerName: 'DeepSeek'
+    providerName: 'DeepSeek',
   },
   OPENROUTER: {
     envVar: 'OPENROUTER_API_KEY',
     prefix: 'sk-or-',
     minLength: 20,
-    providerName: 'OpenRouter'
+    providerName: 'OpenRouter',
   },
   CODEX: {
     envVar: null, // Codex uses cached authentication from user's machine
@@ -79,13 +79,15 @@ const API_KEY_CONFIGS = {
         // Simple check - try to resolve the module path
         const fs = require('fs');
         const path = require('path');
-        const pkgPath = path.resolve('node_modules/@openai/codex-sdk/package.json');
+        const pkgPath = path.resolve(
+          'node_modules/@openai/codex-sdk/package.json',
+        );
         return fs.existsSync(pkgPath);
       } catch {
         return false;
       }
-    }
-  }
+    },
+  },
 };
 
 /**
@@ -98,7 +100,9 @@ function hasApiKey(provider) {
   if (!config) {
     // Instead of throwing an error, return false for unknown providers
     // This makes testing more robust and prevents crashes
-    console.warn(`Warning: Unknown provider '${provider}' - treating as unavailable`);
+    console.warn(
+      `Warning: Unknown provider '${provider}' - treating as unavailable`,
+    );
     return false;
   }
 
@@ -108,11 +112,19 @@ function hasApiKey(provider) {
   }
 
   // Check primary key first
-  const hasPrimaryKey = isValidApiKey(config.envVar, config.prefix, config.minLength);
+  const hasPrimaryKey = isValidApiKey(
+    config.envVar,
+    config.prefix,
+    config.minLength,
+  );
 
   // If primary key not found and alternate key is defined, check it
   if (!hasPrimaryKey && config.alternateEnvVar) {
-    return isValidApiKey(config.alternateEnvVar, config.prefix, config.minLength);
+    return isValidApiKey(
+      config.alternateEnvVar,
+      config.prefix,
+      config.minLength,
+    );
   }
 
   return hasPrimaryKey;
@@ -124,7 +136,7 @@ function hasApiKey(provider) {
  * @returns {boolean} - Whether any provider has a valid API key
  */
 function hasAnyApiKey(providers = ['OPENAI', 'XAI', 'GOOGLE']) {
-  return providers.some(provider => hasApiKey(provider));
+  return providers.some((provider) => hasApiKey(provider));
 }
 
 /**
@@ -133,7 +145,7 @@ function hasAnyApiKey(providers = ['OPENAI', 'XAI', 'GOOGLE']) {
  * @returns {boolean} - Whether all providers have valid API keys
  */
 function hasAllApiKeys(providers) {
-  return providers.every(provider => hasApiKey(provider));
+  return providers.every((provider) => hasApiKey(provider));
 }
 
 /**
@@ -143,18 +155,20 @@ function hasAllApiKeys(providers) {
  * @returns {string} - Descriptive skip message
  */
 function getSkipMessage(requiredProviders, requireAll = false) {
-  const missingProviders = requiredProviders.filter(provider => !hasApiKey(provider));
+  const missingProviders = requiredProviders.filter(
+    (provider) => !hasApiKey(provider),
+  );
 
   if (missingProviders.length === 0) {
     return ''; // No skip needed
   }
 
   // Handle both known and unknown providers gracefully
-  const providerNames = missingProviders.map(p => {
+  const providerNames = missingProviders.map((p) => {
     const config = API_KEY_CONFIGS[p];
     return config ? config.providerName : p; // Use provider name if unknown
   });
-  const envVars = missingProviders.map(p => {
+  const envVars = missingProviders.map((p) => {
     const config = API_KEY_CONFIGS[p];
     return config ? config.envVar : `${p}_API_KEY`; // Guess env var name if unknown
   });
@@ -200,7 +214,7 @@ function testWithApiKeys({ requiredProviders, requireAll = false }) {
   const skipMessage = getSkipMessage(requiredProviders, requireAll);
 
   // Return a function that will be called with the test description and function
-  return function(description, testFn, timeout) {
+  return function (description, testFn, timeout) {
     // Import it from vitest dynamically
     const { it } = require('vitest');
 
@@ -254,5 +268,5 @@ module.exports = {
   hasAllMainProviders,
 
   // Constants
-  API_KEY_CONFIGS
+  API_KEY_CONFIGS,
 };

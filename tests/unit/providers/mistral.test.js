@@ -12,17 +12,17 @@ const mockChatComplete = vi.fn();
 
 // Mock the Mistral SDK
 vi.mock('@mistralai/mistralai', () => {
-  const MockMistral = function(config) {
+  const MockMistral = function (config) {
     this.apiKey = config.apiKey;
 
     this.chat = {
-      complete: mockChatComplete
+      complete: mockChatComplete,
     };
   };
 
   return {
     default: MockMistral,
-    Mistral: MockMistral
+    Mistral: MockMistral,
   };
 });
 
@@ -38,8 +38,8 @@ describe('Mistral Provider', () => {
 
     mockConfig = {
       apiKeys: {
-        mistral: 'test-mistral-api-key-1234567890abcdefghijklmnopqrstuvwxyz'
-      }
+        mistral: 'test-mistral-api-key-1234567890abcdefghijklmnopqrstuvwxyz',
+      },
     };
   });
 
@@ -56,10 +56,10 @@ describe('Mistral Provider', () => {
     it('should reject configuration with invalid API key format', () => {
       const invalidConfigs = [
         { apiKeys: { mistral: '' } },
-        { apiKeys: { mistral: 123 } }
+        { apiKeys: { mistral: 123 } },
       ];
 
-      invalidConfigs.forEach(config => {
+      invalidConfigs.forEach((config) => {
         expect(mistralProvider.validateConfig(config)).toBe(false);
       });
     });
@@ -118,31 +118,31 @@ describe('Mistral Provider', () => {
 
     beforeEach(() => {
       mockResponse = {
-        choices: [{
-          message: {
-            content: 'Test response',
-            role: 'assistant'
+        choices: [
+          {
+            message: {
+              content: 'Test response',
+              role: 'assistant',
+            },
+            finish_reason: 'stop',
           },
-          finish_reason: 'stop'
-        }],
+        ],
         usage: {
           prompt_tokens: 10,
           completion_tokens: 20,
-          total_tokens: 30
+          total_tokens: 30,
         },
-        model: 'magistral-medium-2509'
+        model: 'magistral-medium-2509',
       };
 
       mockChatComplete.mockResolvedValue(mockResponse);
     });
 
     it('should invoke with basic messages', async () => {
-      const messages = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages = [{ role: 'user', content: 'Hello' }];
 
       const result = await mistralProvider.invoke(messages, {
-        config: mockConfig
+        config: mockConfig,
       });
 
       expect(mockChatComplete).toHaveBeenCalled();
@@ -158,31 +158,33 @@ describe('Mistral Provider', () => {
           usage: {
             input_tokens: 10,
             output_tokens: 20,
-            total_tokens: 30
+            total_tokens: 30,
           },
-          provider: 'mistral'
-        }
+          provider: 'mistral',
+        },
       });
     });
 
     it('should handle image content', async () => {
-      const messages = [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What is this?' },
-          {
-            type: 'image',
-            source: {
-              media_type: 'image/jpeg',
-              data: 'base64data'
-            }
-          }
-        ]
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is this?' },
+            {
+              type: 'image',
+              source: {
+                media_type: 'image/jpeg',
+                data: 'base64data',
+              },
+            },
+          ],
+        },
+      ];
 
       await mistralProvider.invoke(messages, {
         model: 'mistral-medium-2508',
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockChatComplete.mock.calls[0][0];
@@ -190,8 +192,8 @@ describe('Mistral Provider', () => {
         { type: 'text', text: 'What is this?' },
         {
           type: 'image_url',
-          imageUrl: 'data:image/jpeg;base64,base64data'
-        }
+          imageUrl: 'data:image/jpeg;base64,base64data',
+        },
       ]);
     });
 
@@ -202,7 +204,7 @@ describe('Mistral Provider', () => {
         model: 'mistral-small-latest',
         temperature: 0.5,
         maxTokens: 2000,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockChatComplete.mock.calls[0][0];
@@ -217,7 +219,7 @@ describe('Mistral Provider', () => {
       await mistralProvider.invoke(messages, {
         model: 'magistral-small-2509',
         maxTokens: 100000,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const callArgs = mockChatComplete.mock.calls[0][0];
@@ -228,29 +230,31 @@ describe('Mistral Provider', () => {
     // Keeping the test as a placeholder for potential future non-image models
     it.skip('should reject image content for models that do not support it', async () => {
       // This test would be enabled if we add any models that don't support images
-      const messages = [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What is this?' },
-          {
-            type: 'image',
-            source: {
-              media_type: 'image/jpeg',
-              data: 'base64data'
-            }
-          }
-        ]
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is this?' },
+            {
+              type: 'image',
+              source: {
+                media_type: 'image/jpeg',
+                data: 'base64data',
+              },
+            },
+          ],
+        },
+      ];
 
       // Example with hypothetical non-image model
       await expect(
         mistralProvider.invoke(messages, {
           model: 'hypothetical-text-only-model',
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('does not support images')
+        message: expect.stringContaining('does not support images'),
       });
     });
   });
@@ -260,22 +264,24 @@ describe('Mistral Provider', () => {
       ['stop', StopReasons.STOP],
       ['length', StopReasons.LENGTH],
       ['model_length', StopReasons.LENGTH],
-      ['tool_calls', StopReasons.TOOL_USE]
+      ['tool_calls', StopReasons.TOOL_USE],
     ];
 
     testCases.forEach(([mistralReason, expectedReason]) => {
       it(`should map finish_reason "${mistralReason}" to "${expectedReason}"`, async () => {
         mockChatComplete.mockResolvedValue({
-          choices: [{
-            message: { content: 'Test', role: 'assistant' },
-            finish_reason: mistralReason
-          }],
-          usage: {}
+          choices: [
+            {
+              message: { content: 'Test', role: 'assistant' },
+              finish_reason: mistralReason,
+            },
+          ],
+          usage: {},
         });
 
         const result = await mistralProvider.invoke(
           [{ role: 'user', content: 'Hello' }],
-          { config: mockConfig }
+          { config: mockConfig },
         );
 
         expect(result.stop_reason).toBe(expectedReason);
@@ -284,16 +290,18 @@ describe('Mistral Provider', () => {
 
     it('should map unknown stop reason to OTHER', async () => {
       mockChatComplete.mockResolvedValue({
-        choices: [{
-          message: { content: 'Test', role: 'assistant' },
-          finish_reason: 'unknown_reason'
-        }],
-        usage: {}
+        choices: [
+          {
+            message: { content: 'Test', role: 'assistant' },
+            finish_reason: 'unknown_reason',
+          },
+        ],
+        usage: {},
       });
 
       const result = await mistralProvider.invoke(
         [{ role: 'user', content: 'Hello' }],
-        { config: mockConfig }
+        { config: mockConfig },
       );
 
       expect(result.stop_reason).toBe(StopReasons.OTHER);
@@ -304,95 +312,111 @@ describe('Mistral Provider', () => {
     it('should handle missing API key', async () => {
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: {}
-        })
+          config: {},
+        }),
       ).rejects.toThrow('Mistral API key not configured');
     });
 
     it('should validate message format', async () => {
       await expect(
         mistralProvider.invoke('not an array', {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGES,
-        message: 'Messages must be an array'
+        message: 'Messages must be an array',
       });
     });
 
     it('should validate individual messages', async () => {
       await expect(
         mistralProvider.invoke([null], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_MESSAGE,
-        message: expect.stringContaining('Message at index 0 must be an object')
+        message: expect.stringContaining(
+          'Message at index 0 must be an object',
+        ),
       });
     });
 
     it('should validate message roles', async () => {
       await expect(
         mistralProvider.invoke([{ role: 'invalid', content: 'test' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_ROLE,
-        message: expect.stringContaining('Invalid role "invalid"')
+        message: expect.stringContaining('Invalid role "invalid"'),
       });
     });
 
     it('should validate message content', async () => {
       await expect(
         mistralProvider.invoke([{ role: 'user' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MISSING_CONTENT,
-        message: expect.stringContaining('Message content is required')
+        message: expect.stringContaining('Message content is required'),
       });
     });
 
     it('should handle no response choice', async () => {
       mockChatComplete.mockResolvedValue({
         choices: [],
-        usage: {}
+        usage: {},
       });
 
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NO_RESPONSE_CHOICE,
-        message: 'No response choice received from Mistral'
+        message: 'No response choice received from Mistral',
       });
     });
 
     it('should handle no response content', async () => {
       mockChatComplete.mockResolvedValue({
-        choices: [{
-          message: { role: 'assistant' },
-          finish_reason: 'stop'
-        }],
-        usage: {}
+        choices: [
+          {
+            message: { role: 'assistant' },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
       });
 
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.NO_RESPONSE_CONTENT,
-        message: 'No content in response from Mistral'
+        message: 'No content in response from Mistral',
       });
     });
 
     it('should handle API errors', async () => {
       const errorCases = [
-        { status: 401, expectedCode: ErrorCodes.INVALID_API_KEY, expectedMessage: 'Invalid Mistral API key' },
-        { status: 429, expectedCode: ErrorCodes.RATE_LIMIT_EXCEEDED, expectedMessage: 'rate limit exceeded' },
-        { status: 403, expectedCode: ErrorCodes.QUOTA_EXCEEDED, expectedMessage: 'quota exceeded' }
+        {
+          status: 401,
+          expectedCode: ErrorCodes.INVALID_API_KEY,
+          expectedMessage: 'Invalid Mistral API key',
+        },
+        {
+          status: 429,
+          expectedCode: ErrorCodes.RATE_LIMIT_EXCEEDED,
+          expectedMessage: 'rate limit exceeded',
+        },
+        {
+          status: 403,
+          expectedCode: ErrorCodes.QUOTA_EXCEEDED,
+          expectedMessage: 'quota exceeded',
+        },
       ];
 
       for (const { status, expectedCode, expectedMessage } of errorCases) {
@@ -400,58 +424,58 @@ describe('Mistral Provider', () => {
 
         await expect(
           mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-            config: mockConfig
-          })
+            config: mockConfig,
+          }),
         ).rejects.toMatchObject({
           code: expectedCode,
-          message: expect.stringContaining(expectedMessage)
+          message: expect.stringContaining(expectedMessage),
         });
       }
     });
 
     it('should handle invalid request errors', async () => {
       mockChatComplete.mockRejectedValue({
-        message: 'Invalid request: bad parameter'
+        message: 'Invalid request: bad parameter',
       });
 
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('Invalid request')
+        message: expect.stringContaining('Invalid request'),
       });
     });
 
     it('should handle model not found errors', async () => {
       mockChatComplete.mockRejectedValue({
-        message: 'Model unknown-model not found'
+        message: 'Model unknown-model not found',
       });
 
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
           model: 'unknown-model',
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining('Model unknown-model not found')
+        message: expect.stringContaining('Model unknown-model not found'),
       });
     });
 
     it('should handle context length errors', async () => {
       mockChatComplete.mockRejectedValue({
-        message: 'Context length exceeded'
+        message: 'Context length exceeded',
       });
 
       await expect(
         mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig
-        })
+          config: mockConfig,
+        }),
       ).rejects.toMatchObject({
         code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
-        message: 'Context length exceeded for model'
+        message: 'Context length exceeded for model',
       });
     });
   });

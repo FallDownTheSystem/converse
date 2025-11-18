@@ -20,9 +20,13 @@ import {
   createMockOpenRouterProvider,
   createMockMistralProvider,
   createMockDeepSeekProvider,
-  createMockProviderRegistry
+  createMockProviderRegistry,
 } from '../../mocks/providers/index.js';
-import { ProviderError, ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
+import {
+  ProviderError,
+  ErrorCodes,
+  StopReasons,
+} from '../../../src/providers/interface.js';
 
 describe('Mock Provider Base', () => {
   describe('createMockProvider', () => {
@@ -47,7 +51,7 @@ describe('Mock Provider Base', () => {
       expect(provider.tracker.getCallCount('invoke')).toBe(1);
       expect(provider.tracker.getLastCall('invoke').args).toEqual({
         messages,
-        options
+        options,
       });
     });
 
@@ -84,12 +88,12 @@ describe('Mock Provider Base', () => {
           usage: {
             input_tokens: 50,
             output_tokens: 100,
-            total_tokens: 30
+            total_tokens: 30,
           },
           response_time_ms: 250,
           finish_reason: StopReasons.LENGTH,
-          provider: 'test-provider'
-        }
+          provider: 'test-provider',
+        },
       });
     });
   });
@@ -153,7 +157,9 @@ describe('Mock Provider Base', () => {
       await expect(behavior.getBehaviorForCall(0)).resolves.toBe(null);
 
       // Second call should throw
-      await expect(behavior.getBehaviorForCall(1)).rejects.toThrow('Test error');
+      await expect(behavior.getBehaviorForCall(1)).rejects.toThrow(
+        'Test error',
+      );
     });
 
     it('should return custom responses', async () => {
@@ -175,13 +181,13 @@ describe('Mock Provider Variants', () => {
     it('should create provider that throws ProviderError', async () => {
       const provider = createMockProviderWithError({
         message: 'API Error',
-        code: ErrorCodes.API_ERROR
+        code: ErrorCodes.API_ERROR,
       });
 
       await expect(provider.invoke([])).rejects.toThrow(ProviderError);
       await expect(provider.invoke([])).rejects.toMatchObject({
         message: 'API Error',
-        code: ErrorCodes.API_ERROR
+        code: ErrorCodes.API_ERROR,
       });
     });
   });
@@ -246,7 +252,7 @@ describe('Provider-Specific Mocks', () => {
       const response = await provider.invoke([], {
         model: 'o1',
         reasoning_effort: 'high',
-        config: { apiKeys: { openai: 'test-key' } }
+        config: { apiKeys: { openai: 'test-key' } },
       });
 
       expect(response.metadata.usage.reasoning_tokens).toBe(5000);
@@ -258,7 +264,7 @@ describe('Provider-Specific Mocks', () => {
       const response = await provider.invoke([], {
         model: 'gpt-4o',
         use_websearch: true,
-        config: { apiKeys: { openai: 'test-key' } }
+        config: { apiKeys: { openai: 'test-key' } },
       });
 
       expect(response.content).toContain('web search');
@@ -266,7 +272,9 @@ describe('Provider-Specific Mocks', () => {
 
     it('should validate API key', async () => {
       const provider = createMockOpenAIProvider();
-      await expect(provider.invoke([], {})).rejects.toThrow('OpenAI API key is required');
+      await expect(provider.invoke([], {})).rejects.toThrow(
+        'OpenAI API key is required',
+      );
     });
   });
 
@@ -275,7 +283,7 @@ describe('Provider-Specific Mocks', () => {
       const provider = createMockGoogleProvider();
       const response = await provider.invoke([], {
         model: 'gemini-2.0-flash-thinking-exp',
-        config: { apiKeys: { google: 'test-key' } }
+        config: { apiKeys: { google: 'test-key' } },
       });
 
       expect(response.content).toContain('think step by step');
@@ -288,7 +296,7 @@ describe('Provider-Specific Mocks', () => {
       const response = await provider.invoke([], {
         model: 'grok-4',
         use_websearch: true,
-        config: { apiKeys: { xai: 'test-key' } }
+        config: { apiKeys: { xai: 'test-key' } },
       });
 
       expect(response.content).toContain('current information from the web');
@@ -299,18 +307,25 @@ describe('Provider-Specific Mocks', () => {
   describe('Anthropic Mock', () => {
     it('should validate image support', async () => {
       const provider = createMockAnthropicProvider();
-      const messages = [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What is this?' },
-          { type: 'image', source: { media_type: 'image/png', data: 'base64...' } }
-        ]
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is this?' },
+            {
+              type: 'image',
+              source: { media_type: 'image/png', data: 'base64...' },
+            },
+          ],
+        },
+      ];
 
-      await expect(provider.invoke(messages, {
-        model: 'claude-3-5-haiku-20241022',
-        config: { apiKeys: { anthropic: 'test-key' } }
-      })).rejects.toThrow('does not support images');
+      await expect(
+        provider.invoke(messages, {
+          model: 'claude-3-5-haiku-20241022',
+          config: { apiKeys: { anthropic: 'test-key' } },
+        }),
+      ).rejects.toThrow('does not support images');
     });
   });
 
@@ -319,7 +334,7 @@ describe('Provider-Specific Mocks', () => {
       const provider = createMockOpenRouterProvider();
       const response = await provider.invoke([], {
         model: 'custom/new-model',
-        config: { apiKeys: { openrouter: 'test-key' } }
+        config: { apiKeys: { openrouter: 'test-key' } },
       });
 
       expect(response.content).toContain('dynamic model: custom/new-model');
@@ -339,7 +354,7 @@ describe('Provider-Specific Mocks', () => {
       const provider = createMockMistralProvider();
       const response = await provider.invoke([], {
         model: 'codestral-latest',
-        config: { apiKeys: { mistral: 'test-key' } }
+        config: { apiKeys: { mistral: 'test-key' } },
       });
 
       expect(response.content).toContain('```python');
@@ -353,7 +368,7 @@ describe('Provider-Specific Mocks', () => {
       const response = await provider.invoke([], {
         model: 'deepseek-reasoner',
         reasoning_effort: 'high',
-        config: { apiKeys: { deepseek: 'test-key' } }
+        config: { apiKeys: { deepseek: 'test-key' } },
       });
 
       expect(response.metadata.usage.reasoning_tokens).toBe(15000);
@@ -394,8 +409,8 @@ describe('Mock Provider Registry', () => {
     const config = {
       apiKeys: {
         openai: 'key1',
-        google: 'key2'
-      }
+        google: 'key2',
+      },
     };
 
     const available = registry.getAvailable(config);
@@ -411,8 +426,8 @@ describe('Mock Provider Registry', () => {
     const mockConfig = {
       apiKeys: {
         openai: 'test-openai-key',
-        google: 'test-google-key'
-      }
+        google: 'test-google-key',
+      },
     };
 
     // Make some calls

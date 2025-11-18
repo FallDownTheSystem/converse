@@ -73,16 +73,17 @@ class ComprehensiveTestSuite {
           env: {
             ...process.env,
             NODE_ENV: 'test',
-            LOG_LEVEL: 'error'  // Minimal logging to avoid stdout contamination
-          }
+            LOG_LEVEL: 'error', // Minimal logging to avoid stdout contamination
+          },
         });
 
         this.client = new Client({
           name: 'comprehensive-test-client',
-          version: '1.0.0'
+          version: '1.0.0',
         });
 
-        this.client.connect(this.transport)
+        this.client
+          .connect(this.transport)
           .then(() => {
             clearTimeout(timeout);
             this.log('MCP server connected successfully');
@@ -92,7 +93,6 @@ class ComprehensiveTestSuite {
             clearTimeout(timeout);
             reject(new Error(`Client connection failed: ${error.message}`));
           });
-
       } catch (error) {
         clearTimeout(timeout);
         reject(error);
@@ -130,7 +130,10 @@ class ComprehensiveTestSuite {
     } catch (error) {
       result.setFailure(error);
       result.duration = Date.now() - startTime;
-      this.log(`✗ ${testName} (${result.duration}ms): ${error.message}`, 'FAIL');
+      this.log(
+        `✗ ${testName} (${result.duration}ms): ${error.message}`,
+        'FAIL',
+      );
     }
 
     this.results.push(result);
@@ -145,18 +148,20 @@ class ComprehensiveTestSuite {
       throw new Error('Invalid tools response format');
     }
 
-    const toolNames = response.tools.map(tool => tool.name);
+    const toolNames = response.tools.map((tool) => tool.name);
     const expectedTools = ['chat', 'consensus'];
 
     for (const tool of expectedTools) {
       if (!toolNames.includes(tool)) {
-        throw new Error(`Expected tool '${tool}' not found in: ${toolNames.join(', ')}`);
+        throw new Error(
+          `Expected tool '${tool}' not found in: ${toolNames.join(', ')}`,
+        );
       }
     }
 
     return {
       toolCount: response.tools.length,
-      tools: toolNames
+      tools: toolNames,
     };
   }
 
@@ -166,8 +171,8 @@ class ComprehensiveTestSuite {
       name: 'chat',
       arguments: {
         prompt: 'Hello! Please respond with exactly: "Test response received"',
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     if (!response.content || !Array.isArray(response.content)) {
@@ -180,7 +185,7 @@ class ComprehensiveTestSuite {
 
     return {
       responseLength: response.content[0].text.length,
-      hasContent: !!response.content[0].text
+      hasContent: !!response.content[0].text,
     };
   }
 
@@ -190,9 +195,10 @@ class ComprehensiveTestSuite {
     const firstResponse = await this.client.callTool({
       name: 'chat',
       arguments: {
-        prompt: 'Remember this number: 12345. Just say "I will remember 12345" and nothing else.',
-        model: 'openai:gpt-4o-mini'
-      }
+        prompt:
+          'Remember this number: 12345. Just say "I will remember 12345" and nothing else.',
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     if (!firstResponse.continuation) {
@@ -207,8 +213,8 @@ class ComprehensiveTestSuite {
       arguments: {
         prompt: 'What number did I ask you to remember?',
         continuation: conversationId,
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     if (secondResponse.continuation.id !== conversationId) {
@@ -219,7 +225,7 @@ class ComprehensiveTestSuite {
       conversationId,
       firstMessageCount: firstResponse.continuation.messageCount,
       secondMessageCount: secondResponse.continuation.messageCount,
-      conversationMaintained: secondResponse.continuation.id === conversationId
+      conversationMaintained: secondResponse.continuation.id === conversationId,
     };
   }
 
@@ -229,11 +235,8 @@ class ComprehensiveTestSuite {
       name: 'consensus',
       arguments: {
         prompt: 'What is 2 + 2? Please respond with just the number.',
-        models: [
-          { model: 'openai:gpt-4o-mini' },
-          { model: 'google:flash' }
-        ]
-      }
+        models: [{ model: 'openai:gpt-4o-mini' }, { model: 'google:flash' }],
+      },
     });
 
     if (!response.content || !Array.isArray(response.content)) {
@@ -241,14 +244,17 @@ class ComprehensiveTestSuite {
     }
 
     const consensusText = response.content[0].text;
-    if (!consensusText.includes('Initial Responses') || !consensusText.includes('Refined Responses')) {
+    if (
+      !consensusText.includes('Initial Responses') ||
+      !consensusText.includes('Refined Responses')
+    ) {
       throw new Error('Consensus response missing expected sections');
     }
 
     return {
       responseLength: consensusText.length,
       hasInitialResponses: consensusText.includes('Initial Responses'),
-      hasRefinedResponses: consensusText.includes('Refined Responses')
+      hasRefinedResponses: consensusText.includes('Refined Responses'),
     };
   }
 
@@ -257,7 +263,7 @@ class ComprehensiveTestSuite {
     try {
       await this.client.callTool({
         name: 'nonexistent-tool',
-        arguments: {}
+        arguments: {},
       });
       throw new Error('Expected error for invalid tool, but call succeeded');
     } catch (error) {
@@ -273,11 +279,14 @@ class ComprehensiveTestSuite {
     try {
       await this.client.callTool({
         name: 'chat',
-        arguments: {} // Missing required prompt
+        arguments: {}, // Missing required prompt
       });
       throw new Error('Expected error for missing prompt, but call succeeded');
     } catch (error) {
-      if (error.message.includes('prompt') || error.message.includes('required')) {
+      if (
+        error.message.includes('prompt') ||
+        error.message.includes('required')
+      ) {
         return { errorHandled: true, errorMessage: error.message };
       }
       throw error;
@@ -288,7 +297,10 @@ class ComprehensiveTestSuite {
   async testFileContext() {
     // Create a temporary test file
     const testFile = join(__dirname, 'test-context.txt');
-    await fs.writeFile(testFile, 'This is test content for file context processing.\nLine 2 of test file.');
+    await fs.writeFile(
+      testFile,
+      'This is test content for file context processing.\nLine 2 of test file.',
+    );
 
     try {
       const response = await this.client.callTool({
@@ -296,8 +308,8 @@ class ComprehensiveTestSuite {
         arguments: {
           prompt: 'What is in the provided file?',
           model: 'openai:gpt-4o-mini',
-          files: [testFile]
-        }
+          files: [testFile],
+        },
       });
 
       if (!response.content || !response.content[0].text) {
@@ -309,7 +321,7 @@ class ComprehensiveTestSuite {
 
       return {
         fileProcessed: true,
-        responseLength: response.content[0].text.length
+        responseLength: response.content[0].text.length,
       };
     } catch (error) {
       // Cleanup on error
@@ -330,27 +342,28 @@ class ComprehensiveTestSuite {
       name: 'chat',
       arguments: {
         prompt: 'Hi',
-        model: 'openai:gpt-4o-mini'
-      }
+        model: 'openai:gpt-4o-mini',
+      },
     });
 
     const responseTime = Date.now() - startTime;
 
-    if (responseTime > 30000) { // 30 second timeout
+    if (responseTime > 30000) {
+      // 30 second timeout
       throw new Error(`Response time too slow: ${responseTime}ms`);
     }
 
     return {
       responseTime,
-      withinLimit: responseTime < 30000
+      withinLimit: responseTime < 30000,
     };
   }
 
   // Generate comprehensive test report
   async generateReport() {
     const totalDuration = Date.now() - this.startTime;
-    const passed = this.results.filter(r => r.success).length;
-    const failed = this.results.filter(r => !r.success).length;
+    const passed = this.results.filter((r) => r.success).length;
+    const failed = this.results.filter((r) => !r.success).length;
 
     const report = {
       timestamp: new Date().toISOString(),
@@ -359,15 +372,15 @@ class ComprehensiveTestSuite {
         passed,
         failed,
         successRate: Math.round((passed / this.results.length) * 100),
-        totalDuration
+        totalDuration,
       },
-      results: this.results.map(r => ({
+      results: this.results.map((r) => ({
         name: r.name,
         success: r.success,
         duration: r.duration,
         error: r.error ? r.error.message : null,
-        details: r.details
-      }))
+        details: r.details,
+      })),
     };
 
     // Save report to file
@@ -392,15 +405,19 @@ class ComprehensiveTestSuite {
 
     if (report.summary.failed > 0) {
       console.log('\nFAILED TESTS:');
-      report.results.filter(r => !r.success).forEach(r => {
-        console.log(`  ✗ ${r.name}: ${r.error}`);
-      });
+      report.results
+        .filter((r) => !r.success)
+        .forEach((r) => {
+          console.log(`  ✗ ${r.name}: ${r.error}`);
+        });
     }
 
     console.log('\nPASSED TESTS:');
-    report.results.filter(r => r.success).forEach(r => {
-      console.log(`  ✓ ${r.name} (${r.duration}ms)`);
-    });
+    report.results
+      .filter((r) => r.success)
+      .forEach((r) => {
+        console.log(`  ✓ ${r.name} (${r.duration}ms)`);
+      });
   }
 
   // Run all tests
@@ -409,21 +426,36 @@ class ComprehensiveTestSuite {
       await this.startServer();
 
       // Core functionality tests
-      await this.runTest('Server Connectivity', () => this.testServerConnectivity());
-      await this.runTest('Chat Basic Functionality', () => this.testChatBasic());
-      await this.runTest('Chat Continuation', () => this.testChatContinuation());
-      await this.runTest('Consensus Basic Functionality', () => this.testConsensusBasic());
+      await this.runTest('Server Connectivity', () =>
+        this.testServerConnectivity(),
+      );
+      await this.runTest('Chat Basic Functionality', () =>
+        this.testChatBasic(),
+      );
+      await this.runTest('Chat Continuation', () =>
+        this.testChatContinuation(),
+      );
+      await this.runTest('Consensus Basic Functionality', () =>
+        this.testConsensusBasic(),
+      );
 
       // Error handling tests
-      await this.runTest('Error Handling - Invalid Tool', () => this.testErrorHandlingInvalidTool());
-      await this.runTest('Error Handling - Invalid Arguments', () => this.testErrorHandlingInvalidArgs());
+      await this.runTest('Error Handling - Invalid Tool', () =>
+        this.testErrorHandlingInvalidTool(),
+      );
+      await this.runTest('Error Handling - Invalid Arguments', () =>
+        this.testErrorHandlingInvalidArgs(),
+      );
 
       // Feature tests
-      await this.runTest('File Context Processing', () => this.testFileContext());
+      await this.runTest('File Context Processing', () =>
+        this.testFileContext(),
+      );
 
       // Performance tests
-      await this.runTest('Performance - Basic Response Time', () => this.testPerformanceBasic());
-
+      await this.runTest('Performance - Basic Response Time', () =>
+        this.testPerformanceBasic(),
+      );
     } finally {
       await this.stopServer();
     }
@@ -439,7 +471,8 @@ class ComprehensiveTestSuite {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const testSuite = new ComprehensiveTestSuite();
 
-  testSuite.runAllTests()
+  testSuite
+    .runAllTests()
     .then((report) => {
       process.exit(report.summary.failed > 0 ? 1 : 0);
     })
