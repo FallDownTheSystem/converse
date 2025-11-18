@@ -101,9 +101,9 @@ MCP_TRANSPORT=stdio npm start
     },
     "media_resolution": {
       "type": "string",
-      "enum": ["low", "medium", "high"],
-      "default": "high",
-      "description": "Control image/PDF/video processing quality (Gemini 3.0 only). Defaults to 'high' for Gemini 3.0. Examples: 'low' (faster, less detail), 'medium' (balanced), 'high' (maximum detail)"
+      "enum": ["MEDIA_RESOLUTION_LOW", "MEDIA_RESOLUTION_MEDIUM", "MEDIA_RESOLUTION_HIGH", "MEDIA_RESOLUTION_UNSPECIFIED"],
+      "default": "MEDIA_RESOLUTION_HIGH",
+      "description": "Control image/PDF/video processing quality (Gemini 3.0). Defaults to 'MEDIA_RESOLUTION_HIGH' for Gemini 3.0. Examples: 'MEDIA_RESOLUTION_LOW' (faster, less detail), 'MEDIA_RESOLUTION_MEDIUM' (balanced), 'MEDIA_RESOLUTION_HIGH' (maximum detail)"
     },
     "async": {
       "type": "boolean",

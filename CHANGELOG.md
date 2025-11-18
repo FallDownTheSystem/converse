@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 1M context window, 64K max output tokens
   - Level-based thinking mode (low/high) instead of token-based budget
   - New `media_resolution` parameter for controlling image/PDF/video processing quality
-  - Values: `low` (faster, less detail), `medium` (balanced), `high` (maximum detail)
-  - Defaults to `high` for Gemini 3.0 models (automatically applied)
+  - Values: `MEDIA_RESOLUTION_LOW`, `MEDIA_RESOLUTION_MEDIUM`, `MEDIA_RESOLUTION_HIGH`, `MEDIA_RESOLUTION_UNSPECIFIED`
+  - Defaults to `MEDIA_RESOLUTION_HIGH` for Gemini 3.0 models (automatically applied)
   - Supports streaming, web search (grounding), and multimodal inputs
   - Aliases: `gemini-3`, `gemini3`, `gemini-3-pro`, `3-pro`
 

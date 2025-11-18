@@ -553,14 +553,28 @@ export const googleProvider = {
 
     // Add media resolution for Gemini 3.0 models
     if (modelConfig.thinkingMode === 'level') {
-      // Default to "high" for Gemini 3.0 if not specified
-      const resolution = media_resolution || 'high';
-      if (['low', 'medium', 'high'].includes(resolution)) {
+      // Default to MEDIA_RESOLUTION_HIGH for Gemini 3.0 if not specified
+      const resolution = media_resolution || 'MEDIA_RESOLUTION_HIGH';
+      const validResolutions = [
+        'MEDIA_RESOLUTION_LOW',
+        'MEDIA_RESOLUTION_MEDIUM',
+        'MEDIA_RESOLUTION_HIGH',
+        'MEDIA_RESOLUTION_UNSPECIFIED',
+      ];
+      if (validResolutions.includes(resolution)) {
         generationConfig.mediaResolution = resolution;
       }
-    } else if (media_resolution && ['low', 'medium', 'high'].includes(media_resolution)) {
+    } else if (media_resolution) {
       // For other models, only add if explicitly specified
-      generationConfig.mediaResolution = media_resolution;
+      const validResolutions = [
+        'MEDIA_RESOLUTION_LOW',
+        'MEDIA_RESOLUTION_MEDIUM',
+        'MEDIA_RESOLUTION_HIGH',
+        'MEDIA_RESOLUTION_UNSPECIFIED',
+      ];
+      if (validResolutions.includes(media_resolution)) {
+        generationConfig.mediaResolution = media_resolution;
+      }
     }
 
     // Add web search grounding if requested and model supports it
