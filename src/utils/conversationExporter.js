@@ -172,6 +172,13 @@ function generateMetadata(conversationState, totalTurns, params) {
       img.startsWith('data:') ? '[base64 image]' : img
     );
   }
+  // Consensus-specific metadata
+  if (params.models) {
+    metadata.models = params.models;
+  }
+  if (params.enable_cross_feedback !== undefined) {
+    metadata.enable_cross_feedback = params.enable_cross_feedback;
+  }
 
   return metadata;
 }

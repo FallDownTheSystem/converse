@@ -1045,6 +1045,12 @@ chatTool.inputSchema = {
         'Execute chat in background. When true, returns continuation_id immediately and processes request asynchronously. Default: false',
       default: false,
     },
+    export: {
+      type: 'boolean',
+      description:
+        'Export conversation to disk. Creates folder with continuation_id name containing numbered request/response files and metadata. Default: false',
+      default: false,
+    },
     prompt: {
       type: 'string',
       description:

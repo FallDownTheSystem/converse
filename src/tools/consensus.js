@@ -24,6 +24,7 @@ import { CONSENSUS_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
+import { exportConversation } from '../utils/conversationExporter.js';
 
 const logger = createLogger('consensus');
 
@@ -72,6 +73,7 @@ export async function consensusTool(args, dependencies) {
       reasoning_effort = 'medium',
       use_websearch = false,
       async = false,
+      export: shouldExport = false,
     } = args;
 
     // Handle async execution mode
@@ -509,6 +511,7 @@ Please provide your refined response:`;
     }
 
     // Save conversation state
+    let conversationState;
     try {
       const consensusMessage = {
         role: 'assistant',
@@ -519,7 +522,7 @@ Please provide your refined response:`;
             : ''),
       };
 
-      const conversationState = {
+      conversationState = {
         messages: [...messages, consensusMessage],
         type: 'consensus',
         lastUpdated: Date.now(),
@@ -538,6 +541,21 @@ Please provide your refined response:`;
     } catch (error) {
       logger.error('Error saving consensus conversation', { error });
       // Continue even if save fails
+    }
+
+    // Export conversation if requested
+    if (shouldExport && conversationState) {
+      await exportConversation(conversationState, {
+        clientCwd: dependencies.config.server?.client_cwd,
+        continuation_id: continuationId,
+        models: models.join(','),
+        temperature,
+        reasoning_effort,
+        use_websearch,
+        files,
+        images,
+        enable_cross_feedback,
+      });
     }
 
     const consensusExecutionTime = (Date.now() - consensusStartTime) / 1000; // Convert to seconds
@@ -826,6 +844,7 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
     temperature = 0.2,
     reasoning_effort = 'medium',
     use_websearch = false,
+    export: shouldExport = false,
   } = args;
 
   let conversationHistory = [];
@@ -1166,6 +1185,7 @@ Please provide your refined response:`;
   }
 
   // Save conversation state
+  let conversationState;
   try {
     const consensusMessage = {
       role: 'assistant',
@@ -1176,7 +1196,7 @@ Please provide your refined response:`;
           : ''),
     };
 
-    const conversationState = {
+    conversationState = {
       messages: [...messages, consensusMessage],
       type: 'consensus',
       lastUpdated: Date.now(),
@@ -1191,6 +1211,21 @@ Please provide your refined response:`;
     await continuationStore.set(continuationId, conversationState);
   } catch (error) {
     logger.error('Error saving consensus conversation', { error });
+  }
+
+  // Export conversation if requested
+  if (shouldExport && conversationState) {
+    await exportConversation(conversationState, {
+      clientCwd: config.server?.client_cwd,
+      continuation_id: continuationId,
+      models: models.join(','),
+      temperature,
+      reasoning_effort,
+      use_websearch,
+      files,
+      images,
+      enable_cross_feedback,
+    });
   }
 
   const consensusExecutionTime = (Date.now() - consensusStartTime) / 1000;
@@ -1573,6 +1608,12 @@ consensusTool.inputSchema = {
       type: 'boolean',
       description:
         'Execute consensus in background with detailed progress tracking. When true, returns continuation_id immediately and processes request asynchronously with per-provider status updates. Default: false',
+      default: false,
+    },
+    export: {
+      type: 'boolean',
+      description:
+        'Export conversation to disk. Creates folder with continuation_id name containing numbered request/response files and metadata. Default: false',
       default: false,
     },
     prompt: {

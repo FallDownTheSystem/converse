@@ -252,6 +252,11 @@ conv_architecture_design/
       "type": "boolean",
       "default": false,
       "description": "Execute in background mode with per-provider progress tracking. Returns continuation_id immediately for monitoring."
+    },
+    "export": {
+      "type": "boolean",
+      "default": false,
+      "description": "Export conversation to disk. Creates folder with continuation_id name containing numbered request/response files and metadata. Example: true to save consensus results"
     }
   },
   "required": ["prompt", "models"]
