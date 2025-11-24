@@ -5,6 +5,23 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-11-24
+
+### Added
+
+- **Claude SDK Provider**: New `claude` provider for subscription-based access via Claude Agent SDK
+  - Uses `@anthropic-ai/claude-agent-sdk` for authentication via `claude login` command
+  - No API key required - leverages existing Claude Code CLI authentication
+  - Model name: `claude` with aliases `claude-sdk` and `claude-code`
+  - Supports both streaming and synchronous execution modes
+  - Automatically handles SDK message types (system, assistant, result)
+  - Pre-normalized streaming events compatible with ProviderStreamNormalizer
+
+- **Model Routing Enhancement**: Smart routing distinguishes SDK vs API access
+  - `claude`, `claude-sdk`, `claude-code` → routes to new claude provider (SDK-based, subscription)
+  - `claude-sonnet-*`, `claude-3-*`, `opus`, `haiku`, etc. → routes to anthropic provider (API-based)
+  - Enables using Claude Pro/Max subscription alongside API access
+
 ## [2.7.0] - 2025-11-24
 
 ### Added
