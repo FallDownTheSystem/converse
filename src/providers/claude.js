@@ -24,7 +24,7 @@ const SUPPORTED_MODELS = {
     contextWindow: 200000,
     maxOutputTokens: 8192,
     supportsStreaming: true,
-    supportsImages: false, // SDK has limited image support
+    supportsImages: true, // Supported via streaming input mode
     supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 120000, // 2 minutes
@@ -83,14 +83,19 @@ async function getClaudeSDK() {
 }
 
 /**
- * Convert message array to single prompt for Claude SDK
- * Claude SDK expects single prompts, not message history
+ * Convert message array to SDK input format
+ * Claude SDK supports two modes:
+ * 1. Single message mode (string) - simpler, but no image support
+ * 2. Streaming input mode (AsyncGenerator) - supports images
  *
  * Strategy:
- * - Extract last user message only
- * - Handle both string and multimodal content formats
+ * - Extract last user message
+ * - If message contains images, use streaming input mode
+ * - Otherwise, return string prompt for single message mode
+ *
+ * @returns {Object} { prompt: string | null, sdkMessage: Object | null, hasImages: boolean }
  */
-function convertMessagesToPrompt(messages) {
+function convertMessagesToSdkInput(messages) {
   if (!Array.isArray(messages)) {
     throw new ClaudeProviderError(
       'Messages must be an array',
@@ -117,32 +122,80 @@ function convertMessagesToPrompt(messages) {
 
   // Extract text content from message
   if (typeof lastUserMessage.content === 'string') {
-    return lastUserMessage.content;
+    return {
+      prompt: lastUserMessage.content,
+      sdkMessage: null,
+      hasImages: false,
+    };
   }
 
   // Handle array content (multimodal format)
   if (Array.isArray(lastUserMessage.content)) {
+    // Check if message contains images
+    const hasImages = lastUserMessage.content.some(
+      (item) => item.type === 'image',
+    );
+
+    if (hasImages) {
+      // Use streaming input mode for images
+      // Convert to SDK message format
+      const sdkContent = lastUserMessage.content.map((item) => {
+        if (item.type === 'text') {
+          return {
+            type: 'text',
+            text: item.text,
+          };
+        } else if (item.type === 'image') {
+          // SDK expects Anthropic image format
+          return {
+            type: 'image',
+            source: item.source,
+          };
+        }
+        return item;
+      });
+
+      debugLog(
+        `[Claude SDK] Using streaming input mode for multimodal content (${lastUserMessage.content.filter((i) => i.type === 'image').length} images)`,
+      );
+
+      return {
+        prompt: null,
+        sdkMessage: {
+          type: 'user',
+          message: {
+            role: 'user',
+            content: sdkContent,
+          },
+        },
+        hasImages: true,
+      };
+    }
+
+    // No images - extract text only
     const textParts = lastUserMessage.content
       .filter((item) => item.type === 'text')
       .map((item) => item.text);
 
-    // Log warning if images present (Claude SDK has limited image support)
-    const hasImages = lastUserMessage.content.some(
-      (item) => item.type === 'image',
-    );
-    if (hasImages) {
-      debugLog(
-        '[Claude SDK] Warning: Images in message will be ignored (Claude SDK does not support multimodal input)',
-      );
-    }
-
-    return textParts.join('\n');
+    return {
+      prompt: textParts.join('\n'),
+      sdkMessage: null,
+      hasImages: false,
+    };
   }
 
   throw new ClaudeProviderError(
     'Invalid message content format',
     ErrorCodes.INVALID_MESSAGES,
   );
+}
+
+/**
+ * Create an async generator that yields a single SDK user message
+ * This is required for streaming input mode (image support)
+ */
+async function* createSdkMessageGenerator(sdkMessage) {
+  yield sdkMessage;
 }
 
 /**
@@ -153,12 +206,25 @@ function convertMessagesToPrompt(messages) {
  * - system (subtype: init): Session initialization
  * - assistant: Model responses with message.content
  * - result (subtype: success/error_*): Final results with usage
+ *
+ * @param {Function} queryFn - The SDK query function
+ * @param {string|null} prompt - String prompt for single message mode, or null for streaming input mode
+ * @param {Object|null} sdkMessage - SDK user message for streaming input mode (with images)
+ * @param {Object} options - SDK options (cwd, etc.)
+ * @param {AbortSignal} signal - Abort signal for cancellation
  */
-async function* createStreamingGenerator(queryFn, prompt, options, signal) {
+async function* createStreamingGenerator(
+  queryFn,
+  prompt,
+  sdkMessage,
+  options,
+  signal,
+) {
   try {
     // Build query options
+    // Use higher maxTurns to allow for file reading operations
     const queryOptions = {
-      maxTurns: 1, // Single turn for chat
+      maxTurns: 10, // Allow multiple turns for file operations
       permissionMode: 'bypassPermissions', // Don't prompt for permissions
     };
 
@@ -179,9 +245,16 @@ async function* createStreamingGenerator(queryFn, prompt, options, signal) {
       });
     }
 
+    // Determine input mode based on whether we have an SDK message (with images) or plain prompt
+    // - Streaming input mode: prompt is AsyncGenerator<SDKUserMessage> - required for images
+    // - Single message mode: prompt is string - simpler but no image support
+    const queryInput = sdkMessage
+      ? createSdkMessageGenerator(sdkMessage) // Streaming input mode for images
+      : prompt; // Single message mode for text-only
+
     // Create query generator
     const response = queryFn({
-      prompt,
+      prompt: queryInput,
       options: queryOptions,
     });
 
@@ -330,8 +403,15 @@ export const claudeProvider = {
       // Get Claude SDK
       const query = await getClaudeSDK();
 
-      // Convert messages to prompt
-      const prompt = convertMessagesToPrompt(messages);
+      // Convert messages to SDK input format
+      // Returns { prompt, sdkMessage, hasImages }
+      // - prompt: string for single message mode (text-only)
+      // - sdkMessage: SDK user message for streaming input mode (with images)
+      const { prompt, sdkMessage, hasImages } = convertMessagesToSdkInput(messages);
+
+      if (hasImages) {
+        debugLog('[Claude SDK] Using streaming input mode for image support');
+      }
 
       // Build SDK options
       const sdkOptions = {
@@ -340,7 +420,13 @@ export const claudeProvider = {
 
       // Streaming mode
       if (stream) {
-        return createStreamingGenerator(query, prompt, sdkOptions, signal);
+        return createStreamingGenerator(
+          query,
+          prompt,
+          sdkMessage,
+          sdkOptions,
+          signal,
+        );
       }
 
       // Synchronous mode: consume streaming internally and return complete response
@@ -348,6 +434,7 @@ export const claudeProvider = {
       const generator = createStreamingGenerator(
         query,
         prompt,
+        sdkMessage,
         sdkOptions,
         signal,
       );

@@ -95,7 +95,7 @@ export function generateHelpContent(config = null) {
       return `\`\`\`json
 {
   "prompt": "Should we use microservices architecture for our new project?",
-  "models": ["gpt-5", "gemini-pro", "grok-4"],
+  "models": ["codex", "gemini", "claude"],
   "files": ["./requirements.md", "C:\\\\Users\\\\username\\\\architecture.md"],
   "enable_cross_feedback": true,
   "temperature": 0.3

@@ -270,20 +270,35 @@ export async function chatTool(args, dependencies) {
     let providerName;
 
     if (model === 'auto') {
-      // Auto-select first available provider
-      const availableProviders = Object.keys(providers).filter((name) => {
-        const provider = providers[name];
-        return provider && provider.isAvailable && provider.isAvailable(config);
-      });
+      // Auto-select first available provider in priority order
+      // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
+      const providerOrder = [
+        'codex',
+        'gemini-cli',
+        'claude',
+        'openai',
+        'google',
+        'xai',
+        'anthropic',
+        'mistral',
+        'deepseek',
+        'openrouter',
+      ];
 
-      if (availableProviders.length === 0) {
+      for (const name of providerOrder) {
+        const provider = providers[name];
+        if (provider && provider.isAvailable && provider.isAvailable(config)) {
+          providerName = name;
+          selectedProvider = provider;
+          break;
+        }
+      }
+
+      if (!providerName) {
         return createToolError(
           'No providers available. Please configure at least one API key.',
         );
       }
-
-      providerName = availableProviders[0];
-      selectedProvider = providers[providerName];
     } else {
       // Use specified provider/model
       // Try to map model to provider
@@ -998,7 +1013,7 @@ chatTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "gpt-5", "grok-4-0709". Defaults to auto-selection.',
+        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "claude", "gpt-5", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

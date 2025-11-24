@@ -275,8 +275,12 @@ export async function consensusTool(args, dependencies) {
     let modelsToProcess = models;
     if (models.length === 1 && models[0].toLowerCase() === 'auto') {
       // Find first 3 available providers
+      // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
       const availableProviders = [];
       const providerOrder = [
+        'codex',
+        'gemini-cli',
+        'claude',
         'openai',
         'google',
         'xai',
@@ -980,8 +984,12 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
   // Special handling for single "auto" model - expand to first 3 available providers
   let modelsToProcess = models;
   if (models.length === 1 && models[0].toLowerCase() === 'auto') {
+    // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
     const availableProviders = [];
     const providerOrder = [
+      'codex',
+      'gemini-cli',
+      'claude',
       'openai',
       'google',
       'xai',
@@ -1609,7 +1617,7 @@ consensusTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'List of models to consult. Example: ["gpt-5", "gemini-pro", "grok-4-0709"]',
+        'List of models to consult. Example: ["codex", "gemini", "claude"]',
     },
     files: {
       type: 'array',
