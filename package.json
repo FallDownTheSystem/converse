@@ -99,6 +99,8 @@
     "@mistralai/mistralai": "^1.10.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@openai/codex-sdk": "^0.58.0",
+    "ai": "^5.0.101",
+    "ai-sdk-provider-gemini-cli": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
