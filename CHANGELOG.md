@@ -5,6 +5,43 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-11-24
+
+### Added
+
+- **Gemini CLI Provider**: OAuth-based access to Gemini models via subscription
+  - New `gemini-cli` provider using `ai-sdk-provider-gemini-cli` package
+  - OAuth authentication via Gemini CLI (credentials stored in `~/.gemini/oauth_creds.json`)
+  - Access Gemini 3.0 Pro Preview through Google subscription (Google One AI Premium or Gemini Advanced)
+  - No API key required - uses Google account login instead of pay-per-use API
+  - Model name `gemini` now routes to CLI provider (for API access, use specific names like `gemini-2.5-pro`)
+  - Full support in both chat and consensus tools
+  - Streaming support with ProviderStreamNormalizer integration
+  - Setup: `npm install -g @google/gemini-cli && gemini` to authenticate
+  - Enhanced agentic features available through CLI that aren't in standard API
+
+### Changed
+
+- **Model Routing**: Updated `gemini` alias behavior
+  - `gemini` → routes to Gemini CLI provider (OAuth-based subscription access)
+  - For Google API access, use specific model names: `gemini-2.5-pro`, `gemini-2.0-flash`, etc.
+  - Aliases `pro`, `flash`, `pro 2.5` remain unchanged for API-based access
+
+### Fixed
+
+- **Consensus Tool**: Fixed model routing for CLI-based providers
+  - Codex now correctly routes to `codex` provider instead of `openai` in consensus mode
+  - Gemini CLI correctly routes to `gemini-cli` provider in consensus mode
+  - Both CLI providers (Codex and Gemini CLI) now work properly in consensus tool
+  - Added exact match routing checks in `src/tools/consensus.js` to match `src/tools/chat.js`
+
+### Documentation
+
+- Updated `docs/PROVIDERS.md` with comprehensive Gemini CLI setup guide
+- Updated `docs/API.md` with Gemini CLI model information and usage examples
+- Added authentication setup instructions and best practices
+- Documented differences between Gemini CLI and Google API providers
+
 ## [2.4.0] - 2025-11-19
 
 ### Added
