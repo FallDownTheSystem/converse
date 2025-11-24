@@ -224,7 +224,8 @@ async function* createStreamingGenerator(
     // Build query options
     // Use higher maxTurns to allow for file reading operations
     const queryOptions = {
-      maxTurns: 10, // Allow multiple turns for file operations
+      model: 'claude-opus-4-5', // Use Opus 4.5 for best quality
+      maxTurns: 20, // Allow multiple turns for file operations
       permissionMode: 'bypassPermissions', // Don't prompt for permissions
     };
 
