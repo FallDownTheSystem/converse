@@ -5,6 +5,14 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.5] - 2025-11-24
+
+### Fixed
+
+- **Anthropic Request Payload**: Remove spread of non-API parameters into request
+  - Non-API parameters like `continuationStore` were being spread into the API request
+  - Fixes "continuationStore: Extra inputs are not permitted" error
+
 ## [2.8.4] - 2025-11-24
 
 ### Fixed
