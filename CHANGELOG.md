@@ -5,6 +5,27 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2025-11-24
+
+### Fixed
+
+- **Gemini CLI Provider**: Fixed streaming event format for async mode compatibility
+  - Changed delta events to use `data.textDelta` instead of `content` field
+  - Ensures proper integration with ProviderStreamNormalizer
+  - Enables real-time progress updates during async execution
+
+### Changed
+
+- **Auto Mode Priority**: Updated model selection priority for `model: "auto"`
+  - New priority order: codex > gemini-cli > openai
+  - Prioritizes subscription-based and CLI providers over pay-per-use APIs
+  - Applies to both chat and consensus tools
+
+- **Model Routing**: Enhanced routing to prevent provider conflicts
+  - Added `gemini-cli` as explicit alias for Gemini CLI provider
+  - Removed `gemini` from keyword matching to avoid Google API conflicts
+  - Positioned gemini-cli before google in provider registry for proper priority
+
 ## [2.5.0] - 2025-11-24
 
 ### Added
