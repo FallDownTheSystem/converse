@@ -5,6 +5,17 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.3] - 2025-11-24
+
+### Fixed
+
+- **Gemini CLI Provider**: Fixed AI SDK v5 ModelMessage format validation
+  - Changed image format to use `image` property instead of `data`
+  - AI SDK validates ModelMessage format before passing to provider
+  - Images now use `{ type: 'image', image: base64 }` per AI SDK v5 spec
+  - Fixes "messages must be ModelMessage[]" validation error
+  - Renamed conversion function to `convertToModelMessages` for clarity
+
 ## [2.5.2] - 2025-11-24
 
 ### Fixed
