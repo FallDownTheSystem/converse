@@ -686,8 +686,11 @@ export const anthropicProvider = {
 
       const startTime = Date.now();
 
-      // Make the API call
-      const response = await anthropic.messages.create(requestPayload);
+      // Make the API call - use beta endpoint when beta features are enabled
+      const hasBetaFeatures = betas && betas.length > 0;
+      const response = hasBetaFeatures
+        ? await anthropic.beta.messages.create(requestPayload)
+        : await anthropic.messages.create(requestPayload);
 
       const responseTime = Date.now() - startTime;
       debugLog(`[Anthropic] Response received in ${responseTime}ms`);
@@ -848,8 +851,11 @@ export const anthropicProvider = {
       // Enable streaming in request payload
       const streamingPayload = { ...requestPayload, stream: true };
 
-      // Create the streaming request
-      const stream = await anthropic.messages.create(streamingPayload);
+      // Create the streaming request - use beta endpoint when beta features are enabled
+      const hasBetaFeatures = requestPayload.betas && requestPayload.betas.length > 0;
+      const stream = hasBetaFeatures
+        ? await anthropic.beta.messages.create(streamingPayload)
+        : await anthropic.messages.create(streamingPayload);
 
       // Process stream events
       for await (const event of stream) {
