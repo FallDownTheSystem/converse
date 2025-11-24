@@ -513,13 +513,38 @@ Please provide your refined response:`;
     // Save conversation state
     let conversationState;
     try {
+      // Build formatted consensus response with actual model responses
+      let formattedContent = '';
+
+      // Add initial responses
+      formattedContent += '## Initial Responses\n\n';
+      for (const result of initialPhase.successful) {
+        formattedContent += `### ${result.model} (initial response):\n${result.response}\n\n---\n\n`;
+      }
+
+      // Add refined responses if cross-feedback was enabled
+      if (refinedPhase) {
+        formattedContent += '## Refined Responses\n\n';
+        for (const result of refinedPhase) {
+          if (result.status === 'success' && result.refined_response) {
+            formattedContent += `### ${result.model} (refined response):\n${result.refined_response}\n\n---\n\n`;
+          } else if (result.status === 'partial') {
+            // Show initial response for models that failed refinement
+            formattedContent += `### ${result.model} (refinement failed, showing initial):\n${result.initial_response}\n\n---\n\n`;
+          }
+        }
+      }
+
+      // Add summary at the end
+      formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
+      if (refinedPhase) {
+        const successfulRefinements = refinedPhase.filter(r => r.status === 'success').length;
+        formattedContent += ` and ${successfulRefinements} successful refined responses`;
+      }
+      formattedContent += '.';
       const consensusMessage = {
         role: 'assistant',
-        content:
-          `Consensus completed with ${initialPhase.successful.length} successful responses` +
-          (refinedPhase
-            ? ` and ${refinedPhase.filter((r) => r.status === 'success').length} refined responses`
-            : ''),
+        content: formattedContent,
       };
 
       conversationState = {
@@ -548,7 +573,7 @@ Please provide your refined response:`;
       await exportConversation(conversationState, {
         clientCwd: dependencies.config.server?.client_cwd,
         continuation_id: continuationId,
-        models: models.join(','),
+        models,
         temperature,
         reasoning_effort,
         use_websearch,
@@ -1187,13 +1212,38 @@ Please provide your refined response:`;
   // Save conversation state
   let conversationState;
   try {
+    // Build formatted consensus response with actual model responses
+    let formattedContent = '';
+
+    // Add initial responses
+    formattedContent += '## Initial Responses\n\n';
+    for (const result of initialPhase.successful) {
+      formattedContent += `### ${result.model} (initial response):\n${result.response}\n\n---\n\n`;
+    }
+
+    // Add refined responses if cross-feedback was enabled
+    if (refinedPhase) {
+      formattedContent += '## Refined Responses\n\n';
+      for (const result of refinedPhase) {
+        if (result.status === 'success' && result.refined_response) {
+          formattedContent += `### ${result.model} (refined response):\n${result.refined_response}\n\n---\n\n`;
+        } else if (result.status === 'partial') {
+          // Show initial response for models that failed refinement
+          formattedContent += `### ${result.model} (refinement failed, showing initial):\n${result.initial_response}\n\n---\n\n`;
+        }
+      }
+    }
+
+    // Add summary at the end
+    formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
+    if (refinedPhase) {
+      const successfulRefinements = refinedPhase.filter(r => r.status === 'success').length;
+      formattedContent += ` and ${successfulRefinements} successful refined responses`;
+    }
+    formattedContent += '.';
     const consensusMessage = {
       role: 'assistant',
-      content:
-        `Consensus completed with ${initialPhase.successful.length} successful responses` +
-        (refinedPhase
-          ? ` and ${refinedPhase.filter((r) => r.status === 'success').length} refined responses`
-          : ''),
+      content: formattedContent,
     };
 
     conversationState = {
@@ -1218,7 +1268,7 @@ Please provide your refined response:`;
     await exportConversation(conversationState, {
       clientCwd: config.server?.client_cwd,
       continuation_id: continuationId,
-      models: models.join(','),
+      models,
       temperature,
       reasoning_effort,
       use_websearch,

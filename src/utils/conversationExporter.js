@@ -200,6 +200,8 @@ export async function exportConversation(conversationState, options = {}) {
     use_websearch,
     files,
     images,
+    models,
+    enable_cross_feedback,
   } = options;
 
   if (!continuation_id) {
@@ -256,6 +258,8 @@ export async function exportConversation(conversationState, options = {}) {
       use_websearch,
       files,
       images,
+      models,
+      enable_cross_feedback,
     });
 
     const metadataPath = path.join(exportDir, 'metadata.json');

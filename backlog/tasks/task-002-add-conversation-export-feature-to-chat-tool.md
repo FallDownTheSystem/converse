@@ -284,6 +284,14 @@ This feature adds conversation export capability to the chat tool, allowing user
 - docs/API.md - Chat tool API documentation (needs update)
 - docs/ARCHITECTURE.md - Functional architecture patterns
 
+**Latest Updates (2025-11-24):**
+
+Enhanced consensus tool export functionality to include actual model responses instead of just a summary. The exported consensus conversations now include:
+- All initial responses from each model
+- All refined responses (when cross-feedback is enabled)
+- Proper markdown formatting with model names and response types
+- Clear separation between initial and refined responses
+
 **Implementation Summary:**
 
 The conversation export feature has been successfully implemented following the functional architecture patterns established in the codebase. The implementation includes:
