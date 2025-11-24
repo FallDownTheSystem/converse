@@ -5,6 +5,26 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2] - 2025-11-24
+
+### Fixed
+
+- **Claude SDK Image Support**: Images now work correctly with the Claude provider
+  - Implemented streaming input mode for multimodal content as required by SDK
+  - Single message mode (string prompt) doesn't support images per SDK documentation
+  - Images are now sent via `AsyncGenerator<SDKUserMessage>` instead of plain string
+
+- **Claude SDK `error_max_turns` Fix**: Resolved error when using `files` parameter
+  - Increased `maxTurns` from 1 to 10 to allow file reading operations
+  - SDK needs additional turns to read files using internal tools
+
+### Changed
+
+- **Auto Model Selection Priority**: Subscription-based providers now prioritized
+  - New order: codex → gemini-cli → claude → openai → google → xai → anthropic → mistral → deepseek → openrouter
+  - Chat tool: `model: "auto"` picks first available from priority list
+  - Consensus tool: `models: ["auto"]` expands to first 3 available (ideally codex, gemini-cli, claude)
+
 ## [2.8.0] - 2025-11-24
 
 ### Added
