@@ -441,6 +441,7 @@ function resolveAutoModel(model, providerName) {
   const defaults = {
     codex: 'codex',
     'gemini-cli': 'gemini',
+    claude: 'claude',
     openai: 'gpt-5',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
@@ -476,6 +477,11 @@ export function mapModelToProvider(model, providers) {
   // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
   if (modelLower === 'gemini' || modelLower === 'gemini-cli') {
     return 'gemini-cli';
+  }
+
+  // Check Claude SDK (exact match only - routes to SDK provider instead of Anthropic API)
+  if (modelLower === 'claude' || modelLower === 'claude-sdk' || modelLower === 'claude-code') {
+    return 'claude';
   }
 
   // Check OpenRouter-specific patterns first
