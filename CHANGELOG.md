@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-11-24
+
+### Added
+
+- **Claude Opus 4.5 Support**: Added new `claude-opus-4-5-20251101` model
+  - 64K max output tokens, 200K context window
+  - Full thinking/extended reasoning support (up to 64K thinking tokens)
+  - New `supportsEffort` property for Opus 4.5 exclusive effort parameter
+  - Aliases: `opus`, `claude-opus`, `opus-4.5`, `opus-4-5`, `opus4.5`, `claude-opus-4.5`, etc.
+
+- **Effort Parameter (Beta)**: New effort parameter support for Opus 4.5
+  - Maps `reasoning_effort` to Anthropic's effort parameter (`low`, `medium`, `high`)
+  - Automatically adds `effort-2025-11-24` beta header when using Opus 4.5
+  - Controls response thoroughness vs token efficiency
+  - Mapping: minimal/low → "low", medium → "medium", high/max → "high"
+
 ## [2.6.1] - 2025-11-24
 
 ### Fixed
