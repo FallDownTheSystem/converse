@@ -203,19 +203,22 @@ function mapFinishReason(finishReason) {
 }
 
 /**
- * Convert messages from Converse internal format to Gemini CLI SDK format
+ * Convert messages from Converse internal format to AI SDK v5 ModelMessage format
  *
  * Converse format (used by other providers like Anthropic):
  * - Images: { type: 'image', source: { type: 'base64', media_type: '...', data: '...' } }
  *
- * Gemini CLI SDK format (from SDK guide):
- * - Images: { type: 'image', data: '...' }  (base64 string)
+ * AI SDK v5 ModelMessage format (required by generateText/streamText):
+ * - Images: { type: 'image', image: '...' }  (base64 string, Buffer, or URL)
  * - Text: { type: 'text', text: '...' }
  *
+ * Note: The AI SDK validates ModelMessage format before passing to providers.
+ * We must use 'image' property (not 'data') for the AI SDK to accept the message.
+ *
  * @param {Array} messages - Messages in Converse internal format
- * @returns {Array} Messages in Gemini CLI SDK format
+ * @returns {Array} Messages in AI SDK v5 ModelMessage format
  */
-function convertToGeminiCliMessages(messages) {
+function convertToModelMessages(messages) {
   return messages.map((message) => {
     // If content is a string, no conversion needed
     if (typeof message.content === 'string') {
@@ -230,20 +233,20 @@ function convertToGeminiCliMessages(messages) {
           return part;
         }
 
-        // Convert image from Converse format to Gemini CLI SDK format
+        // Convert image from Converse format to AI SDK v5 ModelMessage format
         if (part.type === 'image' && part.source) {
           return {
             type: 'image',
-            data: part.source.data, // Extract base64 data (use 'data' not 'image')
+            image: part.source.data, // AI SDK v5 expects 'image' property (not 'data')
           };
         }
 
-        // If already in Gemini CLI format, return as-is
-        if (part.type === 'image' && part.data) {
+        // If already in AI SDK v5 format, return as-is
+        if (part.type === 'image' && part.image) {
           return part;
         }
 
-        // Handle file parts (future-proofing)
+        // Handle file parts (already in correct format)
         if (part.type === 'file' && part.data) {
           return part;
         }
@@ -326,8 +329,8 @@ export const geminiCliProvider = {
       // Create model instance with SDK model name
       const modelInstance = gemini(sdkModelName);
 
-      // Convert messages from Converse format to Gemini CLI SDK format
-      const convertedMessages = convertToGeminiCliMessages(messages);
+      // Convert messages from Converse format to AI SDK v5 ModelMessage format
+      const convertedMessages = convertToModelMessages(messages);
 
       // Build AI SDK options
       const aiOptions = {

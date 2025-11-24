@@ -613,4 +613,37 @@ const providerConfig = config.providers?.somesetting;
 - Created integration test suite with detailed comments
 - Task documentation complete
 
+**Date:** 2025-11-24 11:13
+
+**Critical Bug Fix - Message Format Conversion:**
+
+Discovered and fixed a critical issue with message format compatibility between Converse's internal format and the Gemini CLI SDK:
+
+**Problem:**
+- Converse uses Anthropic-style image format: `{ type: 'image', source: { type: 'base64', media_type: '...', data: '...' } }`
+- Gemini CLI SDK expects: `{ type: 'image', data: '...' }` (per SDK guide)
+- When files/images were passed, the error "Invalid prompt: messages must be ModelMessage[]" occurred
+
+**Solution:**
+- Added `convertToGeminiCliMessages()` function in `src/providers/gemini-cli.js:218-265`
+- Converts image parts from Converse format to Gemini CLI SDK format
+- Conversion happens before passing messages to `generateText()` or `streamText()`
+- Only affects Gemini CLI provider - all other providers remain unchanged
+- Properly handles text parts (already compatible) and future-proofs for file parts
+
+**Implementation Details:**
+- Conversion at line 330: `const convertedMessages = convertToGeminiCliMessages(messages);`
+- Also applied in streaming mode at line 361
+- Extracts base64 data from `part.source.data` and creates `{ type: 'image', data: base64 }`
+- Follows exact format shown in Gemini CLI SDK guide examples
+
+**Testing:**
+- Ready for testing with images and files
+- Example: `model: "gemini"` with `images: ["tulips.png"]` and `files: ["src/config.js"]`
+
+**Release:**
+- Version 2.5.2 published to npm
+- CHANGELOG.md updated with fix details
+- Commits pushed to GitHub with tag v2.5.2
+
 <!-- NOTES:END -->
