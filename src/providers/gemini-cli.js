@@ -141,10 +141,12 @@ async function* createStreamingGenerator(
         throw new GeminiCliProviderError('Request cancelled', 'CANCELLED');
       }
 
-      // Yield delta event with content chunk
+      // Yield delta event with content chunk (normalized format)
       yield {
         type: 'delta',
-        content: chunk,
+        data: {
+          textDelta: chunk,
+        },
       };
     }
 
