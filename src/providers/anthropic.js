@@ -13,6 +13,35 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-opus-4-5-20251101': {
+    modelName: 'claude-opus-4-5-20251101',
+    friendlyName: 'Claude Opus 4.5',
+    contextWindow: 200000,
+    maxOutputTokens: 64000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 64000,
+    timeout: 300000,
+    supportsEffort: true, // Opus 4.5 exclusive effort parameter
+    description:
+      'Claude Opus 4.5 - Most intelligent model combining maximum capability with practical performance',
+    aliases: [
+      'claude-opus-4-5',
+      'claude-4.5-opus',
+      'claude-4-5-opus',
+      'opus-4.5',
+      'opus-4-5',
+      'opus4.5',
+      'opus4-5',
+      'claude-opus-4.5',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-opus-4-1-20250805': {
     modelName: 'claude-opus-4-1-20250805',
     friendlyName: 'Claude Opus 4.1',
@@ -36,11 +65,9 @@ const SUPPORTED_MODELS = {
       'opus-4-1',
       'claude-4-opus',
       'opus-4',
-      'opus',
-      'claude-opus',
-      'claude-opus-4',
       'opus4',
       'opus4.1',
+      'claude-opus-4',
       'claude-opus-4.1',
     ],
   },
@@ -200,6 +227,18 @@ const THINKING_BUDGETS = {
   medium: 0.33, // 33% of max thinking tokens (default)
   high: 0.67, // 67% of max thinking tokens
   max: 1.0, // 100% of max thinking tokens
+};
+
+/**
+ * Effort parameter mapping for Opus 4.5
+ * Maps reasoning_effort values to Anthropic's effort parameter values
+ */
+const EFFORT_MAP = {
+  minimal: 'low',
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  max: 'high',
 };
 
 /**
@@ -496,6 +535,14 @@ export const anthropicProvider = {
       );
     }
 
+    // Add effort beta feature for Opus 4.5
+    if (modelConfig.supportsEffort && reasoning_effort) {
+      betas.push('effort-2025-11-24');
+      debugLog(
+        `[Anthropic] Model ${resolvedModel} supports effort parameter with beta feature`,
+      );
+    }
+
     // Convert messages to Anthropic format (system messages are always cached)
     const { systemPrompt, messages: anthropicMessages } =
       convertMessagesToAnthropic(messages);
@@ -539,12 +586,14 @@ export const anthropicProvider = {
       // For other models, check against max_tokens if set
       const maxTokensLimit =
         requestPayload.max_tokens ||
-        (resolvedModel.includes('claude-opus-4')
-          ? 32000
-          : resolvedModel.includes('claude-sonnet-4-5') ||
-              resolvedModel.includes('claude-sonnet-4')
-            ? 64000
-            : modelConfig.maxOutputTokens);
+        (resolvedModel.includes('claude-opus-4-5')
+          ? 64000
+          : resolvedModel.includes('claude-opus-4')
+            ? 32000
+            : resolvedModel.includes('claude-sonnet-4-5') ||
+                resolvedModel.includes('claude-sonnet-4')
+              ? 64000
+              : modelConfig.maxOutputTokens);
 
       if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
         // According to Anthropic docs: thinking tokens count towards max_tokens limit
@@ -571,6 +620,19 @@ export const anthropicProvider = {
         debugLog('[Anthropic] Temperature forced to 1 for thinking mode');
       } else {
         requestPayload.temperature = Math.max(0, Math.min(1, temperature));
+      }
+    }
+
+    // Add effort parameter for Opus 4.5 (uses output_config)
+    if (modelConfig.supportsEffort && reasoning_effort && reasoning_effort !== 'none') {
+      const effortValue = EFFORT_MAP[reasoning_effort];
+      if (effortValue) {
+        requestPayload.output_config = {
+          effort: effortValue,
+        };
+        debugLog(
+          `[Anthropic] Effort parameter set to "${effortValue}" for ${resolvedModel} (from reasoning_effort: ${reasoning_effort})`,
+        );
       }
     }
 
@@ -605,6 +667,7 @@ export const anthropicProvider = {
             max_tokens: requestPayload.max_tokens,
             thinking: requestPayload.thinking,
             temperature: requestPayload.temperature,
+            output_config: requestPayload.output_config,
             betas: requestPayload.betas,
             message_count: requestPayload.messages?.length,
             system_length: Array.isArray(requestPayload.system)
