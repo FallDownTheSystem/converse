@@ -203,6 +203,68 @@ function mapFinishReason(finishReason) {
 }
 
 /**
+ * Convert messages from Converse internal format to Gemini CLI SDK format
+ *
+ * Converse format (used by other providers like Anthropic):
+ * - Images: { type: 'image', source: { type: 'base64', media_type: '...', data: '...' } }
+ *
+ * Gemini CLI SDK format (from SDK guide):
+ * - Images: { type: 'image', data: '...' }  (base64 string)
+ * - Text: { type: 'text', text: '...' }
+ *
+ * @param {Array} messages - Messages in Converse internal format
+ * @returns {Array} Messages in Gemini CLI SDK format
+ */
+function convertToGeminiCliMessages(messages) {
+  return messages.map((message) => {
+    // If content is a string, no conversion needed
+    if (typeof message.content === 'string') {
+      return message;
+    }
+
+    // If content is an array, convert each part
+    if (Array.isArray(message.content)) {
+      const convertedContent = message.content.map((part) => {
+        // Text parts are already in correct format
+        if (part.type === 'text') {
+          return part;
+        }
+
+        // Convert image from Converse format to Gemini CLI SDK format
+        if (part.type === 'image' && part.source) {
+          return {
+            type: 'image',
+            data: part.source.data, // Extract base64 data (use 'data' not 'image')
+          };
+        }
+
+        // If already in Gemini CLI format, return as-is
+        if (part.type === 'image' && part.data) {
+          return part;
+        }
+
+        // Handle file parts (future-proofing)
+        if (part.type === 'file' && part.data) {
+          return part;
+        }
+
+        // Unknown part type, return as-is and let SDK handle it
+        debugLog(`[Gemini CLI] Unknown content part type: ${part.type}`);
+        return part;
+      });
+
+      return {
+        ...message,
+        content: convertedContent,
+      };
+    }
+
+    // Unknown content type, return as-is
+    return message;
+  });
+}
+
+/**
  * Gemini CLI Provider Implementation
  */
 export const geminiCliProvider = {
@@ -264,9 +326,12 @@ export const geminiCliProvider = {
       // Create model instance with SDK model name
       const modelInstance = gemini(sdkModelName);
 
+      // Convert messages from Converse format to Gemini CLI SDK format
+      const convertedMessages = convertToGeminiCliMessages(messages);
+
       // Build AI SDK options
       const aiOptions = {
-        messages,
+        messages: convertedMessages,
       };
 
       // Add optional parameters
@@ -291,7 +356,7 @@ export const geminiCliProvider = {
       if (stream) {
         return createStreamingGenerator(
           modelInstance,
-          messages,
+          convertedMessages,
           aiOptions,
           signal,
           model, // Pass user-facing model name for metadata
