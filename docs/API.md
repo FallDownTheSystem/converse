@@ -109,6 +109,11 @@ MCP_TRANSPORT=stdio npm start
       "type": "boolean",
       "default": false,
       "description": "Execute in background mode. Returns continuation_id immediately for status monitoring. Example: true for long-running analysis"
+    },
+    "export": {
+      "type": "boolean",
+      "default": false,
+      "description": "Export conversation to disk. Creates folder with continuation_id name containing numbered request/response files and metadata. Example: true to save for documentation"
     }
   },
   "required": ["prompt"]
@@ -156,6 +161,7 @@ MCP_TRANSPORT=stdio npm start
 
 #### Example Usage
 
+**Basic query:**
 ```json
 {
   "prompt": "Review this authentication function for security issues",
@@ -164,6 +170,26 @@ MCP_TRANSPORT=stdio npm start
   "temperature": 0.2,
   "reasoning_effort": "high"
 }
+```
+
+**With conversation export:**
+```json
+{
+  "prompt": "Help me design a scalable architecture for our system",
+  "model": "gpt-5",
+  "export": true,
+  "continuation_id": "conv_architecture_design"
+}
+```
+
+When export is enabled, the conversation will be saved to disk in the following structure:
+```
+conv_architecture_design/
+├── 1_request.txt      # First user prompt
+├── 1_response.txt     # First AI response
+├── 2_request.txt      # Second user prompt (if continuing)
+├── 2_response.txt     # Second AI response
+└── metadata.json      # Conversation metadata and settings
 ```
 
 ### Consensus Tool

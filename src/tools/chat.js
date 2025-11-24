@@ -20,6 +20,7 @@ import { CHAT_PROMPT } from '../systemPrompts.js';
 import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
+import { exportConversation } from '../utils/conversationExporter.js';
 
 const logger = createLogger('chat');
 
@@ -57,6 +58,7 @@ export async function chatTool(args, dependencies) {
       reasoning_effort = 'medium',
       verbosity = 'medium',
       async = false,
+      export: shouldExport = false,
     } = args;
 
     // Handle async execution mode
@@ -356,6 +358,27 @@ export async function chatTool(args, dependencies) {
       // Continue even if save fails
     }
 
+    // Export conversation if requested
+    if (shouldExport) {
+      await exportConversation({
+        messages: updatedMessages,
+        provider: providerName,
+        model,
+        lastUpdated: Date.now(),
+        codexThreadId: response.metadata?.threadId,
+      }, {
+        clientCwd: config.server?.client_cwd,
+        continuation_id: continuationId,
+        model,
+        temperature,
+        reasoning_effort,
+        verbosity,
+        use_websearch,
+        files,
+        images,
+      });
+    }
+
     // Create unified status line (similar to async status display)
     const statusLine =
       config.environment?.nodeEnv !== 'test'
@@ -577,6 +600,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     images = [],
     reasoning_effort = 'medium',
     verbosity = 'medium',
+    export: shouldExport = false,
   } = args;
 
   // Initialize SummarizationService
@@ -914,6 +938,27 @@ async function executeChatWithStreaming(args, dependencies, context) {
   } catch (error) {
     logger.error('Error saving conversation', { error });
     // Continue even if save fails
+  }
+
+  // Export conversation if requested
+  if (shouldExport) {
+    await exportConversation({
+      messages: updatedMessages,
+      provider: providerName,
+      model,
+      lastUpdated: Date.now(),
+      codexThreadId: response.metadata?.threadId,
+    }, {
+      clientCwd: config.server?.client_cwd,
+      continuation_id: continuationId,
+      model,
+      temperature,
+      reasoning_effort,
+      verbosity,
+      use_websearch,
+      files,
+      images,
+    });
   }
 
   // Return complete result for job completion
