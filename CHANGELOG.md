@@ -5,6 +5,22 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2025-11-24
+
+### Added
+
+- **Conversation Export Feature**: New `export` parameter for chat tool enables saving conversations to disk
+  - Automatically creates organized folder structure with continuation_id as folder name
+  - Saves each request/response pair as numbered text files (1_request.txt, 1_response.txt, etc.)
+  - Generates comprehensive metadata.json with conversation settings and parameters
+  - Implements incremental export with "write-if-missing" optimization for performance
+  - Atomic metadata updates ensure file always reflects current conversation state
+  - Sanitizes continuation_id to prevent path traversal security issues
+  - Supports both synchronous and asynchronous chat execution modes
+  - Graceful error handling ensures export failures don't interrupt conversations
+  - Cross-platform support for Windows and Unix file systems
+  - Respects CLIENT_CWD for user-friendly file locations
+
 ## [2.5.3] - 2025-11-24
 
 ### Fixed
