@@ -488,7 +488,8 @@ export const anthropicProvider = {
       // eslint-disable-next-line no-unused-vars
       verbosity = 'medium', // OpenAI-specific parameter, ignored by Anthropic
       config,
-      ...otherOptions
+      // Note: We don't use ...otherOptions because it can include non-API parameters
+      // like continuationStore that cause "Extra inputs are not permitted" errors
     } = options;
 
     // Validate API key
@@ -553,7 +554,6 @@ export const anthropicProvider = {
       messages: anthropicMessages,
       stream,
       betas, // Include beta features
-      ...otherOptions,
     };
 
     // Add system prompt if present
