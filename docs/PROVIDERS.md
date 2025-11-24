@@ -20,11 +20,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 - **Environment Variable**: `GOOGLE_API_KEY`
 - **Supported Models**:
-  - `gemini-3-pro-preview` (aliases: `pro`, `gemini`) - Enhanced reasoning with thinking levels (1M context, 64K output)
+  - `gemini-3-pro-preview` (alias: `pro`) - Enhanced reasoning with thinking levels (1M context, 64K output)
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
   - `gemini-2.0-flash`, `gemini-2.0-flash-lite` - Latest generation (1M context, 65K output)
-- **Note**: Default aliases (`gemini`, `pro`, `gemini-pro`) now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need version 2.5.
+- **Note**: The short model name `gemini` now routes to **Gemini CLI** (OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.0-flash`.
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -113,6 +113,73 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - Set `CODEX_SANDBOX_MODE=read-only` for safe exploration
 - Use `CODEX_APPROVAL_POLICY=never` for headless server deployments
 - Always use `continuation_id` for thread continuation
+
+### Gemini CLI
+- **Authentication**: OAuth via Gemini CLI (no API key needed)
+- **Setup Required**:
+  1. Install Gemini CLI globally: `npm install -g @google/gemini-cli`
+  2. Authenticate: Run `gemini` command and follow interactive prompts
+  3. Credentials stored in `~/.gemini/oauth_creds.json`
+- **Environment Variables**: None (uses OAuth credentials file)
+- **Supported Models**:
+  - `gemini` - Routes to gemini-3-pro-preview via CLI
+  - Provides access to Gemini 3.0 Pro Preview through Google subscription (Google One AI Premium or Gemini Advanced)
+
+**Key Features:**
+- **OAuth Authentication**: Uses Google account login instead of API keys
+- **Subscription Access**: Leverage Google subscription instead of paying per API call
+- **Enhanced Features**: Access to agentic features available through CLI that aren't in standard API
+- **Model Support**: Currently supports gemini-3-pro-preview only
+
+**Authentication Setup:**
+```bash
+# Install Gemini CLI globally
+npm install -g @google/gemini-cli
+
+# Run interactive authentication (one-time setup)
+gemini
+
+# Follow prompts to:
+# 1. Select authentication method (Personal OAuth recommended)
+# 2. Authorize via browser
+# 3. Credentials are saved to ~/.gemini/oauth_creds.json
+```
+
+**Usage Examples:**
+
+*Chat Tool:*
+```json
+{
+  "name": "chat",
+  "arguments": {
+    "prompt": "Explain async/await in JavaScript",
+    "model": "gemini"
+  }
+}
+```
+
+*Consensus Tool:*
+```json
+{
+  "name": "consensus",
+  "arguments": {
+    "prompt": "Should we use TypeScript for this component?",
+    "models": ["gemini", "gpt-5", "claude-sonnet-4"]
+  }
+}
+```
+
+**Best Practices:**
+- Authenticate before first use (run `gemini` CLI command)
+- Use specific model names for Google API access (e.g., `gemini-2.5-pro`)
+- Model name `gemini` is reserved for CLI-based access
+- Check credentials file exists at `~/.gemini/oauth_creds.json` if authentication fails
+
+**Differences from Google API Provider:**
+- **Authentication**: OAuth (CLI) vs API Key (Google API)
+- **Billing**: Google subscription vs pay-per-use API
+- **Model Routing**: `gemini` → CLI provider, specific names (e.g., `gemini-2.5-pro`) → API provider
+- **Models**: Only gemini-3-pro-preview vs full Gemini model family
 
 ## Configuration Examples
 

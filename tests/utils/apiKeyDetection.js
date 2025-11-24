@@ -88,6 +88,24 @@ const API_KEY_CONFIGS = {
       }
     },
   },
+  GEMINI_CLI: {
+    envVar: null, // Gemini CLI uses OAuth credentials stored in ~/.gemini/oauth_creds.json
+    prefix: null,
+    minLength: 0,
+    providerName: 'Gemini CLI',
+    customCheck: () => {
+      // Check if OAuth credentials file exists
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
+        const credsPath = path.join(os.homedir(), '.gemini', 'oauth_creds.json');
+        return fs.existsSync(credsPath);
+      } catch {
+        return false;
+      }
+    },
+  },
 };
 
 /**
@@ -239,6 +257,7 @@ const hasMistral = hasApiKey('MISTRAL');
 const hasDeepSeek = hasApiKey('DEEPSEEK');
 const hasOpenRouter = hasApiKey('OPENROUTER');
 const hasCodex = hasApiKey('CODEX');
+const hasGeminiCli = hasApiKey('GEMINI_CLI');
 
 // Common combinations
 const hasAnyMainProvider = hasAnyApiKey(['OPENAI', 'XAI', 'GOOGLE']);
@@ -262,6 +281,7 @@ module.exports = {
   hasDeepSeek,
   hasOpenRouter,
   hasCodex,
+  hasGeminiCli,
 
   // Common combinations
   hasAnyMainProvider,

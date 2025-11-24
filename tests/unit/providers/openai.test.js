@@ -3,12 +3,12 @@
  * Tests the unified interface implementation without making real API calls
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { openaiProvider } from "../../../src/providers/openai.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { openaiProvider } from '../../../src/providers/openai.js';
 
 // Mock the OpenAI SDK
-vi.mock("openai", () => {
-  const MockOpenAI = vi.fn().mockImplementation(function () {
+vi.mock('openai', () => {
+  const MockOpenAI = vi.fn().mockImplementation(() => {
     return {
       chat: {
         completions: {
@@ -26,37 +26,37 @@ vi.mock("openai", () => {
   };
 });
 
-describe("OpenAI Provider", () => {
-  describe("validateConfig", () => {
-    it("should return true for valid OpenAI API key", () => {
+describe('OpenAI Provider', () => {
+  describe('validateConfig', () => {
+    it('should return true for valid OpenAI API key', () => {
       const config = {
         apiKeys: {
-          openai: "sk-1234567890abcdef1234567890abcdef1234567890abcdef",
+          openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef',
         },
       };
 
       expect(openaiProvider.validateConfig(config)).toBe(true);
     });
 
-    it("should return false for missing API key", () => {
+    it('should return false for missing API key', () => {
       const config = { apiKeys: {} };
       expect(openaiProvider.validateConfig(config)).toBe(false);
     });
 
-    it("should return false for invalid API key format", () => {
+    it('should return false for invalid API key format', () => {
       const config = {
         apiKeys: {
-          openai: "invalid-key",
+          openai: 'invalid-key',
         },
       };
 
       expect(openaiProvider.validateConfig(config)).toBe(false);
     });
 
-    it("should return false for short API key", () => {
+    it('should return false for short API key', () => {
       const config = {
         apiKeys: {
-          openai: "sk-short",
+          openai: 'sk-short',
         },
       };
 
@@ -64,53 +64,53 @@ describe("OpenAI Provider", () => {
     });
   });
 
-  describe("isAvailable", () => {
-    it("should return true when config is valid", () => {
+  describe('isAvailable', () => {
+    it('should return true when config is valid', () => {
       const config = {
         apiKeys: {
-          openai: "sk-1234567890abcdef1234567890abcdef1234567890abcdef",
+          openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef',
         },
       };
 
       expect(openaiProvider.isAvailable(config)).toBe(true);
     });
 
-    it("should return false when config is invalid", () => {
+    it('should return false when config is invalid', () => {
       const config = { apiKeys: {} };
       expect(openaiProvider.isAvailable(config)).toBe(false);
     });
   });
 
-  describe("getSupportedModels", () => {
-    it("should return supported models object", () => {
+  describe('getSupportedModels', () => {
+    it('should return supported models object', () => {
       const models = openaiProvider.getSupportedModels();
 
-      expect(typeof models).toBe("object");
-      expect("o3" in models).toBe(true);
-      expect("o3-mini" in models).toBe(true);
-      expect("gpt-4o" in models).toBe(true);
-      expect("gpt-4o-mini" in models).toBe(true);
-      expect("gpt-5" in models).toBe(true);
-      expect("gpt-5-pro" in models).toBe(true);
+      expect(typeof models).toBe('object');
+      expect('o3' in models).toBe(true);
+      expect('o3-mini' in models).toBe(true);
+      expect('gpt-4o' in models).toBe(true);
+      expect('gpt-4o-mini' in models).toBe(true);
+      expect('gpt-5' in models).toBe(true);
+      expect('gpt-5-pro' in models).toBe(true);
     });
 
-    it("should include model configuration details", () => {
+    it('should include model configuration details', () => {
       const models = openaiProvider.getSupportedModels();
-      const o3Model = models["o3"];
+      const o3Model = models['o3'];
 
-      expect(o3Model.modelName).toBe("o3");
-      expect(o3Model.friendlyName).toBe("OpenAI (O3)");
+      expect(o3Model.modelName).toBe('o3');
+      expect(o3Model.friendlyName).toBe('OpenAI (O3)');
       expect(o3Model.contextWindow).toBe(200000);
       expect(o3Model.supportsImages).toBe(true);
     });
 
-    it("should include GPT-5 Pro configuration with correct properties", () => {
+    it('should include GPT-5 Pro configuration with correct properties', () => {
       const models = openaiProvider.getSupportedModels();
-      const gpt5ProModel = models["gpt-5-pro"];
+      const gpt5ProModel = models['gpt-5-pro'];
 
       expect(gpt5ProModel).toBeTruthy();
-      expect(gpt5ProModel.modelName).toBe("gpt-5-pro");
-      expect(gpt5ProModel.friendlyName).toBe("OpenAI (GPT-5 Pro)");
+      expect(gpt5ProModel.modelName).toBe('gpt-5-pro');
+      expect(gpt5ProModel.friendlyName).toBe('OpenAI (GPT-5 Pro)');
       expect(gpt5ProModel.contextWindow).toBe(400000);
       expect(gpt5ProModel.maxOutputTokens).toBe(272000);
       expect(gpt5ProModel.supportsStreaming).toBe(false);
@@ -121,146 +121,146 @@ describe("OpenAI Provider", () => {
     });
   });
 
-  describe("getModelConfig", () => {
-    it("should return config for exact model name", () => {
-      const config = openaiProvider.getModelConfig("o3");
+  describe('getModelConfig', () => {
+    it('should return config for exact model name', () => {
+      const config = openaiProvider.getModelConfig('o3');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe("o3");
-      expect(config.friendlyName).toBe("OpenAI (O3)");
+      expect(config.modelName).toBe('o3');
+      expect(config.friendlyName).toBe('OpenAI (O3)');
     });
 
-    it("should return config for model alias", () => {
-      const config = openaiProvider.getModelConfig("o3mini");
+    it('should return config for model alias', () => {
+      const config = openaiProvider.getModelConfig('o3mini');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe("o3-mini");
+      expect(config.modelName).toBe('o3-mini');
     });
 
-    it("should return null for unknown model", () => {
-      const config = openaiProvider.getModelConfig("unknown-model");
+    it('should return null for unknown model', () => {
+      const config = openaiProvider.getModelConfig('unknown-model');
       expect(config).toBeNull();
     });
 
-    it("should be case insensitive", () => {
-      const config = openaiProvider.getModelConfig("O3");
+    it('should be case insensitive', () => {
+      const config = openaiProvider.getModelConfig('O3');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe("o3");
+      expect(config.modelName).toBe('o3');
     });
 
-    it("should return config for GPT-5 Pro aliases", () => {
-      const aliases = ["gpt5-pro", "gpt-5pro", "gpt 5 pro", "gpt-5 pro"];
+    it('should return config for GPT-5 Pro aliases', () => {
+      const aliases = ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro'];
 
       aliases.forEach((alias) => {
         const config = openaiProvider.getModelConfig(alias);
         expect(config).toBeTruthy();
-        expect(config.modelName).toBe("gpt-5-pro");
+        expect(config.modelName).toBe('gpt-5-pro');
       });
     });
   });
 
-  describe("invoke - input validation", () => {
+  describe('invoke - input validation', () => {
     const validConfig = {
       apiKeys: {
-        openai: "sk-1234567890abcdef1234567890abcdef1234567890abcdef",
+        openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef',
       },
     };
 
-    it("should throw error for missing API key", async () => {
-      const messages = [{ role: "user", content: "Hello" }];
+    it('should throw error for missing API key', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
       const config = { apiKeys: {} };
 
       await expect(openaiProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "MISSING_API_KEY",
+          name: 'OpenAIProviderError',
+          code: 'MISSING_API_KEY',
         }),
       );
     });
 
-    it("should throw error for invalid API key format", async () => {
-      const messages = [{ role: "user", content: "Hello" }];
-      const config = { apiKeys: { openai: "invalid" } };
+    it('should throw error for invalid API key format', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+      const config = { apiKeys: { openai: 'invalid' } };
 
       await expect(openaiProvider.invoke(messages, { config })).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "INVALID_API_KEY",
+          name: 'OpenAIProviderError',
+          code: 'INVALID_API_KEY',
         }),
       );
     });
 
-    it("should throw error for non-array messages", async () => {
-      const messages = "not an array";
+    it('should throw error for non-array messages', async () => {
+      const messages = 'not an array';
 
       await expect(
         openaiProvider.invoke(messages, { config: validConfig }),
       ).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "INVALID_MESSAGES",
+          name: 'OpenAIProviderError',
+          code: 'INVALID_MESSAGES',
         }),
       );
     });
 
-    it("should throw error for invalid message role", async () => {
-      const messages = [{ role: "invalid", content: "Hello" }];
+    it('should throw error for invalid message role', async () => {
+      const messages = [{ role: 'invalid', content: 'Hello' }];
 
       await expect(
         openaiProvider.invoke(messages, { config: validConfig }),
       ).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "INVALID_ROLE",
+          name: 'OpenAIProviderError',
+          code: 'INVALID_ROLE',
         }),
       );
     });
 
-    it("should throw error for missing message content", async () => {
-      const messages = [{ role: "user" }];
+    it('should throw error for missing message content', async () => {
+      const messages = [{ role: 'user' }];
 
       await expect(
         openaiProvider.invoke(messages, { config: validConfig }),
       ).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "MISSING_CONTENT",
+          name: 'OpenAIProviderError',
+          code: 'MISSING_CONTENT',
         }),
       );
     });
   });
 
-  describe("temperature handling", () => {
-    it("should clamp temperature to valid range", () => {
+  describe('temperature handling', () => {
+    it('should clamp temperature to valid range', () => {
       // This would be tested with a mocked OpenAI client
       // For now, we verify the model configurations
       const models = openaiProvider.getSupportedModels();
 
       // O3 models don't support temperature
-      expect(models["o3"].supportsTemperature).toBe(false);
-      expect(models["o3-mini"].supportsTemperature).toBe(false);
+      expect(models['o3'].supportsTemperature).toBe(false);
+      expect(models['o3-mini'].supportsTemperature).toBe(false);
 
       // GPT-4o models do support temperature
-      expect(models["gpt-4o"].supportsTemperature).toBe(true);
-      expect(models["gpt-4o-mini"].supportsTemperature).toBe(true);
+      expect(models['gpt-4o'].supportsTemperature).toBe(true);
+      expect(models['gpt-4o-mini'].supportsTemperature).toBe(true);
     });
   });
 
-  describe("model resolution", () => {
-    it("should handle model aliases correctly", () => {
+  describe('model resolution', () => {
+    it('should handle model aliases correctly', () => {
       const models = openaiProvider.getSupportedModels();
 
       // Verify aliases are configured
-      expect(models["o3-mini"].aliases.includes("o3mini")).toBe(true);
-      expect(models["o3-pro-2025-06-10"].aliases.includes("o3-pro")).toBe(true);
+      expect(models['o3-mini'].aliases.includes('o3mini')).toBe(true);
+      expect(models['o3-pro-2025-06-10'].aliases.includes('o3-pro')).toBe(true);
     });
   });
 
-  describe("invoke with mocked SDK", () => {
+  describe('invoke with mocked SDK', () => {
     const validConfig = {
       apiKeys: {
-        openai: "sk-1234567890abcdef1234567890abcdef1234567890abcdef",
+        openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef',
       },
     };
 
@@ -268,21 +268,21 @@ describe("OpenAI Provider", () => {
       vi.clearAllMocks();
     });
 
-    it("should successfully call OpenAI API and return unified response", async () => {
+    it('should successfully call OpenAI API and return unified response', async () => {
       // Import OpenAI to get the mocked instance
-      const OpenAI = (await import("openai")).default;
+      const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        output_text: "Hello! How can I help you today?",
-        status: "completed",
+        output_text: 'Hello! How can I help you today?',
+        status: 'completed',
         usage: {
           input_tokens: 10,
           output_tokens: 8,
           total_tokens: 18,
         },
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
       });
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: {
             completions: {
@@ -295,27 +295,27 @@ describe("OpenAI Provider", () => {
         };
       });
 
-      const messages = [{ role: "user", content: "Hello" }];
+      const messages = [{ role: 'user', content: 'Hello' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
       });
 
       expect(result).toEqual({
-        content: "Hello! How can I help you today?",
-        stop_reason: "completed",
+        content: 'Hello! How can I help you today?',
+        stop_reason: 'completed',
         rawResponse: expect.any(Object),
         metadata: {
-          model: "gpt-4o-mini",
+          model: 'gpt-4o-mini',
           usage: {
             input_tokens: 10,
             output_tokens: 8,
             total_tokens: 18,
           },
           response_time_ms: expect.any(Number),
-          finish_reason: "completed",
-          provider: "openai",
-          api_type: "Responses API",
+          finish_reason: 'completed',
+          provider: 'openai',
+          api_type: 'Responses API',
           web_search_used: false,
           web_search_type: null,
         },
@@ -323,64 +323,64 @@ describe("OpenAI Provider", () => {
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-4o-mini",
-          input: [{ role: "user", content: "Hello" }],
+          model: 'gpt-4o-mini',
+          input: [{ role: 'user', content: 'Hello' }],
           stream: false,
         }),
       );
     });
 
-    it("should handle reasoning effort for O3 models", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should handle reasoning effort for O3 models', async () => {
+      const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        output_text: "Reasoning response",
-        status: "completed",
+        output_text: 'Reasoning response',
+        status: 'completed',
         usage: { input_tokens: 5, output_tokens: 10, total_tokens: 15 },
       });
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
         };
       });
 
-      const messages = [{ role: "user", content: "Complex reasoning task" }];
+      const messages = [{ role: 'user', content: 'Complex reasoning task' }];
       await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "o3",
-        reasoning_effort: "high",
+        model: 'o3',
+        reasoning_effort: 'high',
       });
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "o3",
-          reasoning: { effort: "high" },
+          model: 'o3',
+          reasoning: { effort: 'high' },
         }),
       );
     });
 
-    it("should handle temperature based on model support", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should handle temperature based on model support', async () => {
+      const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        output_text: "response",
-        status: "completed",
+        output_text: 'response',
+        status: 'completed',
         usage: {},
       });
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
         };
       });
 
-      const messages = [{ role: "user", content: "test" }];
+      const messages = [{ role: 'user', content: 'test' }];
 
       // O3 models don't support temperature
       await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "o3",
+        model: 'o3',
         temperature: 0.8,
       });
 
@@ -393,7 +393,7 @@ describe("OpenAI Provider", () => {
       // GPT-4o models do support temperature
       await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "gpt-4o",
+        model: 'gpt-4o',
         temperature: 0.8,
       });
 
@@ -404,39 +404,39 @@ describe("OpenAI Provider", () => {
       );
     });
 
-    it("should handle OpenAI API errors gracefully", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should handle OpenAI API errors gracefully', async () => {
+      const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockRejectedValue(
-        Object.assign(new Error("Rate limit exceeded"), {
-          type: "rate_limit_error",
-          code: "rate_limit_exceeded",
+        Object.assign(new Error('Rate limit exceeded'), {
+          type: 'rate_limit_error',
+          code: 'rate_limit_exceeded',
         }),
       );
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
         };
       });
 
-      const messages = [{ role: "user", content: "test" }];
+      const messages = [{ role: 'user', content: 'test' }];
 
       await expect(
         openaiProvider.invoke(messages, { config: validConfig }),
       ).rejects.toThrow(
         expect.objectContaining({
-          name: "OpenAIProviderError",
-          code: "RATE_LIMIT_EXCEEDED",
+          name: 'OpenAIProviderError',
+          code: 'RATE_LIMIT_EXCEEDED',
         }),
       );
     });
   });
 
-  describe("streaming functionality", () => {
+  describe('streaming functionality', () => {
     const validConfig = {
       apiKeys: {
-        openai: "sk-1234567890abcdef1234567890abcdef1234567890abcdef",
+        openai: 'sk-1234567890abcdef1234567890abcdef1234567890abcdef',
       },
     };
 
@@ -444,25 +444,25 @@ describe("OpenAI Provider", () => {
       vi.clearAllMocks();
     });
 
-    it("should return AsyncGenerator when stream=true", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should return AsyncGenerator when stream=true', async () => {
+      const OpenAI = (await import('openai')).default;
 
       // Create mock stream for Chat Completions API
       const mockStreamChunks = [
         {
-          choices: [{ delta: { content: "Hello" }, finish_reason: null }],
+          choices: [{ delta: { content: 'Hello' }, finish_reason: null }],
           usage: null,
-          model: "gpt-4o-mini",
+          model: 'gpt-4o-mini',
         },
         {
-          choices: [{ delta: { content: " world" }, finish_reason: null }],
+          choices: [{ delta: { content: ' world' }, finish_reason: null }],
           usage: null,
-          model: "gpt-4o-mini",
+          model: 'gpt-4o-mini',
         },
         {
-          choices: [{ delta: { content: "!" }, finish_reason: "stop" }],
+          choices: [{ delta: { content: '!' }, finish_reason: 'stop' }],
           usage: { prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 },
-          model: "gpt-4o-mini",
+          model: 'gpt-4o-mini',
         },
       ];
 
@@ -476,7 +476,7 @@ describe("OpenAI Provider", () => {
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -486,22 +486,22 @@ describe("OpenAI Provider", () => {
       // Temporarily modify model to not support Responses API to force Chat Completions API
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels["gpt-4o-mini"],
+        ...originalModels['gpt-4o-mini'],
         supportsResponsesAPI: false,
       };
-      originalModels["gpt-4o-mini"] = testModel;
+      originalModels['gpt-4o-mini'] = testModel;
 
       try {
-        const messages = [{ role: "user", content: "Hello" }];
+        const messages = [{ role: 'user', content: 'Hello' }];
         const result = await openaiProvider.invoke(messages, {
           config: validConfig,
-          model: "gpt-4o-mini", // Now forces Chat Completions API
+          model: 'gpt-4o-mini', // Now forces Chat Completions API
           stream: true,
         });
 
         // Verify it returns an AsyncGenerator
         expect(result).toBeDefined();
-        expect(typeof result[Symbol.asyncIterator]).toBe("function");
+        expect(typeof result[Symbol.asyncIterator]).toBe('function');
 
         // Collect all events from the stream
         const events = [];
@@ -513,29 +513,29 @@ describe("OpenAI Provider", () => {
         expect(events).toHaveLength(6); // start, 3 deltas, usage, end
 
         expect(events[0]).toMatchObject({
-          type: "start",
-          model: "gpt-4o-mini",
-          provider: "openai",
-          api_type: "Chat Completions API",
+          type: 'start',
+          model: 'gpt-4o-mini',
+          provider: 'openai',
+          api_type: 'Chat Completions API',
         });
 
         expect(events[1]).toMatchObject({
-          type: "delta",
-          content: "Hello",
+          type: 'delta',
+          content: 'Hello',
         });
 
         expect(events[2]).toMatchObject({
-          type: "delta",
-          content: " world",
+          type: 'delta',
+          content: ' world',
         });
 
         expect(events[3]).toMatchObject({
-          type: "delta",
-          content: "!",
+          type: 'delta',
+          content: '!',
         });
 
         expect(events[4]).toMatchObject({
-          type: "usage",
+          type: 'usage',
           usage: {
             input_tokens: 10,
             output_tokens: 3,
@@ -544,43 +544,43 @@ describe("OpenAI Provider", () => {
         });
 
         expect(events[5]).toMatchObject({
-          type: "end",
-          content: "Hello world!",
-          stop_reason: "stop",
+          type: 'end',
+          content: 'Hello world!',
+          stop_reason: 'stop',
           metadata: {
-            model: "gpt-4o-mini",
-            provider: "openai",
-            api_type: "Chat Completions API",
-            finish_reason: "stop",
+            model: 'gpt-4o-mini',
+            provider: 'openai',
+            api_type: 'Chat Completions API',
+            finish_reason: 'stop',
           },
         });
       } finally {
         // Restore original model config
-        originalModels["gpt-4o-mini"] = {
-          ...originalModels["gpt-4o-mini"],
+        originalModels['gpt-4o-mini'] = {
+          ...originalModels['gpt-4o-mini'],
           supportsResponsesAPI: true,
         };
       }
     });
 
-    it("should handle Responses API streaming format", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should handle Responses API streaming format', async () => {
+      const OpenAI = (await import('openai')).default;
 
       // Create mock stream for Responses API
       const mockStreamChunks = [
         {
-          type: "response.output_text.delta",
-          delta: "Response",
+          type: 'response.output_text.delta',
+          delta: 'Response',
         },
         {
-          type: "response.output_text.delta",
-          delta: " text",
+          type: 'response.output_text.delta',
+          delta: ' text',
         },
         {
-          type: "response.completed",
+          type: 'response.completed',
           response: {
-            status: "completed",
-            model: "gpt-5",
+            status: 'completed',
+            model: 'gpt-5',
             usage: { input_tokens: 5, output_tokens: 2, total_tokens: 7 },
           },
         },
@@ -596,17 +596,17 @@ describe("OpenAI Provider", () => {
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
         };
       });
 
-      const messages = [{ role: "user", content: "Test" }];
+      const messages = [{ role: 'user', content: 'Test' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "gpt-5", // GPT-5 uses Responses API by default
+        model: 'gpt-5', // GPT-5 uses Responses API by default
         stream: true,
       });
 
@@ -618,7 +618,7 @@ describe("OpenAI Provider", () => {
 
       // Debug: log actual events
       console.log(
-        "Actual events:",
+        'Actual events:',
         events.map((e) => ({ type: e.type, content: e.content, ...e })),
       );
 
@@ -626,50 +626,50 @@ describe("OpenAI Provider", () => {
       expect(events).toHaveLength(5); // start, 2 deltas, usage, end
 
       expect(events[0]).toMatchObject({
-        type: "start",
-        model: "gpt-5",
-        api_type: "Responses API",
+        type: 'start',
+        model: 'gpt-5',
+        api_type: 'Responses API',
       });
 
       expect(events[1]).toMatchObject({
-        type: "delta",
-        content: "Response",
+        type: 'delta',
+        content: 'Response',
       });
 
       expect(events[2]).toMatchObject({
-        type: "delta",
-        content: " text",
+        type: 'delta',
+        content: ' text',
       });
 
       expect(events[4]).toMatchObject({
-        type: "end",
-        content: "Response text",
-        stop_reason: "completed",
+        type: 'end',
+        content: 'Response text',
+        stop_reason: 'completed',
         metadata: {
-          model: "gpt-5",
-          api_type: "Responses API",
+          model: 'gpt-5',
+          api_type: 'Responses API',
         },
       });
     });
 
-    it("should handle streaming errors gracefully", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should handle streaming errors gracefully', async () => {
+      const OpenAI = (await import('openai')).default;
 
-      const streamError = Object.assign(new Error("Stream error"), {
-        type: "rate_limit_error",
-        code: "rate_limit_exceeded",
+      const streamError = Object.assign(new Error('Stream error'), {
+        type: 'rate_limit_error',
+        code: 'rate_limit_exceeded',
       });
 
       const mockCreate = vi.fn().mockRejectedValue(streamError);
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
         };
       });
 
-      const messages = [{ role: "user", content: "Test" }];
+      const messages = [{ role: 'user', content: 'Test' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
         stream: true,
@@ -683,27 +683,27 @@ describe("OpenAI Provider", () => {
         }
       } catch (error) {
         // Verify the error is properly wrapped
-        expect(error.name).toBe("OpenAIProviderError");
-        expect(error.code).toBe("RATE_LIMIT_EXCEEDED");
+        expect(error.name).toBe('OpenAIProviderError');
+        expect(error.code).toBe('RATE_LIMIT_EXCEEDED');
       }
 
       // Should have start event and error event
       expect(events).toHaveLength(2);
-      expect(events[0].type).toBe("start");
-      expect(events[1].type).toBe("error");
-      expect(events[1].error.code).toBe("RATE_LIMIT_EXCEEDED");
+      expect(events[0].type).toBe('start');
+      expect(events[1].type).toBe('error');
+      expect(events[1].error.code).toBe('RATE_LIMIT_EXCEEDED');
       expect(events[1].error.recoverable).toBe(true);
     });
 
-    it("should fall back to non-streaming for unsupported models", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should fall back to non-streaming for unsupported models', async () => {
+      const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
-        output_text: "Non-streaming response",
-        status: "completed",
+        output_text: 'Non-streaming response',
+        status: 'completed',
         usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 },
       });
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -713,23 +713,23 @@ describe("OpenAI Provider", () => {
       // Temporarily modify a model to not support streaming
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels["gpt-4o"],
+        ...originalModels['gpt-4o'],
         supportsStreaming: false,
       };
-      originalModels["gpt-4o"] = testModel;
+      originalModels['gpt-4o'] = testModel;
 
-      const messages = [{ role: "user", content: "Test" }];
+      const messages = [{ role: 'user', content: 'Test' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: "gpt-4o",
+        model: 'gpt-4o',
         stream: true,
       });
 
       // Should return regular response object, not AsyncGenerator
-      expect(typeof result[Symbol.asyncIterator]).toBe("undefined");
+      expect(typeof result[Symbol.asyncIterator]).toBe('undefined');
       expect(result).toMatchObject({
-        content: "Non-streaming response",
-        stop_reason: "completed",
+        content: 'Non-streaming response',
+        stop_reason: 'completed',
       });
 
       // Verify stream was set to false in the request
@@ -738,18 +738,18 @@ describe("OpenAI Provider", () => {
       );
 
       // Restore original model config
-      originalModels["gpt-4o"] = {
-        ...originalModels["gpt-4o"],
+      originalModels['gpt-4o'] = {
+        ...originalModels['gpt-4o'],
         supportsStreaming: true,
       };
     });
 
-    it("should include usage reporting for Chat Completions API streaming", async () => {
-      const OpenAI = (await import("openai")).default;
+    it('should include usage reporting for Chat Completions API streaming', async () => {
+      const OpenAI = (await import('openai')).default;
 
       const mockStreamChunks = [
         {
-          choices: [{ delta: { content: "test" }, finish_reason: "stop" }],
+          choices: [{ delta: { content: 'test' }, finish_reason: 'stop' }],
           usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
         },
       ];
@@ -765,7 +765,7 @@ describe("OpenAI Provider", () => {
       const mockChatCreate = vi.fn().mockResolvedValue(mockStream);
       const mockResponsesCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(function () {
+      OpenAI.mockImplementation(() => {
         return {
           chat: { completions: { create: mockChatCreate } },
           responses: { create: mockResponsesCreate },
@@ -775,23 +775,23 @@ describe("OpenAI Provider", () => {
       // Temporarily modify model to not support Responses API to force Chat Completions API
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels["gpt-4o"],
+        ...originalModels['gpt-4o'],
         supportsResponsesAPI: false,
       };
-      originalModels["gpt-4o"] = testModel;
+      originalModels['gpt-4o'] = testModel;
 
       try {
-        const messages = [{ role: "user", content: "Test" }];
+        const messages = [{ role: 'user', content: 'Test' }];
         const result = await openaiProvider.invoke(messages, {
           config: validConfig,
-          model: "gpt-4o", // Now forces Chat Completions API
+          model: 'gpt-4o', // Now forces Chat Completions API
           stream: true,
         });
 
         // Consume events from the generator to trigger the API call
         const iterator = result[Symbol.asyncIterator]();
         const firstEvent = await iterator.next();
-        expect(firstEvent.value.type).toBe("start"); // Verify it's streaming
+        expect(firstEvent.value.type).toBe('start'); // Verify it's streaming
 
         // Consume one more event to trigger the actual API call (which happens after start event)
         const secondEvent = await iterator.next();
@@ -807,8 +807,8 @@ describe("OpenAI Provider", () => {
         expect(mockResponsesCreate).not.toHaveBeenCalled();
       } finally {
         // Restore original model config
-        originalModels["gpt-4o"] = {
-          ...originalModels["gpt-4o"],
+        originalModels['gpt-4o'] = {
+          ...originalModels['gpt-4o'],
           supportsResponsesAPI: true,
         };
       }

@@ -14,6 +14,7 @@ import { mistralProvider } from './mistral.js';
 import { deepseekProvider } from './deepseek.js';
 import { openrouterProvider } from './openrouter.js';
 import { codexProvider } from './codex.js';
+import { geminiCliProvider } from './gemini-cli.js';
 
 /**
  * Provider registry map
@@ -31,6 +32,7 @@ const providers = {
   deepseek: deepseekProvider,
   openrouter: openrouterProvider,
   codex: codexProvider,
+  'gemini-cli': geminiCliProvider,
 };
 
 /**

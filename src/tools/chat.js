@@ -441,6 +441,11 @@ export function mapModelToProvider(model, providers) {
     return 'codex';
   }
 
+  // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
+  if (modelLower === 'gemini') {
+    return 'gemini-cli';
+  }
+
   // Check OpenRouter-specific patterns first
   if (
     modelLower === 'openrouter auto' ||

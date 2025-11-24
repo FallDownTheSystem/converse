@@ -331,16 +331,16 @@ MCP_TRANSPORT=stdio npm start
 | `gpt-4o` | 128K | 16K | Multimodal | Vision, general chat |
 | `gpt-4o-mini` | 128K | 16K | Fast multimodal | Quick responses, images |
 
-### Google/Gemini Models
+### Google/Gemini Models (API-based)
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
-| `gemini-3-pro-preview` | `pro`, `gemini` | 1M | 64K | Thinking levels, enhanced reasoning | Complex problems, deep analysis |
+| `gemini-3-pro-preview` | `pro` | 1M | 64K | Thinking levels, enhanced reasoning | Complex problems, deep analysis |
 | `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast | Quick analysis, simple queries |
 | `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Thinking mode | Deep reasoning, architecture |
 | `gemini-2.0-flash` | `flash2` | 1M | 65K | Latest | Experimental thinking |
 
-**Note:** Default aliases `gemini`, `pro`, and `gemini-pro` now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need the 2.5 version.
+**Note:** The short model name `gemini` now routes to **Gemini CLI** (OAuth-based). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.0-flash`.
 
 ### X.AI/Grok Models
 
@@ -397,6 +397,42 @@ MCP_TRANSPORT=stdio npm start
 - **Direct file access**: Reads files from working directory (paths relative to CLIENT_CWD)
 - **Response times**: 6-20 seconds typical (complex tasks may take minutes)
 - **Authentication**: Requires ChatGPT login OR `CODEX_API_KEY` environment variable
+
+### Gemini CLI Models (OAuth-based)
+
+**Gemini CLI** provides subscription-based access to Gemini models through OAuth:
+
+- **Model**: `gemini` (routes to gemini-3-pro-preview)
+- **Authentication**: OAuth via Gemini CLI (requires one-time setup)
+- **Setup**: Install `@google/gemini-cli` globally and run `gemini` to authenticate
+- **Billing**: Uses Google subscription (Google One AI Premium or Gemini Advanced) instead of API credits
+- **Credentials**: Stored in `~/.gemini/oauth_creds.json`
+- **Features**: Access to enhanced agentic features available through CLI
+- **Context**: 1M tokens (inherited from gemini-3-pro-preview)
+- **Output**: 64K tokens
+
+**Authentication Setup:**
+```bash
+# Install Gemini CLI globally
+npm install -g @google/gemini-cli
+
+# Run interactive authentication
+gemini
+
+# Follow prompts to authenticate via browser
+# Credentials are saved to ~/.gemini/oauth_creds.json
+```
+
+**Usage Example:**
+```json
+{
+  "name": "chat",
+  "arguments": {
+    "prompt": "Explain the event loop in JavaScript",
+    "model": "gemini"
+  }
+}
+```
 
 **Codex-Specific Behavior:**
 - `continuation_id` - Required for thread continuation (maintains full conversation history)

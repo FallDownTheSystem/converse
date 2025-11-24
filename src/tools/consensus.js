@@ -684,6 +684,16 @@ function mapModelToProvider(model, providers) {
     return 'openai';
   }
 
+  // Check Codex (exact match only - don't route "gpt-5-codex" etc to Codex provider)
+  if (modelLower === 'codex') {
+    return 'codex';
+  }
+
+  // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
+  if (modelLower === 'gemini') {
+    return 'gemini-cli';
+  }
+
   // Check OpenRouter-specific patterns first
   if (
     modelLower === 'openrouter auto' ||

@@ -268,6 +268,35 @@ describe('Codex Provider E2E Tests', () => {
     );
   });
 
+  describe('Consensus Tool Integration', () => {
+    testWithApiKeys({
+      requiredProviders: ['CODEX'],
+      requireAll: true,
+    })(
+      'should work in consensus tool with Codex',
+      async () => {
+        await withHTTPTestServer(async (client) => {
+          const result = await client.callTool({
+            name: 'consensus',
+            arguments: {
+              prompt: 'What is 2+2? Answer with just the number.',
+              models: ['codex'],
+              enable_cross_feedback: false, // Disable for faster test
+            },
+          });
+
+          expect(result.isError).toBeFalsy();
+          expect(result.content).toBeDefined();
+          expect(result.content[0].text).toBeTruthy();
+          expect(result.content[0].text).toContain('4');
+
+          logger.info('[codex-api-test] Consensus test completed');
+        });
+      },
+      120000,
+    ); // 120s timeout for consensus
+  });
+
   describe('Configuration Integration', () => {
     testWithApiKeys({
       requiredProviders: ['CODEX'],
