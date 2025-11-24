@@ -26,13 +26,13 @@ import { geminiCliProvider } from './gemini-cli.js';
 const providers = {
   openai: openaiProvider,
   xai: xaiProvider,
+  'gemini-cli': geminiCliProvider,
   google: googleProvider,
   anthropic: anthropicProvider,
   mistral: mistralProvider,
   deepseek: deepseekProvider,
   openrouter: openrouterProvider,
   codex: codexProvider,
-  'gemini-cli': geminiCliProvider,
 };
 
 /**

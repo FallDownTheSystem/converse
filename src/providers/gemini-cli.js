@@ -24,8 +24,8 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Supported Gemini CLI models with their configurations
 const SUPPORTED_MODELS = {
-  'gemini-3-pro-preview': {
-    modelName: 'gemini-3-pro-preview',
+  gemini: {
+    modelName: 'gemini',
     friendlyName: 'Gemini 3.0 Pro Preview (via CLI)',
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 64000,
@@ -37,6 +37,9 @@ const SUPPORTED_MODELS = {
     timeout: 300000, // 5 minutes
     description:
 			'Gemini 3.0 Pro Preview via OAuth - requires Gemini CLI authentication',
+    aliases: ['gemini-cli'],
+    // Internal SDK model name (user-facing "gemini" maps to SDK's "gemini-3-pro-preview")
+    sdkModelName: 'gemini-3-pro-preview',
   },
 };
 
@@ -103,16 +106,17 @@ async function getAISDK() {
  * Yields normalized events compatible with ProviderStreamNormalizer
  */
 async function* createStreamingGenerator(
-  model,
+  modelInstance,
   messages,
   options,
   signal,
+  userFacingModelName = 'gemini',
 ) {
   const { streamText } = await getAISDK();
 
   try {
     const streamOptions = {
-      model,
+      model: modelInstance,
       messages,
       ...options,
     };
@@ -127,7 +131,7 @@ async function* createStreamingGenerator(
     yield {
       type: 'start',
       provider: 'gemini-cli',
-      model: options.model || 'gemini-3-pro-preview',
+      model: userFacingModelName,
     };
 
     // Stream text chunks
@@ -208,7 +212,7 @@ export const geminiCliProvider = {
 	 */
   async invoke(messages, options = {}) {
     const {
-      model = 'gemini-3-pro-preview',
+      model = 'gemini',
       config,
       stream = false,
       signal,
@@ -234,6 +238,18 @@ export const geminiCliProvider = {
     }
 
     try {
+      // Get model configuration to map user-facing name to SDK model name
+      const modelConfig = this.getModelConfig(model);
+      if (!modelConfig) {
+        throw new GeminiCliProviderError(
+          `Model ${model} not supported by Gemini CLI provider`,
+          ErrorCodes.MODEL_NOT_FOUND,
+        );
+      }
+
+      // Get the SDK model name (e.g., "gemini" -> "gemini-3-pro-preview")
+      const sdkModelName = modelConfig.sdkModelName || model;
+
       // Get SDKs
       const createGeminiProvider = await getGeminiCliSDK();
       const { generateText } = await getAISDK();
@@ -243,8 +259,8 @@ export const geminiCliProvider = {
         authType: 'oauth-personal',
       });
 
-      // Create model instance
-      const modelInstance = gemini(model);
+      // Create model instance with SDK model name
+      const modelInstance = gemini(sdkModelName);
 
       // Build AI SDK options
       const aiOptions = {
@@ -271,7 +287,13 @@ export const geminiCliProvider = {
 
       // Streaming mode
       if (stream) {
-        return createStreamingGenerator(modelInstance, messages, aiOptions, signal);
+        return createStreamingGenerator(
+          modelInstance,
+          messages,
+          aiOptions,
+          signal,
+          model, // Pass user-facing model name for metadata
+        );
       }
 
       // Synchronous mode
@@ -382,7 +404,17 @@ export const geminiCliProvider = {
       return SUPPORTED_MODELS[modelNameLower];
     }
 
-    // No aliases for Gemini CLI models currently
+    // Check aliases
+    for (const [supportedModel, config] of Object.entries(SUPPORTED_MODELS)) {
+      if (config.aliases) {
+        for (const alias of config.aliases) {
+          if (alias.toLowerCase() === modelNameLower) {
+            return config;
+          }
+        }
+      }
+    }
+
     return null;
   },
 };

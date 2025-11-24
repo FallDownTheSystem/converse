@@ -653,6 +653,8 @@ Please provide your refined response:`;
  */
 function getDefaultModelForProvider(providerName) {
   const defaults = {
+    codex: 'codex',
+    'gemini-cli': 'gemini',
     openai: 'gpt-5',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
@@ -679,8 +681,15 @@ function resolveAutoModel(model, providerName) {
 function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
-  // Handle "auto" - default to OpenAI
+  // Handle "auto" - prioritize: codex > gemini-cli > openai
   if (modelLower === 'auto') {
+    // Check availability in priority order
+    if (providers['codex']) {
+      return 'codex';
+    }
+    if (providers['gemini-cli']) {
+      return 'gemini-cli';
+    }
     return 'openai';
   }
 
@@ -690,7 +699,7 @@ function mapModelToProvider(model, providers) {
   }
 
   // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
-  if (modelLower === 'gemini') {
+  if (modelLower === 'gemini' || modelLower === 'gemini-cli') {
     return 'gemini-cli';
   }
 
@@ -743,7 +752,6 @@ function mapModelToProvider(model, providers) {
 
   // Google models
   if (
-    modelLower.includes('gemini') ||
     modelLower.includes('flash') ||
     modelLower.includes('pro') ||
     modelLower === 'google'

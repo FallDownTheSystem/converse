@@ -416,6 +416,8 @@ function resolveAutoModel(model, providerName) {
   }
 
   const defaults = {
+    codex: 'codex',
+    'gemini-cli': 'gemini',
     openai: 'gpt-5',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
@@ -431,8 +433,15 @@ function resolveAutoModel(model, providerName) {
 export function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
-  // Handle "auto" - default to OpenAI
+  // Handle "auto" - prioritize: codex > gemini-cli > openai
   if (modelLower === 'auto') {
+    // Check availability in priority order
+    if (providers['codex']) {
+      return 'codex';
+    }
+    if (providers['gemini-cli']) {
+      return 'gemini-cli';
+    }
     return 'openai';
   }
 
@@ -442,7 +451,7 @@ export function mapModelToProvider(model, providers) {
   }
 
   // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
-  if (modelLower === 'gemini') {
+  if (modelLower === 'gemini' || modelLower === 'gemini-cli') {
     return 'gemini-cli';
   }
 
@@ -495,7 +504,6 @@ export function mapModelToProvider(model, providers) {
 
   // Google models
   if (
-    modelLower.includes('gemini') ||
     modelLower.includes('flash') ||
     modelLower.includes('pro') ||
     modelLower === 'google'
@@ -939,7 +947,7 @@ chatTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'AI model to use. Examples: "auto" (recommended), "gpt-5", "gemini-pro", "grok-4-0709". Defaults to auto-selection.',
+        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "gpt-5", "grok-4-0709". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

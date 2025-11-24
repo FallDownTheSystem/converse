@@ -144,7 +144,6 @@ const SUPPORTED_MODELS = {
       'gemini3',
       'gemini-3-pro',
       '3-pro',
-      'gemini', // Moving from 2.5 Pro
       'gemini pro', // Moving from 2.5 Pro
       'gemini-pro', // Moving from 2.5 Pro
       'pro', // Moving from 2.5 Pro
