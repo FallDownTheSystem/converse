@@ -5,6 +5,15 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.4] - 2025-11-24
+
+### Fixed
+
+- **Anthropic Beta Endpoint**: Use `anthropic.beta.messages.create()` for beta features
+  - Effort parameter requires the beta endpoint, not the standard messages endpoint
+  - Now correctly routes to beta endpoint when beta features (effort, 1M context, etc.) are enabled
+  - Fixes "output_config: Extra inputs are not permitted" error with Opus 4.5
+
 ## [2.8.2] - 2025-11-24
 
 ### Fixed
