@@ -28,8 +28,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 120000, // 2 minutes
-    description:
-			'Claude via Agent SDK - requires claude login authentication',
+    description: 'Claude via Agent SDK - requires claude login authentication',
     aliases: ['claude-sdk', 'claude-code'],
   },
 };
@@ -320,10 +319,10 @@ async function* createStreamingGenerator(
                 input_tokens: message.usage.input_tokens || 0,
                 output_tokens: message.usage.output_tokens || 0,
                 total_tokens:
-										(message.usage.input_tokens || 0) +
-										(message.usage.output_tokens || 0),
+                    (message.usage.input_tokens || 0) +
+                    (message.usage.output_tokens || 0),
                 cached_input_tokens:
-										message.usage.cache_read_input_tokens || 0,
+                    message.usage.cache_read_input_tokens || 0,
               },
             };
           }
@@ -336,7 +335,7 @@ async function* createStreamingGenerator(
           };
         } else if (
           message.subtype === 'error_max_turns' ||
-						message.subtype === 'error_during_execution'
+            message.subtype === 'error_during_execution'
         ) {
           throw new ClaudeProviderError(
             `Claude SDK execution failed: ${message.subtype}`,
@@ -359,11 +358,11 @@ async function* createStreamingGenerator(
  */
 export const claudeProvider = {
   /**
-	 * Invoke Claude SDK with messages and options
-	 * @param {Array} messages - Message array (Converse format)
-	 * @param {Object} options - Invocation options
-	 * @returns {Promise<Object>|AsyncGenerator} Response or stream generator
-	 */
+   * Invoke Claude SDK with messages and options
+   * @param {Array} messages - Message array (Converse format)
+   * @param {Object} options - Invocation options
+   * @returns {Promise<Object>|AsyncGenerator} Response or stream generator
+   */
   async invoke(messages, options = {}) {
     const {
       model = 'claude',
@@ -408,7 +407,8 @@ export const claudeProvider = {
       // Returns { prompt, sdkMessage, hasImages }
       // - prompt: string for single message mode (text-only)
       // - sdkMessage: SDK user message for streaming input mode (with images)
-      const { prompt, sdkMessage, hasImages } = convertMessagesToSdkInput(messages);
+      const { prompt, sdkMessage, hasImages } =
+        convertMessagesToSdkInput(messages);
 
       if (hasImages) {
         debugLog('[Claude SDK] Using streaming input mode for image support');
@@ -465,7 +465,7 @@ export const claudeProvider = {
               input_tokens: usage.input_tokens || 0,
               output_tokens: usage.output_tokens || 0,
               total_tokens:
-									(usage.input_tokens || 0) + (usage.output_tokens || 0),
+                  (usage.input_tokens || 0) + (usage.output_tokens || 0),
               cached_input_tokens: usage.cached_input_tokens || 0,
             }
             : null,
@@ -479,8 +479,8 @@ export const claudeProvider = {
       // Map common errors to standard error codes
       if (
         error.message?.includes('authentication') ||
-				error.message?.includes('login') ||
-				error.message?.includes('not authenticated')
+        error.message?.includes('login') ||
+        error.message?.includes('not authenticated')
       ) {
         throw new ClaudeProviderError(
           'Claude SDK authentication failed. Run: claude login',
@@ -519,10 +519,10 @@ export const claudeProvider = {
   },
 
   /**
-	 * Validate Claude SDK configuration
-	 * Claude SDK uses CLI authentication (NOT API keys)
-	 * Returns true optimistically - authentication errors handled at runtime
-	 */
+   * Validate Claude SDK configuration
+   * Claude SDK uses CLI authentication (NOT API keys)
+   * Returns true optimistically - authentication errors handled at runtime
+   */
   validateConfig(_config) {
     // Claude SDK uses CLI authentication, not API keys
     // We can't reliably check auth status, so return true optimistically
@@ -531,22 +531,22 @@ export const claudeProvider = {
   },
 
   /**
-	 * Check if Claude SDK provider is available
-	 */
+   * Check if Claude SDK provider is available
+   */
   isAvailable(config) {
     return this.validateConfig(config);
   },
 
   /**
-	 * Get supported Claude SDK models
-	 */
+   * Get supported Claude SDK models
+   */
   getSupportedModels() {
     return SUPPORTED_MODELS;
   },
 
   /**
-	 * Get model configuration for specific model
-	 */
+   * Get model configuration for specific model
+   */
   getModelConfig(modelName) {
     const modelNameLower = modelName.toLowerCase();
 
@@ -559,7 +559,7 @@ export const claudeProvider = {
     for (const [_name, config] of Object.entries(SUPPORTED_MODELS)) {
       if (
         config.aliases &&
-				config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
+        config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
       ) {
         return config;
       }

@@ -624,7 +624,11 @@ export const anthropicProvider = {
     }
 
     // Add effort parameter for Opus 4.5 (uses output_config)
-    if (modelConfig.supportsEffort && reasoning_effort && reasoning_effort !== 'none') {
+    if (
+      modelConfig.supportsEffort &&
+      reasoning_effort &&
+      reasoning_effort !== 'none'
+    ) {
       const effortValue = EFFORT_MAP[reasoning_effort];
       if (effortValue) {
         requestPayload.output_config = {
@@ -852,7 +856,8 @@ export const anthropicProvider = {
       const streamingPayload = { ...requestPayload, stream: true };
 
       // Create the streaming request - use beta endpoint when beta features are enabled
-      const hasBetaFeatures = requestPayload.betas && requestPayload.betas.length > 0;
+      const hasBetaFeatures =
+        requestPayload.betas && requestPayload.betas.length > 0;
       const stream = hasBetaFeatures
         ? await anthropic.beta.messages.create(streamingPayload)
         : await anthropic.messages.create(streamingPayload);

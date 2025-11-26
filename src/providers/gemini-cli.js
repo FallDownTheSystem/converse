@@ -36,7 +36,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     timeout: 300000, // 5 minutes
     description:
-			'Gemini 3.0 Pro Preview via OAuth - requires Gemini CLI authentication',
+      'Gemini 3.0 Pro Preview via OAuth - requires Gemini CLI authentication',
     aliases: ['gemini-cli'],
     // Internal SDK model name (user-facing "gemini" maps to SDK's "gemini-3-pro-preview")
     sdkModelName: 'gemini-3-pro-preview',
@@ -272,11 +272,11 @@ function convertToModelMessages(messages) {
  */
 export const geminiCliProvider = {
   /**
-	 * Invoke Gemini CLI with messages and options
-	 * @param {Array} messages - Message array (Converse format)
-	 * @param {Object} options - Invocation options
-	 * @returns {Promise<Object>|AsyncGenerator} Response or stream generator
-	 */
+   * Invoke Gemini CLI with messages and options
+   * @param {Array} messages - Message array (Converse format)
+   * @param {Object} options - Invocation options
+   * @returns {Promise<Object>|AsyncGenerator} Response or stream generator
+   */
   async invoke(messages, options = {}) {
     const {
       model = 'gemini',
@@ -405,8 +405,8 @@ export const geminiCliProvider = {
       // Map common errors to standard error codes
       if (
         error.message?.includes('authentication') ||
-				error.message?.includes('oauth') ||
-				error.message?.includes('credentials')
+        error.message?.includes('oauth') ||
+        error.message?.includes('credentials')
       ) {
         throw new GeminiCliProviderError(
           'Gemini CLI authentication failed. Run: gemini (interactive CLI) to authenticate',
@@ -441,31 +441,31 @@ export const geminiCliProvider = {
   },
 
   /**
-	 * Validate Gemini CLI configuration
-	 * Gemini CLI uses OAuth authentication (no API keys needed)
-	 */
+   * Validate Gemini CLI configuration
+   * Gemini CLI uses OAuth authentication (no API keys needed)
+   */
   validateConfig(_config) {
     // Check if OAuth credentials file exists
     return hasOAuthCredentials();
   },
 
   /**
-	 * Check if Gemini CLI provider is available
-	 */
+   * Check if Gemini CLI provider is available
+   */
   isAvailable(config) {
     return this.validateConfig(config);
   },
 
   /**
-	 * Get supported Gemini CLI models
-	 */
+   * Get supported Gemini CLI models
+   */
   getSupportedModels() {
     return SUPPORTED_MODELS;
   },
 
   /**
-	 * Get model configuration for specific model
-	 */
+   * Get model configuration for specific model
+   */
   getModelConfig(modelName) {
     const modelNameLower = modelName.toLowerCase();
 

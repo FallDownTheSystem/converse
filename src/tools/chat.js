@@ -375,23 +375,26 @@ export async function chatTool(args, dependencies) {
 
     // Export conversation if requested
     if (shouldExport) {
-      await exportConversation({
-        messages: updatedMessages,
-        provider: providerName,
-        model,
-        lastUpdated: Date.now(),
-        codexThreadId: response.metadata?.threadId,
-      }, {
-        clientCwd: config.server?.client_cwd,
-        continuation_id: continuationId,
-        model,
-        temperature,
-        reasoning_effort,
-        verbosity,
-        use_websearch,
-        files,
-        images,
-      });
+      await exportConversation(
+        {
+          messages: updatedMessages,
+          provider: providerName,
+          model,
+          lastUpdated: Date.now(),
+          codexThreadId: response.metadata?.threadId,
+        },
+        {
+          clientCwd: config.server?.client_cwd,
+          continuation_id: continuationId,
+          model,
+          temperature,
+          reasoning_effort,
+          verbosity,
+          use_websearch,
+          files,
+          images,
+        },
+      );
     }
 
     // Create unified status line (similar to async status display)
@@ -495,7 +498,11 @@ export function mapModelToProvider(model, providers) {
   }
 
   // Check Claude SDK (exact match only - routes to SDK provider instead of Anthropic API)
-  if (modelLower === 'claude' || modelLower === 'claude-sdk' || modelLower === 'claude-code') {
+  if (
+    modelLower === 'claude' ||
+    modelLower === 'claude-sdk' ||
+    modelLower === 'claude-code'
+  ) {
     return 'claude';
   }
 
@@ -963,23 +970,26 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
   // Export conversation if requested
   if (shouldExport) {
-    await exportConversation({
-      messages: updatedMessages,
-      provider: providerName,
-      model,
-      lastUpdated: Date.now(),
-      codexThreadId: response.metadata?.threadId,
-    }, {
-      clientCwd: config.server?.client_cwd,
-      continuation_id: continuationId,
-      model,
-      temperature,
-      reasoning_effort,
-      verbosity,
-      use_websearch,
-      files,
-      images,
-    });
+    await exportConversation(
+      {
+        messages: updatedMessages,
+        provider: providerName,
+        model,
+        lastUpdated: Date.now(),
+        codexThreadId: response.metadata?.threadId,
+      },
+      {
+        clientCwd: config.server?.client_cwd,
+        continuation_id: continuationId,
+        model,
+        temperature,
+        reasoning_effort,
+        verbosity,
+        use_websearch,
+        files,
+        images,
+      },
+    );
   }
 
   // Return complete result for job completion
@@ -1019,7 +1029,7 @@ chatTool.inputSchema = {
       type: 'array',
       items: { type: 'string' },
       description:
-        'File paths to include as context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\src\\auth.js", "./config.json"]',
+        'File paths to include as context (absolute or relative paths). Supports line ranges: "file.txt{10:50}" for lines 10-50, "{:20}" for first 20 lines, "{100:}" for line 100 to end. Example: ["./src/auth.js{50:100}", "./config.json"]',
     },
     images: {
       type: 'array',

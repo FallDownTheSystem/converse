@@ -127,7 +127,8 @@ describe('Gemini CLI Provider E2E Tests', () => {
           const result = await client.callTool({
             name: 'consensus',
             arguments: {
-              prompt: 'What is the capital of France? Answer with just the city name.',
+              prompt:
+                'What is the capital of France? Answer with just the city name.',
               models: ['gemini'],
             },
           });
@@ -246,7 +247,9 @@ describe('Gemini CLI Provider E2E Tests', () => {
 
           // Should either error or route to a different provider
           // We expect an error since this is an invalid model for Gemini CLI
-          expect(result.isError || result.content[0].text.includes('error')).toBeTruthy();
+          expect(
+            result.isError || result.content[0].text.includes('error'),
+          ).toBeTruthy();
 
           logger.info('[gemini-cli-api-test] Error handling test completed');
         });

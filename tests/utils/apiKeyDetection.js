@@ -99,7 +99,11 @@ const API_KEY_CONFIGS = {
         const fs = require('fs');
         const path = require('path');
         const os = require('os');
-        const credsPath = path.join(os.homedir(), '.gemini', 'oauth_creds.json');
+        const credsPath = path.join(
+          os.homedir(),
+          '.gemini',
+          'oauth_creds.json',
+        );
         return fs.existsSync(credsPath);
       } catch {
         return false;

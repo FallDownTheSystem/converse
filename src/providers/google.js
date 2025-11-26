@@ -119,11 +119,7 @@ const SUPPORTED_MODELS = {
     timeout: 300000,
     description:
       'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
-    aliases: [
-      'pro 2.5',
-      'gemini pro 2.5',
-      'gemini-2.5-pro-latest',
-    ],
+    aliases: ['pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest'],
   },
   'gemini-3-pro-preview': {
     modelName: 'gemini-3-pro-preview',

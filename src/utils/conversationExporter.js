@@ -150,7 +150,9 @@ function generateMetadata(conversationState, totalTurns, params) {
     created_at: conversationState.createdAt
       ? new Date(conversationState.createdAt).toISOString()
       : new Date().toISOString(),
-    last_updated: new Date(conversationState.lastUpdated || Date.now()).toISOString(),
+    last_updated: new Date(
+      conversationState.lastUpdated || Date.now(),
+    ).toISOString(),
   };
 
   // Add optional parameters if present
@@ -168,8 +170,8 @@ function generateMetadata(conversationState, totalTurns, params) {
   }
   if (params.images && params.images.length > 0) {
     // Don't store base64 data, just file paths or indicators
-    metadata.images = params.images.map(img =>
-      img.startsWith('data:') ? '[base64 image]' : img
+    metadata.images = params.images.map((img) =>
+      img.startsWith('data:') ? '[base64 image]' : img,
     );
   }
   // Consensus-specific metadata

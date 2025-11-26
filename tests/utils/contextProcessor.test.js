@@ -339,3 +339,235 @@ describe('Context Processor Unit Tests', () => {
 // - Mixed relative and absolute paths
 // - Error handling for non-existent files
 // - Security validation for path traversal
+
+describe('Line Range Processing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    access.mockResolvedValue(undefined);
+    stat.mockResolvedValue({
+      isFile: () => true,
+      size: 1000,
+      mtime: new Date('2024-01-01'),
+    });
+  });
+
+  const multiLineContent =
+    'line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10';
+
+  it('should extract lines with full range {start:end}', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{2:4}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 2\nline 3\nline 4');
+    expect(result.lineCount).toBe(3);
+    expect(result.totalLineCount).toBe(10);
+    expect(result.rangeStart).toBe(2);
+    expect(result.rangeEnd).toBe(4);
+    expect(result.originalPath).toBe('test.txt{2:4}');
+  });
+
+  it('should extract lines from start to specified end {:end}', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{:3}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 1\nline 2\nline 3');
+    expect(result.lineCount).toBe(3);
+    expect(result.totalLineCount).toBe(10);
+    expect(result.rangeStart).toBe(1);
+    expect(result.rangeEnd).toBe(3);
+  });
+
+  it('should extract lines from specified start to end of file {start:}', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{8:}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 8\nline 9\nline 10');
+    expect(result.lineCount).toBe(3);
+    expect(result.totalLineCount).toBe(10);
+    expect(result.rangeStart).toBe(8);
+    expect(result.rangeEnd).toBe(10);
+  });
+
+  it('should clamp end to actual file bounds when range exceeds file length', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{8:500}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 8\nline 9\nline 10');
+    expect(result.lineCount).toBe(3);
+    expect(result.rangeEnd).toBe(10);
+  });
+
+  it('should return empty content when start > file length', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{200:300}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('');
+    expect(result.lineCount).toBe(0);
+    expect(result.totalLineCount).toBe(10);
+  });
+
+  it('should treat start=0 as start=1', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{0:3}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 1\nline 2\nline 3');
+    expect(result.rangeStart).toBe(1);
+    expect(result.rangeEnd).toBe(3);
+  });
+
+  it('should return error for empty range {:}', async () => {
+    const result = await processFileContent('test.txt{:}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('error');
+    expect(result.error).toContain('Empty range specifier');
+    expect(result.errorCode).toBe('EMPTY_RANGE');
+  });
+
+  it('should return error when start > end', async () => {
+    const result = await processFileContent('test.txt{50:10}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('error');
+    expect(result.error).toContain('start (50) is greater than end (10)');
+    expect(result.errorCode).toBe('INVALID_RANGE');
+  });
+
+  it('should process file normally without range specifier', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe(multiLineContent);
+    expect(result.lineCount).toBe(10);
+    expect(result.totalLineCount).toBe(10);
+    expect(result.rangeStart).toBeUndefined();
+    expect(result.rangeEnd).toBeUndefined();
+  });
+
+  it('should handle relative paths with ranges', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('./src/utils/helper.js{10:50}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.originalPath).toBe('./src/utils/helper.js{10:50}');
+    expect(result.path).toBe(resolve(process.cwd(), './src/utils/helper.js'));
+    expect(result.totalLineCount).toBe(10);
+  });
+
+  it('should handle single line extraction {n:n}', async () => {
+    readFile.mockResolvedValue(multiLineContent);
+
+    const result = await processFileContent('test.txt{5:5}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 5');
+    expect(result.lineCount).toBe(1);
+  });
+
+  it('should handle files with Windows-style line endings (CRLF)', async () => {
+    const crlfContent = 'line 1\r\nline 2\r\nline 3\r\nline 4\r\nline 5';
+    readFile.mockResolvedValue(crlfContent);
+
+    const result = await processFileContent('test.txt{2:4}', {
+      skipSecurityCheck: true,
+    });
+
+    expect(result.type).toBe('text');
+    expect(result.content).toBe('line 2\nline 3\nline 4');
+    expect(result.lineCount).toBe(3);
+    expect(result.totalLineCount).toBe(5);
+  });
+
+  it('should treat invalid range syntax as part of filename', async () => {
+    access.mockRejectedValue(new Error('ENOENT: no such file or directory'));
+
+    const result = await processFileContent('test.txt{abc:xyz}', {
+      skipSecurityCheck: true,
+    });
+
+    // File with invalid range in name doesn't exist, so it's a file access error
+    expect(result.type).toBe('error');
+    expect(result.error).toContain('File not accessible');
+    expect(result.originalPath).toBe('test.txt{abc:xyz}');
+  });
+});
+
+describe('createFileContext with Line Ranges', () => {
+  it('should include range info in file header when range was applied', () => {
+    const processedFiles = [
+      {
+        path: resolve(process.cwd(), 'test.txt'),
+        originalPath: 'test.txt{10:20}',
+        type: 'text',
+        content: 'extracted lines here',
+        size: 1000,
+        lineCount: 11,
+        totalLineCount: 100,
+        rangeStart: 10,
+        rangeEnd: 20,
+        lastModified: new Date('2024-01-01'),
+      },
+    ];
+
+    const context = createFileContext(processedFiles);
+
+    expect(context.content[0].text).toContain('test.txt{10:20}');
+    expect(context.content[0].text).toContain('(lines 10-20 of 100)');
+  });
+
+  it('should not include range info for full file reads', () => {
+    const processedFiles = [
+      {
+        path: resolve(process.cwd(), 'test.txt'),
+        originalPath: 'test.txt',
+        type: 'text',
+        content: 'full file content',
+        size: 1000,
+        lineCount: 50,
+        totalLineCount: 50,
+        // No rangeStart/rangeEnd for full file reads
+        lastModified: new Date('2024-01-01'),
+      },
+    ];
+
+    const context = createFileContext(processedFiles);
+
+    expect(context.content[0].text).toContain('test.txt');
+    expect(context.content[0].text).not.toContain('(lines');
+  });
+});

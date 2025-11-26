@@ -542,7 +542,9 @@ Please provide your refined response:`;
       // Add summary at the end
       formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
       if (refinedPhase) {
-        const successfulRefinements = refinedPhase.filter(r => r.status === 'success').length;
+        const successfulRefinements = refinedPhase.filter(
+          (r) => r.status === 'success',
+        ).length;
         formattedContent += ` and ${successfulRefinements} successful refined responses`;
       }
       formattedContent += '.';
@@ -752,7 +754,11 @@ function mapModelToProvider(model, providers) {
   }
 
   // Check Claude SDK (exact match only - routes to SDK provider instead of Anthropic API)
-  if (modelLower === 'claude' || modelLower === 'claude-sdk' || modelLower === 'claude-code') {
+  if (
+    modelLower === 'claude' ||
+    modelLower === 'claude-sdk' ||
+    modelLower === 'claude-code'
+  ) {
     return 'claude';
   }
 
@@ -1251,7 +1257,9 @@ Please provide your refined response:`;
     // Add summary at the end
     formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
     if (refinedPhase) {
-      const successfulRefinements = refinedPhase.filter(r => r.status === 'success').length;
+      const successfulRefinements = refinedPhase.filter(
+        (r) => r.status === 'success',
+      ).length;
       formattedContent += ` and ${successfulRefinements} successful refined responses`;
     }
     formattedContent += '.';
@@ -1623,7 +1631,7 @@ consensusTool.inputSchema = {
       type: 'array',
       items: { type: 'string' },
       description:
-        'File paths for additional context (absolute or relative paths). Example: ["C:\\Users\\username\\project\\architecture.md", "./requirements.txt"]',
+        'File paths for additional context (absolute or relative paths). Supports line ranges: "file.txt{10:50}" for lines 10-50, "{:20}" for first 20 lines, "{100:}" for line 100 to end. Example: ["./architecture.md{1:100}", "./requirements.txt"]',
     },
     images: {
       type: 'array',

@@ -74,10 +74,16 @@ describe('Conversation Exporter', () => {
       expect(files).toContain('metadata.json');
 
       // Check content
-      const request = await fs.readFile(path.join(exportDir, '1_request.txt'), 'utf8');
+      const request = await fs.readFile(
+        path.join(exportDir, '1_request.txt'),
+        'utf8',
+      );
       expect(request).toBe('Hello, world!');
 
-      const response = await fs.readFile(path.join(exportDir, '1_response.txt'), 'utf8');
+      const response = await fs.readFile(
+        path.join(exportDir, '1_response.txt'),
+        'utf8',
+      );
       expect(response).toBe('Hello! How can I help you today?');
     });
 
@@ -121,12 +127,19 @@ describe('Conversation Exporter', () => {
           {
             role: 'user',
             content: [
-              { type: 'file', file_name: 'test.js', file_content: 'const x = 1;' },
+              {
+                type: 'file',
+                file_name: 'test.js',
+                file_content: 'const x = 1;',
+              },
               { type: 'image', image_url: '/path/to/image.png' },
               { type: 'text', text: 'Analyze these files' },
             ],
           },
-          { role: 'assistant', content: 'I can see a JavaScript file and an image.' },
+          {
+            role: 'assistant',
+            content: 'I can see a JavaScript file and an image.',
+          },
         ],
         provider: 'openai',
         lastUpdated: Date.now(),
@@ -139,7 +152,10 @@ describe('Conversation Exporter', () => {
       });
 
       const exportDir = path.join(testDir, 'conv_complex');
-      const request = await fs.readFile(path.join(exportDir, '1_request.txt'), 'utf8');
+      const request = await fs.readFile(
+        path.join(exportDir, '1_request.txt'),
+        'utf8',
+      );
 
       expect(request).toContain('[File: test.js]');
       expect(request).toContain('[Image: image.png]');
@@ -153,7 +169,10 @@ describe('Conversation Exporter', () => {
           {
             role: 'user',
             content: [
-              { type: 'image', image_url: 'data:image/png;base64,iVBORw0KG...' },
+              {
+                type: 'image',
+                image_url: 'data:image/png;base64,iVBORw0KG...',
+              },
               { type: 'text', text: 'What is in this image?' },
             ],
           },
@@ -171,14 +190,17 @@ describe('Conversation Exporter', () => {
       });
 
       const exportDir = path.join(testDir, 'conv_base64');
-      const request = await fs.readFile(path.join(exportDir, '1_request.txt'), 'utf8');
+      const request = await fs.readFile(
+        path.join(exportDir, '1_request.txt'),
+        'utf8',
+      );
 
       expect(request).toContain('[Image: embedded image]');
       expect(request).toContain('What is in this image?');
 
       // Check metadata doesn't store base64 data
       const metadata = JSON.parse(
-        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
       );
       expect(metadata.images).toEqual(['[base64 image]']);
     });
@@ -190,13 +212,21 @@ describe('Conversation Exporter', () => {
       await fs.mkdir(exportDir, { recursive: true });
 
       // Create existing files
-      await fs.writeFile(path.join(exportDir, '1_request.txt'), 'Original request');
-      await fs.writeFile(path.join(exportDir, '1_response.txt'), 'Original response');
+      await fs.writeFile(
+        path.join(exportDir, '1_request.txt'),
+        'Original request',
+      );
+      await fs.writeFile(
+        path.join(exportDir, '1_response.txt'),
+        'Original response',
+      );
 
-      const originalRequestStat = await fs.stat(path.join(exportDir, '1_request.txt'));
+      const originalRequestStat = await fs.stat(
+        path.join(exportDir, '1_request.txt'),
+      );
 
       // Wait a bit to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const conversationState = {
         messages: [
@@ -217,21 +247,35 @@ describe('Conversation Exporter', () => {
       });
 
       // Check original files were not modified
-      const request1 = await fs.readFile(path.join(exportDir, '1_request.txt'), 'utf8');
+      const request1 = await fs.readFile(
+        path.join(exportDir, '1_request.txt'),
+        'utf8',
+      );
       expect(request1).toBe('Original request');
 
-      const response1 = await fs.readFile(path.join(exportDir, '1_response.txt'), 'utf8');
+      const response1 = await fs.readFile(
+        path.join(exportDir, '1_response.txt'),
+        'utf8',
+      );
       expect(response1).toBe('Original response');
 
       // Check timestamp wasn't modified
-      const newRequestStat = await fs.stat(path.join(exportDir, '1_request.txt'));
+      const newRequestStat = await fs.stat(
+        path.join(exportDir, '1_request.txt'),
+      );
       expect(newRequestStat.mtimeMs).toBe(originalRequestStat.mtimeMs);
 
       // Check new files were created
-      const request2 = await fs.readFile(path.join(exportDir, '2_request.txt'), 'utf8');
+      const request2 = await fs.readFile(
+        path.join(exportDir, '2_request.txt'),
+        'utf8',
+      );
       expect(request2).toBe('Second request');
 
-      const response2 = await fs.readFile(path.join(exportDir, '2_response.txt'), 'utf8');
+      const response2 = await fs.readFile(
+        path.join(exportDir, '2_response.txt'),
+        'utf8',
+      );
       expect(response2).toBe('Second response');
     });
   });
@@ -266,7 +310,7 @@ describe('Conversation Exporter', () => {
 
       const exportDir = path.join(testDir, 'conv_metadata');
       const metadata = JSON.parse(
-        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
       );
 
       expect(metadata.continuation_id).toBe('conv_metadata');
@@ -279,7 +323,10 @@ describe('Conversation Exporter', () => {
       expect(metadata.total_turns).toBe(2);
       expect(metadata.files).toEqual(['/path/to/file.txt']);
       expect(metadata.images).toEqual(['/path/to/image.png', '[base64 image]']);
-      expect(new Date(metadata.created_at).getTime()).toBeCloseTo(now - 120000, -2);
+      expect(new Date(metadata.created_at).getTime()).toBeCloseTo(
+        now - 120000,
+        -2,
+      );
       expect(new Date(metadata.last_updated).getTime()).toBeCloseTo(now, -2);
     });
 
@@ -366,7 +413,7 @@ describe('Conversation Exporter', () => {
       expect(files).not.toContain('2_response.txt');
 
       const metadata = JSON.parse(
-        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+        await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
       );
       expect(metadata.total_turns).toBe(2);
     });
@@ -431,7 +478,7 @@ describe('Conversation Exporter', () => {
         exportConversation(conversationState, {
           clientCwd: testDir,
           model: 'gpt-5',
-        })
+        }),
       ).resolves.not.toThrow();
 
       // No folders should be created
@@ -459,7 +506,7 @@ describe('Conversation Exporter', () => {
           clientCwd: readOnlyDir,
           continuation_id: 'conv_error',
           model: 'gpt-5',
-        })
+        }),
       ).resolves.not.toThrow();
     });
   });

@@ -104,7 +104,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Extract continuation_id from result
@@ -128,20 +128,22 @@ describe('Chat Tool Export Feature', () => {
     // Verify request content
     const requestContent = await fs.readFile(
       path.join(exportDir, '1_request.txt'),
-      'utf8'
+      'utf8',
     );
     expect(requestContent).toBe('Hello, how are you?');
 
     // Verify response content
     const responseContent = await fs.readFile(
       path.join(exportDir, '1_response.txt'),
-      'utf8'
+      'utf8',
     );
-    expect(responseContent).toBe('This is a test response from the AI assistant.');
+    expect(responseContent).toBe(
+      'This is a test response from the AI assistant.',
+    );
 
     // Verify metadata
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.continuation_id).toBe(continuationId);
     expect(metadata.model).toBe('gpt-5');
@@ -161,7 +163,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     expect(result).toBeDefined();
@@ -203,7 +205,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     const exportDir = path.join(testDir, continuationId);
@@ -219,13 +221,13 @@ describe('Chat Tool Export Feature', () => {
     // Verify second turn content
     const request2Content = await fs.readFile(
       path.join(exportDir, '2_request.txt'),
-      'utf8'
+      'utf8',
     );
     expect(request2Content).toBe('Second message');
 
     // Verify metadata shows 2 turns
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.total_turns).toBe(2);
   });
@@ -236,8 +238,14 @@ describe('Chat Tool Export Feature', () => {
 
     // Pre-create export directory with first turn
     await fs.mkdir(exportDir, { recursive: true });
-    await fs.writeFile(path.join(exportDir, '1_request.txt'), 'Original request');
-    await fs.writeFile(path.join(exportDir, '1_response.txt'), 'Original response');
+    await fs.writeFile(
+      path.join(exportDir, '1_request.txt'),
+      'Original request',
+    );
+    await fs.writeFile(
+      path.join(exportDir, '1_response.txt'),
+      'Original response',
+    );
 
     // Mock conversation with additional turn
     mockContinuationStore.get = vi.fn(async () => ({
@@ -264,26 +272,26 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Verify first turn files were NOT overwritten
     const request1Content = await fs.readFile(
       path.join(exportDir, '1_request.txt'),
-      'utf8'
+      'utf8',
     );
     expect(request1Content).toBe('Original request');
 
     const response1Content = await fs.readFile(
       path.join(exportDir, '1_response.txt'),
-      'utf8'
+      'utf8',
     );
     expect(response1Content).toBe('Original response');
 
     // Verify second turn was written
     const request2Content = await fs.readFile(
       path.join(exportDir, '2_request.txt'),
-      'utf8'
+      'utf8',
     );
     expect(request2Content).toBe('Second message');
   });
@@ -304,7 +312,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Should create folder with sanitized name
@@ -331,7 +339,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     expect(result).toBeDefined();
@@ -343,7 +351,7 @@ describe('Chat Tool Export Feature', () => {
 
     // Verify metadata includes file references
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.files).toEqual(['/path/to/file1.js', '/path/to/file2.md']);
     expect(metadata.images).toEqual(['[base64 image]', '/path/to/image.png']);
@@ -368,7 +376,7 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Chat should complete successfully
@@ -393,14 +401,14 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     const exportDir = path.join(testDir, continuationId);
 
     // Read first metadata
     const metadata1 = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata1.total_turns).toBe(1);
     expect(metadata1.temperature).toBe(0.7);
@@ -410,7 +418,10 @@ describe('Chat Tool Export Feature', () => {
       messages: [
         { role: 'system', content: 'You are a helpful assistant.' },
         { role: 'user', content: 'First message' },
-        { role: 'assistant', content: 'This is a test response from the AI assistant.' },
+        {
+          role: 'assistant',
+          content: 'This is a test response from the AI assistant.',
+        },
       ],
       provider: 'openai',
       model: 'gpt-5',
@@ -432,12 +443,12 @@ describe('Chat Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Read updated metadata
     const metadata2 = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata2.total_turns).toBe(2);
     expect(metadata2.temperature).toBe(0.3);

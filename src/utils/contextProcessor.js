@@ -11,6 +11,11 @@ import { extname, resolve, isAbsolute } from 'path';
 import { constants } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import {
+  parseFilePathWithRange,
+  extractLineRange,
+  validateRange,
+} from './pathParser.js';
 
 // Security: Define allowed directories for file access
 const __filename = fileURLToPath(import.meta.url);
@@ -103,8 +108,6 @@ async function validateFilePath(filePath, options = {}) {
  * @param {string} filePath - Absolute or relative path to the file
  * @param {object} options - Processing options
  * @param {string[]} options.allowedDirectories - Allowed directories for security
- * @param {number} options.maxTextSize - Maximum text file size in bytes
- * @param {number} options.maxImageSize - Maximum image file size in bytes
  * @param {boolean} options.skipSecurityCheck - Skip security validation (for testing)
  * @returns {Promise<object>} Processed content with metadata
  */
@@ -137,8 +140,21 @@ export async function processFileContent(filePath, options = {}) {
       };
     }
 
-    // Security validation for file paths
-    const validatedPath = await validateFilePath(filePath, options);
+    // Parse line range specifier from file path (e.g., "file.txt{10:50}")
+    const { filePath: actualPath, range } = parseFilePathWithRange(filePath);
+
+    // Validate range early (before expensive file operations)
+    const rangeValidation = validateRange(range);
+    if (!rangeValidation.valid) {
+      throw new ContextProcessorError(
+        rangeValidation.error,
+        rangeValidation.code,
+        { path: filePath },
+      );
+    }
+
+    // Security validation for file paths (without range specifier)
+    const validatedPath = await validateFilePath(actualPath, options);
 
     const fileStats = await stat(validatedPath);
     const extension = extname(validatedPath).toLowerCase();
@@ -162,17 +178,8 @@ export async function processFileContent(filePath, options = {}) {
       encoding: null,
     };
 
-    // Check file size limits
-    const maxTextSize = options.maxTextSize || 1024 * 1024; // 1MB default
-    const maxImageSize = options.maxImageSize || 10 * 1024 * 1024; // 10MB default
-
     if (SUPPORTED_IMAGE_EXTENSIONS.includes(extension)) {
       result.type = 'image';
-
-      if (fileStats.size > maxImageSize) {
-        result.error = `Image too large (${fileStats.size} bytes, max ${maxImageSize})`;
-        return result;
-      }
 
       // For images, read as base64 for AI processing
       const buffer = await readFile(validatedPath);
@@ -183,16 +190,24 @@ export async function processFileContent(filePath, options = {}) {
       // Read everything else as text
       result.type = 'text';
 
-      if (fileStats.size > maxTextSize) {
-        result.error = `File too large (${fileStats.size} bytes, max ${maxTextSize})`;
-        return result;
+      const rawContent = await readFile(validatedPath, 'utf8');
+      const allLines = rawContent.split(/\r?\n/);
+      result.totalLineCount = allLines.length;
+
+      // Apply line range extraction if specified
+      if (range) {
+        const extraction = extractLineRange(allLines, range);
+        result.content = extraction.lines.join('\n');
+        result.lineCount = extraction.lines.length;
+        result.rangeStart = extraction.actualStart;
+        result.rangeEnd = extraction.actualEnd;
+      } else {
+        result.content = rawContent;
+        result.lineCount = allLines.length;
       }
 
-      const content = await readFile(validatedPath, 'utf8');
-      result.content = content;
-      result.lineCount = content.split(/\r?\n/).length;
       result.encoding = 'utf8';
-      result.charCount = content.length;
+      result.charCount = result.content.length;
     }
 
     return result;
@@ -350,7 +365,12 @@ export function createFileContext(processedFiles, options = {}) {
   if (textFiles.length > 0) {
     contextText += '=== FILE CONTEXT ===\n\n';
     for (const file of textFiles) {
-      contextText += `--- ${file.originalPath || file.path} ---\n`;
+      // Show range info if this is a partial file extraction
+      let header = file.originalPath || file.path;
+      if (file.rangeStart !== undefined && file.totalLineCount !== undefined) {
+        header += ` (lines ${file.rangeStart}-${file.rangeEnd} of ${file.totalLineCount})`;
+      }
+      contextText += `--- ${header} ---\n`;
       if (options.includeMetadata) {
         contextText += `Size: ${file.size} bytes, Lines: ${file.lineCount || 'N/A'}\n`;
         contextText += `Last Modified: ${file.lastModified || 'N/A'}\n`;

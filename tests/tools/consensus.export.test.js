@@ -112,7 +112,7 @@ describe('Consensus Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     // Extract continuation_id from result
@@ -136,21 +136,21 @@ describe('Consensus Tool Export Feature', () => {
     // Verify request content
     const requestContent = await fs.readFile(
       path.join(exportDir, '1_request.txt'),
-      'utf8'
+      'utf8',
     );
     expect(requestContent).toBe('Should we use microservices or monolith?');
 
     // Verify response content contains consensus results
     const responseContent = await fs.readFile(
       path.join(exportDir, '1_response.txt'),
-      'utf8'
+      'utf8',
     );
     expect(responseContent).toContain('Consensus gathered');
     expect(responseContent).toContain('responses');
 
     // Verify metadata
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.continuation_id).toBe(continuationId);
     expect(metadata.models).toBe('gpt-5,gemini-pro');
@@ -170,7 +170,7 @@ describe('Consensus Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     const continuationId = result.continuation.id;
@@ -194,7 +194,7 @@ describe('Consensus Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     const continuationId = result.continuation.id;
@@ -202,7 +202,7 @@ describe('Consensus Tool Export Feature', () => {
 
     // Verify metadata shows cross_feedback disabled
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.enable_cross_feedback).toBe(false);
   });
@@ -222,7 +222,7 @@ describe('Consensus Tool Export Feature', () => {
         providers: mockProviders,
         continuationStore: mockContinuationStore,
         contextProcessor: mockContextProcessor,
-      }
+      },
     );
 
     const continuationId = result.continuation.id;
@@ -230,7 +230,7 @@ describe('Consensus Tool Export Feature', () => {
 
     // Verify metadata
     const metadata = JSON.parse(
-      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8')
+      await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.models).toBe('gpt-5,gemini-pro,claude-sonnet');
     expect(metadata.temperature).toBe(0.5);

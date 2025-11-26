@@ -8,6 +8,7 @@
 import { access, constants } from 'fs/promises';
 import { resolve, isAbsolute } from 'path';
 import { createToolError } from '../tools/index.js';
+import { parseFilePathWithRange } from './pathParser.js';
 
 /**
  * Validate that all provided file paths exist
@@ -38,11 +39,15 @@ export async function validateFilePaths(
       continue;
     }
 
+    // Parse and strip line range specifier before validation
+    // e.g., "file.txt{5:10}" -> "file.txt"
+    const { filePath: actualPath } = parseFilePathWithRange(filePath);
+
     // Convert to absolute path if needed
     // Use clientCwd if provided (for auto-detected client working directory), otherwise fall back to process.cwd()
-    const absolutePath = isAbsolute(filePath)
-      ? filePath
-      : resolve(options.clientCwd || process.cwd(), filePath);
+    const absolutePath = isAbsolute(actualPath)
+      ? actualPath
+      : resolve(options.clientCwd || process.cwd(), actualPath);
 
     try {
       // Check if file exists and is readable
