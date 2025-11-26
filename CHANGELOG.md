@@ -5,6 +5,24 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-11-26
+
+### Added
+
+- **Partial File Line Range Support**: Specify line ranges when including files
+  - Syntax: `file.txt{10:50}` extracts lines 10-50 inclusive
+  - Start-only: `file.txt{100:}` extracts from line 100 to end of file
+  - End-only: `file.txt{:20}` extracts first 20 lines
+  - Works with both `files` parameter in chat and consensus tools
+  - Context header shows range info: `(lines 10-50 of 200)`
+  - New `pathParser.js` utility for range parsing and extraction
+
+### Removed
+
+- **File Size Limits**: Removed unused `maxTextSize` and `maxImageSize` limits
+  - These were internal defaults (1MB text, 10MB images) that were never exposed
+  - Files of any size can now be processed (limited only by system memory)
+
 ## [2.8.5] - 2025-11-24
 
 ### Fixed
