@@ -1631,7 +1631,7 @@ consensusTool.inputSchema = {
       type: 'array',
       items: { type: 'string' },
       description:
-        'File paths for additional context (absolute or relative paths). Supports line ranges: "file.txt{10:50}" for lines 10-50, "{:20}" for first 20 lines, "{100:}" for line 100 to end. Example: ["./architecture.md{1:100}", "./requirements.txt"]',
+        'File paths for additional context (absolute or relative paths). Supports line ranges: file.txt{10:50}, file.txt{100:}. Example: ["./docs/architecture.md{1:100}", "./requirements.txt"]',
     },
     images: {
       type: 'array',
