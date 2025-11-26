@@ -509,59 +509,11 @@ These providers use local CLI tools and don't require API keys:
 
 /**
  * Help prompt handler function
- * @param {object} args - Prompt arguments
+ * @param {object} args - Prompt arguments (unused)
  * @param {object} config - Configuration object (optional)
  */
 export async function helpPromptHandler(args = {}, config = null) {
-  const { topic } = args;
-
   const fullHelp = generateHelpContent(config);
-
-  // If no topic specified, return full help
-  if (!topic) {
-    return {
-      messages: [
-        {
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Please provide the following comprehensive help guide for the Converse MCP Server to the user. Share all of this information with them:\n\n${fullHelp}`,
-          },
-        },
-      ],
-    };
-  }
-
-  // Extract specific sections based on topic
-  const topicLower = topic.toLowerCase();
-  let sectionContent = '';
-
-  if (topicLower === 'tools') {
-    const toolsMatch = fullHelp.match(/## Available Tools[\s\S]*?(?=## Provider Models|$)/);
-    sectionContent = toolsMatch ? toolsMatch[0] : 'Tools section not found';
-  } else if (topicLower === 'models' || topicLower === 'providers') {
-    const modelsMatch = fullHelp.match(
-      /## Provider Models[\s\S]*?(?=## Model Categories|$)/,
-    );
-    sectionContent = modelsMatch ? modelsMatch[0] : 'Models section not found';
-  } else if (topicLower === 'parameters') {
-    const paramsMatch = fullHelp.match(
-      /## Configuration Tips[\s\S]*?(?=## Best Practices|$)/,
-    );
-    sectionContent = paramsMatch
-      ? paramsMatch[0]
-      : 'Parameters section not found';
-  } else if (topicLower === 'examples') {
-    // Extract example usage from all tools
-    const examples = fullHelp.match(
-      /\*\*Example Usage:\*\*[\s\S]*?```[\s\S]*?```/g,
-    );
-    sectionContent = examples
-      ? '## Examples\n\n' + examples.join('\n\n')
-      : 'Examples not found';
-  } else {
-    sectionContent = `Topic "${topic}" not found. Available topics: tools, models, providers, parameters, examples`;
-  }
 
   return {
     messages: [
@@ -569,7 +521,7 @@ export async function helpPromptHandler(args = {}, config = null) {
         role: 'user',
         content: {
           type: 'text',
-          text: `Please share this help information about "${topic}" for the Converse MCP Server with the user:\n\n${sectionContent}`,
+          text: `Please provide the following comprehensive help guide for the Converse MCP Server to the user. Share all of this information with them:\n\n${fullHelp}`,
         },
       },
     ],
@@ -582,13 +534,6 @@ export async function helpPromptHandler(args = {}, config = null) {
 export const helpPromptMetadata = {
   name: 'help',
   description:
-    'Comprehensive guide for using the Converse MCP Server with all tools, parameters, and models',
-  arguments: [
-    {
-      name: 'topic',
-      description:
-        'Specific topic to get help on (optional). Options: tools, models, providers, parameters, examples',
-      required: false,
-    },
-  ],
+    'Comprehensive guide for Converse MCP Server - tools, models, parameters, and configuration',
+  arguments: [],
 };
