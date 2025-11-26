@@ -94,7 +94,6 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
-  - `CODEX_DEFAULT_MODEL` - Default model (default: gpt-5-codex)
 - **Supported Models**:
   - `codex` - OpenAI Codex agentic coding assistant
   - Thread-based sessions with persistent context
@@ -204,7 +203,6 @@ CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login availabl
 CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
 CODEX_SKIP_GIT_CHECK=true                    # true (default), false
 CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
-CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ```
 
 ### Claude Configuration (claude_desktop_config.json)

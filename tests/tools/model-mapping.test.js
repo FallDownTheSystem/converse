@@ -127,10 +127,10 @@ describe('Model Mapping', () => {
 
       // Test specific model configs
       // Models that should exist in native providers
-      expect(providers.openai.getModelConfig('gpt-4o')).toBeTruthy();
+      expect(providers.openai.getModelConfig('gpt-5')).toBeTruthy();
       expect(providers.openai.getModelConfig('o3')).toBeTruthy();
       expect(
-        providers.anthropic.getModelConfig('claude-3-5-sonnet-20241022'),
+        providers.anthropic.getModelConfig('claude-sonnet-4-5-20250929'),
       ).toBeTruthy();
       expect(providers.google.getModelConfig('gemini-2.5-flash')).toBeTruthy();
 
@@ -184,7 +184,7 @@ describe('Model Mapping', () => {
           reason: 'Slash format but model does not exist in Anthropic',
         },
         {
-          model: 'gpt-4o',
+          model: 'gpt-5.1',
           shouldExistIn: 'openai',
           reason: 'Simple name exists in OpenAI',
         },

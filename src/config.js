@@ -39,8 +39,6 @@ const logger = createLogger('config');
 const CONFIG_SCHEMA = {
   // Server configuration
   server: {
-    PORT: { type: 'number', default: 3157, description: 'Server port' },
-    HOST: { type: 'string', default: 'localhost', description: 'Server host' },
     NODE_ENV: {
       type: 'string',
       default: 'development',
@@ -277,11 +275,6 @@ const CONFIG_SCHEMA = {
       default: 'never',
       description:
         'Approval policy (never | untrusted | on-failure | on-request)',
-    },
-    CODEX_DEFAULT_MODEL: {
-      type: 'string',
-      default: 'gpt-5-codex',
-      description: 'Default Codex model',
     },
   },
 
@@ -819,13 +812,6 @@ export async function validateRuntimeConfig(config) {
     // Validate Codex configuration
     validateCodexConfig(config);
 
-    // Validate server configuration
-    if (config.server.port < 1 || config.server.port > 65535) {
-      throw new ConfigurationError(
-        `Invalid port number: ${config.server.port}`,
-      );
-    }
-
     // Validate environment
     const validEnvs = ['development', 'production', 'test'];
     if (!validEnvs.includes(config.environment.nodeEnv)) {
@@ -933,7 +919,7 @@ function logConfigurationSummary(config) {
   logger.info('Configuration loaded successfully', {
     data: {
       environment: config.environment.nodeEnv,
-      port: config.server.port,
+      transport: config.transport.mcptransport || 'stdio',
       logLevel: config.server.log_level,
       availableProviders: availableProviders.join(', ') || 'none',
       mcpServer: `${config.mcp.name} v${config.mcp.version}`,

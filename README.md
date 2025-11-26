@@ -353,7 +353,6 @@ CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login availabl
 CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
 CODEX_SKIP_GIT_CHECK=true                    # true (default), false
 CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
-CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ```
 
 ### Configuration Options

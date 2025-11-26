@@ -10,51 +10,6 @@ import { debugLog, debugError } from '../utils/console.js';
 
 // Define supported Gemini models with their capabilities
 const SUPPORTED_MODELS = {
-  'gemini-2.0-flash': {
-    modelName: 'gemini-2.0-flash',
-    friendlyName: 'Gemini (Flash 2.0)',
-    contextWindow: 1048576, // 1M tokens
-    maxOutputTokens: 65536,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: true,
-    supportsThinking: false,
-    supportsWebSearch: true,
-    maxThinkingTokens: 0,
-    timeout: 300000,
-    description:
-      'Gemini 2.0 Flash (1M context) - Latest fast model, supports audio/video input and grounding',
-    aliases: [
-      'flash-2.0',
-      'flash2',
-      'flash 2.0',
-      'gemini flash 2.0',
-      'gemini-2.0-flash-latest',
-    ],
-  },
-  'gemini-2.0-flash-lite': {
-    modelName: 'gemini-2.0-flash-lite',
-    friendlyName: 'Gemini (Flash Lite 2.0)',
-    contextWindow: 1048576, // 1M tokens
-    maxOutputTokens: 65536,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsTemperature: true,
-    supportsThinking: false,
-    supportsWebSearch: true,
-    maxThinkingTokens: 0,
-    timeout: 300000,
-    description:
-      'Gemini 2.0 Flash Lite (1M context) - Lightweight fast model, text-only with grounding',
-    aliases: [
-      'flashlite',
-      'flash-lite',
-      'flash lite',
-      'flash-lite-2.0',
-      'gemini flash lite',
-      'gemini-2.0-flash-lite-latest',
-    ],
-  },
   'gemini-2.5-flash': {
     modelName: 'gemini-flash-latest',
     friendlyName: 'Gemini (Flash 2.5)',

@@ -78,17 +78,17 @@ describe('SummarizationService', () => {
       expect(title).toBe('Create a REST API endpoint for user authentication');
     });
 
-    it('should truncate title to 50 characters', async () => {
+    it('should truncate title to 60 characters', async () => {
       mockProviders.openai.invoke.mockResolvedValue({
         content:
-          'This is a very long title that definitely exceeds fifty characters limit',
+          'This is a very long title that definitely exceeds sixty characters in total length',
       });
 
       const title = await service.generateTitle('Test prompt');
 
-      // Note: trim() first, then substring(0, 50) gives exactly 50 chars (may end with space)
-      expect(title).toBe('This is a very long title that definitely exceeds ');
-      expect(title.length).toBe(50);
+      // Note: trim() first, then substring(0, 60) gives exactly 60 chars
+      expect(title).toBe('This is a very long title that definitely exceeds sixty char');
+      expect(title.length).toBe(60);
     });
 
     it('should handle empty prompt gracefully', async () => {

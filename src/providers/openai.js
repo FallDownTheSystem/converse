@@ -116,21 +116,6 @@ const SUPPORTED_MODELS = {
       'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
     aliases: ['o3-2025-01-31'],
   },
-  'o3-mini': {
-    modelName: 'o3-mini',
-    friendlyName: 'OpenAI (O3-mini)',
-    contextWindow: 200000,
-    maxOutputTokens: 100000,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: false,
-    supportsWebSearch: false, // o3-mini does not support web search
-    supportsResponsesAPI: true,
-    timeout: 300000,
-    description:
-      'Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity',
-    aliases: ['o3mini', 'o3 mini', 'o3-mini-2025-01-31'],
-  },
   'o3-pro-2025-06-10': {
     modelName: 'o3-pro-2025-06-10',
     friendlyName: 'OpenAI (O3-Pro)',
@@ -175,36 +160,6 @@ const SUPPORTED_MODELS = {
     description:
       'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
     aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1', 'gpt-4.1-latest'],
-  },
-  'gpt-4o': {
-    modelName: 'gpt-4o',
-    friendlyName: 'OpenAI (GPT-4o)',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: true,
-    supportsWebSearch: true,
-    supportsResponsesAPI: true,
-    timeout: 180000,
-    description:
-      'GPT-4o (128K context) - Multimodal flagship model with vision capabilities',
-    aliases: ['gpt4o', 'gpt 4o', '4o'],
-  },
-  'gpt-4o-mini': {
-    modelName: 'gpt-4o-mini',
-    friendlyName: 'OpenAI (GPT-4o-mini)',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: true,
-    supportsWebSearch: true,
-    supportsResponsesAPI: true,
-    timeout: 120000,
-    description:
-      'GPT-4o-mini (128K context) - Fast and efficient multimodal model',
-    aliases: ['gpt4o-mini', 'gpt 4o mini', '4o mini', '4o-mini'],
   },
   'o3-deep-research-2025-06-26': {
     modelName: 'o3-deep-research-2025-06-26',

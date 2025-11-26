@@ -475,7 +475,6 @@ gemini
 - `CODEX_SANDBOX_MODE` - Filesystem access control
 - `CODEX_SKIP_GIT_CHECK` - Git repository requirement
 - `CODEX_APPROVAL_POLICY` - Command approval behavior
-- `CODEX_DEFAULT_MODEL` - Default model when using `model: 'codex'`
 
 ### Model Selection
 
@@ -541,9 +540,6 @@ Control Codex behavior through environment variables:
 - `on-failure`: Prompt when commands fail
 - `on-request`: Let model decide (may hang in headless mode)
 
-**CODEX_DEFAULT_MODEL** - Default model when `model: 'codex'`:
-- Default: `gpt-5-codex`
-
 **Authentication:**
 - Requires ChatGPT login (system-wide, persists across restarts)
 - Alternative: Set `CODEX_API_KEY` environment variable for headless deployments
@@ -557,7 +553,6 @@ CODEX_API_KEY=your_codex_api_key_here
 CODEX_SANDBOX_MODE=read-only                 # Default: read-only
 CODEX_SKIP_GIT_CHECK=true                    # Default: true
 CODEX_APPROVAL_POLICY=never                  # Default: never
-CODEX_DEFAULT_MODEL=gpt-5-codex              # Default: gpt-5-codex
 ```
 
 ## Context Processing

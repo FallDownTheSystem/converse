@@ -87,10 +87,9 @@ describe('OpenAI Provider', () => {
 
       expect(typeof models).toBe('object');
       expect('o3' in models).toBe(true);
-      expect('o3-mini' in models).toBe(true);
-      expect('gpt-4o' in models).toBe(true);
-      expect('gpt-4o-mini' in models).toBe(true);
-      expect('gpt-5' in models).toBe(true);
+      expect('o4-mini' in models).toBe(true);
+      expect('gpt-4.1-2025-04-14' in models).toBe(true);
+      expect('gpt-5.1' in models).toBe(true);
       expect('gpt-5-pro' in models).toBe(true);
     });
 
@@ -131,10 +130,10 @@ describe('OpenAI Provider', () => {
     });
 
     it('should return config for model alias', () => {
-      const config = openaiProvider.getModelConfig('o3mini');
+      const config = openaiProvider.getModelConfig('o4mini');
 
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('o3-mini');
+      expect(config.modelName).toBe('o4-mini');
     });
 
     it('should return null for unknown model', () => {
@@ -237,13 +236,12 @@ describe('OpenAI Provider', () => {
       // For now, we verify the model configurations
       const models = openaiProvider.getSupportedModels();
 
-      // O3 models don't support temperature
+      // O3/O4 models don't support temperature
       expect(models['o3'].supportsTemperature).toBe(false);
-      expect(models['o3-mini'].supportsTemperature).toBe(false);
+      expect(models['o4-mini'].supportsTemperature).toBe(false);
 
-      // GPT-4o models do support temperature
-      expect(models['gpt-4o'].supportsTemperature).toBe(true);
-      expect(models['gpt-4o-mini'].supportsTemperature).toBe(true);
+      // GPT-4.1 models do support temperature
+      expect(models['gpt-4.1-2025-04-14'].supportsTemperature).toBe(true);
     });
   });
 
@@ -252,7 +250,7 @@ describe('OpenAI Provider', () => {
       const models = openaiProvider.getSupportedModels();
 
       // Verify aliases are configured
-      expect(models['o3-mini'].aliases.includes('o3mini')).toBe(true);
+      expect(models['o4-mini'].aliases.includes('o4mini')).toBe(true);
       expect(models['o3-pro-2025-06-10'].aliases.includes('o3-pro')).toBe(true);
     });
   });

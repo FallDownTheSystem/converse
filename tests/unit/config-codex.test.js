@@ -18,7 +18,6 @@ describe('Codex Configuration', () => {
     delete process.env.CODEX_SANDBOX_MODE;
     delete process.env.CODEX_SKIP_GIT_CHECK;
     delete process.env.CODEX_APPROVAL_POLICY;
-    delete process.env.CODEX_DEFAULT_MODEL;
   });
 
   afterEach(() => {
@@ -34,7 +33,6 @@ describe('Codex Configuration', () => {
       expect(config.providers.codexsandboxmode).toBe('read-only');
       expect(config.providers.codexskipgitcheck).toBe(true);
       expect(config.providers.codexapprovalpolicy).toBe('never');
-      expect(config.providers.codexdefaultmodel).toBe('gpt-5-codex');
     });
   });
 
@@ -137,34 +135,17 @@ describe('Codex Configuration', () => {
     });
   });
 
-  describe('Default Model Configuration', () => {
-    it('should use default model when not specified', async () => {
-      const config = await loadConfig();
-
-      expect(config.providers.codexdefaultmodel).toBe('gpt-5-codex');
-    });
-
-    it('should accept custom default model', async () => {
-      process.env.CODEX_DEFAULT_MODEL = 'o3-codex';
-      const config = await loadConfig();
-
-      expect(config.providers.codexdefaultmodel).toBe('o3-codex');
-    });
-  });
-
   describe('Combined Configuration', () => {
     it('should load all Codex config values together', async () => {
       process.env.CODEX_SANDBOX_MODE = 'workspace-write';
       process.env.CODEX_SKIP_GIT_CHECK = 'false';
       process.env.CODEX_APPROVAL_POLICY = 'on-failure';
-      process.env.CODEX_DEFAULT_MODEL = 'o3-codex';
 
       const config = await loadConfig();
 
       expect(config.providers.codexsandboxmode).toBe('workspace-write');
       expect(config.providers.codexskipgitcheck).toBe(false);
       expect(config.providers.codexapprovalpolicy).toBe('on-failure');
-      expect(config.providers.codexdefaultmodel).toBe('o3-codex');
     });
   });
 
