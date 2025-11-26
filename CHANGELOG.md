@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.3] - 2025-11-26
+
+### Changed
+
+- **Help Prompt Simplified**: Removed topic argument from help prompt
+  - Now always returns full comprehensive guide without requiring arguments
+  - Improves UX in MCP clients like Claude Code that prompt for optional arguments
+
 ## [2.9.2] - 2025-11-26
 
 ### Removed
