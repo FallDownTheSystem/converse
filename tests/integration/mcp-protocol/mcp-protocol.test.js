@@ -3,6 +3,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRouter } from '../../../src/router.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 describe('MCP Protocol Workflow Tests', () => {
   let config;
@@ -237,14 +238,14 @@ describe('MCP Protocol Workflow Tests', () => {
       expect(response.content).toBeDefined();
       expect(Array.isArray(response.content)).toBe(true);
 
-      // Consensus tool should return JSON content
+      // Consensus tool should return JSON content (may have status line prefix)
       const content = response.content[0];
       expect(content.type).toBe('text');
 
-      // Should be valid JSON
-      expect(() => JSON.parse(content.text)).not.toThrow();
+      // Should be parseable JSON (may have status line prefix)
+      expect(() => parseJsonResponse(content.text)).not.toThrow();
 
-      const consensusResult = JSON.parse(content.text);
+      const consensusResult = parseJsonResponse(content.text);
       expect(consensusResult).toHaveProperty('status');
       expect(consensusResult).toHaveProperty('models_consulted');
       expect(consensusResult).toHaveProperty('phases');

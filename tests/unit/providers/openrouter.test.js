@@ -25,7 +25,7 @@ vi.mock('../../../src/providers/openrouter-endpoints-client.js', () => {
 });
 
 vi.mock('openai', () => {
-  const mockOpenAI = vi.fn(() => {
+  const mockOpenAI = vi.fn(function () {
     return {
       chat: {
         completions: {

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../../utils/responseParser.js';
 import {
   testWithApiKeys,
   hasOpenAI,
@@ -80,7 +81,7 @@ describe('OpenAI Feature-Specific Tests', () => {
           expect(result).toBeDefined();
           expect(result.isError).toBeFalsy();
 
-          const consensusResult = JSON.parse(result.content[0].text);
+          const consensusResult = parseJsonResponse(result.content[0].text);
           expect(consensusResult.status).toBe('consensus_complete');
           expect(consensusResult.models_consulted).toBe(2);
           expect(consensusResult.successful_initial_responses).toBe(2);

@@ -12,7 +12,7 @@ const mockCreate = vi.fn();
 const mockOpenAIInstances = [];
 
 vi.mock('openai', () => {
-  const mockOpenAI = vi.fn((config) => {
+  const mockOpenAI = vi.fn(function (config) {
     const instance = {
       apiKey: config.apiKey,
       baseURL: config.baseURL,

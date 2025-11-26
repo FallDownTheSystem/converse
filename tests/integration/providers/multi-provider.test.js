@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 import {
   testWithApiKeys,
   hasOpenAI,
@@ -89,7 +90,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
           expect(result).toBeDefined();
           expect(result.isError).toBeFalsy();
 
-          const consensusResult = JSON.parse(result.content[0].text);
+          const consensusResult = parseJsonResponse(result.content[0].text);
           expect(consensusResult.status).toBe('consensus_complete');
           expect(consensusResult.models_consulted).toBe(models.length);
           expect(consensusResult.successful_initial_responses).toBeGreaterThan(
@@ -125,7 +126,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
 
           expect(result.isError).toBeFalsy();
 
-          const consensusResult = JSON.parse(result.content[0].text);
+          const consensusResult = parseJsonResponse(result.content[0].text);
           expect(consensusResult.phases.initial).toBeDefined();
           expect(consensusResult.phases.refined).toBeDefined();
           expect(consensusResult.refined_responses).toBeGreaterThan(0);
@@ -171,7 +172,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
 
           expect(result.isError).toBeFalsy();
 
-          const consensusResult = JSON.parse(result.content[0].text);
+          const consensusResult = parseJsonResponse(result.content[0].text);
           expect(consensusResult.models_consulted).toBe(models.length);
 
           // All models should agree on this simple math
@@ -223,7 +224,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const consensusResult = JSON.parse(result.content[0].text);
+        const consensusResult = parseJsonResponse(result.content[0].text);
         expect(consensusResult.models_consulted).toBe(models.length);
 
         // Count successful responses
@@ -264,7 +265,7 @@ describe('Multi-Provider Consensus Integration Tests', () => {
 
           expect(result.isError).toBeFalsy();
 
-          const consensusResult = JSON.parse(result.content[0].text);
+          const consensusResult = parseJsonResponse(result.content[0].text);
 
           // Should still complete with partial success
           expect(consensusResult.status).toBe('consensus_complete');

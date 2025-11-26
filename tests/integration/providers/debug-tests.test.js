@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 import {
   testWithApiKeys,
   hasOpenAI,
@@ -132,13 +133,13 @@ describe('Debug Provider Message Format', () => {
           logger.info('[debug-tests] Consensus debug test completed', {
             isError: result.isError,
             modelsConsulted: result.content?.[0]?.text
-              ? JSON.parse(result.content[0].text).models_consulted
+              ? parseJsonResponse(result.content[0].text).models_consulted
               : 0,
           });
 
           expect(result).toBeDefined();
           if (!result.isError) {
-            const consensusResult = JSON.parse(result.content[0].text);
+            const consensusResult = parseJsonResponse(result.content[0].text);
             expect(consensusResult.status).toBe('consensus_complete');
           }
         } finally {

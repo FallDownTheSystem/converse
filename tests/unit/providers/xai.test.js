@@ -8,7 +8,7 @@ import { xaiProvider } from '../../../src/providers/xai.js';
 
 // Mock the OpenAI SDK
 vi.mock('openai', () => {
-  const MockOpenAI = vi.fn().mockImplementation(() => {
+  const MockOpenAI = vi.fn().mockImplementation(function () {
     return {
       chat: {
         completions: {
@@ -342,7 +342,7 @@ describe('XAI Provider', () => {
       };
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
         };
@@ -398,7 +398,7 @@ describe('XAI Provider', () => {
       };
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
         };
@@ -442,7 +442,7 @@ describe('XAI Provider', () => {
       };
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
         };
@@ -496,7 +496,7 @@ describe('XAI Provider', () => {
       };
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
         };
@@ -551,7 +551,7 @@ describe('XAI Provider', () => {
       };
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
         };
@@ -599,7 +599,7 @@ describe('XAI Provider', () => {
         };
 
         const mockCreate = vi.fn().mockResolvedValue(mockStream);
-        OpenAI.mockImplementation(() => {
+        OpenAI.mockImplementation(function () {
           return {
             chat: { completions: { create: mockCreate } },
           };

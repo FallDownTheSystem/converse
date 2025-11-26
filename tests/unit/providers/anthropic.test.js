@@ -15,7 +15,7 @@ const mockStream = vi.fn();
 vi.mock('@anthropic-ai/sdk', () => {
   const MockAnthropic = function (config) {
     this.apiKey = config.apiKey;
-    this.messages = {
+    const messagesObj = {
       create: vi.fn((options) => {
         // Route to appropriate mock based on stream parameter
         if (options.stream) {
@@ -24,6 +24,11 @@ vi.mock('@anthropic-ai/sdk', () => {
         return mockCreate(options);
       }),
       stream: mockStream,
+    };
+    this.messages = messagesObj;
+    // Also provide beta.messages for beta features
+    this.beta = {
+      messages: messagesObj,
     };
   };
 
@@ -303,7 +308,7 @@ describe('Anthropic Provider', () => {
 
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.model).toBe('claude-haiku-4-5-20251001');
-      expect(callArgs.temperature).toBe(1); // Temperature is forced to 1 for thinking models
+      expect(callArgs.temperature).toBe(0.5); // Temperature is only forced to 1 when thinking is enabled
       expect(callArgs.max_tokens).toBe(2000);
     });
 
@@ -735,6 +740,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
+        model: 'claude-sonnet-4-5-20250929', // Specify model to match expectations
         config: mockConfig,
       });
 

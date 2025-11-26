@@ -3,6 +3,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 describe('Consensus Performance Tests', () => {
   let config;
@@ -13,38 +14,9 @@ describe('Consensus Performance Tests', () => {
   // Helper function to safely parse consensus response
   const parseConsensusResponse = (result, testName = 'unknown') => {
     try {
-      return JSON.parse(result.content[0].text);
+      return parseJsonResponse(result.content[0].text);
     } catch (parseError) {
-      // Check if this is a response that starts with continuation_id followed by JSON
       const responseText = result.content[0].text || '';
-      if (
-        responseText.includes('continuation_id:') &&
-        responseText.includes('{')
-      ) {
-        // Try to extract the JSON part after the continuation_id line
-        const lines = responseText.split('\n');
-        const jsonStartIndex = lines.findIndex((line) =>
-          line.trim().startsWith('{'),
-        );
-        if (jsonStartIndex >= 0) {
-          const jsonText = lines.slice(jsonStartIndex).join('\n');
-          try {
-            console.log(
-              `DEBUG: Extracting JSON from continuation response in ${testName}`,
-            );
-            return JSON.parse(jsonText);
-          } catch (jsonParseError) {
-            console.log(
-              `DEBUG: Failed to parse extracted JSON in ${testName}:`,
-              {
-                error: jsonParseError.message,
-                extractedText: jsonText.substring(0, 200) + '...',
-              },
-            );
-          }
-        }
-      }
-
       console.log(
         `DEBUG: Failed to parse consensus response as JSON in ${testName}:`,
         {

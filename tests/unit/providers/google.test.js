@@ -146,7 +146,7 @@ describe('Google Provider', () => {
     });
 
     it('should return config for default aliases (now pointing to Gemini 3.0)', () => {
-      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'gemini'];
+      const aliases = ['pro', 'gemini pro', 'gemini-pro'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);

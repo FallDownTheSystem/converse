@@ -5,6 +5,7 @@ import { processUnifiedContext } from '../../../src/utils/contextProcessor.js';
 import { getProviders } from '../../../src/providers/index.js';
 import { getTools } from '../../../src/tools/index.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 describe('Tools Integration Tests', () => {
   let config;
@@ -130,7 +131,7 @@ describe('Tools Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
 
       // Should be valid JSON
-      const consensusResult = JSON.parse(result.content[0].text);
+      const consensusResult = parseJsonResponse(result.content[0].text);
       expect(consensusResult.status).toBeDefined();
       expect(consensusResult.models_consulted).toBe(1);
     });
@@ -147,7 +148,7 @@ describe('Tools Integration Tests', () => {
         dependencies,
       );
 
-      const consensusResult = JSON.parse(result.content[0].text);
+      const consensusResult = parseJsonResponse(result.content[0].text);
       expect(consensusResult.models_consulted).toBe(2);
       expect(consensusResult.phases).toBeDefined();
       expect(consensusResult.phases.initial).toBeDefined();
@@ -165,7 +166,7 @@ describe('Tools Integration Tests', () => {
         dependencies,
       );
 
-      const consensusResult = JSON.parse(result.content[0].text);
+      const consensusResult = parseJsonResponse(result.content[0].text);
       // Cross-feedback only happens with multiple successful responses
       if (consensusResult.successful_initial_responses > 1) {
         expect(consensusResult.phases.refined).toBeDefined();

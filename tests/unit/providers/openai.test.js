@@ -8,7 +8,7 @@ import { openaiProvider } from '../../../src/providers/openai.js';
 
 // Mock the OpenAI SDK
 vi.mock('openai', () => {
-  const MockOpenAI = vi.fn().mockImplementation(() => {
+  const MockOpenAI = vi.fn().mockImplementation(function () {
     return {
       chat: {
         completions: {
@@ -280,7 +280,7 @@ describe('OpenAI Provider', () => {
         model: 'gpt-5-mini',
       });
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: {
             completions: {
@@ -336,7 +336,7 @@ describe('OpenAI Provider', () => {
         usage: { input_tokens: 5, output_tokens: 10, total_tokens: 15 },
       });
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -353,7 +353,7 @@ describe('OpenAI Provider', () => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           model: 'o3',
-          reasoning: { effort: 'high' },
+          reasoning: expect.objectContaining({ effort: 'high' }),
         }),
       );
     });
@@ -366,7 +366,7 @@ describe('OpenAI Provider', () => {
         usage: {},
       });
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -411,7 +411,7 @@ describe('OpenAI Provider', () => {
         }),
       );
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -474,7 +474,7 @@ describe('OpenAI Provider', () => {
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -594,7 +594,7 @@ describe('OpenAI Provider', () => {
 
       const mockCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -625,7 +625,7 @@ describe('OpenAI Provider', () => {
 
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'gpt-5',
+        model: 'gpt-5.1', // 'gpt-5' resolves to 'gpt-5.1'
         api_type: 'Responses API',
       });
 
@@ -644,7 +644,7 @@ describe('OpenAI Provider', () => {
         content: 'Response text',
         stop_reason: 'completed',
         metadata: {
-          model: 'gpt-5',
+          model: 'gpt-5', // end event uses model from response, not resolved
           api_type: 'Responses API',
         },
       });
@@ -660,7 +660,7 @@ describe('OpenAI Provider', () => {
 
       const mockCreate = vi.fn().mockRejectedValue(streamError);
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -701,7 +701,7 @@ describe('OpenAI Provider', () => {
         usage: { input_tokens: 5, output_tokens: 3, total_tokens: 8 },
       });
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockCreate } },
           responses: { create: mockCreate },
@@ -763,7 +763,7 @@ describe('OpenAI Provider', () => {
       const mockChatCreate = vi.fn().mockResolvedValue(mockStream);
       const mockResponsesCreate = vi.fn().mockResolvedValue(mockStream);
 
-      OpenAI.mockImplementation(() => {
+      OpenAI.mockImplementation(function () {
         return {
           chat: { completions: { create: mockChatCreate } },
           responses: { create: mockResponsesCreate },

@@ -6,6 +6,7 @@ import {
   createMultipleTestClients,
   stopMultipleTestClients,
 } from './MCPTestClient.js';
+import { parseJsonResponse } from './responseParser.js';
 
 describe('MCPTestClient', () => {
   let client;
@@ -162,7 +163,7 @@ describe('MCPTestClient', () => {
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
 
-      const consensusResult = JSON.parse(result.content[0].text);
+      const consensusResult = parseJsonResponse(result.content[0].text);
       expect(consensusResult.status).toBeDefined();
       expect(consensusResult.models_consulted).toBe(1);
     });

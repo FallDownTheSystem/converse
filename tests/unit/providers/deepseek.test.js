@@ -11,7 +11,7 @@ import { ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
 const mockCreate = vi.fn();
 
 vi.mock('openai', () => {
-  const mockOpenAI = vi.fn(() => {
+  const mockOpenAI = vi.fn(function () {
     return {
       chat: {
         completions: {

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 import {
   testWithApiKeys,
@@ -47,16 +48,16 @@ describe('Consensus Tool Image Processing', () => {
         logger.info('[consensus-image-test] Consensus result', {
           isError: result.isError,
           status: result.content?.[0]?.text
-            ? JSON.parse(result.content[0].text).status
+            ? parseJsonResponse(result.content[0].text).status
             : 'unknown',
           models_consulted: result.content?.[0]?.text
-            ? JSON.parse(result.content[0].text).models_consulted
+            ? parseJsonResponse(result.content[0].text).models_consulted
             : 0,
         });
 
         expect(result.isError).toBe(false);
 
-        const response = JSON.parse(result.content[0].text);
+        const response = parseJsonResponse(result.content[0].text);
         expect(response.status).toBe('consensus_complete');
         expect(response.models_consulted).toBe(3);
         expect(response.successful_initial_responses).toBe(3);

@@ -7,6 +7,7 @@ import {
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 describe('Enhanced MCP Protocol Compliance Tests', () => {
   let config;
@@ -275,8 +276,8 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       expect(Array.isArray(callResponse.content)).toBe(true);
       expect(callResponse.content[0].type).toBe('text');
 
-      // 5. Validate structured JSON response
-      const consensusResult = JSON.parse(callResponse.content[0].text);
+      // 5. Validate structured response (may have status line prefix)
+      const consensusResult = parseJsonResponse(callResponse.content[0].text);
       expect(consensusResult.status).toBeDefined();
       expect(consensusResult.models_consulted).toBeDefined();
       expect(consensusResult.phases).toBeDefined();

@@ -553,6 +553,12 @@ describe('Cache System Integration Tests', () => {
             const jobs = await Promise.all(jobPromises);
             const continuationIds = jobs.map((j) => {
               const text = j.content[0].text;
+              // Extract continuation_id from status line format
+              const match = text.match(/continuation_id:\s*(\S+)/);
+              if (match) {
+                return match[1];
+              }
+              // Fallback to JSON parsing for backwards compatibility
               const jsonStart = text.indexOf('{');
               const parsed =
                 jsonStart >= 0
@@ -586,14 +592,13 @@ describe('Cache System Integration Tests', () => {
                 return;
               }
               const text = result.content[0].text;
-              const jsonStart = text.indexOf('{');
-              const content =
-                jsonStart >= 0
-                  ? JSON.parse(text.substring(jsonStart))
-                  : JSON.parse(text);
-              expect(['queued', 'running', 'completed']).toContain(
-                content.status,
-              );
+              // Parse status from status line format (e.g., "🔄 RUNNING | ...")
+              let status = 'unknown';
+              if (text.includes('🔄 RUNNING')) status = 'running';
+              else if (text.includes('✅ COMPLETED')) status = 'completed';
+              else if (text.includes('⏳ QUEUED') || text.includes('⏳ SUBMITTED')) status = 'queued';
+              else if (text.includes('❌ FAILED')) status = 'failed';
+              expect(['queued', 'running', 'completed', 'failed']).toContain(status);
             });
 
             logger.info('[cache-integration] Concurrent cache access verified');

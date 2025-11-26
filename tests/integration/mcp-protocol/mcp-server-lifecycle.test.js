@@ -90,7 +90,8 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       expect(config.mcp).toBeDefined();
 
       // Validate configuration structure
-      expect(config.server.port).toBeTypeOf('number');
+      // Port is in transport config, not server config
+      expect(config.transport.port).toBeTypeOf('number');
       expect(config.server.node_env).toBeTypeOf('string');
       expect(config.server.log_level).toBeTypeOf('string');
       // Load expected values from package.json
@@ -103,8 +104,9 @@ describe('MCP Server Lifecycle Integration Tests', () => {
 
     it('should validate environment variables correctly', () => {
       // Test that required configuration is present
-      expect(config.server.port).toBeGreaterThan(0);
-      expect(config.server.port).toBeLessThanOrEqual(65535);
+      // Port is in transport config
+      expect(config.transport.port).toBeGreaterThan(0);
+      expect(config.transport.port).toBeLessThanOrEqual(65535);
       expect(
         ['development', 'test', 'production'].includes(config.server.node_env),
       ).toBe(true);
@@ -237,17 +239,26 @@ describe('MCP Server Lifecycle Integration Tests', () => {
 
     it('should handle configuration errors gracefully', async () => {
       // Test with invalid configuration
+      // Must match the structure that validateRuntimeConfig expects:
+      // - environment.nodeEnv (for NODE_ENV validation)
+      // - server.log_level (for LOG_LEVEL validation)
+      // - transport.mcptransport, transport.port (for HTTP validation)
       const invalidConfig = {
         server: {
+          log_level: 'invalid-level', // Invalid log level
+        },
+        transport: {
+          mcptransport: 'http',
           port: -1, // Invalid port
-          nodeEnv: 'invalid-env',
-          logLevel: 'invalid-level',
+        },
+        environment: {
+          nodeEnv: 'invalid-env', // Invalid environment
         },
         apiKeys: {},
         providers: {},
         mcp: {
-          serverName: '',
-          serverVersion: '',
+          name: '',
+          version: '',
         },
       };
 
@@ -261,7 +272,7 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       } catch (error) {
         expect(error).toBeDefined();
         expect(error.message).toMatch(
-          /(port|environment|log level|server name|configuration|invalid)/i,
+          /(NODE_ENV|LOG_LEVEL|HTTP_PORT|configuration|invalid)/i,
         );
       }
     });

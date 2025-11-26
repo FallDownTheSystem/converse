@@ -7,6 +7,7 @@ import { getProviders } from '../../../src/providers/index.js';
 import { getTools } from '../../../src/tools/index.js';
 import { processUnifiedContext } from '../../../src/utils/contextProcessor.js';
 import { logger } from '../../../src/utils/logger.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 
 describe('Error Scenario and Recovery Tests', () => {
   let config;
@@ -356,7 +357,7 @@ describe('Error Scenario and Recovery Tests', () => {
       expect(result.content).toBeDefined();
 
       if (!result.isError) {
-        const consensusData = JSON.parse(result.content[0].text);
+        const consensusData = parseJsonResponse(result.content[0].text);
         expect(consensusData.models_consulted).toBeGreaterThan(0);
 
         // May have some failures but should have at least some successes
@@ -665,7 +666,7 @@ describe('Error Scenario and Recovery Tests', () => {
       });
 
       if (!result.isError) {
-        const consensusData = JSON.parse(result.content[0].text);
+        const consensusData = parseJsonResponse(result.content[0].text);
 
         // Should have attempted all models
         expect(consensusData.models_consulted).toBe(3);

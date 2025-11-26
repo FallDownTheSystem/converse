@@ -10,6 +10,7 @@ import { withHTTPTestServer } from '../../utils/HTTPMCPServerManager.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
 import { testWithApiKeys } from '../../utils/conditionalTest.js';
+import { parseJsonResponse } from '../../utils/responseParser.js';
 import 'dotenv/config';
 
 describe('MCP Client Integration Test Suite', () => {
@@ -257,7 +258,7 @@ describe('MCP Client Integration Test Suite', () => {
         const content = result.content[0];
         expect(content.type).toBe('text');
 
-        const consensusResult = JSON.parse(content.text);
+        const consensusResult = parseJsonResponse(content.text);
         expect(consensusResult.status).toBe('consensus_complete');
         expect(consensusResult.models_consulted).toBe(1);
         // In test environments, API calls may fail, so we allow 0 or 1 successful responses
@@ -642,7 +643,7 @@ describe('MCP Client Integration Test Suite', () => {
 
             expect(result.isError).toBe(false);
 
-            const consensusResult = JSON.parse(result.content[0].text);
+            const consensusResult = parseJsonResponse(result.content[0].text);
             expect(consensusResult.status).toBe('consensus_complete');
             expect(
               consensusResult.successful_initial_responses,
