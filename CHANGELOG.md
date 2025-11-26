@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2] - 2025-11-26
+
 ### Removed
 
 - **`CODEX_DEFAULT_MODEL` config**: Removed unused configuration option
