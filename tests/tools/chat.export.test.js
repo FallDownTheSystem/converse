@@ -299,6 +299,16 @@ describe('Chat Tool Export Feature', () => {
   it('should handle path traversal attempts in continuation_id', async () => {
     const maliciousContinuationId = '../../../etc/passwd';
 
+    // Mock continuation store to return existing conversation (so the ID is preserved)
+    mockContinuationStore.get = vi.fn(async () => ({
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+      ],
+      provider: 'openai',
+      model: 'gpt-5',
+      lastUpdated: Date.now(),
+    }));
+
     // Run chat with malicious continuation_id
     await chatTool(
       {
@@ -315,7 +325,7 @@ describe('Chat Tool Export Feature', () => {
       },
     );
 
-    // Should create folder with sanitized name
+    // Should create folder with sanitized name (path.basename extracts 'passwd')
     const safeExportDir = path.join(testDir, 'passwd');
     const dirStats = await fs.stat(safeExportDir);
     expect(dirStats.isDirectory()).toBe(true);
@@ -325,12 +335,22 @@ describe('Chat Tool Export Feature', () => {
   });
 
   it('should export conversation with files and images', async () => {
+    // Create real test files
+    const file1 = path.join(testDir, 'file1.js');
+    const file2 = path.join(testDir, 'file2.md');
+    const imagePath = path.join(testDir, 'image.png');
+    await fs.writeFile(file1, 'const x = 1;');
+    await fs.writeFile(file2, '# Test');
+    // Create a minimal PNG (1x1 transparent pixel)
+    const minimalPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    await fs.writeFile(imagePath, minimalPng);
+
     // Run chat with files and images
     const result = await chatTool(
       {
         prompt: 'Analyze these files',
-        files: ['/path/to/file1.js', '/path/to/file2.md'],
-        images: ['data:image/png;base64,iVBORw0KG...', '/path/to/image.png'],
+        files: [file1, file2],
+        images: ['data:image/png;base64,iVBORw0KG...', imagePath],
         export: true,
         model: 'gpt-5',
       },
@@ -353,8 +373,8 @@ describe('Chat Tool Export Feature', () => {
     const metadata = JSON.parse(
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
-    expect(metadata.files).toEqual(['/path/to/file1.js', '/path/to/file2.md']);
-    expect(metadata.images).toEqual(['[base64 image]', '/path/to/image.png']);
+    expect(metadata.files).toEqual([file1, file2]);
+    expect(metadata.images).toEqual(['[base64 image]', imagePath]);
   });
 
   it('should handle export errors gracefully without interrupting chat', async () => {
@@ -387,6 +407,16 @@ describe('Chat Tool Export Feature', () => {
   it('should update metadata atomically with each turn', async () => {
     const continuationId = 'conv_atomic_test';
 
+    // Mock continuation store to return existing conversation (so the ID is preserved)
+    mockContinuationStore.get = vi.fn(async () => ({
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+      ],
+      provider: 'openai',
+      model: 'gpt-5',
+      lastUpdated: Date.now(),
+    }));
+
     // First conversation
     await chatTool(
       {
@@ -413,7 +443,7 @@ describe('Chat Tool Export Feature', () => {
     expect(metadata1.total_turns).toBe(1);
     expect(metadata1.temperature).toBe(0.7);
 
-    // Mock continuation store for second turn
+    // Mock continuation store for second turn (with first conversation content)
     mockContinuationStore.get = vi.fn(async () => ({
       messages: [
         { role: 'system', content: 'You are a helpful assistant.' },

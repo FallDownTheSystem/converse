@@ -297,6 +297,9 @@ export function createOpenAICompatibleProvider(providerConfig) {
         use_websearch = false,
         signal,
         config,
+        // Filter out options not meant for the API
+        continuation_id, // eslint-disable-line no-unused-vars
+        continuationStore, // eslint-disable-line no-unused-vars
         ...otherOptions
       } = options;
 

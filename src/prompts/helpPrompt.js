@@ -1,11 +1,347 @@
 /**
  * Help Prompt Implementation
  *
- * Provides comprehensive help documentation for the Converse MCP Server
+ * Provides comprehensive help documentation for the Converse MCP Server.
+ * Auto-generates documentation from code structures (CONFIG_SCHEMA, tool schemas, provider models).
  */
 
 import { getProviders } from '../providers/index.js';
 import { getTools } from '../tools/index.js';
+import { CONFIG_SCHEMA } from '../config.js';
+
+/**
+ * Sample values for generating realistic tool examples.
+ * Structure comes from schema, content from curated values here.
+ */
+const SAMPLE_VALUES = {
+  prompt: 'Explain the authentication flow in this codebase',
+  files: ['src/auth.js'],
+  images: ['./diagram.png'],
+  model: 'auto',
+  models: ['codex', 'gemini', 'claude'],
+  continuation_id: 'conv_abc123',
+  temperature: 0.5,
+  reasoning_effort: 'medium',
+  verbosity: 'medium',
+  use_websearch: false,
+  async: false,
+  export: false,
+  enable_cross_feedback: true,
+  cross_feedback_prompt: null,
+  full_history: false,
+};
+
+/**
+ * Safely get models from a provider (handles CLI providers that may throw)
+ * @param {object} provider - Provider object
+ * @param {string} name - Provider name for logging
+ * @returns {object} Models map or empty object on error
+ */
+function safeGetModels(provider, name) {
+  try {
+    return provider?.getSupportedModels() || {};
+  } catch (error) {
+    // CLI providers may throw if not installed - silently skip
+    return {};
+  }
+}
+
+/**
+ * Generate environment variables documentation from CONFIG_SCHEMA.
+ * Sorted alphabetically within categories, compact one-liner format.
+ * @returns {string} Formatted markdown section
+ */
+function generateEnvironmentVariablesSection() {
+  const categoryTitles = {
+    server: 'Server Configuration',
+    transport: 'Transport Configuration',
+    apiKeys: 'API Keys (at least one required)',
+    providers: 'Provider Configuration',
+    mcp: 'MCP Configuration',
+    summarization: 'Summarization Configuration',
+    async: 'Async Configuration',
+  };
+
+  let output = '';
+
+  for (const [category, vars] of Object.entries(CONFIG_SCHEMA)) {
+    const title = categoryTitles[category] || category;
+    output += `### ${title}\n`;
+
+    // Sort variables alphabetically within category
+    const sortedVars = Object.entries(vars).sort((a, b) =>
+      a[0].localeCompare(b[0]),
+    );
+
+    for (const [varName, schema] of sortedVars) {
+      const tags = [];
+
+      // Add required tag
+      if (schema.required) {
+        tags.push('Required');
+      }
+
+      // Add secret tag for API keys
+      if (schema.secret) {
+        tags.push('Secret');
+      }
+
+      // Add default value
+      if (schema.default !== undefined && schema.default !== null) {
+        tags.push(`Default: ${JSON.stringify(schema.default)}`);
+      }
+
+      const tagStr = tags.length > 0 ? ` (${tags.join(', ')})` : '';
+      output += `- \`${varName}\`${tagStr}: ${schema.description}\n`;
+    }
+
+    output += '\n';
+  }
+
+  return output;
+}
+
+/**
+ * Generate tool example JSON from input schema using SAMPLE_VALUES.
+ * @param {string} toolName - Name of the tool
+ * @param {object} inputSchema - Tool's input schema
+ * @returns {string} Formatted JSON example in markdown code block
+ */
+function generateToolExamplesFromSchema(toolName, inputSchema) {
+  if (!inputSchema || !inputSchema.properties) {
+    return '';
+  }
+
+  const { properties, required = [] } = inputSchema;
+  const example = {};
+
+  // Include required parameters first
+  for (const name of required) {
+    if (properties[name]) {
+      example[name] = SAMPLE_VALUES[name] ?? getDefaultForType(properties[name]);
+    }
+  }
+
+  // For chat and consensus, add some optional parameters for richer examples
+  if (toolName === 'chat') {
+    // Add commonly used optional parameters
+    if (properties.model) example.model = SAMPLE_VALUES.model;
+    if (properties.files) example.files = SAMPLE_VALUES.files;
+    if (properties.temperature) example.temperature = SAMPLE_VALUES.temperature;
+  } else if (toolName === 'consensus') {
+    // Add commonly used optional parameters
+    if (properties.files) example.files = SAMPLE_VALUES.files;
+    if (properties.enable_cross_feedback)
+      example.enable_cross_feedback = SAMPLE_VALUES.enable_cross_feedback;
+    if (properties.temperature) example.temperature = 0.2; // Lower for consensus
+  } else if (toolName === 'check_status') {
+    // For check_status, just show the continuation_id
+    if (properties.continuation_id)
+      example.continuation_id = SAMPLE_VALUES.continuation_id;
+  } else if (toolName === 'cancel_job') {
+    // For cancel_job, just show the continuation_id
+    if (properties.continuation_id)
+      example.continuation_id = SAMPLE_VALUES.continuation_id;
+  }
+
+  return `\`\`\`json\n${JSON.stringify(example, null, 2)}\n\`\`\``;
+}
+
+/**
+ * Get a default value based on JSON schema type.
+ * @param {object} prop - Property schema
+ * @returns {any} Default value
+ */
+function getDefaultForType(prop) {
+  if (prop.default !== undefined) return prop.default;
+  if (prop.enum && prop.enum.length > 0) return prop.enum[0];
+
+  switch (prop.type) {
+    case 'string':
+      return 'example';
+    case 'number':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'array':
+      return [];
+    case 'object':
+      return {};
+    default:
+      return null;
+  }
+}
+
+/**
+ * Generate factual model categorization lists (no subjective tips).
+ * Categories: context window, web search, thinking mode, image support.
+ * @param {object} allModels - Map of provider name to models
+ * @returns {string} Formatted markdown section with sorted model lists
+ */
+function generateModelCategories(allModels) {
+  // Flatten all models with provider info
+  const models = [];
+  for (const [providerName, providerModels] of Object.entries(allModels)) {
+    for (const [modelId, config] of Object.entries(providerModels)) {
+      models.push({
+        id: modelId,
+        provider: providerName,
+        ...config,
+      });
+    }
+  }
+
+  // Sort helper - alphabetically by model ID
+  const sortByModelId = (a, b) => a.id.localeCompare(b.id);
+
+  let output = '## Model Categories\n\n';
+
+  // Group by context window
+  output += '### Models by Context Window\n\n';
+
+  const windowGroups = {
+    '1M+ tokens': models.filter((m) => m.contextWindow >= 1000000),
+    '400K+ tokens': models.filter(
+      (m) => m.contextWindow >= 400000 && m.contextWindow < 1000000,
+    ),
+    '200K+ tokens': models.filter(
+      (m) => m.contextWindow >= 200000 && m.contextWindow < 400000,
+    ),
+    'Under 200K tokens': models.filter((m) => m.contextWindow < 200000),
+  };
+
+  for (const [groupName, groupModels] of Object.entries(windowGroups)) {
+    if (groupModels.length > 0) {
+      output += `**${groupName}:**\n`;
+      for (const m of groupModels.sort(sortByModelId)) {
+        output += `- ${m.id} (${m.provider}) - ${m.contextWindow.toLocaleString()} tokens\n`;
+      }
+      output += '\n';
+    }
+  }
+
+  // Models with Web Search
+  const webSearchModels = models
+    .filter((m) => m.supportsWebSearch)
+    .sort(sortByModelId);
+  if (webSearchModels.length > 0) {
+    output += '### Models with Web Search\n';
+    for (const m of webSearchModels) {
+      output += `- ${m.id} (${m.provider})\n`;
+    }
+    output += '\n';
+  }
+
+  // Models with Thinking Mode
+  const thinkingModels = models
+    .filter((m) => m.supportsThinking)
+    .sort(sortByModelId);
+  if (thinkingModels.length > 0) {
+    output += '### Models with Thinking Mode\n';
+    for (const m of thinkingModels) {
+      output += `- ${m.id} (${m.provider})\n`;
+    }
+    output += '\n';
+  }
+
+  // Models with Image Support
+  const imageModels = models
+    .filter((m) => m.supportsImages)
+    .sort(sortByModelId);
+  if (imageModels.length > 0) {
+    output += '### Models with Image Support\n';
+    for (const m of imageModels) {
+      output += `- ${m.id} (${m.provider})\n`;
+    }
+    output += '\n';
+  }
+
+  return output;
+}
+
+/**
+ * Generate configuration tips from tool parameter schemas.
+ * Extracts enum values and ranges directly from schema.
+ * @param {object} tools - Map of tool name to tool implementation
+ * @returns {string} Formatted markdown section
+ */
+function generateConfigurationTips(tools) {
+  let output = '## Configuration Tips\n\n';
+
+  // Get chat tool schema for parameter info
+  const chatSchema = tools.chat?.inputSchema?.properties || {};
+
+  // Temperature Settings
+  if (chatSchema.temperature) {
+    const tempSchema = chatSchema.temperature;
+    output += '### Temperature Settings\n';
+    if (tempSchema.minimum !== undefined && tempSchema.maximum !== undefined) {
+      output += `Range: ${tempSchema.minimum} to ${tempSchema.maximum}\n`;
+    }
+    output += `- **0.0-0.3**: Factual, deterministic responses\n`;
+    output += `- **0.4-0.7**: Balanced creativity and accuracy (recommended)\n`;
+    output += `- **0.8-1.2**: Creative writing, brainstorming\n`;
+    if (tempSchema.maximum && tempSchema.maximum > 1.2) {
+      output += `- **1.3-${tempSchema.maximum}**: Highly experimental, unpredictable\n`;
+    }
+    output += '\n';
+  }
+
+  // Reasoning Effort
+  if (chatSchema.reasoning_effort) {
+    const effortSchema = chatSchema.reasoning_effort;
+    output += '### Reasoning Effort (for supported models)\n';
+    if (effortSchema.enum) {
+      for (const value of effortSchema.enum) {
+        const descriptions = {
+          none: 'No reasoning, fastest response (GPT-5.1+ only)',
+          minimal: 'Quick responses with minimal reasoning',
+          low: 'Light analysis, simple problems',
+          medium: 'Balanced reasoning (default)',
+          high: 'Deep analysis, complex problems',
+          max: 'Maximum reasoning capability',
+        };
+        output += `- **${value}**: ${descriptions[value] || value}\n`;
+      }
+    }
+    output += '\n';
+  }
+
+  // Verbosity
+  if (chatSchema.verbosity) {
+    const verbSchema = chatSchema.verbosity;
+    output += '### Verbosity (for GPT-5 models)\n';
+    if (verbSchema.enum) {
+      const descriptions = {
+        low: 'Concise answers',
+        medium: 'Balanced detail (default)',
+        high: 'Thorough explanations',
+      };
+      for (const value of verbSchema.enum) {
+        output += `- **${value}**: ${descriptions[value] || value}\n`;
+      }
+    }
+    output += '\n';
+  }
+
+  // File Context
+  output += '### File Context\n';
+  output +=
+    '- Supports multiple file formats: code files, text, markdown, JSON, etc.\n';
+  output +=
+    '- Line ranges supported: `file.txt{10:50}` for lines 10-50, `file.txt{100:}` for line 100 onwards\n';
+  output += '- Files are automatically chunked if too large\n';
+  output +=
+    '- Images are base64 encoded and sent to models that support vision\n\n';
+
+  // Continuation IDs
+  output += '### Continuation IDs\n';
+  output += '- Automatically generated for new conversations\n';
+  output += '- Returned in the response for continuing conversations\n';
+  output += '- Conversations expire after 24 hours of inactivity\n\n';
+
+  return output;
+}
 
 /**
  * Generate comprehensive help content dynamically based on current providers
@@ -14,7 +350,7 @@ import { getTools } from '../tools/index.js';
 export function generateHelpContent(config = null) {
   const providers = getProviders();
 
-  // Collect all models from all providers
+  // Collect all models from all providers (including CLI providers with safe access)
   const allModels = {
     openai: providers.openai?.getSupportedModels() || {},
     google: providers.google?.getSupportedModels() || {},
@@ -23,7 +359,17 @@ export function generateHelpContent(config = null) {
     mistral: providers.mistral?.getSupportedModels() || {},
     deepseek: providers.deepseek?.getSupportedModels() || {},
     openrouter: providers.openrouter?.getSupportedModels() || {},
+    // CLI providers - use safeGetModels (may throw if CLI not installed)
+    codex: safeGetModels(providers.codex, 'codex'),
+    claude: safeGetModels(providers.claude, 'claude'),
+    'gemini-cli': safeGetModels(providers['gemini-cli'], 'gemini-cli'),
   };
+
+  // Limit OpenRouter models if dynamic models enabled (could have hundreds)
+  if (allModels.openrouter && Object.keys(allModels.openrouter).length > 20) {
+    const entries = Object.entries(allModels.openrouter).slice(0, 20);
+    allModels.openrouter = Object.fromEntries(entries);
+  }
 
   // Format provider models for display
   const formatProviderModels = (providerName, models) => {
@@ -80,33 +426,9 @@ export function generateHelpContent(config = null) {
     return params.join('\n');
   };
 
-  const formatToolExample = (toolName) => {
-    if (toolName === 'chat') {
-      return `\`\`\`json
-{
-  "prompt": "Explain the code in main.js",
-  "model": "gpt-5",
-  "files": ["C:\\\\Users\\\\username\\\\project\\\\main.js"],
-  "temperature": 0.7,
-  "use_websearch": false
-}
-\`\`\``;
-    } else if (toolName === 'consensus') {
-      return `\`\`\`json
-{
-  "prompt": "Should we use microservices architecture for our new project?",
-  "models": ["codex", "gemini", "claude"],
-  "files": ["./requirements.md", "C:\\\\Users\\\\username\\\\architecture.md"],
-  "enable_cross_feedback": true,
-  "temperature": 0.3
-}
-\`\`\``;
-    }
-    return '';
-  };
-
   const toolsSection = Object.entries(tools)
     .map(([name, tool], index) => {
+      const example = generateToolExamplesFromSchema(name, tool.inputSchema);
       return `### ${index + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)} Tool
 ${tool.description}
 
@@ -114,7 +436,7 @@ ${tool.description}
 ${formatToolParameters(tool.inputSchema)}
 
 **Example Usage:**
-${formatToolExample(name)}`;
+${example}`;
     })
     .join('\n\n');
 
@@ -134,54 +456,13 @@ ${formatProviderModels('Anthropic', allModels.anthropic)}
 ${formatProviderModels('Mistral', allModels.mistral)}
 ${formatProviderModels('DeepSeek', allModels.deepseek)}
 ${formatProviderModels('OpenRouter', allModels.openrouter)}
+${formatProviderModels('Codex', allModels.codex)}
+${formatProviderModels('Claude CLI', allModels.claude)}
+${formatProviderModels('Gemini CLI', allModels['gemini-cli'])}
 
-## Model Selection Tips
+${generateModelCategories(allModels)}
 
-### For Complex Reasoning Tasks
-- **Most Intelligent**: gpt-5, gpt-5-pro, gemini-pro, grok-4
-- **Fast & Smart**: gpt-5-mini, gpt-5-mini, o4-mini, flash
-- **Budget-Friendly**: gpt-5-nano, gpt-4o-mini, gemini-2.0-flash-lite
-
-### For Quick Responses
-- **Ultra-Fast**: gpt-5-nano, flash, gemini-2.0-flash, gpt-4o-mini
-- **Good Balance**: gpt-5-mini, o4-mini, grok-code-fast-1
-
-### For Large Context Windows
-- **1M+ Tokens**: gpt-4.1 (1M), all Gemini models (1M)
-- **400K Tokens**: gpt-5 family (gpt-5, gpt-5-mini, gpt-5-nano, gpt-5-pro)
-- **256K Tokens**: grok-4 series
-- **200K Tokens**: o3 series, o4-mini
-
-### Special Features
-- **Web Search**: gpt-5, gpt-5-mini, gpt-5-pro, o3 series, o4-mini, gpt-4 series, gemini models with grounding, grok-4
-- **Thinking Mode**: gpt-5 series (reasoning_effort), gemini models (thinking budget)
-- **Image Support**: All models except gemini-2.0-flash-lite and grok-code-fast-1
-
-## Configuration Tips
-
-### Temperature Settings
-- **0.0-0.3**: Factual, deterministic responses
-- **0.4-0.7**: Balanced creativity and accuracy (recommended)
-- **0.8-1.2**: Creative writing, brainstorming
-- **1.3-2.0**: Highly experimental, unpredictable
-
-### Reasoning Effort (for supported models)
-- **minimal**: Quick responses with minimal reasoning
-- **low**: Light analysis, simple problems
-- **medium**: Balanced reasoning (default)
-- **high**: Deep analysis, complex problems
-- **max**: Maximum reasoning capability
-
-### File Context
-- Supports multiple file formats: code files, text, markdown, JSON, etc.
-- Use git-bash style paths on Windows: \`/c/Users/username/file.txt\`
-- Files are automatically chunked if too large
-- Images are base64 encoded and sent to models that support vision
-
-### Continuation IDs
-- Automatically generated for new conversations
-- Returned in the response for continuing conversations
-- Conversations expire after 24 hours of inactivity
+${generateConfigurationTips(tools)}
 
 ## Best Practices
 
@@ -207,30 +488,15 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 
 ## Environment Variables
 
-### API Keys (at least one required):
-- \`OPENAI_API_KEY\`: For OpenAI models
-- \`GOOGLE_API_KEY\`: For Google Gemini models
-- \`XAI_API_KEY\`: For X.AI Grok models
-- \`ANTHROPIC_API_KEY\`: For Anthropic Claude models
-- \`MISTRAL_API_KEY\`: For Mistral models
-- \`DEEPSEEK_API_KEY\`: For DeepSeek models
-- \`OPENROUTER_API_KEY\`: For OpenRouter models
+${generateEnvironmentVariablesSection()}
 
-### OpenRouter Configuration:
-- \`OPENROUTER_REFERER\`: OpenRouter referer header for compliance (required for OpenRouter)
-- \`OPENROUTER_TITLE\`: OpenRouter X-Title header for request tracking (optional)
-- \`OPENROUTER_DYNAMIC_MODELS\`: Enable dynamic model discovery via OpenRouter endpoints API (default: false). Must be set to true to use models in \`provider/model\` format (e.g., \`anthropic/claude-3.5-sonnet\`). When enabled, fetches actual model capabilities from API.
+## CLI-Based Providers (Special Authentication)
 
-### Server Configuration:
-- \`MAX_MCP_OUTPUT_TOKENS\`: Maximum response size (default: 25000)
-- \`LOG_LEVEL\`: Logging verbosity (debug, info, warn, error)
-- \`PORT\`: HTTP server port (default: 3157)
-- \`HTTP_ENABLED\`: Enable HTTP transport (default: true)
-- \`HTTP_RATE_LIMIT_ENABLED\`: Enable rate limiting (default: false)
-- \`HTTP_RATE_LIMIT_WINDOW\`: Rate limit window in milliseconds (default: 900000 - 15 minutes)
-- \`HTTP_RATE_LIMIT_MAX_REQUESTS\`: Maximum requests per window (default: 1000)
+These providers use local CLI tools and don't require API keys:
 
-Note: Server name and version are automatically read from package.json.
+- **codex**: Requires ChatGPT login or CODEX_API_KEY environment variable
+- **claude**: Requires \`claude login\` command (Claude Code CLI authentication)
+- **gemini-cli**: Requires Gemini OAuth authentication via \`gemini\` CLI
 
 ## Need More Help?
 
@@ -271,11 +537,11 @@ export async function helpPromptHandler(args = {}, config = null) {
   let sectionContent = '';
 
   if (topicLower === 'tools') {
-    const toolsMatch = fullHelp.match(/## Available Tools[\s\S]*?(?=##|$)/);
+    const toolsMatch = fullHelp.match(/## Available Tools[\s\S]*?(?=## Provider Models|$)/);
     sectionContent = toolsMatch ? toolsMatch[0] : 'Tools section not found';
   } else if (topicLower === 'models' || topicLower === 'providers') {
     const modelsMatch = fullHelp.match(
-      /## Provider Models[\s\S]*?(?=## Model Selection Tips|$)/,
+      /## Provider Models[\s\S]*?(?=## Model Categories|$)/,
     );
     sectionContent = modelsMatch ? modelsMatch[0] : 'Models section not found';
   } else if (topicLower === 'parameters') {
@@ -286,7 +552,7 @@ export async function helpPromptHandler(args = {}, config = null) {
       ? paramsMatch[0]
       : 'Parameters section not found';
   } else if (topicLower === 'examples') {
-    // Extract example usage from both tools
+    // Extract example usage from all tools
     const examples = fullHelp.match(
       /\*\*Example Usage:\*\*[\s\S]*?```[\s\S]*?```/g,
     );

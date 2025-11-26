@@ -84,12 +84,16 @@ const GOOGLE_MODELS = {
 };
 
 // Mock Google GenerativeAI SDK structure
-export const MockGoogleGenerativeAI = vi.fn().mockImplementation(function() { return ({
-  getGenerativeModel: vi.fn().mockImplementation(function() { return ({
-    generateContent: vi.fn(),
-    generateContentStream: vi.fn(),
-  })),
-}})});
+export const MockGoogleGenerativeAI = vi.fn().mockImplementation(function() {
+  return {
+    getGenerativeModel: vi.fn().mockImplementation(function() {
+      return {
+        generateContent: vi.fn(),
+        generateContentStream: vi.fn(),
+      };
+    }),
+  };
+});
 
 // Create Google-specific mock provider
 export function createMockGoogleProvider(overrides = {}) {

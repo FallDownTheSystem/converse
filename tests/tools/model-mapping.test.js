@@ -173,7 +173,7 @@ describe('Model Mapping', () => {
       // Create test scenarios
       const scenarios = [
         {
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-sonnet-4-5-20250929',
           shouldExistIn: 'anthropic',
           reason: 'Exact model exists in Anthropic provider',
         },

@@ -951,3 +951,6 @@ export function getMcpClientConfig(config) {
     providers: getAvailableProviders(config),
   };
 }
+
+// Export CONFIG_SCHEMA for use by help documentation generator
+export { CONFIG_SCHEMA };

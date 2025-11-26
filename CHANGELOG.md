@@ -5,6 +5,25 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **`CODEX_DEFAULT_MODEL` config**: Removed unused configuration option
+  - Config was defined but never actually used in the codebase
+  - Default behavior now uses Codex CLI's latest model (no model override)
+- **`PORT` and `HOST` server configs**: Removed redundant configuration options
+  - These duplicated `HTTP_PORT` and `HTTP_HOST` from transport section
+  - Only transport configs were actually used; server configs were dead code
+- **Deprecated OpenAI models**: `gpt-4o`, `gpt-4o-mini`, `o3-mini`
+  - Superseded by GPT-5 family (gpt-5, gpt-5-mini, gpt-5-nano) and o4-mini
+- **Deprecated Google models**: `gemini-2.0-flash`, `gemini-2.0-flash-lite`
+  - Deprecated by Google with shutdown scheduled for Feb 2026
+  - Use Gemini 2.5 (flash, pro) or Gemini 3.0 Pro instead
+- **Deprecated Anthropic models**: `claude-3-5-sonnet-20241022`, `claude-3-7-sonnet-20250219`, `claude-3-5-haiku-20241022`
+  - Claude 3.5 Sonnet retired in Oct 2025
+  - Use Claude 4 series (claude-opus-4-5, claude-sonnet-4-5, claude-haiku-4-5) instead
+
 ## [2.9.1] - 2025-11-26
 
 ### Changed

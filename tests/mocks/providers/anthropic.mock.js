@@ -82,12 +82,14 @@ const ANTHROPIC_MODELS = {
 };
 
 // Mock Anthropic SDK structure
-export const MockAnthropic = vi.fn().mockImplementation(function() { return ({
-  messages: {
-    create: vi.fn(),
-    stream: vi.fn(),
-  },
-}));
+export const MockAnthropic = vi.fn().mockImplementation(function() {
+  return {
+    messages: {
+      create: vi.fn(),
+      stream: vi.fn(),
+    },
+  };
+});
 
 // Create Anthropic-specific mock provider
 export function createMockAnthropicProvider(overrides = {}) {

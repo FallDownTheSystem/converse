@@ -277,7 +277,7 @@ describe('OpenAI Provider', () => {
           output_tokens: 8,
           total_tokens: 18,
         },
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
       });
 
       OpenAI.mockImplementation(() => {
@@ -296,7 +296,7 @@ describe('OpenAI Provider', () => {
       const messages = [{ role: 'user', content: 'Hello' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
       });
 
       expect(result).toEqual({
@@ -304,7 +304,7 @@ describe('OpenAI Provider', () => {
         stop_reason: 'completed',
         rawResponse: expect.any(Object),
         metadata: {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           usage: {
             input_tokens: 10,
             output_tokens: 8,
@@ -321,7 +321,7 @@ describe('OpenAI Provider', () => {
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           input: [{ role: 'user', content: 'Hello' }],
           stream: false,
         }),
@@ -388,10 +388,10 @@ describe('OpenAI Provider', () => {
         }),
       );
 
-      // GPT-4o models do support temperature
+      // GPT-4.1 models do support temperature
       await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         temperature: 0.8,
       });
 
@@ -450,17 +450,17 @@ describe('OpenAI Provider', () => {
         {
           choices: [{ delta: { content: 'Hello' }, finish_reason: null }],
           usage: null,
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
         },
         {
           choices: [{ delta: { content: ' world' }, finish_reason: null }],
           usage: null,
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
         },
         {
           choices: [{ delta: { content: '!' }, finish_reason: 'stop' }],
           usage: { prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 },
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
         },
       ];
 
@@ -484,16 +484,16 @@ describe('OpenAI Provider', () => {
       // Temporarily modify model to not support Responses API to force Chat Completions API
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels['gpt-4o-mini'],
+        ...originalModels['gpt-5-mini'],
         supportsResponsesAPI: false,
       };
-      originalModels['gpt-4o-mini'] = testModel;
+      originalModels['gpt-5-mini'] = testModel;
 
       try {
         const messages = [{ role: 'user', content: 'Hello' }];
         const result = await openaiProvider.invoke(messages, {
           config: validConfig,
-          model: 'gpt-4o-mini', // Now forces Chat Completions API
+          model: 'gpt-5-mini', // Now forces Chat Completions API
           stream: true,
         });
 
@@ -512,7 +512,7 @@ describe('OpenAI Provider', () => {
 
         expect(events[0]).toMatchObject({
           type: 'start',
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           provider: 'openai',
           api_type: 'Chat Completions API',
         });
@@ -546,7 +546,7 @@ describe('OpenAI Provider', () => {
           content: 'Hello world!',
           stop_reason: 'stop',
           metadata: {
-            model: 'gpt-4o-mini',
+            model: 'gpt-5-mini',
             provider: 'openai',
             api_type: 'Chat Completions API',
             finish_reason: 'stop',
@@ -554,8 +554,8 @@ describe('OpenAI Provider', () => {
         });
       } finally {
         // Restore original model config
-        originalModels['gpt-4o-mini'] = {
-          ...originalModels['gpt-4o-mini'],
+        originalModels['gpt-5-mini'] = {
+          ...originalModels['gpt-5-mini'],
           supportsResponsesAPI: true,
         };
       }
@@ -711,15 +711,15 @@ describe('OpenAI Provider', () => {
       // Temporarily modify a model to not support streaming
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels['gpt-4o'],
+        ...originalModels['gpt-4.1-2025-04-14'],
         supportsStreaming: false,
       };
-      originalModels['gpt-4o'] = testModel;
+      originalModels['gpt-4.1-2025-04-14'] = testModel;
 
       const messages = [{ role: 'user', content: 'Test' }];
       const result = await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         stream: true,
       });
 
@@ -736,8 +736,8 @@ describe('OpenAI Provider', () => {
       );
 
       // Restore original model config
-      originalModels['gpt-4o'] = {
-        ...originalModels['gpt-4o'],
+      originalModels['gpt-4.1-2025-04-14'] = {
+        ...originalModels['gpt-4.1-2025-04-14'],
         supportsStreaming: true,
       };
     });
@@ -773,16 +773,16 @@ describe('OpenAI Provider', () => {
       // Temporarily modify model to not support Responses API to force Chat Completions API
       const originalModels = openaiProvider.getSupportedModels();
       const testModel = {
-        ...originalModels['gpt-4o'],
+        ...originalModels['gpt-4.1-2025-04-14'],
         supportsResponsesAPI: false,
       };
-      originalModels['gpt-4o'] = testModel;
+      originalModels['gpt-4.1-2025-04-14'] = testModel;
 
       try {
         const messages = [{ role: 'user', content: 'Test' }];
         const result = await openaiProvider.invoke(messages, {
           config: validConfig,
-          model: 'gpt-4o', // Now forces Chat Completions API
+          model: 'gpt-4.1-2025-04-14', // Now forces Chat Completions API
           stream: true,
         });
 
@@ -805,8 +805,8 @@ describe('OpenAI Provider', () => {
         expect(mockResponsesCreate).not.toHaveBeenCalled();
       } finally {
         // Restore original model config
-        originalModels['gpt-4o'] = {
-          ...originalModels['gpt-4o'],
+        originalModels['gpt-4.1-2025-04-14'] = {
+          ...originalModels['gpt-4.1-2025-04-14'],
           supportsResponsesAPI: true,
         };
       }

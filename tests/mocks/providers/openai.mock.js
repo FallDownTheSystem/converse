@@ -121,13 +121,15 @@ const OPENAI_MODELS = {
 };
 
 // Mock OpenAI SDK structure
-export const MockOpenAI = vi.fn().mockImplementation(function() { return ({
-  chat: {
-    completions: {
-      create: vi.fn(),
+export const MockOpenAI = vi.fn().mockImplementation(function() {
+  return {
+    chat: {
+      completions: {
+        create: vi.fn(),
+      },
     },
-  },
-}));
+  };
+});
 
 // Create OpenAI-specific mock provider
 export function createMockOpenAIProvider(overrides = {}) {

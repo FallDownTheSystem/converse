@@ -129,11 +129,11 @@ MCP_TRANSPORT=stdio npm start
   "continuation": {
     "id": "conv_d6a6a5ec-6900-4fd8-a4e0-1fa4f75dfc42",
     "provider": "openai",
-    "model": "gpt-4o-mini",
+    "model": "gpt-5-mini",
     "messageCount": 3
   },
   "metadata": {
-    "model": "gpt-4o-mini",
+    "model": "gpt-5-mini",
     "usage": {
       "input_tokens": 150,
       "output_tokens": 85,
@@ -356,22 +356,25 @@ conv_architecture_design/
 
 | Model | Context | Tokens | Features | Use Cases |
 |-------|---------|--------|----------|-----------|
+| `gpt-5.1` | 1M | 128K | Latest GPT | Multimodal, general purpose |
+| `gpt-5` | 1M | 64K | Advanced | Complex reasoning, analysis |
+| `gpt-5-mini` | 1M | 64K | Fast | Balanced performance/speed |
+| `gpt-5-nano` | 1M | 64K | Ultra-fast | Quick responses, simple queries |
+| `gpt-5-pro` | 1M | 128K | Pro tier | Extended capabilities |
 | `o3` | 200K | 100K | Reasoning | Logic, analysis, complex problems |
-| `o3-mini` | 200K | 100K | Fast reasoning | Balanced performance/speed |
-| `o4-mini` | 200K | 100K | Latest | General purpose, rapid reasoning |
-| `gpt-4o` | 128K | 16K | Multimodal | Vision, general chat |
-| `gpt-4o-mini` | 128K | 16K | Fast multimodal | Quick responses, images |
+| `o3-pro` | 200K | 100K | Extended reasoning | Deep analysis |
+| `o4-mini` | 200K | 100K | Fast reasoning | General purpose, rapid reasoning |
+| `gpt-4.1` | 1M | 32K | Large context | Long documents, analysis |
 
 ### Google/Gemini Models (API-based)
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
 | `gemini-3-pro-preview` | `pro` | 1M | 64K | Thinking levels, enhanced reasoning | Complex problems, deep analysis |
-| `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast | Quick analysis, simple queries |
 | `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Thinking mode | Deep reasoning, architecture |
-| `gemini-2.0-flash` | `flash2` | 1M | 65K | Latest | Experimental thinking |
+| `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast | Quick analysis, simple queries |
 
-**Note:** The short model name `gemini` now routes to **Gemini CLI** (OAuth-based). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.0-flash`.
+**Note:** The short model name `gemini` now routes to **Gemini CLI** (OAuth-based). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash`.
 
 ### X.AI/Grok Models
 
@@ -384,11 +387,11 @@ conv_architecture_design/
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
-| `claude-opus-4-1-20250805` | `opus-4.1`, `opus-4`, `opus` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
-| `claude-sonnet-4-20250514` | `sonnet-4`, `sonnet` | 200K | 64K | Extended thinking, images, caching | High performance, balanced |
-| `claude-3-7-sonnet-20250219` | `sonnet-3.7` | 200K | 64K | Extended thinking, images, caching | Enhanced 3.x generation |
-| `claude-3-5-sonnet-20241022` | `claude-3.5-sonnet` | 200K | 8K | Images, caching | Fast and intelligent |
-| `claude-3-5-haiku-20241022` | `haiku` | 200K | 8K | Caching | Fastest, simple queries |
+| `claude-opus-4-5-20250220` | `opus-4.5`, `opus` | 200K | 32K | Extended thinking, images, caching | Most capable reasoning |
+| `claude-opus-4-1-20250805` | `opus-4.1`, `opus-4` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
+| `claude-sonnet-4-5-20250929` | `sonnet-4.5`, `sonnet` | 200K | 64K | Extended thinking, images, caching | Enhanced reasoning |
+| `claude-sonnet-4-20250514` | `sonnet-4` | 200K | 64K | Extended thinking, images, caching | High performance, balanced |
+| `claude-haiku-4-5-20251001` | `haiku-4.5`, `haiku` | 200K | 64K | Extended thinking, caching | Fast and intelligent |
 
 **Prompt Caching (Always Enabled):**
 - System prompts are automatically cached for 1 hour using Anthropic's prompt caching
@@ -625,7 +628,7 @@ Response includes continuation ID:
   "continuation": {
     "id": "conv_abc123",
     "provider": "openai",
-    "model": "gpt-4o-mini",
+    "model": "gpt-5-mini",
     "messageCount": 2
   }
 }

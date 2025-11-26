@@ -1,9 +1,9 @@
 ---
 id: task-006-remove-outdated-models
 title: Remove Outdated AI Provider Models
-status: "To Do"
+status: "Done"
 created_date: '2025-11-26 18:54'
-updated_date: '2025-11-26 18:54'
+updated_date: '2025-11-26 19:12'
 parent: null
 subtasks: []
 dependencies: []

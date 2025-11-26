@@ -67,10 +67,9 @@ describe('Async Workflow Integration Tests', () => {
         expect(asyncResult).toBeDefined();
         expect(asyncResult.content).toBeTruthy();
 
-        // The response should contain the message and job/continuation info
-        expect(asyncResult.content[0].text).toContain(
-          'Chat request submitted for background processing',
-        );
+        // The response should contain the status line and continuation_id
+        expect(asyncResult.content[0].text).toContain('⏳ SUBMITTED | CHAT');
+        expect(asyncResult.content[0].text).toContain('continuation_id:');
         expect(asyncResult.continuation).toBeDefined();
         expect(asyncResult.continuation.id).toBeDefined();
         expect(asyncResult.continuation.id).toContain('conv_');
@@ -241,9 +240,8 @@ describe('Async Workflow Integration Tests', () => {
             },
           });
 
-          expect(consensusResult.content[0].text).toContain(
-            'Consensus request submitted for background processing',
-          );
+          expect(consensusResult.content[0].text).toContain('⏳ SUBMITTED | CONSENSUS');
+          expect(consensusResult.content[0].text).toContain('continuation_id:');
           expect(consensusResult.continuation).toBeDefined();
           expect(consensusResult.continuation.id).toContain('conv_');
           expect(consensusResult.continuation.status).toBe('processing');
@@ -339,24 +337,14 @@ describe('Async Workflow Integration Tests', () => {
           },
         });
 
-        // Parse cancel response
+        // Parse cancel response - now returns status line format
         const cancelText = cancelResult.content[0].text;
         console.log('[DEBUG] Cancel response:', cancelText);
 
-        // cancel_job returns JSON, but may have validation errors
-        let cancelContent;
-        try {
-          cancelContent = parseJsonResponse(cancelText);
-        } catch (error) {
-          console.log(
-            '[DEBUG] Failed to parse cancel response as JSON, raw text:',
-            cancelText.substring(0, 200),
-          );
-          throw error;
-        }
-
-        expect(cancelContent.status).toBe('cancelled');
-        expect(cancelContent.continuation_id).toBe(jobId);
+        // cancel_job returns a status line format, not JSON
+        expect(cancelText).toContain('⛔ CANCELLED');
+        expect(cancelText).toContain(jobId);
+        expect(cancelText).toContain('continuation_id:');
 
         // Verify job is cancelled when checking status
         const statusResult = await client.callTool({

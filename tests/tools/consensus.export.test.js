@@ -145,7 +145,7 @@ describe('Consensus Tool Export Feature', () => {
       path.join(exportDir, '1_response.txt'),
       'utf8',
     );
-    expect(responseContent).toContain('Consensus gathered');
+    expect(responseContent).toContain('Initial Responses');
     expect(responseContent).toContain('responses');
 
     // Verify metadata
@@ -153,7 +153,7 @@ describe('Consensus Tool Export Feature', () => {
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.continuation_id).toBe(continuationId);
-    expect(metadata.models).toBe('gpt-5,gemini-pro');
+    expect(metadata.models).toEqual(['gpt-5', 'gemini-pro']);
     expect(metadata.enable_cross_feedback).toBe(true);
     expect(metadata.total_turns).toBe(1);
   });
@@ -232,7 +232,7 @@ describe('Consensus Tool Export Feature', () => {
     const metadata = JSON.parse(
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
-    expect(metadata.models).toBe('gpt-5,gemini-pro,claude-sonnet');
+    expect(metadata.models).toEqual(['gpt-5', 'gemini-pro', 'claude-sonnet']);
     expect(metadata.temperature).toBe(0.5);
     expect(metadata.reasoning_effort).toBe('high');
   });

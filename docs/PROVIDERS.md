@@ -9,11 +9,10 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Environment Variable**: `OPENAI_API_KEY`
 - **Supported Models**:
-  - `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro` - GPT-5 family with advanced reasoning
-  - `o3`, `o3-mini`, `o3-pro` - Advanced reasoning models
-  - `o4-mini` - Latest fast reasoning model
+  - `gpt-5.1`, `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro` - GPT-5 family with advanced reasoning
+  - `o3`, `o3-pro`, `o4-mini` - Advanced reasoning models
   - `gpt-4.1` - Large context (1M tokens)
-  - `gpt-4o`, `gpt-4o-mini` - Multimodal models
+  - `o3-deep-research`, `o4-mini-deep-research` - Deep research models
 
 ### Google (Gemini)
 - **API Key Format**: `AIzaSy...` (varies)
@@ -23,8 +22,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `gemini-3-pro-preview` (alias: `pro`) - Enhanced reasoning with thinking levels (1M context, 64K output)
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
-  - `gemini-2.0-flash`, `gemini-2.0-flash-lite` - Latest generation (1M context, 65K output)
-- **Note**: The short model name `gemini` now routes to **Gemini CLI** (OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.0-flash`.
+- **Note**: The short model name `gemini` now routes to **Gemini CLI** (OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash`.
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -39,12 +37,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.anthropic.com](https://console.anthropic.com/)
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Supported Models**:
+  - `claude-opus-4-5-20250220` - Most capable with extended thinking (32K output)
   - `claude-opus-4-1-20250805` - Highest intelligence with extended thinking (32K output)
+  - `claude-sonnet-4-5-20250929` - Enhanced reasoning with extended thinking (64K output)
   - `claude-sonnet-4-20250514` - Balanced performance with extended thinking (64K output)
-  - `claude-3-7-sonnet-20250219` - Enhanced 3.x generation with thinking (64K output)
   - `claude-haiku-4-5-20251001` - Fast and intelligent with extended thinking (64K output)
-  - `claude-3-5-sonnet-20241022` - Fast and intelligent model (8K output)
-  - `claude-3-5-haiku-20241022` - Fastest Claude model (8K output)
   - `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, `claude-3-haiku-20240307` - Previous generation
 
 ### Mistral
@@ -233,9 +230,9 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 All providers support streaming responses for real-time output.
 
 ### Image Support
-- **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-4 series, Claude-3.5-Sonnet, Claude-3-Opus)
+- **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-4 series, Claude-3-Opus)
 - **Via OpenRouter**: Depends on the underlying model
-- **No Support**: DeepSeek, Mistral (except Large), Claude-3.5-Haiku, Codex
+- **No Support**: DeepSeek, Mistral (except Large), Codex
 
 ### Web Search
 - **Native Support**: OpenAI, Google, X.AI (Grok-4)
@@ -246,7 +243,7 @@ All providers support streaming responses for real-time output.
 - **Google**:
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
-- **Anthropic**: Claude 4 and 3.7 models support extended thinking with `reasoning_effort`
+- **Anthropic**: All Claude 4 series models support extended thinking with `reasoning_effort`
 - **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only
 
@@ -280,14 +277,14 @@ When using the chat or consensus tools, specify models using their identifiers:
 ```javascript
 // Chat tool examples
 {
-  "model": "gpt-4o",              // OpenAI (keyword match)
+  "model": "gpt-5",               // OpenAI (keyword match)
   "model": "claude-opus-4",       // Anthropic (keyword match, auto-resolves)
   "model": "sonnet",              // Anthropic (keyword match)
   "model": "gemini-2.5-pro",      // Google (keyword match)
   "model": "grok-4",              // X.AI (keyword match)
   "model": "mistral-large",       // Mistral (keyword match)
   "model": "deepseek-chat",       // DeepSeek (keyword match)
-  "model": "anthropic/claude-3.5-sonnet",  // OpenRouter (slash format, not in Anthropic)
+  "model": "anthropic/claude-sonnet-4",   // OpenRouter (slash format, not in Anthropic)
   "model": "qwen/qwen3-coder",            // OpenRouter (static model)
   "model": "openrouter/auto"              // OpenRouter auto-selection
 }
@@ -296,7 +293,7 @@ When using the chat or consensus tools, specify models using their identifiers:
 {
   "models": [
     {"model": "o3"},
-    {"model": "claude-3-5-sonnet"},
+    {"model": "claude-sonnet-4"},
     {"model": "gemini-2.5-pro"}
   ]
 }
@@ -311,7 +308,7 @@ When using the chat or consensus tools, specify models using their identifiers:
 
 ### Model Not Found
 - Use exact model identifiers as listed above
-- Some providers support aliases (e.g., "claude" → "claude-3-5-sonnet")
+- Some providers support aliases (e.g., "claude" → "claude-sonnet-4-5")
 - Check provider documentation for model availability in your region
 
 ### Rate Limits

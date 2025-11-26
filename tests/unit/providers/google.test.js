@@ -66,9 +66,8 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       expect(typeof models).toBe('object');
-      expect('gemini-2.0-flash' in models).toBeTruthy();
-      expect('gemini-2.0-flash-lite' in models).toBeTruthy();
       expect('gemini-2.5-flash' in models).toBeTruthy();
+      expect('gemini-2.5-flash-lite' in models).toBeTruthy();
       expect('gemini-2.5-pro' in models).toBeTruthy();
       expect('gemini-3-pro-preview' in models).toBeTruthy();
     });
@@ -88,25 +87,20 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       // Models that support thinking
-      expect(models['gemini-2.0-flash'].supportsThinking).toBe(false);
       expect(models['gemini-2.5-flash'].supportsThinking).toBe(true);
+      expect(models['gemini-2.5-flash-lite'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-pro'].supportsThinking).toBe(true);
-
-      // Model that doesn't support thinking
-      expect(models['gemini-2.0-flash-lite'].supportsThinking).toBe(false);
+      expect(models['gemini-3-pro-preview'].supportsThinking).toBe(true);
     });
 
     it('should have correct image support configuration', () => {
       const models = googleProvider.getSupportedModels();
 
-      // Models that support images
-      expect(models['gemini-2.0-flash'].supportsImages).toBe(true);
+      // All current models support images
       expect(models['gemini-2.5-flash'].supportsImages).toBe(true);
+      expect(models['gemini-2.5-flash-lite'].supportsImages).toBe(true);
       expect(models['gemini-2.5-pro'].supportsImages).toBe(true);
       expect(models['gemini-3-pro-preview'].supportsImages).toBe(true);
-
-      // Model that doesn't support images
-      expect(models['gemini-2.0-flash-lite'].supportsImages).toBe(false);
     });
 
     it('should include Gemini 3.0 model with correct configuration', () => {
@@ -288,16 +282,14 @@ describe('Google Provider', () => {
   });
 
   describe('thinking mode support', () => {
-    it('should support thinking for appropriate models', () => {
+    it('should support thinking for all current models', () => {
       const models = googleProvider.getSupportedModels();
 
-      // Thinking-enabled models
-      expect(models['gemini-2.0-flash'].supportsThinking).toBe(false);
+      // All current models support thinking
       expect(models['gemini-2.5-flash'].supportsThinking).toBe(true);
+      expect(models['gemini-2.5-flash-lite'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-pro'].supportsThinking).toBe(true);
-
-      // Non-thinking model
-      expect(models['gemini-2.0-flash-lite'].supportsThinking).toBe(false);
+      expect(models['gemini-3-pro-preview'].supportsThinking).toBe(true);
     });
 
     it('should have correct thinking token limits', () => {
@@ -308,10 +300,7 @@ describe('Google Provider', () => {
 
       // Flash models have moderate thinking budget
       expect(models['gemini-2.5-flash'].maxThinkingTokens).toBe(24576);
-      expect(models['gemini-2.0-flash'].maxThinkingTokens).toBe(0);
-
-      // Lite model has no thinking
-      expect(models['gemini-2.0-flash-lite'].maxThinkingTokens).toBe(0);
+      expect(models['gemini-2.5-flash-lite'].maxThinkingTokens).toBe(24576);
     });
   });
 
@@ -320,10 +309,10 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       // All Gemini models support temperature
-      expect(models['gemini-2.0-flash'].supportsTemperature).toBe(true);
-      expect(models['gemini-2.0-flash-lite'].supportsTemperature).toBe(true);
       expect(models['gemini-2.5-flash'].supportsTemperature).toBe(true);
+      expect(models['gemini-2.5-flash-lite'].supportsTemperature).toBe(true);
       expect(models['gemini-2.5-pro'].supportsTemperature).toBe(true);
+      expect(models['gemini-3-pro-preview'].supportsTemperature).toBe(true);
     });
   });
 
@@ -347,20 +336,21 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       // All models should have 1M context window
-      expect(models['gemini-2.0-flash'].contextWindow).toBe(1048576);
-      expect(models['gemini-2.0-flash-lite'].contextWindow).toBe(1048576);
       expect(models['gemini-2.5-flash'].contextWindow).toBe(1048576);
+      expect(models['gemini-2.5-flash-lite'].contextWindow).toBe(1048576);
       expect(models['gemini-2.5-pro'].contextWindow).toBe(1048576);
+      expect(models['gemini-3-pro-preview'].contextWindow).toBe(1048576);
     });
 
     it('should have consistent output token limits', () => {
       const models = googleProvider.getSupportedModels();
 
-      // All models should have 65536 max output tokens
-      expect(models['gemini-2.0-flash'].maxOutputTokens).toBe(65536);
-      expect(models['gemini-2.0-flash-lite'].maxOutputTokens).toBe(65536);
+      // Most models have 65536 max output tokens
       expect(models['gemini-2.5-flash'].maxOutputTokens).toBe(65536);
+      expect(models['gemini-2.5-flash-lite'].maxOutputTokens).toBe(65536);
       expect(models['gemini-2.5-pro'].maxOutputTokens).toBe(65536);
+      // Gemini 3.0 has 64000 max output tokens
+      expect(models['gemini-3-pro-preview'].maxOutputTokens).toBe(64000);
     });
   });
 
@@ -369,10 +359,10 @@ describe('Google Provider', () => {
       const models = googleProvider.getSupportedModels();
 
       // All current Google models support streaming
-      expect(models['gemini-2.0-flash'].supportsStreaming).toBe(true);
-      expect(models['gemini-2.0-flash-lite'].supportsStreaming).toBe(true);
       expect(models['gemini-2.5-flash'].supportsStreaming).toBe(true);
+      expect(models['gemini-2.5-flash-lite'].supportsStreaming).toBe(true);
       expect(models['gemini-2.5-pro'].supportsStreaming).toBe(true);
+      expect(models['gemini-3-pro-preview'].supportsStreaming).toBe(true);
     });
 
     it('should have _createStreamingGenerator method', () => {

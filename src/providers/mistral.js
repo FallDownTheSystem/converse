@@ -265,6 +265,9 @@ export const mistralProvider = {
       // eslint-disable-next-line no-unused-vars
       use_websearch = false, // Not supported by Mistral, ignored
       config,
+      // Filter out options not meant for the API
+      continuation_id, // eslint-disable-line no-unused-vars
+      continuationStore, // eslint-disable-line no-unused-vars
       ...otherOptions
     } = options;
 

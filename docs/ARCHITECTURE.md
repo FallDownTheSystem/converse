@@ -471,10 +471,10 @@ function generateRequestId() {
 }
 
 // All operations tagged with request ID
-logger.info('Processing chat request', { 
-  requestId, 
-  provider: 'openai', 
-  model: 'gpt-4o' 
+logger.info('Processing chat request', {
+  requestId,
+  provider: 'openai',
+  model: 'gpt-5'
 });
 ```
 

@@ -118,7 +118,7 @@ describe('Help Prompt', () => {
 
       // Check for some known aliases
       expect(content).toContain('Aliases:');
-      expect(content).toMatch(/o3mini|o3 mini/);
+      expect(content).toMatch(/o4mini|o4 mini/);
       expect(content).toMatch(/flash|gemini-flash/);
     });
 

@@ -2,14 +2,66 @@
 
 **Generated:** 2025-11-26
 
+## Instructions for Test Verification
+
+1. Take about 10 test files into your TODO list at a time
+2. Run each test file individually using `pnpm test <path-to-test-file>`
+3. If any tests fail, investigate and fix them:
+   - Many tests may be outdated and need updating to match current code
+   - For Vitest-related issues, use research-explorer to find solutions
+4. If a single test fails, run only that specific test case until fixed
+5. Mark tests as ✅ PASS when they pass, or note fixes needed
+6. Update this file with results before moving to next batch
+7. Continue until all tests are verified
+
+**Status Legend:**
+- ⬜ TODO - Not yet tested
+- ✅ PASS - Test passes
+- ⏭️ SKIP - Test skipped (documented reason)
+- 🔧 FIXED - Test was fixed and now passes
+
 ## Summary
 
 - **Total Test Files:** 84
-- **Total Individual Tests:** 1081
+- **Total Individual Tests:** 1059
+- **Verified Tests:** 569
+- **Passing:** 567
+- **Skipped:** 2
+- **Remaining:** 490
+
+## Verified Test Files
+
+| File | Tests | Status | Notes |
+|------|-------|--------|-------|
+| utils/test-skip-messages.test.js | 6 | ✅ PASS | All passing |
+| utils/pathParser.test.js | 34 | ✅ PASS | All passing |
+| utils/fileValidator.test.js | 18 | ✅ PASS | All passing |
+| prompts/help.test.js | 11 | ✅ PASS | All passing |
+| resources/helpResource.test.js | 7 | ✅ PASS | All passing |
+| services/summarizationService.test.js | 14 | 🔧 FIXED | Updated title truncation test: 50→60 chars |
+| unit/config-codex.test.js | 16 | ✅ PASS | All passing |
+| tools/model-mapping.test.js | 5 | 🔧 FIXED | Updated model names: gpt-4o→gpt-5, claude-3-5-sonnet→claude-sonnet-4-5 |
+| utils/conversationExporter.test.js | 13+1 | 🔧 FIXED | Fixed empty conv test; skipped process.chdir test (Vitest limitation) |
+| utils/contextProcessor.test.js | 28 | ✅ PASS | All passing |
+| tools/cancelJob.test.js | 22 | ✅ PASS | All passing |
+| tools/checkStatus.test.js | 14+1 | ✅ PASS | 14 passed, 1 skipped (deprecated) |
+| tools/checkStatus.fixes.test.js | 10 | ✅ PASS | All passing |
+| tools/checkStatus.improvements.test.js | 6 | ✅ PASS | All passing |
+| tools/async-support.test.js | 15 | ✅ PASS | All passing |
+| tools/chat.export.test.js | 8 | 🔧 FIXED | Fixed file paths, path traversal, atomic metadata tests |
+| tools/consensus.export.test.js | 4 | 🔧 FIXED | Updated response format, models array |
+| shared/examples/usage-example.test.js | 11 | ✅ PASS | All passing |
+| unit/mocks/providers.test.js | 30 | 🔧 FIXED | Fixed syntax errors in mock files (openai, google, anthropic) |
+| fixtures/fixture-validation.test.js | 130 | ✅ PASS | All passing |
+| async/asyncJobStore.test.js | 48 | ✅ PASS | All passing |
+| async/eventBus.test.js | 34 | 🔧 FIXED | Rewrote tests to match simplified single-user implementation (was 56 tests) |
+| async/fileCache.test.js | 45 | ✅ PASS | All passing |
+| async/providerStreamNormalizer.test.js | 23 | ✅ PASS | All passing |
+| fixtures/examples/migration-example.test.js | 13 | ✅ PASS | All passing (incl. dynamic Test Matrix tests) |
 
 ---
 
-## Async (172 tests)
+## Async (150 tests)
 
 ### async/asyncJobStore.test.js
 
@@ -17,117 +69,97 @@
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should generate valid job IDs with correct format | ⬜ TODO |
-| 2 | should generate unique job IDs | ⬜ TODO |
-| 3 | should validate job ID formats correctly | ⬜ TODO |
-| 4 | should create job successfully with valid parameters | ⬜ TODO |
-| 5 | should create job with custom options | ⬜ TODO |
-| 6 | should reject missing jobId | ⬜ TODO |
-| 7 | should reject invalid tools | ⬜ TODO |
-| 8 | should accept valid tools | ⬜ TODO |
-| 9 | should retrieve existing job | ⬜ TODO |
-| 10 | should return null for non-existent job | ⬜ TODO |
-| 11 | should reject invalid job IDs | ⬜ TODO |
-| 12 | should return deep clone to prevent external mutations | ⬜ TODO |
-| 13 | should update lastAccessed timestamp on retrieval | ⬜ TODO |
-| 14 | should update job status | ⬜ TODO |
-| 15 | should update job progress | ⬜ TODO |
-| 16 | should clamp progress values | ⬜ TODO |
-| 17 | should update provider states | ⬜ TODO |
-| 18 | should update timestamps on update | ⬜ TODO |
-| 19 | should add events on update | ⬜ TODO |
-| 20 | should return false for non-existent job | ⬜ TODO |
-| 21 | should reject invalid parameters | ⬜ TODO |
-| 22 | should ignore invalid status values | ⬜ TODO |
-| 23 | should complete job successfully | ⬜ TODO |
-| 24 | should complete job with null result | ⬜ TODO |
-| 25 | should add completion event | ⬜ TODO |
-| 26 | should return false for non-existent job | ⬜ TODO |
-| 27 | should fail job with Error object | ⬜ TODO |
-| 28 | should fail job with error object | ⬜ TODO |
-| 29 | should add failure event | ⬜ TODO |
-| 30 | should return false for non-existent job | ⬜ TODO |
-| 31 | should return true for existing job | ⬜ TODO |
-| 32 | should return false for non-existent job | ⬜ TODO |
-| 33 | should return comprehensive statistics | ⬜ TODO |
-| 34 | should clean up all jobs when maxAge is 0 | ⬜ TODO |
-| 35 | should clean up old jobs based on age | ⬜ TODO |
-| 36 | should not clean up recent jobs | ⬜ TODO |
-| 37 | should maintain ring buffer size for events | ⬜ TODO |
-| 38 | should maintain event chronological order | ⬜ TODO |
-| 39 | should set provider state | ⬜ TODO |
-| 40 | should update existing provider state | ⬜ TODO |
-| 41 | should return null for non-existent provider | ⬜ TODO |
-| 42 | should handle job without providers map | ⬜ TODO |
-| 43 | should allow setting custom store implementation | ⬜ TODO |
-| 44 | should reject invalid store implementations | ⬜ TODO |
-| 45 | should throw AsyncJobStoreError for various error conditions | ⬜ TODO |
-| 46 | should respect TTL for automatic job expiration | ⬜ TODO |
-| 47 | should return the same instance on multiple calls | ⬜ TODO |
-| 48 | should setup cleanup interval only once | ⬜ TODO |
+| 1 | should generate valid job IDs with correct format | ✅ PASS |
+| 2 | should generate unique job IDs | ✅ PASS |
+| 3 | should validate job ID formats correctly | ✅ PASS |
+| 4 | should create job successfully with valid parameters | ✅ PASS |
+| 5 | should create job with custom options | ✅ PASS |
+| 6 | should reject missing jobId | ✅ PASS |
+| 7 | should reject invalid tools | ✅ PASS |
+| 8 | should accept valid tools | ✅ PASS |
+| 9 | should retrieve existing job | ✅ PASS |
+| 10 | should return null for non-existent job | ✅ PASS |
+| 11 | should reject invalid job IDs | ✅ PASS |
+| 12 | should return deep clone to prevent external mutations | ✅ PASS |
+| 13 | should update lastAccessed timestamp on retrieval | ✅ PASS |
+| 14 | should update job status | ✅ PASS |
+| 15 | should update job progress | ✅ PASS |
+| 16 | should clamp progress values | ✅ PASS |
+| 17 | should update provider states | ✅ PASS |
+| 18 | should update timestamps on update | ✅ PASS |
+| 19 | should add events on update | ✅ PASS |
+| 20 | should return false for non-existent job | ✅ PASS |
+| 21 | should reject invalid parameters | ✅ PASS |
+| 22 | should ignore invalid status values | ✅ PASS |
+| 23 | should complete job successfully | ✅ PASS |
+| 24 | should complete job with null result | ✅ PASS |
+| 25 | should add completion event | ✅ PASS |
+| 26 | should return false for non-existent job | ✅ PASS |
+| 27 | should fail job with Error object | ✅ PASS |
+| 28 | should fail job with error object | ✅ PASS |
+| 29 | should add failure event | ✅ PASS |
+| 30 | should return false for non-existent job | ✅ PASS |
+| 31 | should return true for existing job | ✅ PASS |
+| 32 | should return false for non-existent job | ✅ PASS |
+| 33 | should return comprehensive statistics | ✅ PASS |
+| 34 | should clean up all jobs when maxAge is 0 | ✅ PASS |
+| 35 | should clean up old jobs based on age | ✅ PASS |
+| 36 | should not clean up recent jobs | ✅ PASS |
+| 37 | should maintain ring buffer size for events | ✅ PASS |
+| 38 | should maintain event chronological order | ✅ PASS |
+| 39 | should set provider state | ✅ PASS |
+| 40 | should update existing provider state | ✅ PASS |
+| 41 | should return null for non-existent provider | ✅ PASS |
+| 42 | should handle job without providers map | ✅ PASS |
+| 43 | should allow setting custom store implementation | ✅ PASS |
+| 44 | should reject invalid store implementations | ✅ PASS |
+| 45 | should throw AsyncJobStoreError for various error conditions | ✅ PASS |
+| 46 | should respect TTL for automatic job expiration | ✅ PASS |
+| 47 | should return the same instance on multiple calls | ✅ PASS |
+| 48 | should setup cleanup interval only once | ✅ PASS |
 
 ### async/eventBus.test.js
 
-**Describe Blocks:** EventBus Unit Tests > Constructor and Initialization > Event Type Constants > Event Emission Methods > emitJobCreated > emitJobUpdated > emitJobCompleted > emitJobFailed > emitJobCancelled > emitJobStarted > Session-Based Event Filtering > Event History and Ring Buffer > Rate Limiting > Data Sanitization > Validation and Error Handling > Parameter Validation > EventBusError Class > Memory Management and Cleanup > Statistics and Monitoring > Shutdown and Cleanup > Global Instance Management
+**Note:** Tests rewritten to match simplified single-user EventBus implementation (was 56 tests, now 34).
+
+**Describe Blocks:** EventBus Unit Tests > Constructor and Initialization > Event Type Constants > Event Emission Methods > Event Listener Registration > Event History and Ring Buffer > Validation and Error Handling > Statistics and Monitoring > Cleanup and Destruction > Global Instance Management
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should create EventBus with default options | ⬜ TODO |
-| 2 | should create EventBus with custom options | ⬜ TODO |
-| 3 | should initialize cleanup timer | ⬜ TODO |
-| 4 | should initialize tracking maps | ⬜ TODO |
-| 5 | should define all required event types | ⬜ TODO |
-| 6 | should emit job created event with proper payload | ⬜ TODO |
-| 7 | should add event to history | ⬜ TODO |
-| 8 | should emit job updated event with progress data | ⬜ TODO |
-| 9 | should emit job completed event with result indicator | ⬜ TODO |
-| 10 | should handle null result | ⬜ TODO |
-| 11 | should emit job failed event with Error object | ⬜ TODO |
-| 12 | should handle plain object errors | ⬜ TODO |
-| 13 | should emit job cancelled event with reason | ⬜ TODO |
-| 14 | should use default reason if none provided | ⬜ TODO |
-| 15 | should emit job started event with tool info | ⬜ TODO |
-| 16 | should add session listener that only receives events for that session | ⬜ TODO |
-| 17 | should update session activity when adding listeners | ⬜ TODO |
-| 18 | should support multiple listeners for the same session and event type | ⬜ TODO |
-| 19 | should remove specific session listener | ⬜ TODO |
-| 20 | should remove all session listeners | ⬜ TODO |
-| 21 | should return false when trying to remove non-existent session listener | ⬜ TODO |
-| 22 | should return 0 when trying to remove all listeners for non-existent session | ⬜ TODO |
-| 23 | should maintain event history for jobs | ⬜ TODO |
-| 24 | should filter event history by session | ⬜ TODO |
-| 25 | should maintain ring buffer size limit | ⬜ TODO |
-| 26 | should apply limit when getting event history | ⬜ TODO |
-| 27 | should return empty array for non-existent job history | ⬜ TODO |
-| 28 | should handle invalid parameters gracefully | ⬜ TODO |
-| 29 | should allow events within rate limit | ⬜ TODO |
-| 30 | should reject events exceeding rate limit | ⬜ TODO |
-| 31 | should reset rate limits after time window | ⬜ TODO |
-| 32 | should track rate limits per session | ⬜ TODO |
-| 33 | should sanitize sensitive data from event payloads | ⬜ TODO |
-| 34 | should sanitize nested sensitive data | ⬜ TODO |
-| 35 | should validate event types | ⬜ TODO |
-| 36 | should validate job IDs | ⬜ TODO |
-| 37 | should validate session IDs | ⬜ TODO |
-| 38 | should validate callbacks when adding session listeners | ⬜ TODO |
-| 39 | should validate payload size | ⬜ TODO |
-| 40 | should create EventBusError with message and code | ⬜ TODO |
-| 41 | should use default code if none provided | ⬜ TODO |
-| 42 | should track session activity | ⬜ TODO |
-| 43 | should clean up expired sessions | ⬜ TODO |
-| 44 | should clean up old event history | ⬜ TODO |
-| 45 | should not clean up active sessions | ⬜ TODO |
-| 46 | should track event emission statistics | ⬜ TODO |
-| 47 | should track listener statistics | ⬜ TODO |
-| 48 | should include memory and system information in stats | ⬜ TODO |
-| 49 | should shutdown cleanly | ⬜ TODO |
-| 50 | should remove all event listeners on shutdown | ⬜ TODO |
-| 51 | should create global instance on first access | ⬜ TODO |
-| 52 | should accept custom options for global instance | ⬜ TODO |
-| 53 | should allow setting custom EventBus instance | ⬜ TODO |
-| 54 | should validate EventBus instance when setting | ⬜ TODO |
-| 55 | should shutdown previous instance when setting new one | ⬜ TODO |
-| 56 | should create EventBus with createEventBus function | ⬜ TODO |
+| 1 | should create EventBus with default options | ✅ PASS |
+| 2 | should create EventBus with custom options | ✅ PASS |
+| 3 | should initialize tracking maps | ✅ PASS |
+| 4 | should initialize statistics | ✅ PASS |
+| 5 | should define all required event types | ✅ PASS |
+| 6 | should emit job created event with proper payload | ✅ PASS |
+| 7 | should add event to history | ✅ PASS |
+| 8 | should emit job updated event with progress data | ✅ PASS |
+| 9 | should emit job completed event with result | ✅ PASS |
+| 10 | should handle null result | ✅ PASS |
+| 11 | should calculate duration when job was created first | ✅ PASS |
+| 12 | should emit job failed event with Error object | ✅ PASS |
+| 13 | should handle string errors | ✅ PASS |
+| 14 | should emit job cancelled event with reason | ✅ PASS |
+| 15 | should use default reason if none provided | ✅ PASS |
+| 16 | should emit job started event with tool info | ✅ PASS |
+| 17 | should register event listener with onJobEvent | ✅ PASS |
+| 18 | should unsubscribe listener when calling returned function | ✅ PASS |
+| 19 | should throw for invalid event type | ✅ PASS |
+| 20 | should throw for non-function listener | ✅ PASS |
+| 21 | should maintain event history for jobs | ✅ PASS |
+| 22 | should maintain ring buffer size limit | ✅ PASS |
+| 23 | should return empty array for non-existent job history | ✅ PASS |
+| 24 | should clear job history | ✅ PASS |
+| 25 | should validate job IDs | ✅ PASS |
+| 26 | should create EventBusError with message and code | ✅ PASS |
+| 27 | should use default code if none provided | ✅ PASS |
+| 28 | should track event emission statistics | ✅ PASS |
+| 29 | should track listener statistics | ✅ PASS |
+| 30 | should include memory and event history size in stats | ✅ PASS |
+| 31 | should destroy cleanly | ✅ PASS |
+| 32 | should remove all event listeners on destroy | ✅ PASS |
+| 33 | should create global instance on first access | ✅ PASS |
+| 34 | should reset global instance | ✅ PASS |
 
 ### async/fileCache.test.js
 
@@ -135,51 +167,51 @@
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should initialize with default configuration | ⬜ TODO |
-| 2 | should initialize with custom configuration | ⬜ TODO |
-| 3 | should start cleanup timer on initialization | ⬜ TODO |
-| 4 | should stop cleanup timer when requested | ⬜ TODO |
-| 5 | should return same instance on multiple calls | ⬜ TODO |
-| 6 | should allow setting custom instance for testing | ⬜ TODO |
-| 7 | should stop timer when replacing instance | ⬜ TODO |
-| 8 | should extend FileCacheInterface | ⬜ TODO |
-| 9 | should throw error for unimplemented interface methods | ⬜ TODO |
-| 10 | should generate correct job directory path | ⬜ TODO |
-| 11 | should generate correct journal file path | ⬜ TODO |
-| 12 | should generate correct snapshot file path | ⬜ TODO |
-| 13 | should ensure directory exists successfully | ⬜ TODO |
-| 14 | should throw FileCacheError when directory creation fails | ⬜ TODO |
-| 15 | should write journal event successfully | ⬜ TODO |
-| 16 | should validate job ID parameter | ⬜ TODO |
-| 17 | should validate event parameter | ⬜ TODO |
-| 18 | should handle directory creation failure gracefully | ⬜ TODO |
-| 19 | should handle file write failure gracefully | ⬜ TODO |
-| 20 | should add metadata to events | ⬜ TODO |
-| 21 | should write snapshot successfully | ⬜ TODO |
-| 22 | should validate job ID parameter | ⬜ TODO |
-| 23 | should validate result parameter | ⬜ TODO |
-| 24 | should handle file write failure gracefully | ⬜ TODO |
-| 25 | should add metadata to snapshot | ⬜ TODO |
-| 26 | should read snapshot successfully from current date | ⬜ TODO |
-| 27 | should search in recent directories if not found in current date | ⬜ TODO |
-| 28 | should return null if snapshot not found anywhere | ⬜ TODO |
-| 29 | should validate job ID parameter | ⬜ TODO |
-| 30 | should handle malformed JSON gracefully | ⬜ TODO |
-| 31 | should return null when base directory does not exist | ⬜ TODO |
-| 32 | should filter and sort date directories correctly | ⬜ TODO |
-| 33 | should clean up old directories successfully | ⬜ TODO |
-| 34 | should return 0 when base directory does not exist | ⬜ TODO |
-| 35 | should continue cleanup even if individual directory removal fails | ⬜ TODO |
-| 36 | should handle stat errors gracefully | ⬜ TODO |
-| 37 | should throw FileCacheError when cleanup fails completely | ⬜ TODO |
-| 38 | should use default max age when not provided | ⬜ TODO |
-| 39 | should filter date directories with regex correctly | ⬜ TODO |
-| 40 | should create FileCacheError with correct properties | ⬜ TODO |
-| 41 | should use default error code when not provided | ⬜ TODO |
-| 42 | should propagate existing FileCacheError without wrapping | ⬜ TODO |
-| 43 | should handle cleanup timer errors gracefully | ⬜ TODO |
-| 44 | should log successful cleanup with count | ⬜ TODO |
-| 45 | should not log when no directories cleaned | ⬜ TODO |
+| 1 | should initialize with default configuration | ✅ PASS |
+| 2 | should initialize with custom configuration | ✅ PASS |
+| 3 | should start cleanup timer on initialization | ✅ PASS |
+| 4 | should stop cleanup timer when requested | ✅ PASS |
+| 5 | should return same instance on multiple calls | ✅ PASS |
+| 6 | should allow setting custom instance for testing | ✅ PASS |
+| 7 | should stop timer when replacing instance | ✅ PASS |
+| 8 | should extend FileCacheInterface | ✅ PASS |
+| 9 | should throw error for unimplemented interface methods | ✅ PASS |
+| 10 | should generate correct job directory path | ✅ PASS |
+| 11 | should generate correct journal file path | ✅ PASS |
+| 12 | should generate correct snapshot file path | ✅ PASS |
+| 13 | should ensure directory exists successfully | ✅ PASS |
+| 14 | should throw FileCacheError when directory creation fails | ✅ PASS |
+| 15 | should write journal event successfully | ✅ PASS |
+| 16 | should validate job ID parameter | ✅ PASS |
+| 17 | should validate event parameter | ✅ PASS |
+| 18 | should handle directory creation failure gracefully | ✅ PASS |
+| 19 | should handle file write failure gracefully | ✅ PASS |
+| 20 | should add metadata to events | ✅ PASS |
+| 21 | should write snapshot successfully | ✅ PASS |
+| 22 | should validate job ID parameter | ✅ PASS |
+| 23 | should validate result parameter | ✅ PASS |
+| 24 | should handle file write failure gracefully | ✅ PASS |
+| 25 | should add metadata to snapshot | ✅ PASS |
+| 26 | should read snapshot successfully from current date | ✅ PASS |
+| 27 | should search in recent directories if not found in current date | ✅ PASS |
+| 28 | should return null if snapshot not found anywhere | ✅ PASS |
+| 29 | should validate job ID parameter | ✅ PASS |
+| 30 | should handle malformed JSON gracefully | ✅ PASS |
+| 31 | should return null when base directory does not exist | ✅ PASS |
+| 32 | should filter and sort date directories correctly | ✅ PASS |
+| 33 | should clean up old directories successfully | ✅ PASS |
+| 34 | should return 0 when base directory does not exist | ✅ PASS |
+| 35 | should continue cleanup even if individual directory removal fails | ✅ PASS |
+| 36 | should handle stat errors gracefully | ✅ PASS |
+| 37 | should throw FileCacheError when cleanup fails completely | ✅ PASS |
+| 38 | should use default max age when not provided | ✅ PASS |
+| 39 | should filter date directories with regex correctly | ✅ PASS |
+| 40 | should create FileCacheError with correct properties | ✅ PASS |
+| 41 | should use default error code when not provided | ✅ PASS |
+| 42 | should propagate existing FileCacheError without wrapping | ✅ PASS |
+| 43 | should handle cleanup timer errors gracefully | ✅ PASS |
+| 44 | should log successful cleanup with count | ✅ PASS |
+| 45 | should not log when no directories cleaned | ✅ PASS |
 
 ### async/providerStreamNormalizer.test.js
 
@@ -187,65 +219,75 @@
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should throw error for unsupported provider | ⬜ TODO |
-| 2 | should route to correct provider normalizer | ⬜ TODO |
-| 3 | should normalize complete OpenAI Chat Completions stream | ⬜ TODO |
-| 4 | should handle OpenAI Responses API format | ⬜ TODO |
-| 5 | should normalize XAI stream with search metadata | ⬜ TODO |
-| 6 | should normalize Google stream with grounding metadata | ⬜ TODO |
-| 7 | should normalize Anthropic stream with thinking tokens | ⬜ TODO |
-| 8 | should normalize DeepSeek stream with reasoning tokens | ⬜ TODO |
-| 9 | should normalize error events correctly | ⬜ TODO |
-| 10 | should handle stream processing errors | ⬜ TODO |
-| 11 | should create valid start events | ⬜ TODO |
-| 12 | should create valid delta events | ⬜ TODO |
-| 13 | should create valid usage events | ⬜ TODO |
-| 14 | should create valid end events | ⬜ TODO |
-| 15 | should create valid error events | ⬜ TODO |
-| 16 | should determine error recoverability correctly | ⬜ TODO |
-| 17 | should validate complete valid stream | ⬜ TODO |
-| 18 | should detect invalid stream structure | ⬜ TODO |
-| 19 | should detect missing start or end events | ⬜ TODO |
-| 20 | should validate specific event types | ⬜ TODO |
-| 21 | should handle case-insensitive provider names | ⬜ TODO |
-| 22 | should preserve OpenRouter routing metadata | ⬜ TODO |
-| 23 | should handle Mistral streaming format | ⬜ TODO |
+| 1 | should throw error for unsupported provider | ✅ PASS |
+| 2 | should route to correct provider normalizer | ✅ PASS |
+| 3 | should normalize complete OpenAI Chat Completions stream | ✅ PASS |
+| 4 | should handle OpenAI Responses API format | ✅ PASS |
+| 5 | should normalize XAI stream with search metadata | ✅ PASS |
+| 6 | should normalize Google stream with grounding metadata | ✅ PASS |
+| 7 | should normalize Anthropic stream with thinking tokens | ✅ PASS |
+| 8 | should normalize DeepSeek stream with reasoning tokens | ✅ PASS |
+| 9 | should normalize error events correctly | ✅ PASS |
+| 10 | should handle stream processing errors | ✅ PASS |
+| 11 | should create valid start events | ✅ PASS |
+| 12 | should create valid delta events | ✅ PASS |
+| 13 | should create valid usage events | ✅ PASS |
+| 14 | should create valid end events | ✅ PASS |
+| 15 | should create valid error events | ✅ PASS |
+| 16 | should determine error recoverability correctly | ✅ PASS |
+| 17 | should validate complete valid stream | ✅ PASS |
+| 18 | should detect invalid stream structure | ✅ PASS |
+| 19 | should detect missing start or end events | ✅ PASS |
+| 20 | should validate specific event types | ✅ PASS |
+| 21 | should handle case-insensitive provider names | ✅ PASS |
+| 22 | should preserve OpenRouter routing metadata | ✅ PASS |
+| 23 | should handle Mistral streaming format | ✅ PASS |
 
-## Fixtures (20 tests)
+## Fixtures (26 tests)
 
 ### fixtures/examples/migration-example.test.js
+
+**Note:** Tests include dynamically generated Test Matrix tests (13 total).
 
 **Describe Blocks:** Migration Example: Provider Tests > Migration Example: Error Handling > Migration Example: Tool Testing > Migration Example: Edge Case Testing > Migration Example: File Testing > Migration Example: Streaming Responses > Migration Example: Test Matrix > Migration Example: Custom Mock Responses
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should handle provider response | ⬜ TODO |
-| 2 | should handle rate limit errors | ⬜ TODO |
-| 3 | should process chat request | ⬜ TODO |
-| 4 | should handle edge case strings | ⬜ TODO |
-| 5 | should load file fixtures | ⬜ TODO |
-| 6 | should generate streaming chunks | ⬜ TODO |
-| 7 | should create custom mock response | ⬜ TODO |
+| 1 | should handle provider response | ✅ PASS |
+| 2 | should handle rate limit errors | ✅ PASS |
+| 3 | should process chat request | ✅ PASS |
+| 4 | should handle edge case strings | ✅ PASS |
+| 5 | should load file fixtures | ✅ PASS |
+| 6 | should generate streaming chunks | ✅ PASS |
+| 7 | should handle success scenario for openai/gpt-4 | ✅ PASS |
+| 8 | should handle error scenario for openai/gpt-4 | ✅ PASS |
+| 9 | should handle success scenario for openai/gpt-3.5-turbo | ✅ PASS |
+| 10 | should handle error scenario for openai/gpt-3.5-turbo | ✅ PASS |
+| 11 | should handle success scenario for google/gemini-2.5-pro | ✅ PASS |
+| 12 | should handle error scenario for google/gemini-2.5-pro | ✅ PASS |
+| 13 | should create custom mock response | ✅ PASS |
 
 ### fixtures/fixture-validation.test.js
+
+**Note:** Already verified - 130 tests total (includes many dynamic provider tests).
 
 **Describe Blocks:** Fixture Validation > Provider Response Fixtures > Tool Fixtures > Error Scenarios > Edge Cases > File Fixtures > Fixture Loader Functions > Test Scenarios > Fixture Consistency
 
 | # | Test Name | Status |
 |---|-----------|--------|
-| 1 | should have a default response | ⬜ TODO |
-| 2 | should have valid response structure | ⬜ TODO |
-| 3 | should have valid streaming response structure | ⬜ TODO |
-| 4 | should handle special string edge cases | ⬜ TODO |
-| 5 | should handle number edge cases | ⬜ TODO |
-| 6 | should handle empty file correctly | ⬜ TODO |
-| 7 | should load JSON files as valid JSON | ⬜ TODO |
-| 8 | should create valid mock responses | ⬜ TODO |
-| 9 | should generate valid test matrix | ⬜ TODO |
-| 10 | should list fixtures correctly | ⬜ TODO |
-| 11 | should cache fixtures properly | ⬜ TODO |
-| 12 | all provider responses should have consistent usage fields | ⬜ TODO |
-| 13 | all tool fixtures should have consistent metadata | ⬜ TODO |
+| 1 | should have a default response | ✅ PASS |
+| 2 | should have valid response structure | ✅ PASS |
+| 3 | should have valid streaming response structure | ✅ PASS |
+| 4 | should handle special string edge cases | ✅ PASS |
+| 5 | should handle number edge cases | ✅ PASS |
+| 6 | should handle empty file correctly | ✅ PASS |
+| 7 | should load JSON files as valid JSON | ✅ PASS |
+| 8 | should create valid mock responses | ✅ PASS |
+| 9 | should generate valid test matrix | ✅ PASS |
+| 10 | should list fixtures correctly | ✅ PASS |
+| 11 | should cache fixtures properly | ✅ PASS |
+| 12 | all provider responses should have consistent usage fields | ✅ PASS |
+| 13 | all tool fixtures should have consistent metadata | ✅ PASS |
 
 ## Integration (167 tests)
 
