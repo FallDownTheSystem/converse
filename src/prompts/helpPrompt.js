@@ -327,6 +327,10 @@ function generateConfigurationTips(tools) {
   // File Context
   output += '### File Context\n';
   output +=
+    '- **IMPORTANT**: Always use the `files` parameter to share code/file content instead of copying into the prompt\n';
+  output +=
+    '- Using `files` provides better formatting, line numbers, and preserves full context\n';
+  output +=
     '- Supports multiple file formats: code files, text, markdown, JSON, etc.\n';
   output +=
     '- Line ranges supported: `file.txt{10:50}` for lines 10-50, `file.txt{100:}` for line 100 onwards\n';

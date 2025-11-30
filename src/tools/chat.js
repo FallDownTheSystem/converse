@@ -1016,7 +1016,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
 
 // Tool metadata
 chatTool.description =
-  'GENERAL CHAT & COLLABORATIVE THINKING - Development assistance, brainstorming, code analysis. Supports files, images, continuation_id for multi-turn conversations. Use model: "auto" for automatic selection.';
+  'GENERAL CHAT & COLLABORATIVE THINKING - Development assistance, brainstorming, code analysis. Supports files, images, continuation_id for multi-turn conversations. Use model: "auto" for automatic selection. IMPORTANT: Use the "files" parameter to share code/file content instead of pasting into the prompt.';
 chatTool.inputSchema = {
   type: 'object',
   properties: {
@@ -1029,7 +1029,7 @@ chatTool.inputSchema = {
       type: 'array',
       items: { type: 'string' },
       description:
-        'File paths to include as context (absolute or relative paths). Supports line ranges: file.txt{10:50}, file.txt{100:}. Example: ["./src/utils/auth.js{50:100}", "./config.json"]',
+        'File paths to include as context (absolute or relative paths). Supports line ranges: file.txt{10:50}, file.txt{100:}. Example: ["./src/utils/auth.js{50:100}", "./config.json"]. IMPORTANT: Always use this parameter to share file content instead of copying code into the prompt - it provides better formatting, line numbers, and preserves context.',
     },
     images: {
       type: 'array',

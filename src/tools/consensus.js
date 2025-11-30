@@ -1616,7 +1616,7 @@ async function executeConsensusPhaseWithStreaming(
 
 // Tool metadata
 consensusTool.description =
-  'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Query multiple models simultaneously, then optionally refine responses based on cross-feedback. For complex decisions, architectural choices, technical evaluations. Use models: ["auto"] for automatic selection.';
+  'PARALLEL CONSENSUS WITH CROSS-MODEL FEEDBACK - Query multiple models simultaneously, then optionally refine responses based on cross-feedback. For complex decisions, architectural choices, technical evaluations. Use models: ["auto"] for automatic selection. IMPORTANT: Use the "files" parameter to share code/file content instead of pasting into the prompt.';
 consensusTool.inputSchema = {
   type: 'object',
   properties: {
@@ -1631,7 +1631,7 @@ consensusTool.inputSchema = {
       type: 'array',
       items: { type: 'string' },
       description:
-        'File paths for additional context (absolute or relative paths). Supports line ranges: file.txt{10:50}, file.txt{100:}. Example: ["./docs/architecture.md{1:100}", "./requirements.txt"]',
+        'File paths for additional context (absolute or relative paths). Supports line ranges: file.txt{10:50}, file.txt{100:}. Example: ["./docs/architecture.md{1:100}", "./requirements.txt"]. IMPORTANT: Always use this parameter to share file content instead of copying code into the prompt - it provides better formatting, line numbers, and preserves context.',
     },
     images: {
       type: 'array',
