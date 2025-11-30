@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.4] - 2025-11-30
+
+### Changed
+
+- **Tool Documentation**: Added reminder to use `files` parameter instead of pasting code
+  - Updated chat and consensus tool descriptions to emphasize using files param
+  - Updated files parameter descriptions with IMPORTANT note about proper usage
+  - Updated help prompt File Context section with guidance
+
 ## [2.9.3] - 2025-11-26
 
 ### Changed
