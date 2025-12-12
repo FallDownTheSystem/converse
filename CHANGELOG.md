@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.5] - 2025-12-12
+
+### Changed
+
+- **GPT-5.2 Model Support**: Replaced GPT-5.1 with GPT-5.2 (released Dec 11, 2025)
+  - `gpt-5` alias now points to GPT-5.2 (latest flagship)
+  - Added new aliases: `gpt-5.2`, `gpt5.2`, `gpt 5.2`, `gpt-5.2-2025-12-11`
+  - Removed GPT-5.1 (deprecated, sunset ~March 2026)
+  - GPT-5.2 offers 38% fewer errors and 30% fewer hallucinations vs GPT-5.1
+
+### Documentation
+
+- **CLAUDE.md**: Added testing guidance to avoid running full test suite during development
+
 ## [2.9.4] - 2025-11-30
 
 ### Changed
