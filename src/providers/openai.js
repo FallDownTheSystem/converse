@@ -10,9 +10,9 @@ import { debugLog, debugError } from '../utils/console.js';
 
 // Define supported models with their capabilities
 const SUPPORTED_MODELS = {
-  'gpt-5.1': {
-    modelName: 'gpt-5.1',
-    friendlyName: 'OpenAI (GPT-5.1)',
+  'gpt-5.2': {
+    modelName: 'gpt-5.2',
+    friendlyName: 'OpenAI (GPT-5.2)',
     contextWindow: 400000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: false, // GPT-5 doesn't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true, // GPT-5.1 supports "none" for faster responses
+    supportsNoneReasoningEffort: true, // GPT-5.2 supports "none" for faster responses
     timeout: 3600000, // 1 hour
     description:
       'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, analysis. Supports "none" reasoning for faster responses',
@@ -28,9 +28,9 @@ const SUPPORTED_MODELS = {
       'gpt-5',
       'gpt5',
       'gpt 5',
-      'gpt-5.1-2025-11-13',
-      'gpt5.1',
-      'gpt 5.1',
+      'gpt-5.2-2025-12-11',
+      'gpt5.2',
+      'gpt 5.2',
     ],
   },
   'gpt-5-2025-08-07': {

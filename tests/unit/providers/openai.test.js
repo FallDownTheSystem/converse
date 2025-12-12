@@ -89,7 +89,7 @@ describe('OpenAI Provider', () => {
       expect('o3' in models).toBe(true);
       expect('o4-mini' in models).toBe(true);
       expect('gpt-4.1-2025-04-14' in models).toBe(true);
-      expect('gpt-5.1' in models).toBe(true);
+      expect('gpt-5.2' in models).toBe(true);
       expect('gpt-5-pro' in models).toBe(true);
     });
 
@@ -625,7 +625,7 @@ describe('OpenAI Provider', () => {
 
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'gpt-5.1', // 'gpt-5' resolves to 'gpt-5.1'
+        model: 'gpt-5.2', // 'gpt-5' resolves to 'gpt-5.2'
         api_type: 'Responses API',
       });
 

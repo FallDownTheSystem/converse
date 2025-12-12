@@ -99,10 +99,25 @@ ENABLE_RESPONSE_SUMMARIZATION=true LOG_LEVEL=debug pnpm run dev
 
 ### Testing
 
-#### Run All Tests
+**IMPORTANT: Do NOT run the full test suite (`pnpm test`) during development.** The test suite contains hundreds of tests including integration and e2e tests that make real API calls. Running all tests will timeout and consume API credits.
+
+**Instead, run only the specific tests relevant to your changes:**
 
 ```bash
-# Run full test suite
+# Run specific test file
+pnpm test -- tests/unit/providers/openai.test.js
+
+# Run tests matching a pattern
+pnpm test -- tests/unit/providers/*.test.js
+
+# Run with verbose output
+pnpm test -- tests/unit/providers/openai.test.js --reporter=verbose
+```
+
+#### Run All Tests (CI only)
+
+```bash
+# Run full test suite (WARNING: takes a long time, uses real APIs)
 pnpm test
 
 # Run tests with coverage
