@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.7] - 2025-12-15
+
+### Fixed
+
+- **Codex SDK sandboxMode**: Fixed incorrect property name passed to Codex SDK
+  - Was passing `sandbox` but SDK expects `sandboxMode`
+  - This caused sandbox restrictions to be silently ignored
+  - Now correctly enforces `read-only`, `workspace-write`, or `danger-full-access` modes
+
 ## [2.9.6] - 2025-12-15
 
 ### Changed
