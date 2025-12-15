@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.6] - 2025-12-15
+
+### Changed
+
+- **GPT-5.2 Pro Model**: Updated GPT-5-pro to GPT-5.2-pro (released Dec 11, 2025)
+  - `gpt-5-pro` alias now points to GPT-5.2-pro (latest pro model)
+  - Added new alias: `gpt-5.2-pro-2025-12-11`
+
 ## [2.9.5] - 2025-12-12
 
 ### Changed
