@@ -284,7 +284,7 @@ export const codexProvider = {
       const rawWorkingDirectory = config.server?.client_cwd || process.cwd();
       // Normalize Windows extended-length paths (\\?\C:\...) to regular paths
       const workingDirectory = normalizeExtendedPath(rawWorkingDirectory);
-      const sandbox = config.providers?.codexsandboxmode || 'read-only';
+      const sandboxMode = config.providers?.codexsandboxmode || 'read-only';
       const skipGitRepoCheck =
         config.providers?.codexskipgitcheck !== undefined
           ? config.providers.codexskipgitcheck
@@ -294,7 +294,7 @@ export const codexProvider = {
       // Create or resume thread
       const threadOptions = {
         workingDirectory,
-        sandbox,
+        sandboxMode,
         skipGitRepoCheck,
         approvalPolicy,
       };
