@@ -79,9 +79,9 @@ const SUPPORTED_MODELS = {
       'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07'],
   },
-  'gpt-5-pro': {
-    modelName: 'gpt-5-pro',
-    friendlyName: 'OpenAI (GPT-5 Pro)',
+  'gpt-5.2-pro': {
+    modelName: 'gpt-5.2-pro',
+    friendlyName: 'OpenAI (GPT-5.2 Pro)',
     contextWindow: 400000,
     maxOutputTokens: 272000,
     supportsStreaming: false, // GPT-5 Pro doesn't support streaming
@@ -94,11 +94,12 @@ const SUPPORTED_MODELS = {
     description:
       'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
     aliases: [
+      'gpt-5-pro',
       'gpt5-pro',
       'gpt-5pro',
       'gpt 5 pro',
       'gpt-5 pro',
-      'gpt-5-pro-2025-10-06',
+      'gpt-5.2-pro-2025-12-11',
     ],
   },
   o3: {
