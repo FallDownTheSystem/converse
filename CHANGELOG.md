@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-01-29
+
+### Changed
+
+- **Updated all dependencies to latest versions**
+  - `@anthropic-ai/sdk` 0.71.2 → 0.72.0 (structured outputs: `output_format` → `output_config`)
+  - `@anthropic-ai/claude-agent-sdk` 0.2.9 → 0.2.23
+  - `@openai/codex-sdk` 0.86.0 → 0.92.0 (memory leak fix, dynamic tools injection)
+  - `@google/genai` 1.37.0 → 1.38.0
+  - `@mistralai/mistralai` 1.11.0 → 1.13.0
+  - `openai` 6.16.0 → 6.17.0
+  - `ai` 6.0.38 → 6.0.62
+  - `@modelcontextprotocol/sdk` 1.25.2 → 1.25.3
+  - `cors` 2.8.5 → 2.8.6
+  - `lru-cache` 11.2.4 → 11.2.5
+  - `vite` 7.3.1 (unchanged)
+  - `vitest` 4.0.17 → 4.0.18
+  - `@vitest/coverage-v8` 4.0.17 → 4.0.18
+  - `prettier` 3.8.0 → 3.8.1
+
 ## [2.9.7] - 2025-12-15
 
 ### Fixed
