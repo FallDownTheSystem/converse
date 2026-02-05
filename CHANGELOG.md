@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-02-05
+
+### Added
+
+- **Claude Opus 4.6 Model Support**: Added `claude-opus-4-6` to Anthropic provider
+  - 128K max output tokens (doubled from Opus 4.5's 64K)
+  - 1M token context window (beta, via `context-1m-2025-08-07` header)
+  - Adaptive thinking mode (`thinking: {type: "adaptive"}`) — recommended over legacy budget-based thinking
+  - Effort parameter is now GA (no beta header required), with new `max` effort level
+  - `opus` / `claude-opus` aliases now resolve to Opus 4.6
+- **GPT-5.3-Codex Aliases**: Added `gpt-5.2-codex` and `gpt-5.3-codex` aliases to Codex provider
+- **API Key Validation Utilities**: Added `idValidation.js` for API key format detection
+
+### Changed
+
+- **Claude SDK Provider**: Default model updated from `claude-opus-4-5` to `claude-opus-4-6`
+- **Codex Provider**: Updated friendly name to reflect GPT-5.3-Codex availability
+- **Gemini CLI Provider**: Improved error handling and configuration
+- **Updated dependencies**
+  - `@anthropic-ai/sdk` 0.72.0 → 0.73.0
+  - `@anthropic-ai/claude-agent-sdk` 0.2.23 → 0.2.32
+  - `@openai/codex-sdk` 0.92.0 → 0.98.0
+
+### Removed
+
+- **Test Inventory**: Removed `backlog/test-inventory.md` (served its purpose)
+
 ## [2.10.0] - 2026-01-29
 
 ### Changed
