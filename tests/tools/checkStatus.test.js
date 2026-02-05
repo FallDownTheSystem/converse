@@ -96,6 +96,19 @@ describe('Check Status Tool', () => {
       );
     });
 
+    it('should reject unsafe continuation_id values', async () => {
+      const result = await checkStatusTool(
+        { continuation_id: '../escape' },
+        { config: mockConfig, request: mockRequest },
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid continuation_id');
+
+      expect(mockAsyncJobStore.get).not.toHaveBeenCalled();
+      expect(mockFileCache.readSnapshot).not.toHaveBeenCalled();
+    });
+
     // Tests for deprecated parameters removed - since_seq, max_results, include_events no longer supported
   });
 

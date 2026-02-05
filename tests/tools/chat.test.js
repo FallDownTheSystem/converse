@@ -525,6 +525,43 @@ describe('Chat Tool Unit Tests', () => {
       expect(result.content[0].text).toContain('Provider error');
     });
 
+    it('should retry on temporary provider errors', async () => {
+      mockProviders.openai.invoke
+        .mockRejectedValueOnce(new Error('Temporary network error'))
+        .mockResolvedValue({
+          content: 'Recovered response',
+          stop_reason: 'stop',
+          rawResponse: {},
+          metadata: { provider: 'openai', model: 'gpt-4o-mini' },
+        });
+
+      const args = { prompt: 'Test provider recovery' };
+
+      const result = await chatTool(args, mockDependencies);
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Recovered response');
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(2);
+    });
+
+    it('should fail over to next provider in auto mode', async () => {
+      const mockCodexProvider = {
+        invoke: vi.fn().mockRejectedValue(new Error('API key invalid')),
+        validateConfig: vi.fn(),
+        isAvailable: vi.fn().mockReturnValue(true),
+        getSupportedModels: vi.fn(),
+        getModelConfig: vi.fn(),
+      };
+
+      mockProviders.codex = mockCodexProvider;
+
+      const args = { prompt: 'Test provider recovery', model: 'auto' };
+      const result = await chatTool(args, mockDependencies);
+
+      expect(result.isError).toBe(false);
+      expect(mockCodexProvider.invoke).toHaveBeenCalledTimes(1);
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1);
+    });
+
     it('should handle no available providers', async () => {
       // Make all providers unavailable
       mockProviders.openai.isAvailable.mockReturnValue(false);

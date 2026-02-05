@@ -13,6 +13,38 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-opus-4-6': {
+    modelName: 'claude-opus-4-6',
+    friendlyName: 'Claude Opus 4.6',
+    contextWindow: 200000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Opus 4.6: thinking: {type: "adaptive"} recommended
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 128000,
+    timeout: 600000,
+    supportsEffort: true, // Effort parameter is GA on Opus 4.6 (no beta header needed)
+    effortGA: true, // Effort is generally available, no beta header required
+    supports1MContext: true, // Beta 1M context support
+    description:
+      'Claude Opus 4.6 - Most intelligent model for building agents and coding with adaptive thinking and 128K output',
+    aliases: [
+      'claude-opus-4-6',
+      'claude-4.6-opus',
+      'claude-4-6-opus',
+      'opus-4.6',
+      'opus-4-6',
+      'opus4.6',
+      'opus4-6',
+      'claude-opus-4.6',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-opus-4-5-20251101': {
     modelName: 'claude-opus-4-5-20251101',
     friendlyName: 'Claude Opus 4.5',
@@ -26,9 +58,9 @@ const SUPPORTED_MODELS = {
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
     timeout: 300000,
-    supportsEffort: true, // Opus 4.5 exclusive effort parameter
+    supportsEffort: true, // Opus 4.5 effort parameter (requires beta header)
     description:
-      'Claude Opus 4.5 - Most intelligent model combining maximum capability with practical performance',
+      'Claude Opus 4.5 - Previous most intelligent model combining maximum capability with practical performance',
     aliases: [
       'claude-opus-4-5',
       'claude-4.5-opus',
@@ -38,8 +70,6 @@ const SUPPORTED_MODELS = {
       'opus4.5',
       'opus4-5',
       'claude-opus-4.5',
-      'opus',
-      'claude-opus',
     ],
   },
   'claude-opus-4-1-20250805': {
@@ -175,7 +205,7 @@ const EFFORT_MAP = {
   low: 'low',
   medium: 'medium',
   high: 'high',
-  max: 'high',
+  max: 'max', // Opus 4.6 supports 'max' effort level
 };
 
 /**
@@ -473,11 +503,15 @@ export const anthropicProvider = {
       );
     }
 
-    // Add effort beta feature for Opus 4.5
-    if (modelConfig.supportsEffort && reasoning_effort) {
+    // Add effort beta feature for models that need it (not GA yet)
+    if (modelConfig.supportsEffort && reasoning_effort && !modelConfig.effortGA) {
       betas.push('effort-2025-11-24');
       debugLog(
         `[Anthropic] Model ${resolvedModel} supports effort parameter with beta feature`,
+      );
+    } else if (modelConfig.effortGA && reasoning_effort) {
+      debugLog(
+        `[Anthropic] Model ${resolvedModel} using GA effort parameter (no beta header needed)`,
       );
     }
 
@@ -511,56 +545,69 @@ export const anthropicProvider = {
 
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
-      const thinkingBudget = calculateThinkingBudget(
-        modelConfig,
-        reasoning_effort,
-      );
-      debugLog(
-        `[Anthropic] Model ${resolvedModel}: maxOutputTokens=${modelConfig.maxOutputTokens}, maxThinkingTokens=${modelConfig.maxThinkingTokens}, thinkingBudget=${thinkingBudget}`,
-      );
-
-      // For 4 series models, we trust the SDK defaults work with thinking
-      // For other models, check against max_tokens if set
-      const maxTokensLimit =
-        requestPayload.max_tokens ||
-        (resolvedModel.includes('claude-opus-4-5')
-          ? 64000
-          : resolvedModel.includes('claude-opus-4')
-            ? 32000
-            : resolvedModel.includes('claude-sonnet-4-5') ||
-                resolvedModel.includes('claude-sonnet-4')
-              ? 64000
-              : modelConfig.maxOutputTokens);
-
-      if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
-        // According to Anthropic docs: thinking tokens count towards max_tokens limit
-        // thinking.budget_tokens must be >= 1024 and < max_tokens
+      if (modelConfig.supportsAdaptiveThinking) {
+        // Opus 4.6+: Use adaptive thinking (recommended)
+        // Claude dynamically decides when and how much to think
+        // Effort parameter controls thinking depth
         requestPayload.thinking = {
-          type: 'enabled',
-          budget_tokens: thinkingBudget,
+          type: 'adaptive',
         };
         debugLog(
-          `[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens (${reasoning_effort} effort)`,
+          `[Anthropic] Adaptive thinking enabled for ${resolvedModel} (effort controls depth via effort parameter)`,
         );
       } else {
-        debugLog(
-          `[Anthropic] Thinking not enabled: budget ${thinkingBudget} must be < max_tokens limit ${maxTokensLimit}`,
+        // Legacy models: Use budget-based thinking
+        const thinkingBudget = calculateThinkingBudget(
+          modelConfig,
+          reasoning_effort,
         );
+        debugLog(
+          `[Anthropic] Model ${resolvedModel}: maxOutputTokens=${modelConfig.maxOutputTokens}, maxThinkingTokens=${modelConfig.maxThinkingTokens}, thinkingBudget=${thinkingBudget}`,
+        );
+
+        const maxTokensLimit =
+          requestPayload.max_tokens ||
+          (resolvedModel.includes('claude-opus-4-5')
+            ? 64000
+            : resolvedModel.includes('claude-opus-4')
+              ? 32000
+              : resolvedModel.includes('claude-sonnet-4-5') ||
+                  resolvedModel.includes('claude-sonnet-4')
+                ? 64000
+                : modelConfig.maxOutputTokens);
+
+        if (thinkingBudget > 0 && thinkingBudget < maxTokensLimit) {
+          requestPayload.thinking = {
+            type: 'enabled',
+            budget_tokens: thinkingBudget,
+          };
+          debugLog(
+            `[Anthropic] Thinking enabled with budget: ${thinkingBudget} tokens (${reasoning_effort} effort)`,
+          );
+        } else {
+          debugLog(
+            `[Anthropic] Thinking not enabled: budget ${thinkingBudget} must be < max_tokens limit ${maxTokensLimit}`,
+          );
+        }
       }
     }
 
     // Add temperature if specified
-    // When thinking is enabled, temperature must be 1
+    // When legacy thinking (type: "enabled") is active, temperature must be 1
+    // Adaptive thinking (type: "adaptive") does not have this constraint
     if (temperature !== undefined) {
-      if (requestPayload.thinking) {
+      if (
+        requestPayload.thinking &&
+        requestPayload.thinking.type === 'enabled'
+      ) {
         requestPayload.temperature = 1;
-        debugLog('[Anthropic] Temperature forced to 1 for thinking mode');
+        debugLog('[Anthropic] Temperature forced to 1 for legacy thinking mode');
       } else {
         requestPayload.temperature = Math.max(0, Math.min(1, temperature));
       }
     }
 
-    // Add effort parameter for Opus 4.5 (uses output_config)
+    // Add effort parameter for models that support it (uses output_config)
     if (
       modelConfig.supportsEffort &&
       reasoning_effort &&
@@ -569,6 +616,7 @@ export const anthropicProvider = {
       const effortValue = EFFORT_MAP[reasoning_effort];
       if (effortValue) {
         requestPayload.output_config = {
+          ...requestPayload.output_config,
           effort: effortValue,
         };
         debugLog(

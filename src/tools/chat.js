@@ -21,6 +21,7 @@ import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
 import { exportConversation } from '../utils/conversationExporter.js';
+import { isRecoverableError, retryWithBackoff } from '../utils/errorHandler.js';
 
 const logger = createLogger('chat');
 
@@ -265,12 +266,14 @@ export async function chatTool(args, dependencies) {
 
     messages.push(userMessage);
 
-    // Select provider
+    // Select provider(s)
     let selectedProvider;
     let providerName;
 
+    const providerCandidates = [];
+
     if (model === 'auto') {
-      // Auto-select first available provider in priority order
+      // Auto-select providers in priority order
       // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
       const providerOrder = [
         'codex',
@@ -288,20 +291,17 @@ export async function chatTool(args, dependencies) {
       for (const name of providerOrder) {
         const provider = providers[name];
         if (provider && provider.isAvailable && provider.isAvailable(config)) {
-          providerName = name;
-          selectedProvider = provider;
-          break;
+          providerCandidates.push({ name, provider });
         }
       }
 
-      if (!providerName) {
+      if (providerCandidates.length === 0) {
         return createToolError(
           'No providers available. Please configure at least one API key.',
         );
       }
     } else {
       // Use specified provider/model
-      // Try to map model to provider
       providerName = mapModelToProvider(model, providers);
       selectedProvider = providers[providerName];
 
@@ -314,32 +314,60 @@ export async function chatTool(args, dependencies) {
           `Provider ${providerName} is not available. Check API key configuration.`,
         );
       }
+
+      providerCandidates.push({ name: providerName, provider: selectedProvider });
     }
 
-    // Resolve model name and prepare provider options
-    const resolvedModel = resolveAutoModel(model, providerName);
-    const providerOptions = {
-      model: resolvedModel,
-      temperature,
-      reasoning_effort,
-      verbosity,
-      use_websearch,
-      config,
-      continuation_id, // Pass for thread resumption
-      continuationStore, // Pass store for state management
-    };
-
-    // Call provider
+    // Call provider with recovery (retry and, for auto, failover)
     let response;
     const startTime = Date.now();
-    try {
-      response = await selectedProvider.invoke(messages, providerOptions);
-    } catch (error) {
-      logger.error('Provider error', {
-        error,
-        data: { provider: providerName },
-      });
-      return createToolError(`Provider error: ${error.message}`);
+    let lastError;
+    let resolvedModel;
+
+    for (const candidate of providerCandidates) {
+      providerName = candidate.name;
+      selectedProvider = candidate.provider;
+
+      // Resolve model name and prepare provider options
+      resolvedModel = resolveAutoModel(model, providerName);
+      const providerOptions = {
+        model: resolvedModel,
+        temperature,
+        reasoning_effort,
+        verbosity,
+        use_websearch,
+        config,
+        continuation_id, // Pass for thread resumption
+        continuationStore, // Pass store for state management
+      };
+
+      try {
+        response = await retryWithBackoff(
+          () => selectedProvider.invoke(messages, providerOptions),
+          getProviderRetryOptions(config, providerName),
+        );
+        break;
+      } catch (error) {
+        lastError = error;
+        logger.error('Provider error', {
+          error,
+          data: { provider: providerName },
+        });
+
+        if (
+          model !== 'auto' ||
+          !shouldFailoverToNextProvider(error) ||
+          candidate === providerCandidates[providerCandidates.length - 1]
+        ) {
+          return createToolError(`Provider error: ${error.message}`);
+        }
+      }
+    }
+
+    if (!response) {
+      return createToolError(
+        `Provider error: ${(lastError && lastError.message) || 'Unknown error'}`,
+      );
     }
     const executionTime = (Date.now() - startTime) / 1000; // Convert to seconds
 
@@ -470,6 +498,29 @@ function resolveAutoModel(model, providerName) {
   };
 
   return defaults[providerName] || 'gpt-5';
+}
+
+function getProviderRetryOptions(config, providerName) {
+  const nodeEnv = config?.environment?.nodeEnv || process.env.NODE_ENV;
+  const isTest = nodeEnv === 'test';
+
+  return {
+    retries: isTest ? 1 : 3,
+    delay: isTest ? 0 : 500,
+    maxDelay: isTest ? 0 : 10000,
+    operation: `provider-invoke:${providerName}`,
+  };
+}
+
+function shouldFailoverToNextProvider(error) {
+  if (isRecoverableError(error)) {
+    return true;
+  }
+
+  const message = (error && error.message) || '';
+  return /(api key|authentication|unauthorized|forbidden|invalid|not available)/i.test(
+    message,
+  );
 }
 
 export function mapModelToProvider(model, providers) {

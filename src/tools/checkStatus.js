@@ -17,6 +17,7 @@ import {
   formatJobListHumanReadable,
   formatConversationHistory,
 } from '../utils/formatStatus.js';
+import { isSafeIdSegment } from '../utils/idValidation.js';
 
 const logger = createLogger('check-status');
 
@@ -36,8 +37,22 @@ export async function checkStatusTool(args, dependencies) {
     const { continuation_id, full_history = false } = args;
 
     // Validate arguments
-    if (continuation_id && typeof continuation_id !== 'string') {
-      return createToolError('continuation_id must be a string');
+    if (continuation_id !== undefined) {
+      if (typeof continuation_id !== 'string') {
+        return createToolError('continuation_id must be a string');
+      }
+
+      if (continuation_id.length === 0) {
+        return createToolError(
+          'Invalid continuation_id: must be a non-empty string',
+        );
+      }
+
+      if (!isSafeIdSegment(continuation_id)) {
+        return createToolError(
+          'Invalid continuation_id: contains unsafe characters',
+        );
+      }
     }
 
     const asyncJobStore = getAsyncJobStore();

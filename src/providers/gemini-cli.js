@@ -7,7 +7,7 @@
  * Key features:
  * - Uses OAuth authentication from Gemini CLI (no API keys needed)
  * - Supports gemini-3-pro-preview model via Google Cloud Code endpoints
- * - Uses AI SDK v5 standard interfaces (generateText/streamText)
+ * - Uses AI SDK v6 standard interfaces (generateText/streamText)
  * - Compatible with both chat and consensus tools
  *
  * Authentication:
@@ -156,12 +156,13 @@ async function* createStreamingGenerator(
 
     // Yield usage event
     if (usage) {
+      const tokens = extractUsageTokens(usage);
       yield {
         type: 'usage',
         usage: {
-          input_tokens: usage.promptTokens || 0,
-          output_tokens: usage.completionTokens || 0,
-          total_tokens: usage.totalTokens || 0,
+          input_tokens: tokens.input,
+          output_tokens: tokens.output,
+          total_tokens: tokens.total,
           cached_input_tokens: 0,
         },
       };
@@ -171,7 +172,7 @@ async function* createStreamingGenerator(
     yield {
       type: 'end',
       stop_reason: mapFinishReason(finishReason),
-      finish_reason: finishReason,
+      finish_reason: getRawFinishReason(finishReason),
     };
   } catch (error) {
     if (signal?.aborted) {
@@ -182,10 +183,16 @@ async function* createStreamingGenerator(
 }
 
 /**
- * Map AI SDK finish reasons to our StopReasons enum
+ * Map AI SDK v6 finish reasons to our StopReasons enum
+ * AI SDK v6 returns finishReason as { unified: 'stop', raw: 'STOP' }
+ * @param {Object|string} finishReason - The finish reason (object in v6, string in v5)
  */
 function mapFinishReason(finishReason) {
-  switch (finishReason) {
+  // AI SDK v6 returns an object with 'unified' property
+  const reason =
+    typeof finishReason === 'object' ? finishReason?.unified : finishReason;
+
+  switch (reason) {
   case 'stop':
     return StopReasons.STOP;
   case 'length':
@@ -203,12 +210,51 @@ function mapFinishReason(finishReason) {
 }
 
 /**
- * Convert messages from Converse internal format to AI SDK v5 ModelMessage format
+ * Extract raw finish reason string for metadata
+ * AI SDK v6 returns finishReason as { unified: 'stop', raw: 'STOP' }
+ * @param {Object|string} finishReason - The finish reason
+ * @returns {string} The raw finish reason string
+ */
+function getRawFinishReason(finishReason) {
+  if (typeof finishReason === 'object') {
+    return finishReason?.unified || finishReason?.raw || 'stop';
+  }
+  return finishReason || 'stop';
+}
+
+/**
+ * Extract usage tokens from AI SDK v6 hierarchical structure
+ * AI SDK v6 usage: { inputTokens: { total: N }, outputTokens: { total: N } }
+ * AI SDK v5 usage: { promptTokens: N, completionTokens: N, totalTokens: N }
+ * @param {Object} usage - The usage object from AI SDK
+ * @returns {Object} Normalized token counts
+ */
+function extractUsageTokens(usage) {
+  if (!usage) {
+    return { input: 0, output: 0, total: 0 };
+  }
+
+  // AI SDK v6 hierarchical structure
+  if (usage.inputTokens && typeof usage.inputTokens === 'object') {
+    const input = usage.inputTokens.total || 0;
+    const output = usage.outputTokens?.total || 0;
+    return { input, output, total: input + output };
+  }
+
+  // AI SDK flat structure (backwards compatibility)
+  const input = usage.promptTokens || usage.inputTokens || 0;
+  const output = usage.completionTokens || usage.outputTokens || 0;
+  const total = usage.totalTokens || input + output;
+  return { input, output, total };
+}
+
+/**
+ * Convert messages from Converse internal format to AI SDK ModelMessage format
  *
  * Converse format (used by other providers like Anthropic):
  * - Images: { type: 'image', source: { type: 'base64', media_type: '...', data: '...' } }
  *
- * AI SDK v5 ModelMessage format (required by generateText/streamText):
+ * AI SDK ModelMessage format (required by generateText/streamText):
  * - Images: { type: 'image', image: '...' }  (base64 string, Buffer, or URL)
  * - Text: { type: 'text', text: '...' }
  *
@@ -216,7 +262,7 @@ function mapFinishReason(finishReason) {
  * We must use 'image' property (not 'data') for the AI SDK to accept the message.
  *
  * @param {Array} messages - Messages in Converse internal format
- * @returns {Array} Messages in AI SDK v5 ModelMessage format
+ * @returns {Array} Messages in AI SDK ModelMessage format
  */
 function convertToModelMessages(messages) {
   return messages.map((message) => {
@@ -233,11 +279,11 @@ function convertToModelMessages(messages) {
           return part;
         }
 
-        // Convert image from Converse format to AI SDK v5 ModelMessage format
+        // Convert image from Converse format to AI SDK ModelMessage format
         if (part.type === 'image' && part.source) {
           return {
             type: 'image',
-            image: part.source.data, // AI SDK v5 expects 'image' property (not 'data')
+            image: part.source.data, // AI SDK expects 'image' property (not 'data')
           };
         }
 
@@ -329,7 +375,7 @@ export const geminiCliProvider = {
       // Create model instance with SDK model name
       const modelInstance = gemini(sdkModelName);
 
-      // Convert messages from Converse format to AI SDK v5 ModelMessage format
+      // Convert messages from Converse format to AI SDK ModelMessage format
       const convertedMessages = convertToModelMessages(messages);
 
       // Build AI SDK options
@@ -377,8 +423,11 @@ export const geminiCliProvider = {
 
       const responseTime = Date.now() - startTime;
 
-      // Extract content from AI SDK v5 response format
+      // Extract content from AI SDK v6 response format
       const content = result.content?.[0]?.text || result.text || '';
+
+      // Extract usage tokens with AI SDK v6 compatibility
+      const tokens = extractUsageTokens(result.usage);
 
       return {
         content,
@@ -389,14 +438,14 @@ export const geminiCliProvider = {
           model,
           usage: result.usage
             ? {
-              input_tokens: result.usage.promptTokens || 0,
-              output_tokens: result.usage.completionTokens || 0,
-              total_tokens: result.usage.totalTokens || 0,
+              input_tokens: tokens.input,
+              output_tokens: tokens.output,
+              total_tokens: tokens.total,
               cached_input_tokens: 0,
             }
             : null,
           response_time_ms: responseTime,
-          finish_reason: result.finishReason || 'stop',
+          finish_reason: getRawFinishReason(result.finishReason),
         },
       };
     } catch (error) {

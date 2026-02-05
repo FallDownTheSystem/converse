@@ -11,6 +11,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { debugLog, debugError } from '../utils/console.js';
 import { ConverseMCPError, ERROR_CODES } from '../utils/errorHandler.js';
+import { isSafeIdSegment } from '../utils/idValidation.js';
 
 /**
  * File cache specific error class
@@ -149,6 +150,14 @@ export class FileCache extends FileCacheInterface {
    * @private
    */
   getJobDir(jobId) {
+    if (!isSafeIdSegment(jobId)) {
+      throw new FileCacheError(
+        'Job ID contains unsafe characters',
+        ERROR_CODES.VALIDATION_ERROR,
+        { jobId },
+      );
+    }
+
     const today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
     return path.join(this.baseDir, today, jobId);
   }
@@ -201,7 +210,15 @@ export class FileCache extends FileCacheInterface {
     if (!jobId || typeof jobId !== 'string') {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
-        ERROR_CODES.CACHE_WRITE_FAILED,
+        ERROR_CODES.VALIDATION_ERROR,
+        { jobId },
+      );
+    }
+
+    if (!isSafeIdSegment(jobId)) {
+      throw new FileCacheError(
+        'Job ID contains unsafe characters',
+        ERROR_CODES.VALIDATION_ERROR,
         { jobId },
       );
     }
@@ -265,7 +282,15 @@ export class FileCache extends FileCacheInterface {
     if (!jobId || typeof jobId !== 'string') {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
-        ERROR_CODES.CACHE_WRITE_FAILED,
+        ERROR_CODES.VALIDATION_ERROR,
+        { jobId },
+      );
+    }
+
+    if (!isSafeIdSegment(jobId)) {
+      throw new FileCacheError(
+        'Job ID contains unsafe characters',
+        ERROR_CODES.VALIDATION_ERROR,
         { jobId },
       );
     }
@@ -324,7 +349,15 @@ export class FileCache extends FileCacheInterface {
     if (!jobId || typeof jobId !== 'string') {
       throw new FileCacheError(
         'Job ID must be a non-empty string',
-        ERROR_CODES.CACHE_READ_FAILED,
+        ERROR_CODES.VALIDATION_ERROR,
+        { jobId },
+      );
+    }
+
+    if (!isSafeIdSegment(jobId)) {
+      throw new FileCacheError(
+        'Job ID contains unsafe characters',
+        ERROR_CODES.VALIDATION_ERROR,
         { jobId },
       );
     }
