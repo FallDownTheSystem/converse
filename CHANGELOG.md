@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-02-07
+
+### Fixed
+
+- **Codex Provider**: `reasoning_effort` parameter was silently ignored — it was passed to `runStreamed()` which only accepts `outputSchema` and `signal`. Now correctly set as `modelReasoningEffort` on `ThreadOptions` (passed to `startThread`/`resumeThread`), where the SDK actually reads it. Values are mapped to the SDK's enum: `none`/`minimal` → `minimal`, `max` → `xhigh`.
+
 ## [2.11.0] - 2026-02-05
 
 ### Added
