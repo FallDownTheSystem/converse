@@ -168,36 +168,29 @@ async function getThreadIdFromContinuation(continuationId, continuationStore) {
 }
 
 /**
+ * Map tool-level reasoning_effort values to Codex SDK's ModelReasoningEffort.
+ * Tool enum:  'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
+ * SDK enum:   'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+ */
+function mapReasoningEffort(effort) {
+  const mapping = {
+    none: 'minimal',
+    minimal: 'minimal',
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    max: 'xhigh',
+  };
+  return mapping[effort] || 'medium';
+}
+
+/**
  * Create stream generator for Codex streaming responses
  * Yields raw Codex SDK events that will be normalized by ProviderStreamNormalizer
  */
-async function* createStreamingGenerator(
-  thread,
-  prompt,
-  signal,
-  runOptions = {},
-) {
+async function* createStreamingGenerator(thread, prompt, signal) {
   try {
-    // Try with runOptions, fallback without if SDK doesn't support them
-    let eventsPromise;
-    try {
-      eventsPromise = thread.runStreamed(prompt, runOptions);
-    } catch (error) {
-      if (
-        runOptions.reasoningEffort &&
-        (error.message?.includes('reasoningEffort') ||
-          error.message?.includes('unknown option'))
-      ) {
-        debugLog(
-          '[Codex] reasoning_effort not supported by this SDK version for streaming, retrying without it',
-        );
-        eventsPromise = thread.runStreamed(prompt);
-      } else {
-        throw error;
-      }
-    }
-
-    const { events } = await eventsPromise;
+    const { events } = await thread.runStreamed(prompt, { signal });
 
     for await (const event of events) {
       // Check for cancellation
@@ -304,30 +297,24 @@ export const codexProvider = {
         skipGitRepoCheck,
         approvalPolicy,
       };
+
+      if (reasoning_effort) {
+        threadOptions.modelReasoningEffort = mapReasoningEffort(reasoning_effort);
+      }
+
       const thread = threadId
         ? codex.resumeThread(threadId, threadOptions)
         : codex.startThread(threadOptions);
 
-      // Build run options with reasoning_effort if provided
-      const runOptions = {};
-      if (reasoning_effort) {
-        runOptions.reasoningEffort = reasoning_effort; // Best-effort mapping
-      }
-
       // WORKAROUND: SDK's thread.run() hangs due to missing break after turn.completed
       // Always use streaming internally, consume synchronously when stream=false
       if (stream) {
-        return createStreamingGenerator(thread, prompt, signal, runOptions);
+        return createStreamingGenerator(thread, prompt, signal);
       }
 
       // Synchronous mode: consume streaming internally and return complete response
       const startTime = Date.now();
-      const generator = createStreamingGenerator(
-        thread,
-        prompt,
-        signal,
-        runOptions,
-      );
+      const generator = createStreamingGenerator(thread, prompt, signal);
 
       let content = '';
       let usage = null;
