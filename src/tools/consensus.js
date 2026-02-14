@@ -275,12 +275,13 @@ export async function consensusTool(args, dependencies) {
     let modelsToProcess = models;
     if (models.length === 1 && models[0].toLowerCase() === 'auto') {
       // Find first 3 available providers
-      // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
+      // Prioritize subscription-based providers (codex, gemini-cli, claude, copilot) over API-key providers
       const availableProviders = [];
       const providerOrder = [
         'codex',
         'gemini-cli',
         'claude',
+        'copilot',
         'openai',
         'google',
         'xai',
@@ -705,6 +706,7 @@ function getDefaultModelForProvider(providerName) {
     codex: 'codex',
     'gemini-cli': 'gemini',
     claude: 'claude',
+    copilot: 'copilot',
     openai: 'gpt-5',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
@@ -731,14 +733,19 @@ function resolveAutoModel(model, providerName) {
 function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
-  // Handle "auto" - prioritize: codex > gemini-cli > openai
+  // Handle "auto" - prioritize: codex > gemini-cli > claude > copilot > openai
   if (modelLower === 'auto') {
-    // Check availability in priority order
     if (providers['codex']) {
       return 'codex';
     }
     if (providers['gemini-cli']) {
       return 'gemini-cli';
+    }
+    if (providers['claude']) {
+      return 'claude';
+    }
+    if (providers['copilot']) {
+      return 'copilot';
     }
     return 'openai';
   }
@@ -760,6 +767,15 @@ function mapModelToProvider(model, providers) {
     modelLower === 'claude-code'
   ) {
     return 'claude';
+  }
+
+  // Check Copilot SDK (exact match only - routes to SDK provider)
+  if (
+    modelLower === 'copilot' ||
+    modelLower === 'copilot-sdk' ||
+    modelLower === 'github-copilot'
+  ) {
+    return 'copilot';
   }
 
   // Check OpenRouter-specific patterns first
@@ -990,12 +1006,13 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
   // Special handling for single "auto" model - expand to first 3 available providers
   let modelsToProcess = models;
   if (models.length === 1 && models[0].toLowerCase() === 'auto') {
-    // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
+    // Prioritize subscription-based providers (codex, gemini-cli, claude, copilot) over API-key providers
     const availableProviders = [];
     const providerOrder = [
       'codex',
       'gemini-cli',
       'claude',
+      'copilot',
       'openai',
       'google',
       'xai',

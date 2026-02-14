@@ -157,18 +157,18 @@ function getDefaultForType(prop) {
   if (prop.enum && prop.enum.length > 0) return prop.enum[0];
 
   switch (prop.type) {
-    case 'string':
-      return 'example';
-    case 'number':
-      return 0;
-    case 'boolean':
-      return false;
-    case 'array':
-      return [];
-    case 'object':
-      return {};
-    default:
-      return null;
+  case 'string':
+    return 'example';
+  case 'number':
+    return 0;
+  case 'boolean':
+    return false;
+  case 'array':
+    return [];
+  case 'object':
+    return {};
+  default:
+    return null;
   }
 }
 
@@ -278,9 +278,9 @@ function generateConfigurationTips(tools) {
     if (tempSchema.minimum !== undefined && tempSchema.maximum !== undefined) {
       output += `Range: ${tempSchema.minimum} to ${tempSchema.maximum}\n`;
     }
-    output += `- **0.0-0.3**: Factual, deterministic responses\n`;
-    output += `- **0.4-0.7**: Balanced creativity and accuracy (recommended)\n`;
-    output += `- **0.8-1.2**: Creative writing, brainstorming\n`;
+    output += '- **0.0-0.3**: Factual, deterministic responses\n';
+    output += '- **0.4-0.7**: Balanced creativity and accuracy (recommended)\n';
+    output += '- **0.8-1.2**: Creative writing, brainstorming\n';
     if (tempSchema.maximum && tempSchema.maximum > 1.2) {
       output += `- **1.3-${tempSchema.maximum}**: Highly experimental, unpredictable\n`;
     }

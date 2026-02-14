@@ -67,6 +67,7 @@ export const hasDeepSeek = hasApiKey('DEEPSEEK');
 export const hasOpenRouter = hasApiKey('OPENROUTER');
 export const hasCodex = hasApiKey('CODEX');
 export const hasGeminiCli = hasApiKey('GEMINI_CLI');
+export const hasCopilot = hasApiKey('COPILOT');
 
 // Common combinations
 export const hasAnyMainProvider = hasAnyApiKey(['OPENAI', 'XAI', 'GOOGLE']);

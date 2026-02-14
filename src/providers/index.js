@@ -16,6 +16,7 @@ import { openrouterProvider } from './openrouter.js';
 import { codexProvider } from './codex.js';
 import { geminiCliProvider } from './gemini-cli.js';
 import { claudeProvider } from './claude.js';
+import { copilotProvider } from './copilot.js';
 
 /**
  * Provider registry map
@@ -35,6 +36,7 @@ const providers = {
   openrouter: openrouterProvider,
   codex: codexProvider,
   claude: claudeProvider,
+  copilot: copilotProvider,
 };
 
 /**

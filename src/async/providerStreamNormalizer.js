@@ -42,6 +42,9 @@ class ProviderStreamNormalizer {
       deepseek: this.normalizeDeepSeekStream.bind(this),
       openrouter: this.normalizeOpenRouterStream.bind(this),
       codex: this.normalizeCodexStream.bind(this),
+      copilot: this.normalizePassthroughStream.bind(this),
+      claude: this.normalizePassthroughStream.bind(this),
+      'gemini-cli': this.normalizePassthroughStream.bind(this),
     };
   }
 
@@ -636,6 +639,77 @@ class ProviderStreamNormalizer {
       }
     } catch (error) {
       debugError('[StreamNormalizer] OpenRouter stream error:', error);
+      yield this.createErrorEvent(error, provider);
+      throw error;
+    }
+  }
+
+  /**
+   * Passthrough normalizer for providers that yield pre-normalized events
+   * (copilot, claude, gemini-cli). These providers emit start/delta/usage/end
+   * events directly — wrap them in the standard createXxxEvent() format.
+   */
+  async *normalizePassthroughStream(stream, context) {
+    const provider = context.provider || 'unknown';
+    const model = context.model || 'unknown';
+    const startTime = Date.now();
+
+    let accumulatedContent = '';
+    let accumulatedUsage = null;
+
+    try {
+      for await (const event of stream) {
+        switch (event.type) {
+        case 'start':
+          yield this.createStartEvent(provider, model, event);
+          break;
+
+        case 'delta':
+          accumulatedContent += event.data?.textDelta || '';
+          yield this.createDeltaEvent(
+            event.data?.textDelta || '',
+            provider,
+            model,
+          );
+          break;
+
+        case 'usage':
+          accumulatedUsage = event.usage || event.data?.usage;
+          if (accumulatedUsage) {
+            yield this.createUsageEvent(accumulatedUsage, provider, model);
+          }
+          break;
+
+        case 'end':
+          yield this.createEndEvent(
+            {
+              content: accumulatedContent,
+              stopReason: event.stop_reason || event.finish_reason || 'stop',
+              usage: accumulatedUsage,
+              responseTime: Date.now() - startTime,
+              metadata: event.metadata || {},
+            },
+            provider,
+            model,
+          );
+          break;
+
+        case 'error':
+          yield this.createErrorEvent(
+            event.error || new Error('Unknown streaming error'),
+            provider,
+          );
+          break;
+
+        default:
+          debugLog(
+            `[StreamNormalizer] Passthrough: unknown event type '${event.type}'`,
+          );
+          break;
+        }
+      }
+    } catch (error) {
+      debugError('[StreamNormalizer] Passthrough stream error:', error);
       yield this.createErrorEvent(error, provider);
       throw error;
     }

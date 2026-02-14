@@ -274,11 +274,12 @@ export async function chatTool(args, dependencies) {
 
     if (model === 'auto') {
       // Auto-select providers in priority order
-      // Prioritize subscription-based providers (codex, gemini-cli, claude) over API-key providers
+      // Prioritize subscription-based providers (codex, gemini-cli, claude, copilot) over API-key providers
       const providerOrder = [
         'codex',
         'gemini-cli',
         'claude',
+        'copilot',
         'openai',
         'google',
         'xai',
@@ -315,7 +316,10 @@ export async function chatTool(args, dependencies) {
         );
       }
 
-      providerCandidates.push({ name: providerName, provider: selectedProvider });
+      providerCandidates.push({
+        name: providerName,
+        provider: selectedProvider,
+      });
     }
 
     // Call provider with recovery (retry and, for auto, failover)
@@ -488,6 +492,7 @@ function resolveAutoModel(model, providerName) {
     codex: 'codex',
     'gemini-cli': 'gemini',
     claude: 'claude',
+    copilot: 'copilot',
     openai: 'gpt-5',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
@@ -526,14 +531,19 @@ function shouldFailoverToNextProvider(error) {
 export function mapModelToProvider(model, providers) {
   const modelLower = model.toLowerCase();
 
-  // Handle "auto" - prioritize: codex > gemini-cli > openai
+  // Handle "auto" - prioritize: codex > gemini-cli > claude > copilot > openai
   if (modelLower === 'auto') {
-    // Check availability in priority order
     if (providers['codex']) {
       return 'codex';
     }
     if (providers['gemini-cli']) {
       return 'gemini-cli';
+    }
+    if (providers['claude']) {
+      return 'claude';
+    }
+    if (providers['copilot']) {
+      return 'copilot';
     }
     return 'openai';
   }
@@ -555,6 +565,15 @@ export function mapModelToProvider(model, providers) {
     modelLower === 'claude-code'
   ) {
     return 'claude';
+  }
+
+  // Check Copilot SDK (exact match only - routes to SDK provider)
+  if (
+    modelLower === 'copilot' ||
+    modelLower === 'copilot-sdk' ||
+    modelLower === 'github-copilot'
+  ) {
+    return 'copilot';
   }
 
   // Check OpenRouter-specific patterns first

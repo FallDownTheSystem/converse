@@ -58,6 +58,15 @@ pnpm test
 pnpm run format:check
 ```
 
+### Code Style Rules
+
+**IMPORTANT: Do NOT run `prettier --write` or `npx prettier` on project files.** This project uses ESLint for formatting with single quotes and tab indentation. Prettier uses incompatible defaults (double quotes, spaces) and will:
+- Convert single quotes to double quotes (breaks ESLint `quotes` rule)
+- Convert tabs to spaces (breaks ESLint `indent` rule)
+- Convert `function()` to `() =>` in test mocks (breaks constructor semantics, causes test failures)
+
+Use `npx eslint --fix <file>` instead to auto-fix formatting issues.
+
 ### Development Commands
 
 ```bash

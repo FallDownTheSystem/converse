@@ -110,6 +110,25 @@ const API_KEY_CONFIGS = {
       }
     },
   },
+  COPILOT: {
+    envVar: null, // Copilot uses GitHub CLI subscription auth
+    prefix: null,
+    minLength: 0,
+    providerName: 'Copilot',
+    customCheck: () => {
+      // Check if Copilot SDK is available
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const pkgPath = path.resolve(
+          'node_modules/@github/copilot-sdk/package.json',
+        );
+        return fs.existsSync(pkgPath);
+      } catch {
+        return false;
+      }
+    },
+  },
 };
 
 /**
@@ -262,6 +281,7 @@ const hasDeepSeek = hasApiKey('DEEPSEEK');
 const hasOpenRouter = hasApiKey('OPENROUTER');
 const hasCodex = hasApiKey('CODEX');
 const hasGeminiCli = hasApiKey('GEMINI_CLI');
+const hasCopilot = hasApiKey('COPILOT');
 
 // Common combinations
 const hasAnyMainProvider = hasAnyApiKey(['OPENAI', 'XAI', 'GOOGLE']);
@@ -286,6 +306,7 @@ module.exports = {
   hasOpenRouter,
   hasCodex,
   hasGeminiCli,
+  hasCopilot,
 
   // Common combinations
   hasAnyMainProvider,

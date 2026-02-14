@@ -276,6 +276,19 @@ const CONFIG_SCHEMA = {
       description:
         'Approval policy (never | untrusted | on-failure | on-request)',
     },
+
+    // Copilot configuration
+    COPILOT_TOOL_ACCESS: {
+      type: 'string',
+      default: 'read-only',
+      description: 'Copilot tool access level (read-only | full)',
+    },
+    COPILOT_MODEL: {
+      type: 'string',
+      required: false,
+      description:
+        'Default model for Copilot SDK sessions (e.g., gpt-5, claude-sonnet-4.5)',
+    },
   },
 
   // MCP configuration
@@ -602,16 +615,20 @@ export async function loadConfig() {
       nodeEnv,
     };
 
-    // Validate that at least one API key is present OR Vertex AI is configured
+    // Validate that at least one usable provider is available
+    // API-key providers require keys; SDK-based providers (codex, claude, gemini-cli, copilot)
+    // work via subscription auth and are always considered available
     const availableKeys = Object.keys(config.apiKeys);
     const hasVertexAI =
       config.providers.googlegenaiusevertexai &&
       config.providers.googlecloudproject &&
       config.providers.googlecloudlocation;
+    const sdkProviders = ['codex', 'claude', 'gemini-cli', 'copilot'];
+    const hasSdkProvider = sdkProviders.length > 0;
 
-    if (availableKeys.length === 0 && !hasVertexAI) {
+    if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI with GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT, and GOOGLE_CLOUD_LOCATION.',
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, gemini-cli, copilot).',
       );
     }
 
