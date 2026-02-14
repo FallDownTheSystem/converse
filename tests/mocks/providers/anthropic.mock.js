@@ -3,15 +3,15 @@
  * Implements Anthropic Claude-specific behavior and response formats
  */
 
-import { vi } from "vitest";
-import { createMockProvider, MockResponseBuilder } from "./base.mock.js";
-import { ProviderError, ErrorCodes } from "../../../src/providers/interface.js";
+import { vi } from 'vitest';
+import { createMockProvider, MockResponseBuilder } from './base.mock.js';
+import { ProviderError, ErrorCodes } from '../../../src/providers/interface.js';
 
 // Anthropic model configurations matching the real provider
 const ANTHROPIC_MODELS = {
-  "claude-3-5-sonnet-20241022": {
-    modelName: "claude-3-5-sonnet-20241022",
-    friendlyName: "Claude 3.5 Sonnet",
+  'claude-3-5-sonnet-20241022': {
+    modelName: 'claude-3-5-sonnet-20241022',
+    friendlyName: 'Claude 3.5 Sonnet',
     contextWindow: 200000,
     maxOutputTokens: 8192,
     supportsStreaming: true,
@@ -20,12 +20,12 @@ const ANTHROPIC_MODELS = {
     supportsWebSearch: false,
     supportsThinking: false,
     timeout: 60000,
-    description: "Most intelligent model, best for complex tasks",
-    aliases: ["claude-3-5-sonnet-latest"],
+    description: 'Most intelligent model, best for complex tasks',
+    aliases: ['claude-3-5-sonnet-latest'],
   },
-  "claude-3-5-haiku-20241022": {
-    modelName: "claude-3-5-haiku-20241022",
-    friendlyName: "Claude 3.5 Haiku",
+  'claude-3-5-haiku-20241022': {
+    modelName: 'claude-3-5-haiku-20241022',
+    friendlyName: 'Claude 3.5 Haiku',
     contextWindow: 200000,
     maxOutputTokens: 8192,
     supportsStreaming: true,
@@ -34,12 +34,12 @@ const ANTHROPIC_MODELS = {
     supportsWebSearch: false,
     supportsThinking: false,
     timeout: 30000,
-    description: "Fast and cost-effective for everyday tasks",
-    aliases: ["claude-3-5-haiku-latest"],
+    description: 'Fast and cost-effective for everyday tasks',
+    aliases: ['claude-3-5-haiku-latest'],
   },
-  "claude-3-opus-20240229": {
-    modelName: "claude-3-opus-20240229",
-    friendlyName: "Claude 3 Opus",
+  'claude-3-opus-20240229': {
+    modelName: 'claude-3-opus-20240229',
+    friendlyName: 'Claude 3 Opus',
     contextWindow: 200000,
     maxOutputTokens: 4096,
     supportsStreaming: true,
@@ -48,12 +48,12 @@ const ANTHROPIC_MODELS = {
     supportsWebSearch: false,
     supportsThinking: false,
     timeout: 60000,
-    description: "Powerful model for complex analysis",
-    aliases: ["claude-3-opus-latest"],
+    description: 'Powerful model for complex analysis',
+    aliases: ['claude-3-opus-latest'],
   },
-  "claude-3-sonnet-20240229": {
-    modelName: "claude-3-sonnet-20240229",
-    friendlyName: "Claude 3 Sonnet",
+  'claude-3-sonnet-20240229': {
+    modelName: 'claude-3-sonnet-20240229',
+    friendlyName: 'Claude 3 Sonnet',
     contextWindow: 200000,
     maxOutputTokens: 4096,
     supportsStreaming: true,
@@ -62,12 +62,12 @@ const ANTHROPIC_MODELS = {
     supportsWebSearch: false,
     supportsThinking: false,
     timeout: 60000,
-    description: "Balanced performance for most tasks",
+    description: 'Balanced performance for most tasks',
     aliases: [],
   },
-  "claude-3-haiku-20240307": {
-    modelName: "claude-3-haiku-20240307",
-    friendlyName: "Claude 3 Haiku",
+  'claude-3-haiku-20240307': {
+    modelName: 'claude-3-haiku-20240307',
+    friendlyName: 'Claude 3 Haiku',
     contextWindow: 200000,
     maxOutputTokens: 4096,
     supportsStreaming: true,
@@ -76,7 +76,7 @@ const ANTHROPIC_MODELS = {
     supportsWebSearch: false,
     supportsThinking: false,
     timeout: 30000,
-    description: "Fast, compact model for simple tasks",
+    description: 'Fast, compact model for simple tasks',
     aliases: [],
   },
 };
@@ -94,7 +94,7 @@ export const MockAnthropic = vi.fn().mockImplementation(function() {
 // Create Anthropic-specific mock provider
 export function createMockAnthropicProvider(overrides = {}) {
   return createMockProvider({
-    name: "anthropic",
+    name: 'anthropic',
 
     getSupportedModels: vi.fn().mockImplementation(() => ANTHROPIC_MODELS),
 
@@ -117,12 +117,12 @@ export function createMockAnthropicProvider(overrides = {}) {
     invoke: vi.fn().mockImplementation(async (messages, options = {}) => {
       const modelConfig =
         ANTHROPIC_MODELS[options.model] ||
-        ANTHROPIC_MODELS["claude-3-5-sonnet-20241022"];
+        ANTHROPIC_MODELS['claude-3-5-sonnet-20241022'];
 
       // Simulate Anthropic-specific validations
       if (!options.config?.apiKeys?.anthropic) {
         throw new ProviderError(
-          "Anthropic API key is required",
+          'Anthropic API key is required',
           ErrorCodes.MISSING_API_KEY,
         );
       }
@@ -131,7 +131,7 @@ export function createMockAnthropicProvider(overrides = {}) {
       const hasImages = messages.some(
         (msg) =>
           Array.isArray(msg.content) &&
-          msg.content.some((item) => item.type === "image"),
+          msg.content.some((item) => item.type === 'image'),
       );
 
       if (hasImages && !modelConfig.supportsImages) {
@@ -143,9 +143,9 @@ export function createMockAnthropicProvider(overrides = {}) {
 
       // Default response
       return new MockResponseBuilder()
-        .withContent("Mock Anthropic response")
-        .withModel(options.model || "claude-3-5-sonnet-20241022")
-        .withProvider("anthropic")
+        .withContent('Mock Anthropic response')
+        .withModel(options.model || 'claude-3-5-sonnet-20241022')
+        .withProvider('anthropic')
         .withUsage({
           input_tokens: 50,
           output_tokens: 30,
@@ -163,21 +163,21 @@ export const mockAnthropicProvider = createMockAnthropicProvider();
 
 // Mock response generators for Anthropic format
 export function createMockAnthropicResponse(
-  content = "Test response",
+  content = 'Test response',
   options = {},
 ) {
   return {
     id: `msg_${Date.now()}`,
-    type: "message",
-    role: "assistant",
-    model: options.model || "claude-3-5-sonnet-20241022",
+    type: 'message',
+    role: 'assistant',
+    model: options.model || 'claude-3-5-sonnet-20241022',
     content: [
       {
-        type: "text",
+        type: 'text',
         text: content,
       },
     ],
-    stop_reason: options.stop_reason || "end_turn",
+    stop_reason: options.stop_reason || 'end_turn',
     stop_sequence: null,
     usage: {
       input_tokens: options.input_tokens || 10,
@@ -188,18 +188,18 @@ export function createMockAnthropicResponse(
 
 // Mock streaming response generator
 export function createMockAnthropicStreamResponse(
-  chunks = ["Hello", " world", "!"],
+  chunks = ['Hello', ' world', '!'],
 ) {
   const events = [];
 
   // Message start event
   events.push({
-    type: "message_start",
+    type: 'message_start',
     message: {
       id: `msg_${Date.now()}`,
-      type: "message",
-      role: "assistant",
-      model: "claude-3-5-sonnet-20241022",
+      type: 'message',
+      role: 'assistant',
+      model: 'claude-3-5-sonnet-20241022',
       content: [],
       stop_reason: null,
       stop_sequence: null,
@@ -212,21 +212,21 @@ export function createMockAnthropicStreamResponse(
 
   // Content block start
   events.push({
-    type: "content_block_start",
+    type: 'content_block_start',
     index: 0,
     content_block: {
-      type: "text",
-      text: "",
+      type: 'text',
+      text: '',
     },
   });
 
   // Content deltas
   chunks.forEach((chunk) => {
     events.push({
-      type: "content_block_delta",
+      type: 'content_block_delta',
       index: 0,
       delta: {
-        type: "text_delta",
+        type: 'text_delta',
         text: chunk,
       },
     });
@@ -234,15 +234,15 @@ export function createMockAnthropicStreamResponse(
 
   // Content block stop
   events.push({
-    type: "content_block_stop",
+    type: 'content_block_stop',
     index: 0,
   });
 
   // Message delta with final usage
   events.push({
-    type: "message_delta",
+    type: 'message_delta',
     delta: {
-      stop_reason: "end_turn",
+      stop_reason: 'end_turn',
       stop_sequence: null,
     },
     usage: {
@@ -252,7 +252,7 @@ export function createMockAnthropicStreamResponse(
 
   // Message stop
   events.push({
-    type: "message_stop",
+    type: 'message_stop',
   });
 
   return events;
@@ -260,25 +260,25 @@ export function createMockAnthropicStreamResponse(
 
 // Error response generators
 export function createMockAnthropicError(
-  type = "invalid_api_key",
+  type = 'invalid_api_key',
   message = null,
 ) {
   const errors = {
     invalid_api_key: {
-      type: "authentication_error",
-      message: message || "Invalid API key",
+      type: 'authentication_error',
+      message: message || 'Invalid API key',
     },
     rate_limit: {
-      type: "rate_limit_error",
-      message: message || "Rate limit exceeded",
+      type: 'rate_limit_error',
+      message: message || 'Rate limit exceeded',
     },
     invalid_request: {
-      type: "invalid_request_error",
-      message: message || "Invalid request",
+      type: 'invalid_request_error',
+      message: message || 'Invalid request',
     },
     overloaded: {
-      type: "overloaded_error",
-      message: message || "Overloaded",
+      type: 'overloaded_error',
+      message: message || 'Overloaded',
     },
   };
 
@@ -286,11 +286,11 @@ export function createMockAnthropicError(
   const error = new Error(errorData.message);
   error.type = errorData.type;
   error.status =
-    type === "invalid_api_key"
+    type === 'invalid_api_key'
       ? 401
-      : type === "rate_limit"
+      : type === 'rate_limit'
         ? 429
-        : type === "overloaded"
+        : type === 'overloaded'
           ? 529
           : 400;
 
@@ -307,7 +307,7 @@ export function createMockAnthropicClient(behavior = {}) {
         }
 
         return createMockAnthropicResponse(
-          behavior.content || "Mock response",
+          behavior.content || 'Mock response',
           behavior.responseOptions || {},
         );
       }),
@@ -317,7 +317,7 @@ export function createMockAnthropicClient(behavior = {}) {
           throw createMockAnthropicError(behavior.errorType);
         }
 
-        const chunks = behavior.chunks || ["Test", " streaming", " response"];
+        const chunks = behavior.chunks || ['Test', ' streaming', ' response'];
         const events = createMockAnthropicStreamResponse(chunks);
 
         return {
