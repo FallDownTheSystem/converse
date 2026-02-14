@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.0] - 2026-02-14
+
+### Added
+
+- **GitHub Copilot SDK Provider**: New provider using `@github/copilot-sdk` for CLI-authenticated Copilot access
+  - Singleton `CopilotClient` with auto-start/restart; fresh session per request
+  - Push-to-pull streaming bridge (SDK events → async generator)
+  - Tool permission handler with `COPILOT_TOOL_ACCESS` (read-only | full)
+  - Model passthrough via `COPILOT_MODEL` env or explicit model param
+  - Aliases: `copilot`, `copilot-sdk`, `github-copilot`
+  - Registered in all auto-selection paths (chat sync/async, consensus sync/async) with priority after `claude`, before `openai`
+- **ESLint Test Override**: Disabled `prefer-arrow-callback` for test files to prevent `eslint --fix` from breaking mock constructors
+
+### Fixed
+
+- **Async Chat Auto-Selection**: Used `providerOrder` priority array instead of `Object.keys(providers)` for consistent provider selection between sync and async paths
+- **Async Consensus Streaming**: SDK providers (copilot, codex, claude, gemini-cli) now stream via `invoke({stream: true})` with async iterator detection, instead of falling through to non-streaming path
+- **Stream Normalizer Context**: Pass `provider` name in normalizer context from chat and consensus call sites, fixing `'unknown'` provider in passthrough normalizer
+- **Config Usable-Provider Validation**: Check SDK package availability via `import.meta.resolve` instead of always-true array length check
+- **Copilot SDK Availability**: `isCopilotSDKAvailable()` now uses `import.meta.resolve` instead of always returning `true`
+- **Copilot Config Injection**: Provider reads `COPILOT_TOOL_ACCESS` and `COPILOT_MODEL` from config object instead of `process.env` directly
+- **Copilot TOOL_ACCESS Validation**: Invalid values are caught at config load time (matching `CODEX_SANDBOX_MODE` validation pattern)
+- **Copilot session.send()**: Awaited SDK's `session.send()` which returns a Promise
+- **Copilot assistant.message**: Handle final-content event as delta fallback when deltas are coalesced
+
+### Changed
+
+- **Node.js Requirement**: Minimum version bumped from 20 to 24 (required by `@github/copilot-sdk`)
+- **Dependencies**: Added `@github/copilot-sdk` ^0.1.23
+
 ## [2.12.0] - 2026-02-07
 
 ### Fixed
