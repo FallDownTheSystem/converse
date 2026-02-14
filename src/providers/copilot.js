@@ -79,7 +79,7 @@ let clientInitPromise = null;
  * Get or create the singleton CopilotClient
  * The client manages the CLI process lifecycle via JSON-RPC
  */
-async function getCopilotClient() {
+async function getCopilotClient(cwd) {
   if (clientInstance) {
     return clientInstance;
   }
@@ -94,9 +94,10 @@ async function getCopilotClient() {
       autoStart: true,
       autoRestart: true,
       useLoggedInUser: true,
+      cwd: cwd || process.cwd(),
     });
     await clientInstance.start();
-    debugLog('[Copilot SDK] Client started');
+    debugLog('[Copilot SDK] Client started (cwd: %s)', clientInstance.options?.cwd || cwd);
     return clientInstance;
   })();
 
@@ -414,7 +415,8 @@ export const copilotProvider = {
     }
 
     try {
-      const client = await getCopilotClient();
+      const cwd = config.server?.client_cwd || process.cwd();
+      const client = await getCopilotClient(cwd);
       const prompt = convertMessagesToPrompt(messages);
 
       const modelConfig = SUPPORTED_MODELS.copilot;
