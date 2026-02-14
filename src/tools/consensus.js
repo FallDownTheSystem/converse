@@ -1462,20 +1462,37 @@ async function executeConsensusPhaseWithStreaming(
         const messagesToSend = call.messages || messages;
         let response;
 
-        // Check if provider supports streaming
+        // Try streaming: .stream() method first, then invoke({stream:true}) for SDK providers
+        let stream = null;
         if (
           call.providerInstance.stream &&
           typeof call.providerInstance.stream === 'function'
         ) {
-          // Use streaming with normalization
-          const stream = call.providerInstance.stream(
+          stream = call.providerInstance.stream(
             messagesToSend,
             call.options,
           );
+        } else {
+          // SDK providers (copilot, codex, claude, gemini-cli) stream via invoke
+          const streamResult = await call.providerInstance.invoke(
+            messagesToSend,
+            { ...call.options, stream: true },
+          );
+          // Check if result is an async iterable (streaming) vs a plain response
+          if (streamResult && typeof streamResult[Symbol.asyncIterator] === 'function') {
+            stream = streamResult;
+          } else {
+            // Provider returned a non-streaming response — use it directly
+            response = streamResult;
+          }
+        }
+
+        if (stream) {
           const normalizedStream = streamNormalizer.normalize(
             call.provider,
             stream,
             {
+              provider: call.provider,
               model: call.options.model,
               requestId: `${context.jobId}-${phase}-${index}`,
             },
@@ -1512,7 +1529,7 @@ async function executeConsensusPhaseWithStreaming(
                     accumulatedContent.length > 150
                       ? accumulatedContent.substring(0, 150) + '...'
                       : accumulatedContent,
-                accumulated_content: combinedContent, // Full combined content from all providers
+                accumulated_content: combinedContent,
               });
               break;
             case 'usage':
@@ -1539,12 +1556,16 @@ async function executeConsensusPhaseWithStreaming(
 
           // Store final provider content
           providerContents[index] = accumulatedContent;
-        } else {
-          // Fall back to regular invoke
-          response = await call.providerInstance.invoke(
-            messagesToSend,
-            call.options,
-          );
+        }
+
+        if (!stream) {
+          // Non-streaming path (provider doesn't support streaming at all)
+          if (!response) {
+            response = await call.providerInstance.invoke(
+              messagesToSend,
+              call.options,
+            );
+          }
 
           // Store provider content for non-streaming response
           if (response && response.content) {

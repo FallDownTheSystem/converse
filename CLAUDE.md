@@ -315,7 +315,7 @@ LOG_LEVEL=debug npm start
 
 ### Environment Requirements
 
-- Node.js 20.0.0+ (LTS recommended)
+- Node.js 24.0.0+ (LTS recommended)
 - **pnpm** (required - do NOT use npm or yarn)
   - Install: `npm install -g pnpm` or `corepack enable`
 - API keys for at least one provider (OpenAI, Google, or XAI)

@@ -543,6 +543,16 @@ export async function loadConfig() {
               );
             }
           }
+
+          // Validate Copilot tool access level during loading
+          if (key === 'COPILOT_TOOL_ACCESS') {
+            const validAccessLevels = ['read-only', 'full'];
+            if (!validAccessLevels.includes(value)) {
+              errors.push(
+                `Invalid COPILOT_TOOL_ACCESS: "${value}". Must be one of: ${validAccessLevels.join(', ')}`,
+              );
+            }
+          }
         }
       } catch (error) {
         errors.push(error.message);
@@ -617,14 +627,26 @@ export async function loadConfig() {
 
     // Validate that at least one usable provider is available
     // API-key providers require keys; SDK-based providers (codex, claude, gemini-cli, copilot)
-    // work via subscription auth and are always considered available
+    // work via subscription auth — check if their packages are actually installed
     const availableKeys = Object.keys(config.apiKeys);
     const hasVertexAI =
       config.providers.googlegenaiusevertexai &&
       config.providers.googlecloudproject &&
       config.providers.googlecloudlocation;
-    const sdkProviders = ['codex', 'claude', 'gemini-cli', 'copilot'];
-    const hasSdkProvider = sdkProviders.length > 0;
+    const sdkPackages = {
+      codex: '@anthropic-ai/claude-code',
+      claude: '@anthropic-ai/claude-agent-sdk',
+      'gemini-cli': '@anthropic-ai/claude-code', // shares codex check
+      copilot: '@github/copilot-sdk',
+    };
+    const hasSdkProvider = Object.values(sdkPackages).some((pkg) => {
+      try {
+        import.meta.resolve(pkg);
+        return true;
+      } catch {
+        return false;
+      }
+    });
 
     if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(

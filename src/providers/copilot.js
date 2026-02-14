@@ -40,34 +40,32 @@ class CopilotProviderError extends ProviderError {
 }
 
 /**
- * Check if Copilot SDK is available (optional dependency)
+ * Check if Copilot SDK is available (installed as dependency)
  */
+let _sdkAvailable = null;
 function isCopilotSDKAvailable() {
+  if (_sdkAvailable !== null) return _sdkAvailable;
   try {
-    return true;
+    // Use synchronous resolve to check if the package exists
+    import.meta.resolve('@github/copilot-sdk');
+    _sdkAvailable = true;
   } catch {
-    return false;
+    _sdkAvailable = false;
   }
+  return _sdkAvailable;
 }
 
 /**
  * Dynamically import Copilot SDK (lazy loading)
  */
 async function getCopilotSDK() {
-  if (!isCopilotSDKAvailable()) {
-    throw new CopilotProviderError(
-      'Copilot SDK not installed. Install with: npm install @github/copilot-sdk',
-      'COPILOT_SDK_NOT_INSTALLED',
-    );
-  }
-
   try {
     const { CopilotClient } = await import('@github/copilot-sdk');
     return CopilotClient;
   } catch (error) {
     throw new CopilotProviderError(
-      'Failed to load Copilot SDK. Install with: npm install @github/copilot-sdk',
-      'COPILOT_SDK_LOAD_ERROR',
+      'Copilot SDK not available. Ensure @github/copilot-sdk is installed and Copilot CLI is authenticated (copilot auth login).',
+      ErrorCodes.API_ERROR,
       error,
     );
   }
@@ -167,11 +165,12 @@ function convertMessagesToPrompt(messages) {
 }
 
 /**
- * Get tool access level from environment
+ * Get tool access level from config
+ * @param {object} config - Server configuration object
  * @returns {'read-only' | 'full'}
  */
-function getToolAccessLevel() {
-  const level = process.env.COPILOT_TOOL_ACCESS || 'read-only';
+function getToolAccessLevel(config) {
+  const level = config?.providers?.copilottoolaccess || 'read-only';
   return level === 'full' ? 'full' : 'read-only';
 }
 
@@ -198,12 +197,12 @@ function createPermissionHandler(accessLevel) {
 
 /**
  * Resolve model to pass to SDK session
- * Precedence: explicit model param > COPILOT_MODEL env > omit (SDK default)
+ * Precedence: explicit model param > config COPILOT_MODEL > omit (SDK default)
  *
  * Note: "copilot" is a Converse routing alias, not a valid SDK model ID.
  * Only pass through model names that are actual SDK model IDs.
  */
-function resolveSessionModel(requestModel) {
+function resolveSessionModel(requestModel, config) {
   const converseAliases = ['copilot', 'copilot-sdk', 'github-copilot'];
 
   // If user specified a non-alias model name, pass it to SDK
@@ -211,9 +210,9 @@ function resolveSessionModel(requestModel) {
     return requestModel;
   }
 
-  // Fall back to env var
-  if (process.env.COPILOT_MODEL) {
-    return process.env.COPILOT_MODEL;
+  // Fall back to config value
+  if (config?.providers?.copilotmodel) {
+    return config.providers.copilotmodel;
   }
 
   // Omit — let SDK use its default
@@ -232,11 +231,11 @@ function resolveSessionModel(requestModel) {
  * - session.idle → processing complete
  * - session.error → { data: { errorType, message } }
  */
-async function* createStreamingGenerator(client, prompt, options, signal) {
+async function* createStreamingGenerator(client, prompt, options, signal, config) {
   const { model, timeout = 120000 } = options;
 
-  const sessionModel = resolveSessionModel(model);
-  const accessLevel = getToolAccessLevel();
+  const sessionModel = resolveSessionModel(model, config);
+  const accessLevel = getToolAccessLevel(config);
 
   const sessionConfig = {
     streaming: true,
@@ -270,6 +269,16 @@ async function* createStreamingGenerator(client, prompt, options, signal) {
           type: 'delta',
           data: { textDelta: event.data.deltaContent },
         });
+        break;
+
+      case 'assistant.message':
+        // Final complete message — use as fallback if deltas were coalesced
+        if (event.data.content) {
+          eventQueue.push({
+            type: 'delta',
+            data: { textDelta: event.data.content },
+          });
+        }
         break;
 
       case 'assistant.usage':
@@ -318,8 +327,8 @@ async function* createStreamingGenerator(client, prompt, options, signal) {
     }, timeout);
 
     try {
-      // Send the prompt (non-blocking — events come via callback)
-      session.send({ prompt });
+      // Send the prompt — SDK returns a Promise; await to catch send errors
+      await session.send({ prompt });
 
       // Pull events from queue until done
       while (!done || eventQueue.length > 0) {
@@ -415,7 +424,7 @@ export const copilotProvider = {
       };
 
       if (stream) {
-        return createStreamingGenerator(client, prompt, invokeOptions, signal);
+        return createStreamingGenerator(client, prompt, invokeOptions, signal, config);
       }
 
       // Synchronous mode: consume streaming internally
@@ -425,6 +434,7 @@ export const copilotProvider = {
         prompt,
         invokeOptions,
         signal,
+        config,
       );
 
       let content = '';

@@ -821,20 +821,35 @@ async function executeChatWithStreaming(args, dependencies, context) {
   let providerName;
 
   if (model === 'auto') {
-    // Auto-select first available provider
-    const availableProviders = Object.keys(providers).filter((name) => {
-      const provider = providers[name];
-      return provider && provider.isAvailable && provider.isAvailable(config);
-    });
+    // Auto-select first available provider using same priority as sync path
+    const providerOrder = [
+      'codex',
+      'gemini-cli',
+      'claude',
+      'copilot',
+      'openai',
+      'google',
+      'xai',
+      'anthropic',
+      'mistral',
+      'deepseek',
+      'openrouter',
+    ];
 
-    if (availableProviders.length === 0) {
+    for (const name of providerOrder) {
+      const provider = providers[name];
+      if (provider && provider.isAvailable && provider.isAvailable(config)) {
+        providerName = name;
+        selectedProvider = provider;
+        break;
+      }
+    }
+
+    if (!selectedProvider) {
       throw new Error(
         'No providers available. Please configure at least one API key.',
       );
     }
-
-    providerName = availableProviders[0];
-    selectedProvider = providers[providerName];
   } else {
     // Use specified provider/model
     providerName = mapModelToProvider(model, providers);
@@ -885,6 +900,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
       providerName,
       stream,
       {
+        provider: providerName,
         model: resolvedModel,
         requestId: context.jobId,
       },
