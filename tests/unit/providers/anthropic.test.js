@@ -93,21 +93,22 @@ describe('Anthropic Provider', () => {
       expect(Object.keys(models).length).toBeGreaterThan(0);
 
       // Check for some expected models
+      expect(models['claude-sonnet-4-6']).toBeDefined();
       expect(models['claude-sonnet-4-5-20250929']).toBeDefined();
       expect(models['claude-haiku-4-5-20251001']).toBeDefined();
       expect(models['claude-opus-4-5-20251101']).toBeDefined();
     });
 
     it('should get model config by exact name', () => {
-      const config = anthropicProvider.getModelConfig(
-        'claude-sonnet-4-5-20250929',
-      );
+      const config = anthropicProvider.getModelConfig('claude-sonnet-4-6');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('claude-sonnet-4-5-20250929');
+      expect(config.modelName).toBe('claude-sonnet-4-6');
       expect(config.contextWindow).toBe(200000);
       expect(config.maxOutputTokens).toBe(64000);
       expect(config.supportsImages).toBe(true);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.supportsCompaction).toBe(true);
     });
 
     it('should get Claude Haiku 4.5 config with correct specifications', () => {
@@ -131,7 +132,7 @@ describe('Anthropic Provider', () => {
       const config = anthropicProvider.getModelConfig('sonnet');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('claude-sonnet-4-5-20250929');
+      expect(config.modelName).toBe('claude-sonnet-4-6');
     });
 
     it('should resolve Claude Haiku 4.5 by various aliases', () => {
@@ -178,7 +179,7 @@ describe('Anthropic Provider', () => {
           input_tokens: 10,
           output_tokens: 20,
         },
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
       };
 
       mockCreate.mockResolvedValue(mockResponse);
@@ -189,20 +190,20 @@ describe('Anthropic Provider', () => {
 
       const result = await anthropicProvider.invoke(messages, {
         config: mockConfig,
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
       });
 
       expect(mockCreate).toHaveBeenCalled();
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.messages).toEqual(messages);
-      expect(callArgs.model).toBe('claude-sonnet-4-5-20250929');
+      expect(callArgs.model).toBe('claude-sonnet-4-6');
       expect(callArgs.max_tokens).toBe(64000); // Default for this model
 
       expect(result).toMatchObject({
         content: 'Test response',
         stop_reason: StopReasons.STOP,
         metadata: {
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'claude-sonnet-4-6',
           usage: {
             input_tokens: 10,
             output_tokens: 20,
@@ -356,25 +357,27 @@ describe('Anthropic Provider', () => {
       expect(maxEffortCallArgs.max_tokens).toBe(32000);
     });
 
-    it('should handle claude-sonnet-4 with thinking enabled', async () => {
-      const messages = [{ role: 'user', content: 'Test sonnet-4' }];
+    it('should use adaptive thinking for Sonnet 4.6', async () => {
+      const messages = [{ role: 'user', content: 'Test sonnet-4.6' }];
 
       await anthropicProvider.invoke(messages, {
-        model: 'claude-sonnet-4',
+        model: 'claude-sonnet-4-6',
         reasoning_effort: 'medium',
         config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.model).toBe('claude-sonnet-4-20250514');
-      expect(callArgs.max_tokens).toBe(64000); // Set for Claude 4 models
+      expect(callArgs.model).toBe('claude-sonnet-4-6');
+      expect(callArgs.max_tokens).toBe(64000);
       expect(callArgs.thinking).toEqual({
-        type: 'enabled',
-        budget_tokens: 21120, // 33% of 64000
+        type: 'adaptive',
+      });
+      expect(callArgs.output_config).toEqual({
+        effort: 'medium',
       });
     });
 
-    it('should add thinking for all current models that support it', async () => {
+    it('should add budget-based thinking for legacy Sonnet 4.5', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
 
       await anthropicProvider.invoke(messages, {
@@ -629,13 +632,13 @@ describe('Anthropic Provider', () => {
 
       await expect(
         anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'claude-sonnet-4-6',
           config: mockConfig,
         }),
       ).rejects.toMatchObject({
         code: ErrorCodes.MODEL_NOT_FOUND,
         message: expect.stringContaining(
-          'Model claude-sonnet-4-5-20250929 not found',
+          'Model claude-sonnet-4-6 not found',
         ),
       });
     });
@@ -740,7 +743,7 @@ describe('Anthropic Provider', () => {
 
       const streamResult = await anthropicProvider.invoke(messages, {
         stream: true,
-        model: 'claude-sonnet-4-5-20250929', // Specify model to match expectations
+        model: 'claude-sonnet-4-6', // Specify model to match expectations
         config: mockConfig,
       });
 
@@ -759,9 +762,9 @@ describe('Anthropic Provider', () => {
       // Check start event
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         provider: 'anthropic',
-        thinking_mode: true, // Sonnet 4.5 supports thinking
+        thinking_mode: true, // Sonnet 4.6 supports thinking
       });
 
       // Check delta events
@@ -794,7 +797,7 @@ describe('Anthropic Provider', () => {
         content: 'Hello world',
         stop_reason: 'stop',
         metadata: {
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'claude-sonnet-4-6',
           provider: 'anthropic',
           reasoning_effort: 'medium', // Default reasoning effort
         },

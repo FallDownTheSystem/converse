@@ -30,6 +30,7 @@ const SUPPORTED_MODELS = {
     supportsEffort: true, // Effort parameter is GA on Opus 4.6 (no beta header needed)
     effortGA: true, // Effort is generally available, no beta header required
     supports1MContext: true, // Beta 1M context support
+    supportsCompaction: true, // Beta server-side context compaction
     description:
       'Claude Opus 4.6 - Most intelligent model for building agents and coding with adaptive thinking and 128K output',
     aliases: [
@@ -101,9 +102,42 @@ const SUPPORTED_MODELS = {
       'claude-opus-4.1',
     ],
   },
+  'claude-sonnet-4-6': {
+    modelName: 'claude-sonnet-4-6',
+    friendlyName: 'Claude Sonnet 4.6',
+    contextWindow: 200000,
+    maxOutputTokens: 64000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Sonnet 4.6: thinking: {type: "adaptive"} recommended
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 64000,
+    timeout: 300000,
+    supportsEffort: true,
+    effortGA: true, // Effort is generally available, no beta header required
+    supports1MContext: true, // Beta 1M context support
+    supportsCompaction: true, // Beta server-side context compaction
+    description:
+      'Claude Sonnet 4.6 - Best combination of speed and intelligence with adaptive thinking',
+    aliases: [
+      'claude-sonnet-4-6',
+      'claude-4.6-sonnet',
+      'claude-4-6-sonnet',
+      'sonnet-4.6',
+      'sonnet-4-6',
+      'sonnet4.6',
+      'sonnet4-6',
+      'claude-sonnet-4.6',
+      'sonnet',
+      'claude-sonnet',
+    ],
+  },
   'claude-sonnet-4-5-20250929': {
     modelName: 'claude-sonnet-4-5-20250929',
-    friendlyName: 'Claude Sonnet 4.5',
+    friendlyName: 'Claude Sonnet 4.5 (Legacy)',
     contextWindow: 200000,
     maxOutputTokens: 64000,
     supportsStreaming: true,
@@ -115,35 +149,16 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 64000,
     timeout: 300000,
     supports1MContext: true, // Beta 1M context support
+    deprecated: true,
     description:
-      'Claude Sonnet 4.5 - Latest Sonnet with enhanced intelligence and optional 1M context',
+      'Claude Sonnet 4.5 (Legacy) - Use claude-sonnet-4-6 instead',
     aliases: [
       'claude-4.5-sonnet',
       'sonnet-4.5',
       'claude-sonnet-4.5',
       'sonnet4.5',
       'claude-sonnet-4-5',
-      'sonnet',
-      'claude-sonnet',
     ],
-  },
-  'claude-sonnet-4-20250514': {
-    modelName: 'claude-sonnet-4-20250514',
-    friendlyName: 'Claude Sonnet 4',
-    contextWindow: 200000,
-    maxOutputTokens: 64000,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: true,
-    supportsWebSearch: false,
-    supportsThinking: true,
-    minThinkingTokens: 1024,
-    maxThinkingTokens: 64000,
-    timeout: 300000,
-    supports1MContext: true, // Beta 1M context support
-    description:
-      'Claude Sonnet 4 - High intelligence and balanced performance with extended thinking',
-    aliases: ['claude-4-sonnet', 'sonnet-4', 'claude-sonnet-4', 'sonnet4'],
   },
   'claude-haiku-4-5-20251001': {
     modelName: 'claude-haiku-4-5-20251001',
@@ -197,7 +212,7 @@ const THINKING_BUDGETS = {
 };
 
 /**
- * Effort parameter mapping for Opus 4.5
+ * Effort parameter mapping for Opus 4.6, Sonnet 4.6, and Opus 4.5
  * Maps reasoning_effort values to Anthropic's effort parameter values
  */
 const EFFORT_MAP = {
@@ -503,6 +518,14 @@ export const anthropicProvider = {
       );
     }
 
+    // Add compaction beta feature if model supports it
+    if (modelConfig.supportsCompaction) {
+      betas.push('compact-2026-01-12');
+      debugLog(
+        `[Anthropic] Model ${resolvedModel} supports server-side context compaction with beta feature`,
+      );
+    }
+
     // Add effort beta feature for models that need it (not GA yet)
     if (modelConfig.supportsEffort && reasoning_effort && !modelConfig.effortGA) {
       betas.push('effort-2025-11-24');
@@ -546,7 +569,7 @@ export const anthropicProvider = {
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
       if (modelConfig.supportsAdaptiveThinking) {
-        // Opus 4.6+: Use adaptive thinking (recommended)
+        // Opus 4.6 / Sonnet 4.6: Use adaptive thinking (recommended)
         // Claude dynamically decides when and how much to think
         // Effort parameter controls thinking depth
         requestPayload.thinking = {
