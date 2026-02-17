@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-02-17
+
+### Added
+
+- **Claude Sonnet 4.6 Model Support**: Added `claude-sonnet-4-6` to Anthropic provider
+  - 64K max output tokens, 200K context (1M beta)
+  - Adaptive thinking mode (`thinking: {type: "adaptive"}`) — recommended over legacy budget-based thinking
+  - Effort parameter is GA (no beta header required)
+  - `sonnet` / `claude-sonnet` aliases now resolve to Sonnet 4.6
+- **Server-Side Context Compaction**: Beta support for Opus 4.6 and Sonnet 4.6 via `compact-2026-01-12` header
+  - Automatically summarizes older context when approaching context window limits
+
+### Changed
+
+- **Sonnet 4.5 Deprecated**: Marked as legacy; `sonnet` alias moved to Sonnet 4.6
+- **Sonnet 4 Removed**: Removed from supported models entirely
+- **Dependencies**: Updated all dependencies to latest versions
+  - `@anthropic-ai/sdk` 0.73.0 → 0.74.0
+  - `@anthropic-ai/claude-agent-sdk` 0.2.32 → 0.2.44
+  - `@google/genai` 1.38.0 → 1.41.0
+  - `@modelcontextprotocol/sdk` 1.25.3 → 1.26.0
+  - `openai` 6.17.0 → 6.22.0
+  - `eslint` 9.39.2 → 10.0.0
+  - And others (see package.json)
+
+### Fixed
+
+- **OpenAI Tests**: Updated tests for `gpt-5-pro` → `gpt-5.2-pro` model rename
+
 ## [2.13.0] - 2026-02-14
 
 ### Added
