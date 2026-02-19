@@ -94,14 +94,14 @@
     ".env.example"
   ],
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.44",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.47",
     "@anthropic-ai/sdk": "^0.74.0",
-    "@github/copilot-sdk": "^0.1.24",
+    "@github/copilot-sdk": "^0.1.25",
     "@google/genai": "^1.42.0",
     "@mistralai/mistralai": "^1.14.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@openai/codex-sdk": "^0.101.0",
-    "ai": "^6.0.87",
+    "ai": "^6.0.93",
     "ai-sdk-provider-gemini-cli": "^2.0.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
