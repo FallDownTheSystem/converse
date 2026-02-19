@@ -26,7 +26,7 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 const SUPPORTED_MODELS = {
   gemini: {
     modelName: 'gemini',
-    friendlyName: 'Gemini 3.0 Pro Preview (via CLI)',
+    friendlyName: 'Gemini 3.1 Pro Preview (via CLI)',
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 64000,
     supportsStreaming: true,
@@ -36,10 +36,10 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     timeout: 300000, // 5 minutes
     description:
-      'Gemini 3.0 Pro Preview via OAuth - requires Gemini CLI authentication',
+      'Gemini 3.1 Pro Preview via OAuth - requires Gemini CLI authentication',
     aliases: ['gemini-cli'],
-    // Internal SDK model name (user-facing "gemini" maps to SDK's "gemini-3-pro-preview")
-    sdkModelName: 'gemini-3-pro-preview',
+    // Internal SDK model name (user-facing "gemini" maps to SDK's "gemini-3.1-pro-preview")
+    sdkModelName: 'gemini-3.1-pro-preview',
   },
 };
 

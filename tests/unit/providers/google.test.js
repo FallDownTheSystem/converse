@@ -69,7 +69,7 @@ describe('Google Provider', () => {
       expect('gemini-2.5-flash' in models).toBeTruthy();
       expect('gemini-2.5-flash-lite' in models).toBeTruthy();
       expect('gemini-2.5-pro' in models).toBeTruthy();
-      expect('gemini-3-pro-preview' in models).toBeTruthy();
+      expect('gemini-3.1-pro-preview' in models).toBeTruthy();
     });
 
     it('should include model configuration details', () => {
@@ -90,7 +90,7 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-flash-lite'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-pro'].supportsThinking).toBe(true);
-      expect(models['gemini-3-pro-preview'].supportsThinking).toBe(true);
+      expect(models['gemini-3.1-pro-preview'].supportsThinking).toBe(true);
     });
 
     it('should have correct image support configuration', () => {
@@ -100,21 +100,27 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].supportsImages).toBe(true);
       expect(models['gemini-2.5-flash-lite'].supportsImages).toBe(true);
       expect(models['gemini-2.5-pro'].supportsImages).toBe(true);
-      expect(models['gemini-3-pro-preview'].supportsImages).toBe(true);
+      expect(models['gemini-3.1-pro-preview'].supportsImages).toBe(true);
     });
 
-    it('should include Gemini 3.0 model with correct configuration', () => {
+    it('should include Gemini 3.1 model with correct configuration', () => {
       const models = googleProvider.getSupportedModels();
-      const gemini3Model = models['gemini-3-pro-preview'];
+      const gemini31Model = models['gemini-3.1-pro-preview'];
 
-      expect(gemini3Model.modelName).toBe('gemini-3-pro-preview');
-      expect(gemini3Model.friendlyName).toBe('Gemini (Pro 3.0)');
-      expect(gemini3Model.contextWindow).toBe(1048576);
-      expect(gemini3Model.maxOutputTokens).toBe(64000);
-      expect(gemini3Model.supportsThinking).toBe(true);
-      expect(gemini3Model.thinkingMode).toBe('level');
-      expect(gemini3Model.supportsImages).toBe(true);
-      expect(gemini3Model.supportsWebSearch).toBe(true);
+      expect(gemini31Model.modelName).toBe('gemini-3.1-pro-preview');
+      expect(gemini31Model.friendlyName).toBe('Gemini (Pro 3.1)');
+      expect(gemini31Model.contextWindow).toBe(1048576);
+      expect(gemini31Model.maxOutputTokens).toBe(64000);
+      expect(gemini31Model.supportsThinking).toBe(true);
+      expect(gemini31Model.thinkingMode).toBe('level');
+      expect(gemini31Model.thinkingLevels).toEqual([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+      ]);
+      expect(gemini31Model.supportsImages).toBe(true);
+      expect(gemini31Model.supportsWebSearch).toBe(true);
     });
   });
 
@@ -145,23 +151,44 @@ describe('Google Provider', () => {
       }
     });
 
-    it('should return config for default aliases (now pointing to Gemini 3.0)', () => {
+    it('should return config for default aliases (now pointing to Gemini 3.1)', () => {
       const aliases = ['pro', 'gemini pro', 'gemini-pro'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-3-pro-preview');
+        expect(config.modelName).toBe('gemini-3.1-pro-preview');
       }
     });
 
-    it('should return config for Gemini 3.0 specific aliases', () => {
-      const aliases = ['gemini-3', 'gemini3', 'gemini-3-pro', '3-pro'];
+    it('should return config for Gemini 3.1 specific aliases', () => {
+      const aliases = [
+        'gemini-3.1',
+        'gemini3.1',
+        'gemini-3.1-pro',
+        '3.1-pro',
+      ];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-3-pro-preview');
+        expect(config.modelName).toBe('gemini-3.1-pro-preview');
+      }
+    });
+
+    it('should return config for Gemini 3.0 aliases (now pointing to Gemini 3.1)', () => {
+      const aliases = [
+        'gemini-3',
+        'gemini3',
+        'gemini-3-pro',
+        'gemini-3-pro-preview',
+        '3-pro',
+      ];
+
+      for (const alias of aliases) {
+        const config = googleProvider.getModelConfig(alias);
+        expect(config).toBeTruthy(); // Should find config for alias: ${alias}
+        expect(config.modelName).toBe('gemini-3.1-pro-preview');
       }
     });
 
@@ -289,7 +316,8 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-flash-lite'].supportsThinking).toBe(true);
       expect(models['gemini-2.5-pro'].supportsThinking).toBe(true);
-      expect(models['gemini-3-pro-preview'].supportsThinking).toBe(true);
+
+      expect(models['gemini-3.1-pro-preview'].supportsThinking).toBe(true);
     });
 
     it('should have correct thinking token limits', () => {
@@ -312,7 +340,8 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].supportsTemperature).toBe(true);
       expect(models['gemini-2.5-flash-lite'].supportsTemperature).toBe(true);
       expect(models['gemini-2.5-pro'].supportsTemperature).toBe(true);
-      expect(models['gemini-3-pro-preview'].supportsTemperature).toBe(true);
+
+      expect(models['gemini-3.1-pro-preview'].supportsTemperature).toBe(true);
     });
   });
 
@@ -339,7 +368,8 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].contextWindow).toBe(1048576);
       expect(models['gemini-2.5-flash-lite'].contextWindow).toBe(1048576);
       expect(models['gemini-2.5-pro'].contextWindow).toBe(1048576);
-      expect(models['gemini-3-pro-preview'].contextWindow).toBe(1048576);
+
+      expect(models['gemini-3.1-pro-preview'].contextWindow).toBe(1048576);
     });
 
     it('should have consistent output token limits', () => {
@@ -349,8 +379,9 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].maxOutputTokens).toBe(65536);
       expect(models['gemini-2.5-flash-lite'].maxOutputTokens).toBe(65536);
       expect(models['gemini-2.5-pro'].maxOutputTokens).toBe(65536);
-      // Gemini 3.0 has 64000 max output tokens
-      expect(models['gemini-3-pro-preview'].maxOutputTokens).toBe(64000);
+      // Gemini 3.x has 64000 max output tokens
+
+      expect(models['gemini-3.1-pro-preview'].maxOutputTokens).toBe(64000);
     });
   });
 
@@ -362,7 +393,8 @@ describe('Google Provider', () => {
       expect(models['gemini-2.5-flash'].supportsStreaming).toBe(true);
       expect(models['gemini-2.5-flash-lite'].supportsStreaming).toBe(true);
       expect(models['gemini-2.5-pro'].supportsStreaming).toBe(true);
-      expect(models['gemini-3-pro-preview'].supportsStreaming).toBe(true);
+
+      expect(models['gemini-3.1-pro-preview'].supportsStreaming).toBe(true);
     });
 
     it('should have _createStreamingGenerator method', () => {

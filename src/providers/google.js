@@ -76,28 +76,34 @@ const SUPPORTED_MODELS = {
       'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
     aliases: ['pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest'],
   },
-  'gemini-3-pro-preview': {
-    modelName: 'gemini-3-pro-preview',
-    friendlyName: 'Gemini (Pro 3.0)',
+  'gemini-3.1-pro-preview': {
+    modelName: 'gemini-3.1-pro-preview',
+    friendlyName: 'Gemini (Pro 3.1)',
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
     supportsTemperature: true,
-    supportsThinking: true, // Always enabled for Gemini 3.0
+    supportsThinking: true,
     supportsWebSearch: true,
-    thinkingMode: 'level', // Distinguishes from 2.5's budget mode
+    thinkingMode: 'level',
+    thinkingLevels: ['minimal', 'low', 'medium', 'high'],
     timeout: 300000,
     description:
-      'Gemini 3.0 Pro - Enhanced reasoning with dynamic thinking levels (1M context)',
+      'Gemini 3.1 Pro - Most advanced reasoning with expanded thinking levels (1M context)',
     aliases: [
       'gemini-3',
       'gemini3',
       'gemini-3-pro',
+      'gemini-3-pro-preview',
       '3-pro',
-      'gemini pro', // Moving from 2.5 Pro
-      'gemini-pro', // Moving from 2.5 Pro
-      'pro', // Moving from 2.5 Pro
+      'gemini-3.1',
+      'gemini3.1',
+      'gemini-3.1-pro',
+      '3.1-pro',
+      'gemini pro',
+      'gemini-pro',
+      'pro',
     ],
   },
 };
@@ -484,10 +490,30 @@ export const googleProvider = {
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
       if (modelConfig.thinkingMode === 'level') {
-        // Gemini 3.0: Use thinking level (low/high)
-        const thinkingLevel = ['minimal', 'low'].includes(reasoning_effort)
-          ? 'low'
-          : 'high';
+        let thinkingLevel;
+        if (modelConfig.thinkingLevels) {
+          // Model supports specific levels (e.g., Gemini 3.1 Pro: minimal/low/medium/high)
+          const levelMap = {
+            none: 'minimal',
+            minimal: 'minimal',
+            low: 'low',
+            medium: 'medium',
+            high: 'high',
+            max: 'high',
+          };
+          thinkingLevel = levelMap[reasoning_effort] || 'high';
+          if (!modelConfig.thinkingLevels.includes(thinkingLevel)) {
+            thinkingLevel =
+              modelConfig.thinkingLevels[
+                modelConfig.thinkingLevels.length - 1
+              ];
+          }
+        } else {
+          // Binary levels only (Gemini 3.0 Pro: low/high)
+          thinkingLevel = ['minimal', 'low'].includes(reasoning_effort)
+            ? 'low'
+            : 'high';
+        }
         generationConfig.thinkingConfig = { thinkingLevel };
       } else {
         // Gemini 2.5: Use thinking budget (token count)
