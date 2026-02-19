@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.15.0] - 2026-02-19
+
+### Added
+
+- **Gemini 3.1 Pro Model Support**: Added `gemini-3.1-pro-preview` to Google provider
+  - 1M context window, 64K max output tokens
+  - Expanded thinking levels: `minimal`, `low`, `medium`, `high` (up from 3.0's binary `low`/`high`)
+  - Thinking level logic updated to pass granular levels when the model supports them
+  - Aliases: `gemini-3.1`, `gemini3.1`, `gemini-3.1-pro`, `3.1-pro`, `pro`, `gemini-pro`, `gemini pro`
+
+### Changed
+
+- **Gemini 3.0 Pro Removed**: Replaced entirely by Gemini 3.1 Pro; all 3.0 aliases (`gemini-3`, `gemini3`, `gemini-3-pro`, `gemini-3-pro-preview`, `3-pro`) now resolve to 3.1 Pro
+- **Gemini CLI Provider**: Updated SDK model name from `gemini-3-pro-preview` to `gemini-3.1-pro-preview`
+- **Dependencies**: Updated to latest versions
+  - `@google/genai` 1.41.0 → 1.42.0
+  - `@anthropic-ai/claude-agent-sdk` 0.2.44 → 0.2.47
+  - `@github/copilot-sdk` 0.1.24 → 0.1.25
+  - `ai` 6.0.87 → 6.0.93
+
 ## [2.14.0] - 2026-02-17
 
 ### Added
