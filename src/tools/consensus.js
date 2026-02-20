@@ -43,6 +43,7 @@ export async function consensusTool(args, dependencies) {
       contextProcessor,
       jobRunner,
       providerStreamNormalizer,
+      signal,
     } = dependencies;
 
     // Validate required arguments
@@ -359,6 +360,7 @@ export async function consensusTool(args, dependencies) {
           temperature,
           reasoning_effort,
           use_websearch,
+          signal,
           config,
           model: resolvedModelName, // Use resolved model name for API call
         },
@@ -432,7 +434,8 @@ export async function consensusTool(args, dependencies) {
     let refinedPhase = null;
 
     // Phase 2: Cross-feedback (if enabled and we have multiple successful responses)
-    if (enable_cross_feedback && initialPhase.successful.length > 1) {
+    // Skip if signal is already aborted after Phase 1
+    if (enable_cross_feedback && initialPhase.successful.length > 1 && !signal?.aborted) {
       logger.debug('Running cross-feedback phase', {
         data: { responseCount: initialPhase.successful.length },
       });
@@ -515,64 +518,66 @@ Please provide your refined response:`;
       });
     }
 
-    // Save conversation state
+    // Save conversation state (skip on abort to avoid persisting incomplete history)
     let conversationState;
-    try {
-      // Build formatted consensus response with actual model responses
-      let formattedContent = '';
+    if (!signal?.aborted) {
+      try {
+        // Build formatted consensus response with actual model responses
+        let formattedContent = '';
 
-      // Add initial responses
-      formattedContent += '## Initial Responses\n\n';
-      for (const result of initialPhase.successful) {
-        formattedContent += `### ${result.model} (initial response):\n${result.response}\n\n---\n\n`;
-      }
+        // Add initial responses
+        formattedContent += '## Initial Responses\n\n';
+        for (const result of initialPhase.successful) {
+          formattedContent += `### ${result.model} (initial response):\n${result.response}\n\n---\n\n`;
+        }
 
-      // Add refined responses if cross-feedback was enabled
-      if (refinedPhase) {
-        formattedContent += '## Refined Responses\n\n';
-        for (const result of refinedPhase) {
-          if (result.status === 'success' && result.refined_response) {
-            formattedContent += `### ${result.model} (refined response):\n${result.refined_response}\n\n---\n\n`;
-          } else if (result.status === 'partial') {
-            // Show initial response for models that failed refinement
-            formattedContent += `### ${result.model} (refinement failed, showing initial):\n${result.initial_response}\n\n---\n\n`;
+        // Add refined responses if cross-feedback was enabled
+        if (refinedPhase) {
+          formattedContent += '## Refined Responses\n\n';
+          for (const result of refinedPhase) {
+            if (result.status === 'success' && result.refined_response) {
+              formattedContent += `### ${result.model} (refined response):\n${result.refined_response}\n\n---\n\n`;
+            } else if (result.status === 'partial') {
+              // Show initial response for models that failed refinement
+              formattedContent += `### ${result.model} (refinement failed, showing initial):\n${result.initial_response}\n\n---\n\n`;
+            }
           }
         }
+
+        // Add summary at the end
+        formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
+        if (refinedPhase) {
+          const successfulRefinements = refinedPhase.filter(
+            (r) => r.status === 'success',
+          ).length;
+          formattedContent += ` and ${successfulRefinements} successful refined responses`;
+        }
+        formattedContent += '.';
+        const consensusMessage = {
+          role: 'assistant',
+          content: formattedContent,
+        };
+
+        conversationState = {
+          messages: [...messages, consensusMessage],
+          type: 'consensus',
+          lastUpdated: Date.now(),
+          consensusData: {
+            modelsRequested: models.length,
+            providersSuccessful: initialPhase.successful.length,
+            providersFailed: initialPhase.failed.length,
+            crossFeedbackEnabled: enable_cross_feedback,
+          },
+        };
+
+        await dependencies.continuationStore.set(
+          continuationId,
+          conversationState,
+        );
+      } catch (error) {
+        logger.error('Error saving consensus conversation', { error });
+        // Continue even if save fails
       }
-
-      // Add summary at the end
-      formattedContent += `\n**Summary:** Consensus completed with ${initialPhase.successful.length} successful initial responses`;
-      if (refinedPhase) {
-        const successfulRefinements = refinedPhase.filter(
-          (r) => r.status === 'success',
-        ).length;
-        formattedContent += ` and ${successfulRefinements} successful refined responses`;
-      }
-      formattedContent += '.';
-      const consensusMessage = {
-        role: 'assistant',
-        content: formattedContent,
-      };
-
-      conversationState = {
-        messages: [...messages, consensusMessage],
-        type: 'consensus',
-        lastUpdated: Date.now(),
-        consensusData: {
-          modelsRequested: models.length,
-          providersSuccessful: initialPhase.successful.length,
-          providersFailed: initialPhase.failed.length,
-          crossFeedbackEnabled: enable_cross_feedback,
-        },
-      };
-
-      await dependencies.continuationStore.set(
-        continuationId,
-        conversationState,
-      );
-    } catch (error) {
-      logger.error('Error saving consensus conversation', { error });
-      // Continue even if save fails
     }
 
     // Export conversation if requested
@@ -688,6 +693,10 @@ Please provide your refined response:`;
       },
     });
   } catch (error) {
+    if (dependencies?.signal?.aborted || error.name === 'AbortError') {
+      logger.debug('Consensus tool cancelled by client');
+      return createToolError('Consensus request cancelled');
+    }
     logger.error('Consensus tool error', { error });
     return createToolError('Consensus tool failed', error);
   }

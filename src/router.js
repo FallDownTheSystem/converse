@@ -198,7 +198,7 @@ export async function createRouter(server, config) {
     );
 
     // Register unified tool call handler with enhanced error handling
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       const toolTimer = startTimer('tool-execution', 'router');
       const toolName = request.params?.name;
       const toolArgs = request.params?.arguments || {};
@@ -227,8 +227,8 @@ export async function createRouter(server, config) {
           }
         }
 
-        // Execute the tool with dependency injection
-        const result = await tool(toolArgs, dependencies);
+        // Execute the tool with dependency injection (signal is per-request from MCP SDK)
+        const result = await tool(toolArgs, { ...dependencies, signal: extra?.signal });
 
         const executionTime = toolTimer('completed');
         requestLogger.info('Tool execution completed', {
@@ -248,6 +248,15 @@ export async function createRouter(server, config) {
         return result;
       } catch (error) {
         const executionTime = toolTimer('failed');
+
+        // Detect cancellation — log at debug, not error
+        if (extra?.signal?.aborted || error.name === 'AbortError') {
+          requestLogger.debug('Tool execution cancelled by client', {
+            data: { executionTime: `${executionTime}ms` },
+          });
+          return createErrorResponse(new Error('Request cancelled'), toolName);
+        }
+
         requestLogger.error('Tool execution failed', {
           error,
           data: {
@@ -391,7 +400,7 @@ export async function createRouter(server, config) {
         };
       },
 
-      callTool: async (toolCall) => {
+      callTool: async (toolCall, { signal } = {}) => {
         const toolName = toolCall.name;
         const toolArgs = toolCall.arguments || {};
 
@@ -417,8 +426,8 @@ export async function createRouter(server, config) {
             }
           }
 
-          // Execute the tool with dependency injection
-          return await tool(toolArgs, dependencies);
+          // Execute the tool with dependency injection (signal is per-request)
+          return await tool(toolArgs, { ...dependencies, signal });
         } catch (error) {
           return createErrorResponse(error, toolName, {
             arguments: toolArgs,

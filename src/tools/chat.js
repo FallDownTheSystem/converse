@@ -40,6 +40,7 @@ export async function chatTool(args, dependencies) {
       contextProcessor,
       jobRunner,
       providerStreamNormalizer,
+      signal,
     } = dependencies;
 
     // Validate required arguments
@@ -340,6 +341,7 @@ export async function chatTool(args, dependencies) {
         reasoning_effort,
         verbosity,
         use_websearch,
+        signal,
         config,
         continuation_id, // Pass for thread resumption
         continuationStore, // Pass store for state management
@@ -388,21 +390,23 @@ export async function chatTool(args, dependencies) {
 
     const updatedMessages = [...messages, assistantMessage];
 
-    // Save conversation state
-    try {
-      const conversationState = {
-        messages: updatedMessages,
-        provider: providerName,
-        model,
-        lastUpdated: Date.now(),
-        // Store Codex thread ID if available (for thread resumption)
-        codexThreadId: response.metadata?.threadId,
-      };
+    // Save conversation state (skip on abort to avoid persisting incomplete history)
+    if (!signal?.aborted) {
+      try {
+        const conversationState = {
+          messages: updatedMessages,
+          provider: providerName,
+          model,
+          lastUpdated: Date.now(),
+          // Store Codex thread ID if available (for thread resumption)
+          codexThreadId: response.metadata?.threadId,
+        };
 
-      await continuationStore.set(continuationId, conversationState);
-    } catch (error) {
-      logger.error('Error saving conversation', { error });
-      // Continue even if save fails
+        await continuationStore.set(continuationId, conversationState);
+      } catch (error) {
+        logger.error('Error saving conversation', { error });
+        // Continue even if save fails
+      }
     }
 
     // Export conversation if requested
@@ -470,6 +474,10 @@ export async function chatTool(args, dependencies) {
 
     return createToolResponse(finalResult);
   } catch (error) {
+    if (dependencies?.signal?.aborted || error.name === 'AbortError') {
+      logger.debug('Chat tool cancelled by client');
+      return createToolError('Chat request cancelled');
+    }
     logger.error('Chat tool error', { error });
     return createToolError('Chat tool failed', error);
   }

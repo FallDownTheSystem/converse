@@ -562,14 +562,11 @@ export const openaiProvider = {
 
       // Make the API call based on API type
       let response;
+      const requestOptions = signal ? { signal } : {};
       if (shouldUseResponsesAPI) {
-        // The signal is used internally by the OpenAI SDK for cancellation
-        // Don't pass it as a parameter to the API
-        response = await openai.responses.create(requestPayload);
+        response = await openai.responses.create(requestPayload, requestOptions);
       } else {
-        // The signal is used internally by the OpenAI SDK for cancellation
-        // Don't pass it as a parameter to the API
-        response = await openai.chat.completions.create(requestPayload);
+        response = await openai.chat.completions.create(requestPayload, requestOptions);
       }
 
       const responseTime = Date.now() - startTime;
@@ -797,14 +794,11 @@ export const openaiProvider = {
 
       // Create stream based on API type
       let stream;
+      const requestOptions = signal ? { signal } : {};
       if (shouldUseResponsesAPI) {
-        // The signal is used internally by the OpenAI SDK for cancellation
-        // Don't pass it as a parameter to the API
-        stream = await openai.responses.create(requestPayload);
+        stream = await openai.responses.create(requestPayload, requestOptions);
       } else {
-        // The signal is used internally by the OpenAI SDK for cancellation
-        // Don't pass it as a parameter to the API
-        stream = await openai.chat.completions.create(requestPayload);
+        stream = await openai.chat.completions.create(requestPayload, requestOptions);
       }
 
       // Process stream chunks

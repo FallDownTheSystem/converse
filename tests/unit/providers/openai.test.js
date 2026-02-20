@@ -325,6 +325,7 @@ describe('OpenAI Provider', () => {
           input: [{ role: 'user', content: 'Hello' }],
           stream: false,
         }),
+        expect.any(Object),
       );
     });
 
@@ -355,6 +356,7 @@ describe('OpenAI Provider', () => {
           model: 'o3',
           reasoning: expect.objectContaining({ effort: 'high' }),
         }),
+        expect.any(Object),
       );
     });
 
@@ -386,6 +388,7 @@ describe('OpenAI Provider', () => {
         expect.not.objectContaining({
           temperature: expect.any(Number),
         }),
+        expect.any(Object),
       );
 
       // GPT-4.1 models do support temperature
@@ -399,6 +402,7 @@ describe('OpenAI Provider', () => {
         expect.objectContaining({
           temperature: 0.8,
         }),
+        expect.any(Object),
       );
     });
 
@@ -733,6 +737,7 @@ describe('OpenAI Provider', () => {
       // Verify stream was set to false in the request
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ stream: false }),
+        expect.any(Object),
       );
 
       // Restore original model config
@@ -799,6 +804,7 @@ describe('OpenAI Provider', () => {
           expect.objectContaining({
             stream_options: { include_usage: true },
           }),
+          expect.any(Object),
         );
 
         // Verify Responses API was not called
