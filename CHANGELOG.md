@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.16.0] - 2026-02-20
+
+### Added
+
+- **MCP Cancellation Support for Sync Tool Calls**: Pressing Escape in Claude Code now aborts in-flight provider API calls instead of silently discarding the response
+  - Router accepts MCP SDK's `extra.signal` and forwards it per-request to tools
+  - Chat and consensus sync paths pass `signal` through to provider `invoke()` calls
+  - OpenAI provider passes `signal` as `RequestOptions` to SDK `.create()` calls (both sync and streaming)
+  - Consensus Phase 2 (cross-feedback) skipped entirely if signal is aborted after Phase 1
+  - Cancelled calls do not persist conversation state to continuation store
+  - Abort errors logged at `debug` level (not `error`) across router, tool, and provider layers
+  - `callTool` test utility accepts optional `signal` parameter for test coverage
+
 ## [2.15.0] - 2026-02-19
 
 ### Added
