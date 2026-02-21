@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.0] - 2026-02-21
+
+### Added
+
+- **Copilot Model Selection via `copilot:modelname` Syntax**: Choose specific AI models through Copilot provider using a prefix syntax
+  - Use `copilot:gpt-5.2`, `copilot:claude-sonnet-4.6`, `copilot:gemini-2.5-pro`, etc. to select specific models
+  - Version shortcut aliases: `copilot:gpt-5` → gpt-5.2, `copilot:codex` → gpt-5.3-codex, `copilot:sonnet` → claude-sonnet-4.6, `copilot:opus` → claude-opus-4.6, `copilot:haiku`, `copilot:gemini`, `copilot:flash`, `copilot:grok`
+  - 23 Copilot-available models added: OpenAI (gpt-4.1, gpt-5-mini, gpt-5.1, gpt-5.2, codex variants), Anthropic (claude-haiku-4.5, claude-sonnet-4/4.5/4.6, claude-opus-4.5/4.6/4.6-fast), Google (gemini-2.5-pro, gemini-3-flash/pro-preview, gemini-3.1-pro-preview), xAI (grok-code-fast-1), and fine-tuned models (raptor-mini, goldeneye)
+  - `copilot:` prefix takes precedence over keyword routing — `copilot:claude-sonnet-4.6` routes to Copilot, not Anthropic
+  - `COPILOT_MODEL` env var supports aliases and prefix stripping (e.g., `COPILOT_MODEL=codex`)
+  - Case-insensitive prefix detection and alias resolution
+  - Unknown models passed through to SDK for future compatibility
+  - Sync metadata now reports resolved SDK model slug instead of raw input
+
+### Changed
+
+- **Dependencies**: Updated to latest versions
+  - `@anthropic-ai/claude-agent-sdk` 0.2.49 → 0.2.50
+  - `ai` 6.0.94 → 6.0.97
+
 ## [2.16.0] - 2026-02-20
 
 ### Added
