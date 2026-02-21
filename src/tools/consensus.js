@@ -787,6 +787,12 @@ function mapModelToProvider(model, providers) {
     return 'copilot';
   }
 
+  // Check copilot: prefix (e.g., copilot:gpt-5.2, copilot:claude-sonnet-4.6)
+  // Must be before slash-format and keyword matching to prevent misrouting
+  if (modelLower.startsWith('copilot:')) {
+    return 'copilot';
+  }
+
   // Check OpenRouter-specific patterns first
   if (
     modelLower === 'openrouter auto' ||

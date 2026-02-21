@@ -27,8 +27,317 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 120000,
     description:
-      'GitHub Copilot via CLI SDK - requires copilot auth login authentication',
+			'GitHub Copilot via CLI SDK - uses default or env-configured model',
     aliases: ['copilot-sdk', 'github-copilot'],
+  },
+
+  // OpenAI models
+  'gpt-4.1': {
+    modelName: 'gpt-4.1',
+    friendlyName: 'GPT-4.1 (via Copilot)',
+    contextWindow: 1047576,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'OpenAI GPT-4.1 via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5-mini': {
+    modelName: 'gpt-5-mini',
+    friendlyName: 'GPT-5 Mini (via Copilot)',
+    contextWindow: 1047576,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'OpenAI GPT-5 Mini via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.1': {
+    modelName: 'gpt-5.1',
+    friendlyName: 'GPT-5.1 (via Copilot)',
+    contextWindow: 1047576,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'OpenAI GPT-5.1 via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.1-codex': {
+    modelName: 'gpt-5.1-codex',
+    friendlyName: 'GPT-5.1 Codex (via Copilot)',
+    contextWindow: 192000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'OpenAI GPT-5.1 Codex via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.1-codex-mini': {
+    modelName: 'gpt-5.1-codex-mini',
+    friendlyName: 'GPT-5.1 Codex Mini (via Copilot)',
+    contextWindow: 192000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'OpenAI GPT-5.1 Codex Mini via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.1-codex-max': {
+    modelName: 'gpt-5.1-codex-max',
+    friendlyName: 'GPT-5.1 Codex Max (via Copilot)',
+    contextWindow: 192000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 600000,
+    description: 'OpenAI GPT-5.1 Codex Max via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.2': {
+    modelName: 'gpt-5.2',
+    friendlyName: 'GPT-5.2 (via Copilot)',
+    contextWindow: 1047576,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'OpenAI GPT-5.2 via Copilot subscription',
+    aliases: ['gpt-5'],
+  },
+  'gpt-5.2-codex': {
+    modelName: 'gpt-5.2-codex',
+    friendlyName: 'GPT-5.2 Codex (via Copilot)',
+    contextWindow: 192000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'OpenAI GPT-5.2 Codex via Copilot subscription',
+    aliases: [],
+  },
+  'gpt-5.3-codex': {
+    modelName: 'gpt-5.3-codex',
+    friendlyName: 'GPT-5.3 Codex (via Copilot)',
+    contextWindow: 192000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'OpenAI GPT-5.3 Codex via Copilot subscription',
+    aliases: ['codex'],
+  },
+
+  // Anthropic models
+  'claude-haiku-4.5': {
+    modelName: 'claude-haiku-4.5',
+    friendlyName: 'Claude Haiku 4.5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'Anthropic Claude Haiku 4.5 via Copilot subscription',
+    aliases: ['haiku'],
+  },
+  'claude-sonnet-4': {
+    modelName: 'claude-sonnet-4',
+    friendlyName: 'Claude Sonnet 4 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'Anthropic Claude Sonnet 4 via Copilot subscription',
+    aliases: [],
+  },
+  'claude-sonnet-4.5': {
+    modelName: 'claude-sonnet-4.5',
+    friendlyName: 'Claude Sonnet 4.5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'Anthropic Claude Sonnet 4.5 via Copilot subscription',
+    aliases: [],
+  },
+  'claude-sonnet-4.6': {
+    modelName: 'claude-sonnet-4.6',
+    friendlyName: 'Claude Sonnet 4.6 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'Anthropic Claude Sonnet 4.6 via Copilot subscription',
+    aliases: ['sonnet'],
+  },
+  'claude-opus-4.5': {
+    modelName: 'claude-opus-4.5',
+    friendlyName: 'Claude Opus 4.5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Anthropic Claude Opus 4.5 via Copilot subscription',
+    aliases: [],
+  },
+  'claude-opus-4.6': {
+    modelName: 'claude-opus-4.6',
+    friendlyName: 'Claude Opus 4.6 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Anthropic Claude Opus 4.6 via Copilot subscription',
+    aliases: ['opus'],
+  },
+  'claude-opus-4.6-fast': {
+    modelName: 'claude-opus-4.6-fast',
+    friendlyName: 'Claude Opus 4.6 Fast (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Anthropic Claude Opus 4.6 Fast mode via Copilot subscription',
+    aliases: [],
+  },
+
+  // Google models
+  'gemini-2.5-pro': {
+    modelName: 'gemini-2.5-pro',
+    friendlyName: 'Gemini 2.5 Pro (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Google Gemini 2.5 Pro via Copilot subscription',
+    aliases: ['gemini'],
+  },
+  'gemini-3-flash-preview': {
+    modelName: 'gemini-3-flash-preview',
+    friendlyName: 'Gemini 3 Flash Preview (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'Google Gemini 3 Flash Preview via Copilot subscription',
+    aliases: ['flash', 'gemini-3-flash'],
+  },
+  'gemini-3-pro-preview': {
+    modelName: 'gemini-3-pro-preview',
+    friendlyName: 'Gemini 3 Pro Preview (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Google Gemini 3 Pro Preview via Copilot subscription',
+    aliases: ['gemini-3-pro'],
+  },
+  'gemini-3.1-pro-preview': {
+    modelName: 'gemini-3.1-pro-preview',
+    friendlyName: 'Gemini 3.1 Pro Preview (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 300000,
+    description: 'Google Gemini 3.1 Pro Preview via Copilot subscription',
+    aliases: ['gemini-3.1-pro'],
+  },
+
+  // xAI models
+  'grok-code-fast-1': {
+    modelName: 'grok-code-fast-1',
+    friendlyName: 'Grok Code Fast 1 (via Copilot)',
+    contextWindow: 131072,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'xAI Grok Code Fast 1 via Copilot subscription',
+    aliases: ['grok'],
+  },
+
+  // Fine-tuned / specialized models
+  'raptor-mini': {
+    modelName: 'raptor-mini',
+    friendlyName: 'Raptor Mini (via Copilot)',
+    contextWindow: 128000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'GitHub fine-tuned Raptor Mini via Copilot subscription',
+    aliases: [],
+  },
+  goldeneye: {
+    modelName: 'goldeneye',
+    friendlyName: 'Goldeneye (via Copilot)',
+    contextWindow: 128000,
+    maxOutputTokens: 16384,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 120000,
+    description: 'GitHub Goldeneye model via Copilot subscription',
+    aliases: [],
   },
 };
 
@@ -197,27 +506,75 @@ function createPermissionHandler(accessLevel) {
 }
 
 /**
+ * Resolve a friendly alias to its SDK model identifier (case-insensitive)
+ * Returns the resolved model name, or null if no alias matches
+ */
+function resolveModelAlias(name) {
+  if (typeof name !== 'string') return null;
+  const lower = name.toLowerCase().trim();
+  if (!lower) return null;
+
+  // Direct key match
+  if (SUPPORTED_MODELS[lower] && lower !== 'copilot') {
+    return SUPPORTED_MODELS[lower].modelName;
+  }
+
+  // Alias match
+  for (const config of Object.values(SUPPORTED_MODELS)) {
+    if (config.modelName === 'copilot') continue;
+    if (
+      config.aliases &&
+			config.aliases.some((alias) => alias.toLowerCase() === lower)
+    ) {
+      return config.modelName;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Resolve model to pass to SDK session
  * Precedence: explicit model param > config COPILOT_MODEL > omit (SDK default)
  *
+ * Handles copilot: prefix stripping, alias resolution, and env var fallback.
  * Note: "copilot" is a Converse routing alias, not a valid SDK model ID.
- * Only pass through model names that are actual SDK model IDs.
  */
 function resolveSessionModel(requestModel, config) {
   const converseAliases = ['copilot', 'copilot-sdk', 'github-copilot'];
 
-  // If user specified a non-alias model name, pass it to SDK
-  if (requestModel && !converseAliases.includes(requestModel.toLowerCase())) {
-    return requestModel;
+  // Guard non-string inputs
+  if (typeof requestModel !== 'string') {
+    requestModel = '';
   }
 
-  // Fall back to config value
-  if (config?.providers?.copilotmodel) {
-    return config.providers.copilotmodel;
+  // Strip copilot: prefix (case-insensitive)
+  let effectiveModel = requestModel;
+  if (effectiveModel.toLowerCase().startsWith('copilot:')) {
+    effectiveModel = effectiveModel.slice('copilot:'.length).trim();
   }
 
-  // Omit — let SDK use its default
-  return undefined;
+  // Empty suffix or converse alias → use env/default
+  if (
+    !effectiveModel ||
+		converseAliases.includes(effectiveModel.toLowerCase())
+  ) {
+    const envModel = config?.providers?.copilotmodel;
+    if (envModel) {
+      let resolved = typeof envModel === 'string' ? envModel : '';
+      if (resolved.toLowerCase().startsWith('copilot:')) {
+        resolved = resolved.slice('copilot:'.length).trim();
+      }
+      if (!resolved || converseAliases.includes(resolved.toLowerCase())) {
+        return undefined;
+      }
+      return resolveModelAlias(resolved) || resolved;
+    }
+    return undefined;
+  }
+
+  // Resolve alias or passthrough unknown models to SDK
+  return resolveModelAlias(effectiveModel) || effectiveModel;
 }
 
 /**
@@ -376,6 +733,8 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
   }
 }
 
+export { resolveModelAlias, resolveSessionModel };
+
 /**
  * Copilot SDK Provider Implementation
  */
@@ -419,6 +778,7 @@ export const copilotProvider = {
       const client = await getCopilotClient(cwd);
       const prompt = convertMessagesToPrompt(messages);
 
+      const sessionModel = resolveSessionModel(model, config);
       const modelConfig = SUPPORTED_MODELS.copilot;
       const invokeOptions = {
         model,
@@ -458,13 +818,13 @@ export const copilotProvider = {
         rawResponse: { content, usage },
         metadata: {
           provider: 'copilot',
-          model,
+          model: sessionModel || 'copilot',
           usage: usage
             ? {
               input_tokens: usage.input_tokens || 0,
               output_tokens: usage.output_tokens || 0,
               total_tokens:
-                  (usage.input_tokens || 0) + (usage.output_tokens || 0),
+								(usage.input_tokens || 0) + (usage.output_tokens || 0),
               cached_input_tokens: usage.cached_input_tokens || 0,
             }
             : null,
@@ -533,16 +893,24 @@ export const copilotProvider = {
   },
 
   getModelConfig(modelName) {
-    const modelNameLower = modelName.toLowerCase();
+    if (typeof modelName !== 'string') return null;
 
-    if (SUPPORTED_MODELS[modelNameLower]) {
-      return SUPPORTED_MODELS[modelNameLower];
+    let name = modelName;
+    if (name.toLowerCase().startsWith('copilot:')) {
+      name = name.slice('copilot:'.length).trim();
+    }
+    if (!name) return SUPPORTED_MODELS.copilot;
+
+    const nameLower = name.toLowerCase();
+
+    if (SUPPORTED_MODELS[nameLower]) {
+      return SUPPORTED_MODELS[nameLower];
     }
 
-    for (const [_name, config] of Object.entries(SUPPORTED_MODELS)) {
+    for (const config of Object.values(SUPPORTED_MODELS)) {
       if (
         config.aliases &&
-        config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
+				config.aliases.some((alias) => alias.toLowerCase() === nameLower)
       ) {
         return config;
       }
