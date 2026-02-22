@@ -329,18 +329,19 @@ describe('Continuation Flow Integration Tests', () => {
   });
 
   describe('Error Handling in Continuation Flow', () => {
-    it('should handle invalid continuation IDs gracefully', async () => {
+    it('should preserve custom continuation IDs', async () => {
       const response = await tools.chat(
         {
-          prompt: 'Test with invalid continuation',
-          continuation_id: 'invalid-continuation-id',
+          prompt: 'Test with custom continuation',
+          continuation_id: 'my-custom-id',
         },
         dependencies,
       );
 
-      // Should create new conversation instead of failing
+      // Should preserve the custom ID and start a new conversation
       expect(response.continuation).toBeDefined();
-      expect(response.continuation.id).not.toBe('invalid-continuation-id');
+      expect(response.continuation.id).toBe('my-custom-id');
+      expect(response.continuation.custom_id).toBe(true);
       expect(response.continuation.messageCount).toBe(2); // New conversation (user + assistant, system excluded)
     });
 

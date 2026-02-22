@@ -336,20 +336,22 @@ describe('Tools Integration Tests', () => {
       }
     });
 
-    it('should handle invalid continuation IDs', async () => {
+    it('should preserve custom continuation IDs', async () => {
       const chatTool = tools.chat;
 
       const result = await chatTool(
         {
           prompt: 'Test message',
-          continuation_id: 'invalid-continuation-id',
+          continuation_id: 'my-custom-id',
         },
         dependencies,
       );
 
-      // Should handle gracefully and create new conversation
+      // Should preserve the custom ID and start a new conversation
       expect(result.content).toBeDefined();
       expect(result.continuation).toBeDefined();
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBe(true);
     });
   });
 

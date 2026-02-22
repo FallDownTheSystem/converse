@@ -278,20 +278,73 @@ describe('Chat Tool Unit Tests', () => {
       );
     });
 
-    it('should handle invalid continuation ID gracefully', async () => {
+    it('should preserve custom continuation ID and set custom_id flag', async () => {
       mockContinuationStore.get.mockResolvedValue(null);
       mockContinuationStore.exists.mockResolvedValue(false);
 
       const args = {
         prompt: 'Test message',
-        continuation_id: 'invalid-continuation-id',
+        continuation_id: 'my-custom-id',
       };
 
       const result = await chatTool(args, mockDependencies);
 
-      // Should create new conversation
+      // Should preserve the custom ID and start a new conversation
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBe(true);
       expect(result.continuation.messageCount).toBe(2); // user + assistant (system messages excluded)
       expect(mockContinuationStore.set).toHaveBeenCalled();
+    });
+
+    it('should preserve standard-format ID without custom_id flag when not found', async () => {
+      mockContinuationStore.get.mockResolvedValue(null);
+
+      const args = {
+        prompt: 'Test message',
+        continuation_id: 'conv_XXXXXXXXXX',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      // Standard format ID preserved but no custom_id flag (likely expired/stale)
+      expect(result.continuation.id).toBe('conv_XXXXXXXXXX');
+      expect(result.continuation.custom_id).toBeUndefined();
+    });
+
+    it('should not set custom_id when resuming an existing conversation', async () => {
+      mockContinuationStore.get.mockResolvedValue({
+        messages: [
+          { role: 'user', content: 'Previous message' },
+          { role: 'assistant', content: 'Previous response' },
+        ],
+        provider: 'openai',
+        model: 'gpt-5',
+      });
+
+      const args = {
+        prompt: 'Follow-up',
+        continuation_id: 'my-custom-id',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      // Resume: no custom_id flag regardless of format
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBeUndefined();
+    });
+
+    it('should preserve custom ID and set custom_id on store error', async () => {
+      mockContinuationStore.get.mockRejectedValue(new Error('Store error'));
+
+      const args = {
+        prompt: 'Test message',
+        continuation_id: 'my-custom-id',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBe(true);
     });
   });
 

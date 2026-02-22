@@ -225,6 +225,53 @@ describe('Async Support Tests', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Async execution failed');
     });
+
+    it('should reject async custom ID with unsafe characters', async () => {
+      const args = {
+        prompt: 'Test async with unsafe ID',
+        async: true,
+        continuation_id: 'my project/analysis',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid continuation_id for async mode');
+    });
+
+    it('should accept async custom ID with safe characters', async () => {
+      mockContinuationStore.get.mockResolvedValue(null);
+
+      const args = {
+        prompt: 'Test async with safe custom ID',
+        async: true,
+        continuation_id: 'my-safe-custom-id_123',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-safe-custom-id_123');
+      expect(result.continuation.custom_id).toBe(true);
+    });
+
+    it('should not set custom_id on async resume of existing custom ID', async () => {
+      mockContinuationStore.get.mockResolvedValue({
+        messages: [{ role: 'user', content: 'prev' }],
+        provider: 'openai',
+        model: 'gpt-5',
+      });
+
+      const args = {
+        prompt: 'Resume async',
+        async: true,
+        continuation_id: 'my-safe-custom-id_123',
+      };
+
+      const result = await chatTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-safe-custom-id_123');
+      expect(result.continuation.custom_id).toBeUndefined();
+    });
   });
 
   describe('Consensus Tool Async Support', () => {
@@ -353,6 +400,55 @@ describe('Async Support Tests', () => {
         }),
         expect.any(Function),
       );
+    });
+
+    it('should reject async custom ID with unsafe characters', async () => {
+      const args = {
+        prompt: 'Test async consensus with unsafe ID',
+        models: ['gpt-5'],
+        async: true,
+        continuation_id: 'my project/analysis',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid continuation_id for async mode');
+    });
+
+    it('should accept async custom ID with safe characters', async () => {
+      mockContinuationStore.get.mockResolvedValue(null);
+
+      const args = {
+        prompt: 'Test async consensus with safe custom ID',
+        models: ['gpt-5'],
+        async: true,
+        continuation_id: 'my-safe-custom-id_123',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-safe-custom-id_123');
+      expect(result.continuation.custom_id).toBe(true);
+    });
+
+    it('should not set custom_id on async resume of existing custom ID', async () => {
+      mockContinuationStore.get.mockResolvedValue({
+        messages: [{ role: 'user', content: 'prev' }],
+        type: 'consensus',
+      });
+
+      const args = {
+        prompt: 'Resume async consensus',
+        models: ['gpt-5'],
+        async: true,
+        continuation_id: 'my-safe-custom-id_123',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-safe-custom-id_123');
+      expect(result.continuation.custom_id).toBeUndefined();
     });
   });
 

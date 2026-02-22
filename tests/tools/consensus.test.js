@@ -648,6 +648,72 @@ describe('Consensus Tool Unit Tests', () => {
         expect.any(Object),
       );
     });
+
+    it('should preserve custom continuation ID and set custom_id flag', async () => {
+      mockContinuationStore.get.mockResolvedValue(null);
+
+      const args = {
+        prompt: 'Test consensus',
+        models: ['gpt-4o-mini'],
+        continuation_id: 'my-custom-id',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBe(true);
+    });
+
+    it('should not set custom_id when resuming existing conversation', async () => {
+      mockContinuationStore.get.mockResolvedValue({
+        messages: [
+          { role: 'user', content: 'Previous question' },
+          { role: 'assistant', content: 'Previous answer' },
+        ],
+        type: 'consensus',
+      });
+
+      const args = {
+        prompt: 'Follow-up',
+        models: ['gpt-4o-mini'],
+        continuation_id: 'my-custom-id',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBeUndefined();
+    });
+
+    it('should preserve standard-format ID without custom_id flag when not found', async () => {
+      mockContinuationStore.get.mockResolvedValue(null);
+
+      const args = {
+        prompt: 'Test consensus',
+        models: ['gpt-4o-mini'],
+        continuation_id: 'conv_XXXXXXXXXX',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('conv_XXXXXXXXXX');
+      expect(result.continuation.custom_id).toBeUndefined();
+    });
+
+    it('should preserve custom ID and set custom_id on store error', async () => {
+      mockContinuationStore.get.mockRejectedValue(new Error('Store error'));
+
+      const args = {
+        prompt: 'Test consensus',
+        models: ['gpt-4o-mini'],
+        continuation_id: 'my-custom-id',
+      };
+
+      const result = await consensusTool(args, mockDependencies);
+
+      expect(result.continuation.id).toBe('my-custom-id');
+      expect(result.continuation.custom_id).toBe(true);
+    });
   });
 
   describe('Response Format Compliance', () => {

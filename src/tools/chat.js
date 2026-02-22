@@ -13,7 +13,9 @@ import {
 import {
   generateContinuationId,
   addMessageToHistory,
+  isValidContinuationId,
 } from '../continuationStore.js';
+import { isSafeIdSegment } from '../utils/idValidation.js';
 import { debugLog, debugError } from '../utils/console.js';
 import { createLogger } from '../utils/logger.js';
 import { CHAT_PROMPT } from '../systemPrompts.js';
@@ -72,9 +74,27 @@ export async function chatTool(args, dependencies) {
         );
       }
 
+      // Validate custom continuation ID for async safety (used as filesystem path segment)
+      if (continuation_id && !isSafeIdSegment(continuation_id)) {
+        return createToolError(
+          `Invalid continuation_id for async mode: "${continuation_id}". Async IDs must contain only letters, numbers, hyphens, and underscores (max 128 chars).`,
+        );
+      }
+
       // Generate or use existing continuation ID for the conversation
       const conversationContinuationId =
         continuation_id || generateContinuationId();
+
+      // Determine if this is a custom ID (non-standard format AND not found in store)
+      let isCustomId = false;
+      if (continuation_id && !isValidContinuationId(continuation_id)) {
+        try {
+          const existing = await continuationStore.get(continuation_id);
+          isCustomId = !existing;
+        } catch {
+          isCustomId = true;
+        }
+      }
 
       // Get provider and model info for the job
       const providerName = mapModelToProvider(args.model || 'auto', providers);
@@ -119,6 +139,7 @@ export async function chatTool(args, dependencies) {
               {
                 ...dependencies,
                 continuationId: conversationContinuationId,
+                isCustomId,
                 title, // Pass title to execution context
               },
               context,
@@ -147,6 +168,7 @@ export async function chatTool(args, dependencies) {
           continuation: {
             id: conversationContinuationId, // Use continuation_id as the primary ID
             status: 'processing',
+            ...(isCustomId && { custom_id: true }),
           },
           async_execution: true,
         });
@@ -158,6 +180,7 @@ export async function chatTool(args, dependencies) {
 
     let conversationHistory = [];
     let continuationId = continuation_id;
+    let isCustomId = false;
 
     // Load existing conversation if continuation_id provided
     if (continuationId) {
@@ -166,13 +189,13 @@ export async function chatTool(args, dependencies) {
         if (existingState) {
           conversationHistory = existingState.messages || [];
         } else {
-          // Invalid continuation ID - start fresh with new ID
-          continuationId = generateContinuationId();
+          // Preserve user-provided ID and start fresh conversation
+          isCustomId = !isValidContinuationId(continuationId);
         }
       } catch (error) {
         logger.error('Error loading conversation', { error });
-        // Continue with fresh conversation on error
-        continuationId = generateContinuationId();
+        // Preserve user-provided ID on error
+        isCustomId = !isValidContinuationId(continuationId);
       }
     } else {
       // Generate new continuation ID for new conversation
@@ -450,6 +473,7 @@ export async function chatTool(args, dependencies) {
         model,
         messageCount: updatedMessages.filter((msg) => msg.role !== 'system')
           .length,
+        ...(isCustomId && { custom_id: true }),
       },
     };
 
@@ -700,6 +724,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     contextProcessor,
     providerStreamNormalizer,
     continuationId,
+    isCustomId,
     title: passedTitle, // Title passed from initial submission
   } = dependencies;
 
@@ -1103,6 +1128,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
       model,
       messageCount: updatedMessages.filter((msg) => msg.role !== 'system')
         .length,
+      ...(isCustomId && { custom_id: true }),
     },
     metadata: {
       provider: providerName,
@@ -1140,7 +1166,7 @@ chatTool.inputSchema = {
     continuation_id: {
       type: 'string',
       description:
-        'Continuation ID for persistent conversation. Example: "chat_1703123456789_abc123"',
+        'Continuation ID for persistent conversation. Example: "chat_1703123456789_abc123". Custom IDs are accepted — an unrecognized ID starts a new conversation under that ID. In async mode, IDs must contain only letters, numbers, hyphens, and underscores (max 128 chars).',
     },
     temperature: {
       type: 'number',
