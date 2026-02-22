@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.18.0] - 2026-02-22
+
+### Added
+
+- **Copilot Provider `reasoning_effort` Support**: The `reasoning_effort` parameter is now forwarded to the Copilot SDK's `reasoningEffort` session config instead of being silently ignored
+  - Maps tool-level values to Copilot SDK enum: `none`/`minimal` → `low`, `low` → `low`, `medium` → `medium`, `high` → `high`, `max` → `xhigh`
+  - Applied at session creation via `client.createSession({ reasoningEffort })` where the SDK reads it
+
+### Fixed
+
+- **Copilot Provider**: Removed incorrect "reasoning_effort not supported" log message — the `@github/copilot-sdk` has supported `reasoningEffort` on `SessionConfig` since v0.1.25
+- **Copilot Tests**: Updated stale model assertions referencing removed models (`gemini-2.5-pro`, `gemini-3-flash-preview`, `grok-code-fast-1`, `raptor-mini`, `goldeneye`) to match current `SUPPORTED_MODELS`
+
 ## [2.17.0] - 2026-02-21
 
 ### Added
