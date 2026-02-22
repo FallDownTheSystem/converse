@@ -507,8 +507,25 @@ function resolveSessionModel(requestModel, config) {
  * - session.idle → processing complete
  * - session.error → { data: { errorType, message } }
  */
+/**
+ * Map tool-level reasoning_effort values to Copilot SDK's ReasoningEffort.
+ * Tool enum:  'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
+ * SDK enum:   'low' | 'medium' | 'high' | 'xhigh'
+ */
+function mapReasoningEffort(effort) {
+  const mapping = {
+    none: 'low',
+    minimal: 'low',
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    max: 'xhigh',
+  };
+  return mapping[effort] || undefined;
+}
+
 async function* createStreamingGenerator(client, prompt, options, signal, config) {
-  const { model, timeout = 120000 } = options;
+  const { model, timeout = 120000, reasoning_effort } = options;
 
   const sessionModel = resolveSessionModel(model, config);
   const accessLevel = getToolAccessLevel(config);
@@ -520,6 +537,14 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
 
   if (sessionModel) {
     sessionConfig.model = sessionModel;
+  }
+
+  if (reasoning_effort) {
+    const mapped = mapReasoningEffort(reasoning_effort);
+    if (mapped) {
+      sessionConfig.reasoningEffort = mapped;
+      debugLog(`[Copilot SDK] Setting reasoningEffort: ${mapped} (from ${reasoning_effort})`);
+    }
   }
 
   const session = await client.createSession(sessionConfig);
@@ -685,12 +710,6 @@ export const copilotProvider = {
         '[Copilot SDK] Parameter "use_websearch" not supported by Copilot SDK (ignored)',
       );
     }
-    if (reasoning_effort !== undefined) {
-      debugLog(
-        '[Copilot SDK] Parameter "reasoning_effort" not supported by Copilot SDK (ignored)',
-      );
-    }
-
     try {
       const cwd = config.server?.client_cwd || process.cwd();
       const client = await getCopilotClient(cwd);
@@ -701,6 +720,7 @@ export const copilotProvider = {
       const invokeOptions = {
         model,
         timeout: modelConfig.timeout,
+        reasoning_effort,
       };
 
       if (stream) {

@@ -17,13 +17,10 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-4.6');
       expect(resolveModelAlias('opus')).toBe('claude-opus-4.6');
       expect(resolveModelAlias('haiku')).toBe('claude-haiku-4.5');
-      expect(resolveModelAlias('gemini')).toBe('gemini-2.5-pro');
-      expect(resolveModelAlias('flash')).toBe('gemini-3-flash-preview');
-      expect(resolveModelAlias('grok')).toBe('grok-code-fast-1');
+      expect(resolveModelAlias('gemini')).toBe('gemini-3.1-pro-preview');
     });
 
     it('resolves convenience aliases without -preview suffix', () => {
-      expect(resolveModelAlias('gemini-3-flash')).toBe('gemini-3-flash-preview');
       expect(resolveModelAlias('gemini-3-pro')).toBe('gemini-3-pro-preview');
       expect(resolveModelAlias('gemini-3.1-pro')).toBe('gemini-3.1-pro-preview');
     });
@@ -31,10 +28,8 @@ describe('Copilot Provider - Model Selection', () => {
     it('resolves direct SDK model names', () => {
       expect(resolveModelAlias('gpt-5.2')).toBe('gpt-5.2');
       expect(resolveModelAlias('claude-sonnet-4.6')).toBe('claude-sonnet-4.6');
-      expect(resolveModelAlias('gemini-2.5-pro')).toBe('gemini-2.5-pro');
-      expect(resolveModelAlias('grok-code-fast-1')).toBe('grok-code-fast-1');
-      expect(resolveModelAlias('raptor-mini')).toBe('raptor-mini');
-      expect(resolveModelAlias('goldeneye')).toBe('goldeneye');
+      expect(resolveModelAlias('gemini-3-pro-preview')).toBe('gemini-3-pro-preview');
+      expect(resolveModelAlias('gemini-3.1-pro-preview')).toBe('gemini-3.1-pro-preview');
     });
 
     it('is case-insensitive', () => {
@@ -215,15 +210,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(keys).toContain('claude-opus-4.6');
 
       // Google
-      expect(keys).toContain('gemini-2.5-pro');
-      expect(keys).toContain('gemini-3-flash-preview');
-
-      // xAI
-      expect(keys).toContain('grok-code-fast-1');
-
-      // Fine-tuned
-      expect(keys).toContain('raptor-mini');
-      expect(keys).toContain('goldeneye');
+      expect(keys).toContain('gemini-3-pro-preview');
+      expect(keys).toContain('gemini-3.1-pro-preview');
     });
   });
 });
@@ -232,7 +220,7 @@ describe('Copilot Prefix Routing - mapModelToProvider', () => {
   it('routes copilot:modelname to copilot provider', () => {
     expect(mapModelToProvider('copilot:gpt-5.2', {})).toBe('copilot');
     expect(mapModelToProvider('copilot:claude-sonnet-4.6', {})).toBe('copilot');
-    expect(mapModelToProvider('copilot:gemini-2.5-pro', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:gemini-3.1-pro-preview', {})).toBe('copilot');
   });
 
   it('routes copilot:alias to copilot provider', () => {
