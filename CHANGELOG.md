@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.19.0] - 2026-02-22
+
+### Added
+
+- **Custom Continuation IDs**: Callers can now provide their own meaningful continuation IDs (e.g., `"my-project-analysis"`) instead of receiving server-generated `conv_` IDs
+  - Unrecognized IDs start a new conversation under that exact ID rather than being silently replaced
+  - Response metadata includes `custom_id: true` when the ID doesn't match standard `conv_` format and is a new conversation (not a resume)
+  - Async mode validates custom IDs for filesystem safety — only letters, numbers, hyphens, and underscores allowed (max 128 chars)
+  - Consistent behavior across chat and consensus tools in sync, async submission, and async completion paths
+  - Aligns implementation with existing README documentation of custom ID support
+
 ## [2.18.0] - 2026-02-22
 
 ### Added
