@@ -1722,7 +1722,7 @@ consensusTool.inputSchema = {
     continuation_id: {
       type: 'string',
       description:
-        'Thread continuation ID for multi-turn conversations. Example: "consensus_1703123456789_xyz789". Custom IDs are accepted — an unrecognized ID starts a new conversation under that ID. In async mode, IDs must contain only letters, numbers, hyphens, and underscores (max 128 chars).',
+        'Thread continuation ID for multi-turn conversations. Auto-generated in the first response; pass it back to continue the conversation.',
     },
     enable_cross_feedback: {
       type: 'boolean',

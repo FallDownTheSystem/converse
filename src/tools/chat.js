@@ -1166,7 +1166,7 @@ chatTool.inputSchema = {
     continuation_id: {
       type: 'string',
       description:
-        'Continuation ID for persistent conversation. Example: "chat_1703123456789_abc123". Custom IDs are accepted — an unrecognized ID starts a new conversation under that ID. In async mode, IDs must contain only letters, numbers, hyphens, and underscores (max 128 chars).',
+        'Continuation ID for persistent conversation. Auto-generated in the first response; pass it back to continue the conversation.',
     },
     temperature: {
       type: 'number',
