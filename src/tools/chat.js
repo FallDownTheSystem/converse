@@ -1149,7 +1149,7 @@ chatTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "claude", "gpt-5", "grok-4-0709". Defaults to auto-selection.',
+        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "claude", "copilot", "copilot:codex". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

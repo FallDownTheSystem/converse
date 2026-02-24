@@ -1705,7 +1705,7 @@ consensusTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'List of models to consult. Example: ["codex", "gemini", "claude"]',
+        'List of models to consult. Examples: ["codex", "gemini", "claude", "copilot", "copilot:codex"]',
     },
     files: {
       type: 'array',
@@ -1747,7 +1747,7 @@ consensusTool.inputSchema = {
       type: 'string',
       enum: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
       description:
-        'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest - GPT-5.1+ only), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
+        'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest), "low" (light analysis), "medium" (balanced), "high" (complex analysis). Default: "medium"',
       default: 'medium',
     },
     use_websearch: {
