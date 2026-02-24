@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.19.2] - 2026-02-24
+
+### Changed
+
+- Updated chat and consensus tool descriptions to include `copilot` and `copilot:codex` model examples
+- Simplified `reasoning_effort` description to remove model-specific qualifier
+
 ## [2.19.1] - 2026-02-23
 
 ### Changed
