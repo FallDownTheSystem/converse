@@ -54,6 +54,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 120000,
     description: 'OpenAI GPT-5 Mini via Copilot subscription',
     aliases: [],
@@ -67,6 +68,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 120000,
     description: 'OpenAI GPT-5.1 via Copilot subscription',
     aliases: [],
@@ -80,6 +82,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 300000,
     description: 'OpenAI GPT-5.1 Codex via Copilot subscription',
     aliases: [],
@@ -93,6 +96,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 300000,
     description: 'OpenAI GPT-5.1 Codex Mini via Copilot subscription',
     aliases: [],
@@ -106,6 +110,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 600000,
     description: 'OpenAI GPT-5.1 Codex Max via Copilot subscription',
     aliases: [],
@@ -119,6 +124,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 120000,
     description: 'OpenAI GPT-5.2 via Copilot subscription',
     aliases: ['gpt-5'],
@@ -132,6 +138,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 300000,
     description: 'OpenAI GPT-5.2 Codex via Copilot subscription',
     aliases: [],
@@ -145,6 +152,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsTemperature: false,
     supportsWebSearch: false,
+    supportsReasoningEffort: true,
     timeout: 300000,
     description: 'OpenAI GPT-5.3 Codex via Copilot subscription',
     aliases: ['codex'],
@@ -452,6 +460,37 @@ function resolveModelAlias(name) {
 }
 
 /**
+ * Look up model config from SUPPORTED_MODELS by name or alias.
+ * Strips copilot: prefix and falls back to the base copilot config.
+ */
+function findModelConfig(modelName) {
+  if (typeof modelName !== 'string') return null;
+
+  let name = modelName;
+  if (name.toLowerCase().startsWith('copilot:')) {
+    name = name.slice('copilot:'.length).trim();
+  }
+  if (!name) return SUPPORTED_MODELS.copilot;
+
+  const nameLower = name.toLowerCase();
+
+  if (SUPPORTED_MODELS[nameLower]) {
+    return SUPPORTED_MODELS[nameLower];
+  }
+
+  for (const config of Object.values(SUPPORTED_MODELS)) {
+    if (
+      config.aliases &&
+      config.aliases.some((alias) => alias.toLowerCase() === nameLower)
+    ) {
+      return config;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Resolve model to pass to SDK session
  * Precedence: explicit model param > config COPILOT_MODEL > omit (SDK default)
  *
@@ -524,6 +563,25 @@ function mapReasoningEffort(effort) {
   return mapping[effort] || undefined;
 }
 
+/**
+ * Check if a model supports reasoning effort via the Copilot SDK's models.list API.
+ * Results are cached by the SDK internally.
+ * Returns true if supported, false if not, or undefined if the check fails.
+ */
+async function checkReasoningSupport(client, modelId) {
+  try {
+    const models = await client.listModels();
+    const match = models.find((m) => m.id === modelId);
+    if (match) {
+      return match.capabilities?.supports?.reasoningEffort === true;
+    }
+    return undefined;
+  } catch (err) {
+    debugLog('[Copilot SDK] Failed to query model capabilities: %s', err.message);
+    return undefined;
+  }
+}
+
 async function* createStreamingGenerator(client, prompt, options, signal, config) {
   const { model, timeout = 120000, reasoning_effort } = options;
 
@@ -542,12 +600,46 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
   if (reasoning_effort) {
     const mapped = mapReasoningEffort(reasoning_effort);
     if (mapped) {
-      sessionConfig.reasoningEffort = mapped;
-      debugLog(`[Copilot SDK] Setting reasoningEffort: ${mapped} (from ${reasoning_effort})`);
+      const effectiveModel = sessionModel || model;
+      const modelDef = findModelConfig(effectiveModel);
+
+      let supported;
+      if (modelDef && modelDef.supportsReasoningEffort !== undefined) {
+        // Known model with explicit flag — use it directly (fast path)
+        supported = modelDef.supportsReasoningEffort;
+      } else {
+        // Unknown model or no static flag — query the SDK
+        supported = await checkReasoningSupport(client, effectiveModel);
+      }
+
+      if (supported === true) {
+        sessionConfig.reasoningEffort = mapped;
+        debugLog(`[Copilot SDK] Setting reasoningEffort: ${mapped} (from ${reasoning_effort})`);
+      } else if (supported === false) {
+        debugLog(`[Copilot SDK] Model "${effectiveModel}" does not support reasoningEffort (ignored)`);
+      } else {
+        // Could not determine — try optimistically, retry without on failure
+        sessionConfig.reasoningEffort = mapped;
+        debugLog(`[Copilot SDK] Model "${effectiveModel}" support unknown — trying reasoningEffort: ${mapped}`);
+      }
     }
   }
 
-  const session = await client.createSession(sessionConfig);
+  let session;
+  try {
+    session = await client.createSession(sessionConfig);
+  } catch (err) {
+    if (
+      sessionConfig.reasoningEffort &&
+      /does not support reasoning effort/i.test(err.message)
+    ) {
+      debugLog('[Copilot SDK] Model rejected reasoningEffort — retrying without it');
+      delete sessionConfig.reasoningEffort;
+      session = await client.createSession(sessionConfig);
+    } else {
+      throw err;
+    }
+  }
 
   try {
     yield {
@@ -716,7 +808,7 @@ export const copilotProvider = {
       const prompt = convertMessagesToPrompt(messages);
 
       const sessionModel = resolveSessionModel(model, config);
-      const modelConfig = SUPPORTED_MODELS.copilot;
+      const modelConfig = findModelConfig(sessionModel || model) || SUPPORTED_MODELS.copilot;
       const invokeOptions = {
         model,
         timeout: modelConfig.timeout,
@@ -831,29 +923,6 @@ export const copilotProvider = {
   },
 
   getModelConfig(modelName) {
-    if (typeof modelName !== 'string') return null;
-
-    let name = modelName;
-    if (name.toLowerCase().startsWith('copilot:')) {
-      name = name.slice('copilot:'.length).trim();
-    }
-    if (!name) return SUPPORTED_MODELS.copilot;
-
-    const nameLower = name.toLowerCase();
-
-    if (SUPPORTED_MODELS[nameLower]) {
-      return SUPPORTED_MODELS[nameLower];
-    }
-
-    for (const config of Object.values(SUPPORTED_MODELS)) {
-      if (
-        config.aliases &&
-				config.aliases.some((alias) => alias.toLowerCase() === nameLower)
-      ) {
-        return config;
-      }
-    }
-
-    return null;
+    return findModelConfig(modelName);
   },
 };
