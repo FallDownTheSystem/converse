@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.19.3] - 2026-02-27
+
+### Fixed
+
+- **Copilot Provider `reasoning_effort` crash**: Models that don't support reasoning effort (Gemini, Claude, GPT-4.1) no longer cause `session.create` to fail when `reasoning_effort` is specified
+  - Three-tier capability detection: static flags for known models, SDK `listModels()` query for unknown models, optimistic retry with fallback for unresolvable defaults
+  - Added `supportsReasoningEffort: true` to GPT-5+ model definitions as a fast-path cache
+  - Case-insensitive error matching for retry resilience against SDK wording changes
+- **Wrong timeouts for Copilot models**: `invoke()` was hardcoded to the base `copilot` config (120s timeout) instead of resolving the actual model config (e.g., 300s for codex models, 600s for codex-max)
+
+### Changed
+
+- Extracted `findModelConfig()` as a standalone helper, refactored `getModelConfig()` to delegate to it
+
 ## [2.19.2] - 2026-02-24
 
 ### Changed
