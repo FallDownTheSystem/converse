@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.1] - 2026-03-03
+
+### Changed
+
+- **Dependencies**: Updated to latest versions
+  - `@anthropic-ai/claude-agent-sdk` 0.2.50 → 0.2.63
+  - `@github/copilot-sdk` 0.1.25 → 0.1.29
+  - `@google/genai` 1.42.0 → 1.43.0
+  - `@mistralai/mistralai` 1.14.0 → 1.14.1
+  - `@modelcontextprotocol/sdk` 1.26.0 → 1.27.1
+  - `ai` 6.0.97 → 6.0.108
+  - `openai` 6.22.0 → 6.25.0
+  - `eslint` 10.0.1 → 10.0.2
+
+## [2.20.0] - 2026-03-03
+
+### Fixed
+
+- **CWD passthrough for globally installed binary**: `process.chdir()` in `bin/converse.js` was overwriting the caller's working directory before `config.js` could capture it, causing relative file paths from MCP clients to resolve against the package root instead of the caller's directory
+  - Captures `process.cwd()` before `chdir` and exposes it as `CLIENT_CWD` env var
+  - Adds `--cwd <path>` CLI argument for explicit override
+  - Normalizes Git Bash paths (`/c/Users/...` → `C:\Users\...`) on Windows so `path.resolve()` works correctly
+
 ## [2.19.3] - 2026-02-27
 
 ### Fixed
