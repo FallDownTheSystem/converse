@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 import { createLogger, configureLogger } from './utils/logger.js';
 import { ConfigurationError } from './utils/errorHandler.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 import { readFileSync } from 'fs';
 
 // Load environment variables from appropriate .env file
@@ -408,6 +408,23 @@ function validateApiKeyFormat(provider, apiKey) {
 }
 
 /**
+ * Normalize Git Bash paths to Windows paths on Windows.
+ * Converts /c/Users/... to C:\Users\... so path.resolve() works correctly.
+ * On non-Windows platforms, returns the path unchanged.
+ */
+function normalizeGitBashPath(inputPath) {
+  if (
+    process.platform === 'win32' &&
+    /^\/[a-zA-Z]\//.test(inputPath)
+  ) {
+    return resolve(
+      inputPath[1].toUpperCase() + ':' + inputPath.slice(2).replace(/\//g, '\\'),
+    );
+  }
+  return inputPath;
+}
+
+/**
  * Loads and validates complete configuration from environment variables
  * @returns {Promise<object>} Validated configuration object
  * @throws {ConfigurationError} If configuration is invalid or incomplete
@@ -437,19 +454,17 @@ export async function loadConfig() {
     for (const [key, schema] of Object.entries(CONFIG_SCHEMA.server)) {
       try {
         // Special handling for CLIENT_CWD - auto-detect if not explicitly set
-        if (key === 'CLIENT_CWD' && !process.env[key]) {
-          // Try to detect the client's working directory from various sources
-          // When run via npx, INIT_CWD contains the directory where npx was invoked
-          // PWD is another common variable set to the working directory
-          // npm_config_local_prefix is set when run via npm/npx
-          const detectedCwd =
+        if (key === 'CLIENT_CWD') {
+          const explicitCwd = process.env[key];
+          const detectedCwd = explicitCwd ||
             process.env.INIT_CWD ||
             process.env.PWD ||
             process.env.npm_config_local_prefix ||
             process.cwd();
-          config.server.client_cwd = detectedCwd;
+          // Normalize Git Bash paths (/c/Users/... -> C:\Users\...)
+          config.server.client_cwd = normalizeGitBashPath(detectedCwd);
           configLogger.debug(
-            `Auto-detected client working directory: ${detectedCwd}`,
+            `Client working directory: ${config.server.client_cwd}${explicitCwd ? ' (from CLIENT_CWD)' : ' (auto-detected)'}`,
           );
         } else {
           config.server[key.toLowerCase()] = validateEnvVar(

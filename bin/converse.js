@@ -10,6 +10,19 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { createRequire } from 'module';
 
+// Capture the caller's working directory before we chdir to the package root.
+// This is critical for resolving relative file paths passed by MCP clients.
+// Parse --cwd <path> from CLI args as an explicit override.
+const cwdArgIndex = process.argv.indexOf('--cwd');
+const callerCwd = (cwdArgIndex !== -1 && process.argv[cwdArgIndex + 1])
+  ? process.argv[cwdArgIndex + 1]
+  : process.cwd();
+
+// Expose as env var so config.js can pick it up (only if not already set)
+if (!process.env.CLIENT_CWD) {
+  process.env.CLIENT_CWD = callerCwd;
+}
+
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,7 +37,7 @@ process.chdir(projectRoot);
 try {
   const indexPath = join(projectRoot, 'src/index.js');
   const { main } = await import(pathToFileURL(indexPath).href);
-  
+
   // The main function will handle all logging appropriately based on transport type
   await main();
 } catch (error) {
