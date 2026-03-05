@@ -184,7 +184,7 @@ describe('Model Mapping', () => {
           reason: 'Slash format but model does not exist in Anthropic',
         },
         {
-          model: 'gpt-5.2',
+          model: 'gpt-5.4',
           shouldExistIn: 'openai',
           reason: 'Simple name exists in OpenAI',
         },

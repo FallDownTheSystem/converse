@@ -115,9 +115,9 @@ const SUPPORTED_MODELS = {
     description: 'OpenAI GPT-5.1 Codex Max via Copilot subscription',
     aliases: [],
   },
-  'gpt-5.2': {
-    modelName: 'gpt-5.2',
-    friendlyName: 'GPT-5.2 (via Copilot)',
+  'gpt-5.4': {
+    modelName: 'gpt-5.4',
+    friendlyName: 'GPT-5.4 (via Copilot)',
     contextWindow: 1047576,
     maxOutputTokens: 32768,
     supportsStreaming: true,
@@ -126,7 +126,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 120000,
-    description: 'OpenAI GPT-5.2 via Copilot subscription',
+    description: 'OpenAI GPT-5.4 via Copilot subscription',
     aliases: ['gpt-5'],
   },
   'gpt-5.2-codex': {

@@ -89,8 +89,8 @@ describe('OpenAI Provider', () => {
       expect('o3' in models).toBe(true);
       expect('o4-mini' in models).toBe(true);
       expect('gpt-4.1-2025-04-14' in models).toBe(true);
-      expect('gpt-5.2' in models).toBe(true);
-      expect('gpt-5.2-pro' in models).toBe(true);
+      expect('gpt-5.4' in models).toBe(true);
+      expect('gpt-5.4-pro' in models).toBe(true);
     });
 
     it('should include model configuration details', () => {
@@ -103,14 +103,14 @@ describe('OpenAI Provider', () => {
       expect(o3Model.supportsImages).toBe(true);
     });
 
-    it('should include GPT-5.2 Pro configuration with correct properties', () => {
+    it('should include GPT-5.4 Pro configuration with correct properties', () => {
       const models = openaiProvider.getSupportedModels();
-      const gpt5ProModel = models['gpt-5.2-pro'];
+      const gpt5ProModel = models['gpt-5.4-pro'];
 
       expect(gpt5ProModel).toBeTruthy();
-      expect(gpt5ProModel.modelName).toBe('gpt-5.2-pro');
-      expect(gpt5ProModel.friendlyName).toBe('OpenAI (GPT-5.2 Pro)');
-      expect(gpt5ProModel.contextWindow).toBe(400000);
+      expect(gpt5ProModel.modelName).toBe('gpt-5.4-pro');
+      expect(gpt5ProModel.friendlyName).toBe('OpenAI (GPT-5.4 Pro)');
+      expect(gpt5ProModel.contextWindow).toBe(1000000);
       expect(gpt5ProModel.maxOutputTokens).toBe(272000);
       expect(gpt5ProModel.supportsStreaming).toBe(false);
       expect(gpt5ProModel.supportsImages).toBe(true);
@@ -148,13 +148,13 @@ describe('OpenAI Provider', () => {
       expect(config.modelName).toBe('o3');
     });
 
-    it('should return config for GPT-5.2 Pro aliases', () => {
+    it('should return config for GPT-5.4 Pro aliases', () => {
       const aliases = ['gpt5-pro', 'gpt-5pro', 'gpt 5 pro', 'gpt-5 pro', 'gpt-5-pro'];
 
       aliases.forEach((alias) => {
         const config = openaiProvider.getModelConfig(alias);
         expect(config).toBeTruthy();
-        expect(config.modelName).toBe('gpt-5.2-pro');
+        expect(config.modelName).toBe('gpt-5.4-pro');
       });
     });
   });
@@ -629,7 +629,7 @@ describe('OpenAI Provider', () => {
 
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'gpt-5.2', // 'gpt-5' resolves to 'gpt-5.2'
+        model: 'gpt-5.4', // 'gpt-5' resolves to 'gpt-5.4'
         api_type: 'Responses API',
       });
 

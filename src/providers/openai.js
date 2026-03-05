@@ -10,44 +10,27 @@ import { debugLog, debugError } from '../utils/console.js';
 
 // Define supported models with their capabilities
 const SUPPORTED_MODELS = {
-  'gpt-5.2': {
-    modelName: 'gpt-5.2',
-    friendlyName: 'OpenAI (GPT-5.2)',
-    contextWindow: 400000,
+  'gpt-5.4': {
+    modelName: 'gpt-5.4',
+    friendlyName: 'OpenAI (GPT-5.4)',
+    contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false, // GPT-5 doesn't support temperature
+    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true, // GPT-5.2 supports "none" for faster responses
+    supportsNoneReasoningEffort: true,
     timeout: 3600000, // 1 hour
     description:
-      'Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, analysis. Supports "none" reasoning for faster responses',
+      'Latest flagship model (1M context, 128K output) - Superior reasoning, coding, agentic workflows, computer use. Most token-efficient reasoning model',
     aliases: [
       'gpt-5',
       'gpt5',
       'gpt 5',
-      'gpt-5.2-2025-12-11',
-      'gpt5.2',
-      'gpt 5.2',
+      'gpt5.4',
+      'gpt 5.4',
     ],
-  },
-  'gpt-5-2025-08-07': {
-    modelName: 'gpt-5-2025-08-07',
-    friendlyName: 'OpenAI (GPT-5.0)',
-    contextWindow: 400000,
-    maxOutputTokens: 128000,
-    supportsStreaming: true,
-    supportsImages: true,
-    supportsTemperature: false, // GPT-5 doesn't support temperature
-    supportsWebSearch: true,
-    supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: false, // GPT-5.0 does not support "none" reasoning
-    timeout: 3600000, // 1 hour
-    description:
-      'GPT-5.0 model (400K context, 128K output) - Previous version, accessible via fully qualified name',
-    aliases: ['gpt-5.0', 'gpt5.0', 'gpt 5.0'],
   },
   'gpt-5-mini': {
     modelName: 'gpt-5-mini',
@@ -79,27 +62,26 @@ const SUPPORTED_MODELS = {
       'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07'],
   },
-  'gpt-5.2-pro': {
-    modelName: 'gpt-5.2-pro',
-    friendlyName: 'OpenAI (GPT-5.2 Pro)',
-    contextWindow: 400000,
+  'gpt-5.4-pro': {
+    modelName: 'gpt-5.4-pro',
+    friendlyName: 'OpenAI (GPT-5.4 Pro)',
+    contextWindow: 1000000,
     maxOutputTokens: 272000,
     supportsStreaming: false, // GPT-5 Pro doesn't support streaming
     supportsImages: true,
-    supportsTemperature: false, // GPT-5 models don't support temperature
+    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsDeepResearch: false, // Not a deep research model
-    timeout: 3600000, // 60 minutes - some requests may take several minutes
+    supportsDeepResearch: false,
+    timeout: 3600000, // 60 minutes
     description:
-      'Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)',
+      'Maximum performance reasoning model (1M context, 272K output) - Most complex tasks, extended compute time (EXPENSIVE)',
     aliases: [
       'gpt-5-pro',
       'gpt5-pro',
       'gpt-5pro',
       'gpt 5 pro',
       'gpt-5 pro',
-      'gpt-5.2-pro-2025-12-11',
     ],
   },
   o3: {
@@ -450,7 +432,7 @@ export const openaiProvider = {
       ) {
         // GPT-5 Pro only supports 'high' reasoning effort
         const effectiveEffort =
-          resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
+          resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5') ? 'high' : reasoning_effort;
         requestPayload.reasoning = {
           effort: effectiveEffort,
           summary: 'auto', // Enable reasoning summaries
@@ -490,7 +472,7 @@ export const openaiProvider = {
       ) {
         // GPT-5 Pro only supports 'high' reasoning effort
         const effectiveEffort =
-          resolvedModel === 'gpt-5-pro' ? 'high' : reasoning_effort;
+          resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5') ? 'high' : reasoning_effort;
         requestPayload.reasoning_effort = effectiveEffort;
       }
 
