@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.2] - 2026-03-05
+
+### Added
+
+- **GPT-5.4 Support**: Added `gpt-5.4` and `gpt-5.4-pro` models to OpenAI provider
+  - 1M context window, 128K output (272K for Pro)
+  - `gpt-5` alias now resolves to `gpt-5.4`
+  - `gpt-5-pro` alias now resolves to `gpt-5.4-pro`
+- **Copilot Provider**: Added `gpt-5.4` model entry, `gpt-5` alias updated
+
+### Removed
+
+- **Deprecated OpenAI models**: Removed `gpt-5.2`, `gpt-5-2025-08-07` (GPT-5.0), and `gpt-5.2-pro`
+
+### Changed
+
+- **Dependencies**: Updated to latest versions
+  - `@openai/codex-sdk` 0.101.0 → 0.110.0
+  - `openai` 6.25.0 → 6.26.0
+
 ## [2.20.1] - 2026-03-03
 
 ### Changed
