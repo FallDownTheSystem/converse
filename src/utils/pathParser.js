@@ -16,7 +16,7 @@
  * Captures: (filePath)(startLine)(endLine)
  * Pattern: ^(.*)\{(\d*):(\d*)\}$
  */
-const RANGE_PATTERN = /^(.*)\{(\d*):(\d*)\}$/;
+const RANGE_PATTERN = /^(.*)\{(\d*)[:\-,;](\d*)\}$/;
 
 /**
  * Parse a file path that may contain a line range specifier.
