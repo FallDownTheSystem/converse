@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.4] - 2026-03-13
+
+### Changed
+
+- **Dependencies**: Updated all dependencies to latest versions
+  - `@anthropic-ai/claude-agent-sdk` 0.2.63 → 0.2.74
+  - `@anthropic-ai/sdk` 0.74.0 → 0.78.0
+  - `@github/copilot-sdk` 0.1.29 → 0.1.32
+  - `@google/genai` 1.43.0 → 1.45.0
+  - `@mistralai/mistralai` 1.14.1 → 1.15.1
+  - `@openai/codex-sdk` 0.110.0 → 0.114.0
+  - `ai` 6.0.108 → 6.0.116
+  - `openai` 6.26.0 → 6.27.0
+  - `vite` 7.3.1 → 8.0.0
+  - `@vitest/coverage-v8` 4.0.18 → 4.1.0
+  - `eslint` 10.0.2 → 10.0.3
+  - `vitest` 4.0.18 → 4.1.0
+
 ## [2.20.3] - 2026-03-07
 
 ### Changed
