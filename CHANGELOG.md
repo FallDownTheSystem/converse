@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.5] - 2026-03-14
+
+### Changed
+
+- **Dependencies**: Updated all dependencies to latest versions
+  - `@anthropic-ai/claude-agent-sdk` 0.2.74 → 0.2.76
+  - `lru-cache` 11.2.6 → 11.2.7
+  - `openai` 6.27.0 → 6.29.0
+
 ## [2.20.4] - 2026-03-13
 
 ### Changed
