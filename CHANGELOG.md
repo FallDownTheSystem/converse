@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.21.0] - 2026-03-17
+
+### Added
+
+- **OpenAI Provider**: Added GPT-5.4 mini and GPT-5.4 nano model support — fast, efficient models optimized for coding, subagents, and computer use
+
 ## [2.20.9] - 2026-03-17
 
 ### Fixed
