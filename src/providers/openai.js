@@ -62,6 +62,46 @@ const SUPPORTED_MODELS = {
       'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07'],
   },
+  'gpt-5.4-mini': {
+    modelName: 'gpt-5.4-mini',
+    friendlyName: 'OpenAI (GPT-5.4 mini)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    timeout: 1800000, // 30 minutes
+    description:
+      'Fast, efficient GPT-5.4 (400K context, 128K output) - Coding, subagents, computer use, tool use. 2x faster than GPT-5 mini',
+    aliases: [
+      'gpt5.4-mini',
+      'gpt-5.4mini',
+      'gpt 5.4 mini',
+      'gpt-5.4-mini-2025-08-07',
+    ],
+  },
+  'gpt-5.4-nano': {
+    modelName: 'gpt-5.4-nano',
+    friendlyName: 'OpenAI (GPT-5.4 nano)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    supportsResponsesAPI: true,
+    timeout: 600000, // 10 minutes
+    description:
+      'Smallest, cheapest GPT-5.4 (400K context, 128K output) - Classification, data extraction, ranking, coding subagents',
+    aliases: [
+      'gpt5.4-nano',
+      'gpt-5.4nano',
+      'gpt 5.4 nano',
+      'gpt-5.4-nano-2025-08-07',
+    ],
+  },
   'gpt-5.4-pro': {
     modelName: 'gpt-5.4-pro',
     friendlyName: 'OpenAI (GPT-5.4 Pro)',
