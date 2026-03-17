@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.6] - 2026-03-17
+
+### Fixed
+
+- **Copilot Provider**: Fixed overly broad auth error detection that caused false positives (e.g. errors containing "OAuth" or "authorization" were incorrectly caught as authentication failures)
+- **Copilot Provider**: Fixed error messages referencing non-existent `copilot auth login` command; now correctly references `gh auth login`
+- **Copilot Provider**: Auth error now includes original error message for easier debugging
+
 ## [2.20.5] - 2026-03-14
 
 ### Changed
