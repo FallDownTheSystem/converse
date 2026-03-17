@@ -12,6 +12,10 @@
  * - Requires GitHub CLI authenticated (gh auth login) with active Copilot subscription
  */
 
+import { createRequire } from 'module';
+import { readFileSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
@@ -291,15 +295,74 @@ function isCopilotSDKAvailable() {
 }
 
 /**
+ * Patch vscode-jsonrpc's package.json to add ESM-compatible exports.
+ * The @github/copilot-sdk imports "vscode-jsonrpc/node" (extensionless) and
+ * "vscode-jsonrpc/node.js" (with extension). Without an exports map, Node.js
+ * strict ESM resolution fails on both forms. Adding an exports field once
+ * also requires "./node.js" since exports blocks unlisted subpaths.
+ * Runs once, skips silently on failure (e.g. read-only node_modules).
+ */
+let _jsonrpcPatched = false;
+function ensureVscodeJsonrpcExports() {
+  if (_jsonrpcPatched) return;
+  _jsonrpcPatched = true;
+
+  try {
+    const sdkUrl = import.meta.resolve('@github/copilot-sdk');
+    const sdkDir = dirname(fileURLToPath(sdkUrl));
+    const sdkRequire = createRequire(join(sdkDir, '_resolve.js'));
+
+    let pkgJsonPath;
+    try {
+      pkgJsonPath = sdkRequire.resolve('vscode-jsonrpc/package.json');
+    } catch {
+      const mainPath = sdkRequire.resolve('vscode-jsonrpc');
+      let dir = dirname(mainPath);
+      for (let i = 0; i < 5; i++) {
+        const candidate = join(dir, 'package.json');
+        try {
+          const p = JSON.parse(readFileSync(candidate, 'utf-8'));
+          if (p.name === 'vscode-jsonrpc') {
+            pkgJsonPath = candidate;
+            break;
+          }
+        } catch { /* continue */ }
+        dir = dirname(dir);
+      }
+    }
+
+    if (!pkgJsonPath) return;
+
+    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+    if (pkg.exports && pkg.exports['./node'] && pkg.exports['./node.js']) {
+      return;
+    }
+
+    pkg.exports = {
+      '.': pkg.main || './lib/node/main.js',
+      './node': './node.js',
+      './node.js': './node.js',
+      './browser': './browser.js',
+      './browser.js': './browser.js',
+    };
+    writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, '\t') + '\n');
+    debugLog('[Copilot SDK] Patched vscode-jsonrpc exports for ESM compatibility');
+  } catch (err) {
+    debugLog('[Copilot SDK] Could not patch vscode-jsonrpc: %s', err.message);
+  }
+}
+
+/**
  * Dynamically import Copilot SDK (lazy loading)
  */
 async function getCopilotSDK() {
+  ensureVscodeJsonrpcExports();
   try {
     const { CopilotClient } = await import('@github/copilot-sdk');
     return CopilotClient;
   } catch (error) {
     throw new CopilotProviderError(
-      'Copilot SDK not available. Ensure @github/copilot-sdk is installed and GitHub CLI is authenticated (gh auth login).',
+      `Copilot SDK import failed: ${error.message}`,
       ErrorCodes.API_ERROR,
       error,
     );
