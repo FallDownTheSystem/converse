@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.8] - 2026-03-17
+
+### Fixed
+
+- **Copilot Provider**: Replaced disk-patching of `vscode-jsonrpc` with a `node:module` resolve hook that rewrites the extensionless `vscode-jsonrpc/node` import to include `.js`. Works in all environments (npm, pnpm, global installs) without filesystem writes.
+
 ## [2.20.7] - 2026-03-17
 
 ### Fixed
