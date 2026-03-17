@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.7] - 2026-03-17
+
+### Fixed
+
+- **Copilot Provider**: Fixed `ERR_MODULE_NOT_FOUND` for `vscode-jsonrpc/node` under Node.js strict ESM resolution by adding runtime patch for missing exports field in `vscode-jsonrpc@8.2.1`
+
 ## [2.20.6] - 2026-03-17
 
 ### Fixed
