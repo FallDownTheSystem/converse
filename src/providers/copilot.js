@@ -9,7 +9,7 @@
  * - Manages a singleton CopilotClient (spawns CLI process via JSON-RPC)
  * - Creates a fresh CopilotSession per request, destroyed after each request
  * - Bridges SDK push-based events to pull-based async generator for streaming
- * - Requires Copilot CLI installed and authenticated (copilot auth login)
+ * - Requires GitHub CLI authenticated (gh auth login) with active Copilot subscription
  */
 
 import { debugLog, debugError } from '../utils/console.js';
@@ -299,7 +299,7 @@ async function getCopilotSDK() {
     return CopilotClient;
   } catch (error) {
     throw new CopilotProviderError(
-      'Copilot SDK not available. Ensure @github/copilot-sdk is installed and Copilot CLI is authenticated (copilot auth login).',
+      'Copilot SDK not available. Ensure @github/copilot-sdk is installed and GitHub CLI is authenticated (gh auth login).',
       ErrorCodes.API_ERROR,
       error,
     );
@@ -866,13 +866,13 @@ export const copilotProvider = {
       debugError('[Copilot SDK] Execution error', error);
 
       if (
-        error.message?.includes('authentication') ||
-        error.message?.includes('auth') ||
         error.message?.includes('not authenticated') ||
-        error.message?.includes('login')
+        error.message?.includes('authentication failed') ||
+        error.message?.includes('not logged in') ||
+        error.message?.includes('login required')
       ) {
         throw new CopilotProviderError(
-          'Copilot SDK authentication failed. Install and authenticate Copilot CLI: copilot auth login',
+          `Copilot SDK authentication failed. Ensure GitHub CLI is authenticated (gh auth login) and you have an active Copilot subscription. Original error: ${error.message}`,
           ErrorCodes.INVALID_API_KEY,
           error,
         );
