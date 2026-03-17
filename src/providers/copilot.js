@@ -673,10 +673,12 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
     let done = false;
     let streamError = null;
     let usageData = null;
+    let receivedDeltas = false;
 
     const unsubscribe = session.on((event) => {
       switch (event.type) {
       case 'assistant.message_delta':
+        receivedDeltas = true;
         eventQueue.push({
           type: 'delta',
           data: { textDelta: event.data.deltaContent },
@@ -684,8 +686,8 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
         break;
 
       case 'assistant.message':
-        // Final complete message — use as fallback if deltas were coalesced
-        if (event.data.content) {
+        // Final complete message — only use if no streaming deltas were received
+        if (!receivedDeltas && event.data.content) {
           eventQueue.push({
             type: 'delta',
             data: { textDelta: event.data.content },
