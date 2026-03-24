@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.21.1] - 2026-03-24
+
+### Changed
+
+- **All Providers**: Increased execution timeouts to 10 minutes (600s) across all CLI providers — Claude, Codex, Gemini CLI, and all Copilot models — to prevent premature timeout errors on long-running requests
+- **Dependencies**: Updated `@anthropic-ai/claude-agent-sdk` 0.2.77→0.2.81, `@google/genai` 1.45.0→1.46.0, `ai` 6.0.116→6.0.138, `openai` 6.31.0→6.32.0, `vite` 8.0.0→8.0.2, `vitest` 4.1.0→4.1.1, `eslint` 10.0.3→10.1.0
+
 ## [2.21.0] - 2026-03-17
 
 ### Added
