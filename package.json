@@ -94,30 +94,30 @@
     ".env.example"
   ],
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.76",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "@anthropic-ai/sdk": "^0.78.0",
     "@github/copilot-sdk": "^0.1.32",
-    "@google/genai": "^1.45.0",
+    "@google/genai": "^1.46.0",
     "@mistralai/mistralai": "^1.15.1",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@openai/codex-sdk": "^0.114.0",
-    "ai": "^6.0.116",
+    "ai": "^6.0.138",
     "ai-sdk-provider-gemini-cli": "^2.0.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "lru-cache": "^11.2.7",
-    "nanoid": "^5.1.6",
-    "openai": "^6.29.0",
+    "nanoid": "^5.1.7",
+    "openai": "^6.32.0",
     "p-limit": "^7.3.0",
-    "vite": "^8.0.0"
+    "vite": "^8.0.2"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.1",
     "cross-env": "^10.1.0",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "prettier": "^3.8.1",
     "rimraf": "^6.1.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.1"
   }
 }

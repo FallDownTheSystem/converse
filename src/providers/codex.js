@@ -28,7 +28,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false, // Codex doesn't support images
     supportsTemperature: false, // Codex manages temperature internally
     supportsWebSearch: false, // Codex accesses files directly, not web
-    timeout: 60000, // 60 seconds (Codex can take 5-20s for responses)
+    timeout: 600000, // 10 minutes
     description:
       'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.3-Codex)',
     aliases: [

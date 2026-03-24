@@ -27,7 +27,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true, // Supported via streaming input mode
     supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
-    timeout: 120000, // 2 minutes
+    timeout: 600000, // 10 minutes
     description: 'Claude via Agent SDK - requires claude login authentication',
     aliases: ['claude-sdk', 'claude-code'],
   },

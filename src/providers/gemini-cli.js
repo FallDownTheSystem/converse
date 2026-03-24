@@ -34,7 +34,7 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsThinking: true,
     supportsWebSearch: true,
-    timeout: 300000, // 5 minutes
+    timeout: 600000, // 10 minutes
     description:
       'Gemini 3.1 Pro Preview via OAuth - requires Gemini CLI authentication',
     aliases: ['gemini-cli'],
