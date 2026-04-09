@@ -14,14 +14,24 @@ import os from 'os';
 import { nanoid } from 'nanoid';
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
-  createLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  }),
-}));
+vi.mock('../../src/utils/logger.js', () => {
+	const fn = vi.fn;
+	const makeLogger = () => ({
+		debug: fn(),
+		info: fn(),
+		warn: fn(),
+		error: fn(),
+		trace: fn(),
+		operation: fn(() => ({
+			debug: fn(),
+			info: fn(),
+			warn: fn(),
+			error: fn(),
+			trace: fn(),
+		})),
+	});
+	return { createLogger: makeLogger };
+});
 
 // Helper to create test directory
 async function createTestDir() {
