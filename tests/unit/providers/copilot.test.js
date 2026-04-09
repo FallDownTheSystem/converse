@@ -13,7 +13,7 @@ describe('Copilot Provider - Model Selection', () => {
   describe('resolveModelAlias', () => {
     it('resolves version shortcut aliases', () => {
       expect(resolveModelAlias('gpt-5')).toBe('gpt-5.4');
-      expect(resolveModelAlias('codex')).toBe('gpt-5.3-codex');
+      expect(resolveModelAlias('codex')).toBe('gpt-5.4');
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-4.6');
       expect(resolveModelAlias('opus')).toBe('claude-opus-4.6');
       expect(resolveModelAlias('haiku')).toBe('claude-haiku-4.5');
@@ -34,7 +34,7 @@ describe('Copilot Provider - Model Selection', () => {
 
     it('is case-insensitive', () => {
       expect(resolveModelAlias('GPT-5')).toBe('gpt-5.4');
-      expect(resolveModelAlias('CODEX')).toBe('gpt-5.3-codex');
+      expect(resolveModelAlias('CODEX')).toBe('gpt-5.4');
       expect(resolveModelAlias('Sonnet')).toBe('claude-sonnet-4.6');
       expect(resolveModelAlias('CLAUDE-SONNET-4.6')).toBe('claude-sonnet-4.6');
     });
@@ -64,7 +64,7 @@ describe('Copilot Provider - Model Selection', () => {
   describe('resolveSessionModel', () => {
     it('strips copilot: prefix and resolves alias', () => {
       expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.3-codex');
+      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.4');
       expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-4.6');
     });
 
@@ -79,7 +79,7 @@ describe('Copilot Provider - Model Selection', () => {
 
     it('is case-insensitive for prefix detection', () => {
       expect(resolveSessionModel('CoPiLoT:GPT-5', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('COPILOT:codex', {})).toBe('gpt-5.3-codex');
+      expect(resolveSessionModel('COPILOT:codex', {})).toBe('gpt-5.4');
     });
 
     it('falls back to default for bare copilot aliases', () => {
@@ -95,12 +95,12 @@ describe('Copilot Provider - Model Selection', () => {
 
     it('uses COPILOT_MODEL env var as fallback with alias resolution', () => {
       const config = { providers: { copilotmodel: 'codex' } };
-      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.3-codex');
+      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.4');
     });
 
     it('strips copilot: prefix from COPILOT_MODEL env var', () => {
       const config = { providers: { copilotmodel: 'copilot:codex' } };
-      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.3-codex');
+      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.4');
     });
 
     it('passes through unknown env var values', () => {
@@ -144,7 +144,7 @@ describe('Copilot Provider - Model Selection', () => {
     it('handles copilot: prefix with alias', () => {
       const config = copilotProvider.getModelConfig('copilot:codex');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.3-codex');
+      expect(config.modelName).toBe('gpt-5.4');
     });
 
     it('returns base copilot config for empty suffix', () => {
@@ -202,7 +202,7 @@ describe('Copilot Provider - Model Selection', () => {
       // OpenAI
       expect(keys).toContain('gpt-4.1');
       expect(keys).toContain('gpt-5.4');
-      expect(keys).toContain('gpt-5.3-codex');
+      expect(keys).toContain('gpt-5.4');
 
       // Anthropic
       expect(keys).toContain('claude-haiku-4.5');

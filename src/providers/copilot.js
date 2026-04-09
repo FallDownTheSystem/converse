@@ -128,7 +128,7 @@ const SUPPORTED_MODELS = {
     supportsReasoningEffort: true,
     timeout: 600000,
     description: 'OpenAI GPT-5.4 via Copilot subscription',
-    aliases: ['gpt-5'],
+    aliases: ['gpt-5', 'codex'],
   },
   'gpt-5.2-codex': {
     modelName: 'gpt-5.2-codex',
@@ -156,7 +156,7 @@ const SUPPORTED_MODELS = {
     supportsReasoningEffort: true,
     timeout: 600000,
     description: 'OpenAI GPT-5.3 Codex via Copilot subscription',
-    aliases: ['codex'],
+    aliases: [],
   },
 
   // Anthropic models
