@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.0] - 2026-04-16
+
+### Added
+
+- **Anthropic Provider**: Added Claude Opus 4.7 model support — most capable model for complex reasoning and agentic coding with adaptive thinking, 1M context, server-side compaction, and 128K output
+- **Copilot Provider**: Added Claude Opus 4.7 model support via Copilot subscription
+
+### Changed
+
+- **Anthropic Provider**: Remapped effort levels to better match Anthropic's xhigh tier — none→low, minimal→low, low→medium, medium→high, high→xhigh, max→max
+- **Anthropic Provider**: Fixed `none` effort level sending adaptive thinking without an effort parameter; now correctly maps to `low`
+- **Claude SDK Provider**: Updated default model from Opus 4.6 to Opus 4.7
+- **Model Aliases**: Unversioned `opus` and `claude-opus` aliases now resolve to Claude Opus 4.7 across all providers
+- **Dependencies**: Updated `@github/copilot-sdk` 0.2.1→0.2.2, `@google/genai` 1.49.0→1.50.1, `ai` 6.0.154→6.0.164, `dotenv` 17.4.1→17.4.2, `lru-cache` 11.3.3→11.3.5, `nanoid` 5.1.7→5.1.9, `vitest` 4.1.3→4.1.4
+
 ## [2.21.1] - 2026-03-24
 
 ### Changed
