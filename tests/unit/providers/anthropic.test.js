@@ -373,7 +373,7 @@ describe('Anthropic Provider', () => {
         type: 'adaptive',
       });
       expect(callArgs.output_config).toEqual({
-        effort: 'medium',
+        effort: 'high',
       });
     });
 

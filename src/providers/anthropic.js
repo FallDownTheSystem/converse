@@ -13,6 +13,39 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-opus-4-7': {
+    modelName: 'claude-opus-4-7',
+    friendlyName: 'Claude Opus 4.7',
+    contextWindow: 200000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true,
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 128000,
+    timeout: 600000,
+    supportsEffort: true,
+    effortGA: true,
+    supports1MContext: true,
+    supportsCompaction: true,
+    description:
+      'Claude Opus 4.7 - Most capable model for complex reasoning and agentic coding',
+    aliases: [
+      'claude-opus-4-7',
+      'claude-4.7-opus',
+      'claude-4-7-opus',
+      'opus-4.7',
+      'opus-4-7',
+      'opus4.7',
+      'opus4-7',
+      'claude-opus-4.7',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-opus-4-6': {
     modelName: 'claude-opus-4-6',
     friendlyName: 'Claude Opus 4.6',
@@ -23,16 +56,16 @@ const SUPPORTED_MODELS = {
     supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
-    supportsAdaptiveThinking: true, // Opus 4.6: thinking: {type: "adaptive"} recommended
+    supportsAdaptiveThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 128000,
     timeout: 600000,
-    supportsEffort: true, // Effort parameter is GA on Opus 4.6 (no beta header needed)
-    effortGA: true, // Effort is generally available, no beta header required
-    supports1MContext: true, // Beta 1M context support
-    supportsCompaction: true, // Beta server-side context compaction
+    supportsEffort: true,
+    effortGA: true,
+    supports1MContext: true,
+    supportsCompaction: true,
     description:
-      'Claude Opus 4.6 - Most intelligent model for building agents and coding with adaptive thinking and 128K output',
+      'Claude Opus 4.6 - Previous most intelligent model with adaptive thinking and 128K output',
     aliases: [
       'claude-opus-4-6',
       'claude-4.6-opus',
@@ -42,8 +75,6 @@ const SUPPORTED_MODELS = {
       'opus4.6',
       'opus4-6',
       'claude-opus-4.6',
-      'opus',
-      'claude-opus',
     ],
   },
   'claude-opus-4-5-20251101': {
@@ -212,15 +243,16 @@ const THINKING_BUDGETS = {
 };
 
 /**
- * Effort parameter mapping for Opus 4.6, Sonnet 4.6, and Opus 4.5
+ * Effort parameter mapping for Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
  * Maps reasoning_effort values to Anthropic's effort parameter values
  */
 const EFFORT_MAP = {
+  none: 'low',
   minimal: 'low',
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  max: 'max', // Opus 4.6 supports 'max' effort level
+  low: 'medium',
+  medium: 'high',
+  high: 'xhigh',
+  max: 'max',
 };
 
 /**
@@ -631,11 +663,7 @@ export const anthropicProvider = {
     }
 
     // Add effort parameter for models that support it (uses output_config)
-    if (
-      modelConfig.supportsEffort &&
-      reasoning_effort &&
-      reasoning_effort !== 'none'
-    ) {
+    if (modelConfig.supportsEffort && reasoning_effort) {
       const effortValue = EFFORT_MAP[reasoning_effort];
       if (effortValue) {
         requestPayload.output_config = {

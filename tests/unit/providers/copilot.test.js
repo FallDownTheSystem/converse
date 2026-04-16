@@ -15,7 +15,7 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveModelAlias('gpt-5')).toBe('gpt-5.4');
       expect(resolveModelAlias('codex')).toBe('gpt-5.4');
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-4.6');
-      expect(resolveModelAlias('opus')).toBe('claude-opus-4.6');
+      expect(resolveModelAlias('opus')).toBe('claude-opus-4.7');
       expect(resolveModelAlias('haiku')).toBe('claude-haiku-4.5');
       expect(resolveModelAlias('gemini')).toBe('gemini-3.1-pro-preview');
     });
