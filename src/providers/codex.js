@@ -25,7 +25,7 @@ const SUPPORTED_MODELS = {
     contextWindow: 400000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
-    supportsImages: false, // Codex doesn't support images
+    supportsImages: true, // Codex SDK 0.118+ supports images via --image (local_image input)
     supportsTemperature: false, // Codex manages temperature internally
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 600000, // 10 minutes
@@ -91,14 +91,19 @@ async function getCodexSDK() {
 }
 
 /**
- * Convert message array to single prompt for Codex
- * Codex expects single prompts, not message history
+ * Convert message array to Codex SDK Input (string | UserInput[])
+ * Codex expects single prompts (new thread) or incremental input (resumed thread);
+ * history is managed SDK-side.
  *
- * Strategy:
- * - For new threads: Extract last user message only
- * - For resumed threads: Same - Codex maintains history internally
+ * Returns a plain string when the last user message is text-only, or an array
+ * of { type: 'text' | 'local_image' } parts when images are present. The SDK
+ * passes local_image paths to the CLI via --image.
+ *
+ * Images must be on-disk files — Converse stores the original path in
+ * metadata.path (chat.js / consensus.js set includeMetadata: true). Images
+ * without a path (e.g. pasted base64 with no metadata) are skipped.
  */
-function convertMessagesToPrompt(messages) {
+function convertMessagesToCodexInput(messages) {
   if (!Array.isArray(messages)) {
     throw new CodexProviderError(
       'Messages must be an array',
@@ -113,7 +118,6 @@ function convertMessagesToPrompt(messages) {
     );
   }
 
-  // Find last user message
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
 
   if (!lastUserMessage) {
@@ -123,34 +127,64 @@ function convertMessagesToPrompt(messages) {
     );
   }
 
-  // Extract text content from message
   if (typeof lastUserMessage.content === 'string') {
     return lastUserMessage.content;
   }
 
-  // Handle array content (multimodal format)
   if (Array.isArray(lastUserMessage.content)) {
-    const textParts = lastUserMessage.content
-      .filter((item) => item.type === 'text')
-      .map((item) => item.text);
+    const parts = [];
+    let droppedImages = 0;
+    for (const item of lastUserMessage.content) {
+      if (item.type === 'text' && item.text) {
+        parts.push({ type: 'text', text: item.text });
+      } else if (item.type === 'image') {
+        const imagePath = item.metadata?.path || item.metadata?.originalPath;
+        if (imagePath) {
+          parts.push({ type: 'local_image', path: imagePath });
+        } else {
+          droppedImages += 1;
+        }
+      }
+    }
 
-    // Log warning if images present (Codex doesn't support images)
-    const hasImages = lastUserMessage.content.some(
-      (item) => item.type === 'image',
-    );
-    if (hasImages) {
+    if (droppedImages > 0) {
       debugLog(
-        '[Codex] Warning: Images in message will be ignored (Codex does not support multimodal input)',
+        `[Codex] Skipped ${droppedImages} image(s) without a file path — Codex requires on-disk images`,
       );
     }
 
-    return textParts.join('\n');
+    if (parts.length === 0) {
+      throw new CodexProviderError(
+        'Message contained no usable text or image parts',
+        ErrorCodes.INVALID_MESSAGES,
+      );
+    }
+
+    // Collapse to plain string when there are no images — keeps the non-image
+    // path identical to the legacy behavior and slightly simpler for the SDK.
+    if (parts.every((p) => p.type === 'text')) {
+      return parts.map((p) => p.text).join('\n');
+    }
+
+    return parts;
   }
 
   throw new CodexProviderError(
     'Invalid message content format',
     ErrorCodes.INVALID_MESSAGES,
   );
+}
+
+/**
+ * Extract the combined text from a Codex SDK Input for prompt-based checks
+ * like $imagegen detection.
+ */
+function extractPromptText(input) {
+  if (typeof input === 'string') return input;
+  return input
+    .filter((p) => p.type === 'text')
+    .map((p) => p.text)
+    .join('\n\n');
 }
 
 /**
@@ -185,12 +219,14 @@ function mapReasoningEffort(effort) {
 }
 
 /**
- * Create stream generator for Codex streaming responses
- * Yields raw Codex SDK events that will be normalized by ProviderStreamNormalizer
+ * Create stream generator for Codex streaming responses.
+ * `input` is the Codex SDK Input (string | UserInput[]) — strings for plain
+ * text turns, arrays when images are attached.
+ * Yields raw Codex SDK events that will be normalized by ProviderStreamNormalizer.
  */
-async function* createStreamingGenerator(thread, prompt, signal) {
+async function* createStreamingGenerator(thread, input, signal) {
   try {
-    const { events } = await thread.runStreamed(prompt, { signal });
+    const { events } = await thread.runStreamed(input, { signal });
 
     for await (const event of events) {
       // Check for cancellation
@@ -256,8 +292,9 @@ export const codexProvider = {
       // Get Codex SDK
       const Codex = await getCodexSDK();
 
-      // Convert messages to prompt
-      const prompt = convertMessagesToPrompt(messages);
+      // Convert messages to Codex SDK input (string or structured parts with images)
+      const input = convertMessagesToCodexInput(messages);
+      const promptText = extractPromptText(input);
 
       // Get thread ID if resuming conversation
       const threadId =
@@ -289,7 +326,7 @@ export const codexProvider = {
       // into image generation via $imagegen — otherwise Codex can't save the
       // generated file. Leave higher modes (workspace-write, danger-full-access)
       // alone so an explicit user choice is never downgraded or escalated.
-      const wantsImageGen = /\$imagegen\b/i.test(prompt);
+      const wantsImageGen = /\$imagegen\b/i.test(promptText);
       const sandboxMode =
         wantsImageGen && configuredSandboxMode === 'read-only'
           ? 'workspace-write'
@@ -324,12 +361,12 @@ export const codexProvider = {
       // WORKAROUND: SDK's thread.run() hangs due to missing break after turn.completed
       // Always use streaming internally, consume synchronously when stream=false
       if (stream) {
-        return createStreamingGenerator(thread, prompt, signal);
+        return createStreamingGenerator(thread, input, signal);
       }
 
       // Synchronous mode: consume streaming internally and return complete response
       const startTime = Date.now();
-      const generator = createStreamingGenerator(thread, prompt, signal);
+      const generator = createStreamingGenerator(thread, input, signal);
 
       let content = '';
       let usage = null;
