@@ -276,6 +276,12 @@ const CONFIG_SCHEMA = {
       description:
         'Approval policy (never | untrusted | on-failure | on-request)',
     },
+    CODEX_MODEL: {
+      type: 'string',
+      default: 'gpt-5.5',
+      description:
+        'Default Codex model (e.g., gpt-5.5, gpt-5.3-codex, gpt-5-codex)',
+    },
 
     // Copilot configuration
     COPILOT_TOOL_ACCESS: {
