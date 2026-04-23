@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.2] - 2026-04-23
+
+### Added
+
+- **Codex Provider**: Pass images through to Codex via the SDK's `local_image` input (forwarded to the CLI as `--image`). Enables image-to-image workflows with `$imagegen` and visual context in chat. Requires `@openai/codex-sdk` 0.118+.
+
+### Changed
+
+- **Codex Provider**: Flip `supportsImages` to `true` for the `codex` model and rewrite message conversion to emit structured SDK input (`string | UserInput[]`) when images are attached. Text-only turns continue to send a plain string. Images without an on-disk file path (e.g. raw base64) are skipped with a debug log.
+
 ## [2.22.1] - 2026-04-23
 
 ### Added
