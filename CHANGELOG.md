@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.3] - 2026-04-23
+
+### Changed
+
+- **Codex Provider**: Default to GPT-5.5 via the new `CODEX_MODEL` env var (default `gpt-5.5`). The model is now passed explicitly to the Codex SDK rather than relying on the CLI's default. Friendly name, description, and aliases updated to reflect GPT-5.5.
+- **Dependencies**: Updated `@openai/codex-sdk` 0.118.0→0.123.0, `@anthropic-ai/sdk` 0.86.1→0.90.0, `@anthropic-ai/claude-agent-sdk` 0.2.110→0.2.118, `@mistralai/mistralai` 2.2.0→2.2.1, `ai` 6.0.164→6.0.168, `vite` 8.0.8→8.0.10, `eslint` 10.2.0→10.2.1, `vitest` / `@vitest/coverage-v8` 4.1.4→4.1.5
+
+### Fixed
+
+- **Tests**: Repaired `tests/unit/async/cache-ttl.test.js` after the AsyncJobStore/FileCache API drift — tests now pass explicit `jobId`s and use `writeSnapshot`/`readSnapshot`, and exercise expiry via `cleanup(maxAgeMs)` instead of LRU's `performance.now()`-based TTL (which fake timers don't advance reliably)
+
 ## [2.22.2] - 2026-04-23
 
 ### Added
