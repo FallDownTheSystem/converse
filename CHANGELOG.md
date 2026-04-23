@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.1] - 2026-04-23
+
+### Added
+
+- **Codex Provider**: Auto-elevate sandbox to `workspace-write` when the prompt contains `$imagegen` so Codex can save generated image files. Higher modes explicitly set by the user (`workspace-write`, `danger-full-access`) are left untouched.
+
 ## [2.22.0] - 2026-04-16
 
 ### Added
