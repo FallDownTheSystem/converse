@@ -283,7 +283,22 @@ export const codexProvider = {
       const rawWorkingDirectory = config.server?.client_cwd || process.cwd();
       // Normalize Windows extended-length paths (\\?\C:\...) to regular paths
       const workingDirectory = normalizeExtendedPath(rawWorkingDirectory);
-      const sandboxMode = config.providers?.codexsandboxmode || 'read-only';
+      const configuredSandboxMode =
+        config.providers?.codexsandboxmode || 'read-only';
+      // Auto-elevate read-only sandbox to workspace-write when the prompt opts
+      // into image generation via $imagegen — otherwise Codex can't save the
+      // generated file. Leave higher modes (workspace-write, danger-full-access)
+      // alone so an explicit user choice is never downgraded or escalated.
+      const wantsImageGen = /\$imagegen\b/i.test(prompt);
+      const sandboxMode =
+        wantsImageGen && configuredSandboxMode === 'read-only'
+          ? 'workspace-write'
+          : configuredSandboxMode;
+      if (sandboxMode !== configuredSandboxMode) {
+        debugLog(
+          '[Codex] $imagegen detected — elevating sandboxMode from read-only to workspace-write so the image file can be written',
+        );
+      }
       const skipGitRepoCheck =
         config.providers?.codexskipgitcheck !== undefined
           ? config.providers.codexskipgitcheck
