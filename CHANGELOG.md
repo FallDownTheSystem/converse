@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.22.4] - 2026-04-24
+
+### Fixed
+
+- **Codex Provider**: Bumped `@openai/codex-sdk` 0.123.0→0.124.0 to match the Codex CLI 0.124.0 release and unblock the new `gpt-5.5` default model (earlier SDK rejected it with "model does not exist").
+
+### Changed
+
+- **Dependencies**: Updated `@anthropic-ai/sdk` 0.90.0→0.91.0 and `@anthropic-ai/claude-agent-sdk` 0.2.118→0.2.119.
+
 ## [2.22.3] - 2026-04-23
 
 ### Changed
