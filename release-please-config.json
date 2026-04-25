@@ -4,7 +4,6 @@
   "versioning-strategy": "always-bump-patch",
   "include-v-in-tag": true,
   "include-component-in-tag": false,
-  "bootstrap-sha": "272663d790bf4794382fe641cdd61d29e6e449a9",
   "bump-minor-pre-major": false,
   "bump-patch-for-minor-pre-major": false,
   "draft": false,
