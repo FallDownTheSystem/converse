@@ -5,6 +5,125 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0](https://github.com/FallDownTheSystem/converse/compare/converse-mcp-server-v2.22.4...converse-mcp-server-v3.0.0) (2026-04-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Default transport is now stdio instead of HTTP
+
+### feat\
+
+* Change default transport from HTTP to stdio for MCP compliance ([a9594c5](https://github.com/FallDownTheSystem/converse/commit/a9594c59ebb1f04cd462d226afe30a3e1b136b2c))
+
+
+### Features
+
+* Add 'none' reasoning effort support for GPT-5.1 ([d779239](https://github.com/FallDownTheSystem/converse/commit/d77923906b137f5c6aadddfca7c4d1d76c1e50c3))
+* Add Claude Haiku 4.5 model support and update aliases ([2725b4b](https://github.com/FallDownTheSystem/converse/commit/2725b4be5844f3ecf054d0ced97787c45aa643b6))
+* add Claude Opus 4.5 model with effort parameter support ([bed0096](https://github.com/FallDownTheSystem/converse/commit/bed0096bbdf851ff401e68e5c606798699237ade))
+* add Claude SDK provider for subscription-based access ([e622e27](https://github.com/FallDownTheSystem/converse/commit/e622e27fd20575f1f8d53f9b081530759c247f04))
+* Add Claude Sonnet 4.5 and update dependencies ([f41ad52](https://github.com/FallDownTheSystem/converse/commit/f41ad527cf27118ad47a6269cd42efe9d6680678))
+* add conversation export feature to chat tool ([0daf09a](https://github.com/FallDownTheSystem/converse/commit/0daf09a111afa3cdb687c31b1231317b7bd51f6d))
+* add export parameter to both chat and consensus tool schemas ([70dfe85](https://github.com/FallDownTheSystem/converse/commit/70dfe855c07c15f2758465b99178c43309981b28))
+* Add GEMINI_API_KEY support and Google Vertex AI configuration ([cca8eeb](https://github.com/FallDownTheSystem/converse/commit/cca8eeb4653bdbb91ba239ea578417d8562f7050))
+* Add GPT-5 advanced features - minimal reasoning and verbosity control ([ab6c331](https://github.com/FallDownTheSystem/converse/commit/ab6c331fb5f7a6effd94e16fb4300e5c0dcf2656))
+* Add GPT-5 Pro support ([511e4e7](https://github.com/FallDownTheSystem/converse/commit/511e4e73b1664bec0bda8888beb26066bf4cd92e))
+* Add GPT-5 support to OpenAI provider ([fd64b27](https://github.com/FallDownTheSystem/converse/commit/fd64b27ed94d3129d3a1c4877d40a3994aca2a74))
+* Add GPT-5-mini and GPT-5-nano models to OpenAI provider ([506817b](https://github.com/FallDownTheSystem/converse/commit/506817baa15db7fd8ec719c0900a6331b6d723c7))
+* Add GPT-5.1 model support ([5dff5b4](https://github.com/FallDownTheSystem/converse/commit/5dff5b4b681eff185e159ccd61af37001327f220))
+* Add metadata display and shorter continuation IDs ([e194487](https://github.com/FallDownTheSystem/converse/commit/e1944877a0398c560be3e5b2eb90971cccb617f8))
+* Add OpenAI reasoning summaries support ([3bc87d7](https://github.com/FallDownTheSystem/converse/commit/3bc87d727c667b4dacc4c4f9749495e36d62c318))
+* Add support for grok-code-fast-1 model ([05c54fd](https://github.com/FallDownTheSystem/converse/commit/05c54fd25bb27d340b660f56d770496a400f9fb2))
+* Add XAI Grok 4 Fast models and update Mistral models to latest versions ([bac09ba](https://github.com/FallDownTheSystem/converse/commit/bac09bae338406a26f4b2c8e1e85e3f24e7a8357))
+* Auto-detect client working directory and remove file access restrictions ([4e3c72a](https://github.com/FallDownTheSystem/converse/commit/4e3c72af139da15cd4c1dd96f5ad5b2b14087afd))
+* **claude:** use Opus 4.5 model and increase maxTurns to 20 ([fad18fe](https://github.com/FallDownTheSystem/converse/commit/fad18fe4c5d79f161a87eb5cdd273975fc3ccd93))
+* Enhanced auto model selection for consensus tool ([4b96f3a](https://github.com/FallDownTheSystem/converse/commit/4b96f3a76bf62f27bbd82a8961245d0418b92f06))
+* **files:** add partial file line range support ([b65fc2c](https://github.com/FallDownTheSystem/converse/commit/b65fc2cb174640e52129263413d218d0d5e50cbd))
+* Implement Anthropic prompt caching with 1-hour TTL ([69f88b6](https://github.com/FallDownTheSystem/converse/commit/69f88b600ebce07eb72c10c9b39783a375e7faf6))
+* switch to release-please for fully automated releases ([04a0fdc](https://github.com/FallDownTheSystem/converse/commit/04a0fdcfe8c8aa7cb20cb5cf06b0babda4f88e2b))
+* Update Anthropic provider to Claude Opus 4.1 ([1484c3c](https://github.com/FallDownTheSystem/converse/commit/1484c3c05ab0fd0cb005919ab996ae2e00ce9530))
+
+
+### Bug Fixes
+
+* **anthropic:** remove otherOptions spread from request payload ([4633787](https://github.com/FallDownTheSystem/converse/commit/4633787c9bfb4462159ded3d0a2e073a60edc6bb))
+* **anthropic:** use beta endpoint for effort parameter ([002fef5](https://github.com/FallDownTheSystem/converse/commit/002fef5d776f493e42828abf828b5a8c1a2b7afe))
+* Change working directory to project root for npx compatibility ([bc1bece](https://github.com/FallDownTheSystem/converse/commit/bc1bece9ef4d73b338c1d54a04f09926536b0ac8))
+* Codex uses CODEX_API_KEY instead of OPENAI_API_KEY ([f8611c5](https://github.com/FallDownTheSystem/converse/commit/f8611c529b486dfdbe113396060a3d7cc02bf9ab))
+* **codex:** Apply permanent patch for SDK event loop bug ([76d6db2](https://github.com/FallDownTheSystem/converse/commit/76d6db2c98ce77138da7d15aeb94187dc1a9ca16))
+* **codex:** Improve API key handling and event processing ([07da245](https://github.com/FallDownTheSystem/converse/commit/07da24508a5360b6f5dff33620c5b9c3000d9227))
+* **codex:** Normalize Windows extended-length paths ([4067d72](https://github.com/FallDownTheSystem/converse/commit/4067d726a8cf45cb81de6431d1ee108019a48f7e))
+* correct Claude Code MCP setup syntax for environment variables ([ee2541e](https://github.com/FallDownTheSystem/converse/commit/ee2541e41389f0e1995b1438280047c11c8d6282))
+* Enforce high reasoning effort for GPT-5 Pro ([954471d](https://github.com/FallDownTheSystem/converse/commit/954471dc4c15ffac1fd8681da4b6081102961ece))
+* Fix gemini-2.0-flash thinking mode and Claude 4 series token handling ([d0f2d0e](https://github.com/FallDownTheSystem/converse/commit/d0f2d0e73f3776409155605b673cca7b9e2670ac))
+* Fix Mistral provider image handling ([495aeca](https://github.com/FallDownTheSystem/converse/commit/495aecad7e192051aac5beb71d4aeaa0c3738c1c))
+* Fix syntax error in Codex provider invoke method ([3841f04](https://github.com/FallDownTheSystem/converse/commit/3841f04fc468d30dfaf4a4a0cf95a0168f747bc7))
+* Increase Anthropic SDK timeout to handle thinking models ([da70a08](https://github.com/FallDownTheSystem/converse/commit/da70a083231731c1ad8a6afbfb1c01c1de61b012))
+* Pass configuration options to Codex resumeThread() ([65b0199](https://github.com/FallDownTheSystem/converse/commit/65b019989f6cb1595dc00b0102093f448aa04cc6))
+* reinstall dependencies ([b96c88e](https://github.com/FallDownTheSystem/converse/commit/b96c88e2ff01d68a7d346fa6484dd9dfd4166a5d))
+* Remove non-existent thinking beta header ([7bede6d](https://github.com/FallDownTheSystem/converse/commit/7bede6d4985d65db71e52282ed0aef8f0213ef66))
+* remove unnecessary -- separator in claude mcp add command ([6415f37](https://github.com/FallDownTheSystem/converse/commit/6415f37a6fd69364e8528313c61753e2d66f1715))
+* Support relative file paths in chat and consensus tools ([7b44171](https://github.com/FallDownTheSystem/converse/commit/7b44171c31864d79698ce5353a169c8243ba4a91))
+
+
+### Refactor
+
+* Shorten tool descriptions for better clarity ([ae3d7a4](https://github.com/FallDownTheSystem/converse/commit/ae3d7a48f2999b85c4c975eeb54332cd043cdd71))
+
+
+### Documentation
+
+* Add MCP_TOOL_TIMEOUT environment variable to README ([92a9df6](https://github.com/FallDownTheSystem/converse/commit/92a9df612aa8f9504ab45e0357a11df29d7622ab))
+* Clarify Claude Code environment variables are global, not project-specific ([fb59685](https://github.com/FallDownTheSystem/converse/commit/fb59685febc3fbcba1ecb74d8319243956d57bc7))
+* improve files parameter schema descriptions ([b455606](https://github.com/FallDownTheSystem/converse/commit/b455606b9e0ec2510c59f45e3dae52b552e4c020))
+* improve README clarity and organization ([381945c](https://github.com/FallDownTheSystem/converse/commit/381945c838d17c7b9d7d0dc322781bf34d86e7fa))
+* improve README clarity and remove redundancy ([bec7cfc](https://github.com/FallDownTheSystem/converse/commit/bec7cfc8c0703a6218e9c89fbf965363ae939b74))
+* Update changelog for v1.12.0 ([39c5f75](https://github.com/FallDownTheSystem/converse/commit/39c5f75d7f83e6a09e3f5bea1c6f99b3fa887dba))
+* Update CHANGELOG for v2.1.0 ([b57ba4a](https://github.com/FallDownTheSystem/converse/commit/b57ba4acf3952e6c244d641cbc2366173e92d89a))
+* Update CHANGELOG for v2.2.0 ([3b7d87b](https://github.com/FallDownTheSystem/converse/commit/3b7d87b1a35732f13539f6703343643d959f2487))
+* Update CHANGELOG for v2.3.0 ([6a43a57](https://github.com/FallDownTheSystem/converse/commit/6a43a5776364a457a068f45e098ba539d3750a1c))
+* Update CHANGELOG for v2.3.1 ([6f49f84](https://github.com/FallDownTheSystem/converse/commit/6f49f84585a223483f047c1450dc30b52708292a))
+* Update CHANGELOG.md for version 1.7.0 ([785c7fc](https://github.com/FallDownTheSystem/converse/commit/785c7fcc3dfd93447a0b77f23b678c455b39fb91))
+* Update CLAUDE.md to require pnpm for development ([f7c71eb](https://github.com/FallDownTheSystem/converse/commit/f7c71eb9ec37c996d6380baeed82b45cce472fa9))
+* update Mistral and DeepSeek API key formats ([aa38ae1](https://github.com/FallDownTheSystem/converse/commit/aa38ae1d3106c52c3f115a86e50bd85eea64c3bc))
+* Update README with current models and fix installation instructions ([b2b660f](https://github.com/FallDownTheSystem/converse/commit/b2b660f705ef10a8be11c1f0e09d4d0a7fb41dd0))
+
+
+### Miscellaneous
+
+* Bump version to 1.18.0-beta.0 for Codex integration testing ([0d4b439](https://github.com/FallDownTheSystem/converse/commit/0d4b439ef09761d98282069d8cbb014717242e6f))
+* Bump version to 1.18.0-beta.1 ([4d68ed5](https://github.com/FallDownTheSystem/converse/commit/4d68ed50c21879af363114d2b08ec3d5b3377c2c))
+* Bump version to 1.18.0-beta.5 ([a862d41](https://github.com/FallDownTheSystem/converse/commit/a862d41ce74deba08ea4b8d365d02d87702c029e))
+* Bump version to 1.3.4 ([145dbf6](https://github.com/FallDownTheSystem/converse/commit/145dbf6b43f47d27e29a644a0164856a4029cd13))
+* Bump version to 1.5.3 and update changelog ([7c64184](https://github.com/FallDownTheSystem/converse/commit/7c64184166e8bc3edb9a986d6b2314f8db47e888))
+* Bump version to 1.5.4 ([a3516db](https://github.com/FallDownTheSystem/converse/commit/a3516dbf3419abaf8035a9bdadd7d459b9da5efe))
+* Bump version to 1.5.5 and update changelog ([deef0b8](https://github.com/FallDownTheSystem/converse/commit/deef0b83b20efb23a4a555e7c30fbe564f744005))
+* Bump version to 2.0.1 ([e950524](https://github.com/FallDownTheSystem/converse/commit/e950524db891c2e270b825c10683f32832711d57))
+* Bump version to 2.1.0 ([4988a98](https://github.com/FallDownTheSystem/converse/commit/4988a98ecc275750d86835844ea085ae08dbf696))
+* Release v1.10.0 ([8ab74b0](https://github.com/FallDownTheSystem/converse/commit/8ab74b0fb29258c29d79a10a99183cfff6583e8e))
+* Release v1.10.1 ([45dbe2a](https://github.com/FallDownTheSystem/converse/commit/45dbe2a89bd46e37720f7c46f6cc0d186de6ee0a))
+* Release v1.11.2 ([7e0c813](https://github.com/FallDownTheSystem/converse/commit/7e0c813f9eb16770a9ccc1970ecff8ce53b31444))
+* Release v2.0.0 ([43e4640](https://github.com/FallDownTheSystem/converse/commit/43e4640af630427d761cdda73d21765c4a68da7b))
+* Release v2.0.2 - Fix Codex provider hang ([9eec695](https://github.com/FallDownTheSystem/converse/commit/9eec695efd11937462e2bb8105e3ac4c1feb1b44))
+* Release version 1.14.1 ([214dbc1](https://github.com/FallDownTheSystem/converse/commit/214dbc140f225ac50ce232dde212234b3dd38f89))
+* Release version 1.14.2 ([430329c](https://github.com/FallDownTheSystem/converse/commit/430329c5639c80cf408535697d33503e53b8560f))
+* Release version 1.14.3 ([b0e9660](https://github.com/FallDownTheSystem/converse/commit/b0e9660540a663c3aea58116a04717a9232ce1ac))
+* Release version 1.14.4 ([ff5b040](https://github.com/FallDownTheSystem/converse/commit/ff5b040a4aaeee39998b647b677cc17769226d1c))
+* Remove debug logging and bump to 2.0.2-beta.5 ([2bfa941](https://github.com/FallDownTheSystem/converse/commit/2bfa94178eef5dcf3b3908e723cd592aee12d70d))
+* Remove unused reasoningEffort property from GPT-5 Pro config ([3b7059b](https://github.com/FallDownTheSystem/converse/commit/3b7059b6c8c76fcaa46ce3f28919498c7c5557e0))
+* Update changelog for v1.15.0 ([5da9230](https://github.com/FallDownTheSystem/converse/commit/5da92307e1371d8781a117b78d7d269d6f015051))
+* Update changelog for v1.15.1 ([65d7096](https://github.com/FallDownTheSystem/converse/commit/65d709682585c773d461a7b6b9d67c4b92d953cd))
+* Update changelog for v1.16.0 ([34120c2](https://github.com/FallDownTheSystem/converse/commit/34120c231d863d139219d14929332ba49feadf72))
+* Update changelog for v1.17.0 ([4884943](https://github.com/FallDownTheSystem/converse/commit/488494353beba45a5a349994ffc4e695b213fab2))
+* Update changelog for v1.17.1 ([d675286](https://github.com/FallDownTheSystem/converse/commit/d675286c6a7bd56fa27edd58ef43cea9869bc4f2))
+* Update changelog for v1.17.2 ([9d402b3](https://github.com/FallDownTheSystem/converse/commit/9d402b36faee8cdb15245335c8290fba3017bd77))
+
+
+### Tests
+
+* Add comprehensive integration tests for new providers ([3e72c32](https://github.com/FallDownTheSystem/converse/commit/3e72c320e00c7d46f03268561de8e8928726c32c))
+
 ## [Unreleased]
 
 ## [2.22.4] - 2026-04-24
