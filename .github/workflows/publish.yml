@@ -25,15 +25,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: latest
-          run_install: false
-
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: pnpm
+          cache: npm
           registry-url: 'https://registry.npmjs.org'
 
       - name: Read package version
@@ -59,19 +54,19 @@ jobs:
 
       - name: Install dependencies
         if: steps.published.outputs.should_publish == 'true'
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Lint
         if: steps.published.outputs.should_publish == 'true'
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Typecheck
         if: steps.published.outputs.should_publish == 'true'
-        run: pnpm run typecheck
+        run: npm run typecheck
 
       - name: Unit tests
         if: steps.published.outputs.should_publish == 'true'
-        run: pnpm run test:unit
+        run: npm run test:unit
 
       - name: Publish to npm
         if: steps.published.outputs.should_publish == 'true'
