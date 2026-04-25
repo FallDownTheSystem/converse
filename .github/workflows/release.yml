@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run release-please (open PR or tag merged release)
+        uses: googleapis/release-please-action@v5
+        id: release1
+
+      - name: Auto-merge release PR if one was created or updated
+        if: ${{ steps.release1.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(echo '${{ steps.release1.outputs.pr }}' | jq -r '.number')
+          gh pr merge "$PR_NUMBER" --squash --repo "$GITHUB_REPOSITORY"
+
+      - name: Re-run release-please to tag the just-merged release
+        if: ${{ steps.release1.outputs.prs_created == 'true' }}
+        uses: googleapis/release-please-action@v5
+        id: release2
+
+      - name: Determine if a release was created
+        id: gate
+        run: |
+          if [ "${{ steps.release1.outputs.release_created }}" = "true" ] || [ "${{ steps.release2.outputs.release_created }}" = "true" ]; then
+            echo "release_created=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_created=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.gate.outputs.release_created == 'true'
+        with:
+          ref: main
+
+      - uses: pnpm/action-setup@v4
+        if: steps.gate.outputs.release_created == 'true'
+        with:
+          version: latest
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        if: steps.gate.outputs.release_created == 'true'
+        with:
+          node-version: '24'
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.release_created == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        if: steps.gate.outputs.release_created == 'true'
+        run: pnpm run lint
+
+      - name: Typecheck
+        if: steps.gate.outputs.release_created == 'true'
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        if: steps.gate.outputs.release_created == 'true'
+        run: pnpm run test:unit
+
+      - name: Publish to npm
+        if: steps.gate.outputs.release_created == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
