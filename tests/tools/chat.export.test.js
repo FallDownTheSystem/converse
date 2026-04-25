@@ -15,22 +15,22 @@ import { nanoid } from 'nanoid';
 
 // Mock dependencies
 vi.mock('../../src/utils/logger.js', () => {
-	const fn = vi.fn;
-	const makeLogger = () => ({
-		debug: fn(),
-		info: fn(),
-		warn: fn(),
-		error: fn(),
-		trace: fn(),
-		operation: fn(() => ({
-			debug: fn(),
-			info: fn(),
-			warn: fn(),
-			error: fn(),
-			trace: fn(),
-		})),
-	});
-	return { createLogger: makeLogger };
+  const fn = vi.fn;
+  const makeLogger = () => ({
+    debug: fn(),
+    info: fn(),
+    warn: fn(),
+    error: fn(),
+    trace: fn(),
+    operation: fn(() => ({
+      debug: fn(),
+      info: fn(),
+      warn: fn(),
+      error: fn(),
+      trace: fn(),
+    })),
+  });
+  return { createLogger: makeLogger };
 });
 
 // Helper to create test directory
