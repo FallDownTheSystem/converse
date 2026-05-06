@@ -42,11 +42,11 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for attempt in $(seq 1 180); do
+          for attempt in $(seq 1 60); do
             MERGED_AT=$(gh pr view "$PR_URL" --json mergedAt --jq '.mergedAt')
             if [ "$MERGED_AT" != "null" ] && [ -n "$MERGED_AT" ]; then
               MERGE_SHA=$(gh pr view "$PR_URL" --json mergeCommit --jq '.mergeCommit.oid')
-              EXISTING_RUN_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/runs?branch=main&per_page=20" --jq ".workflow_runs[] | select(.head_sha == \"$MERGE_SHA\") | .id" | head -n 1)
+              EXISTING_RUN_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/runs?branch=main&per_page=100" --jq ".workflow_runs[] | select(.head_sha == \"$MERGE_SHA\") | .id" | head -n 1)
 
               if [ -n "$EXISTING_RUN_ID" ]; then
                 echo "Release workflow already exists for merge commit $MERGE_SHA (run $EXISTING_RUN_ID)."
@@ -66,7 +66,7 @@ jobs:
             sleep 10
           done
 
-          echo "Timed out waiting for Dependabot PR to merge before dispatching release."
+          echo "Timed out after 10 minutes waiting for the Dependabot PR to merge. Check the PR status and manually trigger release.yml if the merge completed later."
           exit 1
 
       - name: Flag major updates for human review
