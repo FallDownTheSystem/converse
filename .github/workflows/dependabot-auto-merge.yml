@@ -2,7 +2,12 @@ name: Dependabot auto-merge
 
 on: pull_request
 
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -28,6 +33,41 @@ jobs:
         run: |
           gh pr review --approve "$PR_URL"
           gh pr merge --auto --squash "$PR_URL"
+
+      - name: Trigger release after merged patch/minor update
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for attempt in $(seq 1 180); do
+            MERGED_AT=$(gh pr view "$PR_URL" --json mergedAt --jq '.mergedAt')
+            if [ "$MERGED_AT" != "null" ] && [ -n "$MERGED_AT" ]; then
+              MERGE_SHA=$(gh pr view "$PR_URL" --json mergeCommit --jq '.mergeCommit.oid')
+              EXISTING_RUN_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/runs?branch=main&per_page=20" --jq ".workflow_runs[] | select(.head_sha == \"$MERGE_SHA\") | .id" | head -n 1)
+
+              if [ -n "$EXISTING_RUN_ID" ]; then
+                echo "Release workflow already exists for merge commit $MERGE_SHA (run $EXISTING_RUN_ID)."
+              else
+                gh workflow run release.yml --ref main
+                echo "Triggered release workflow for merged Dependabot update at $MERGE_SHA."
+              fi
+              exit 0
+            fi
+
+            PR_STATE=$(gh pr view "$PR_URL" --json state --jq '.state')
+            if [ "$PR_STATE" = "CLOSED" ]; then
+              echo "Dependabot PR closed without merging; skipping release dispatch."
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for Dependabot PR to merge before dispatching release."
+          exit 1
 
       - name: Flag major updates for human review
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
