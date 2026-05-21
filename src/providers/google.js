@@ -106,6 +106,32 @@ const SUPPORTED_MODELS = {
       'pro',
     ],
   },
+  'gemini-3.5-flash': {
+    modelName: 'gemini-3.5-flash',
+    friendlyName: 'Gemini (Flash 3.5)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    thinkingMode: 'level',
+    thinkingLevels: ['minimal', 'low', 'medium', 'high'],
+    timeout: 300000,
+    description:
+      'Gemini 3.5 Flash - Frontier-level agentic and coding performance at Flash speed (1M context)',
+    aliases: [
+      'gemini-3.5',
+      'gemini3.5',
+      'gemini-3.5-flash-latest',
+      'flash-3.5',
+      'flash3.5',
+      'gemini-flash-3.5',
+      'gemini flash 3.5',
+      '3.5-flash',
+    ],
+  },
 };
 
 // Thinking mode budget percentages

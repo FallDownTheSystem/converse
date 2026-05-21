@@ -26,6 +26,32 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 const SUPPORTED_MODELS = {
   gemini: {
     modelName: 'gemini',
+    friendlyName: 'Gemini 3.5 Flash (via CLI)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true, // Base64 only (no URLs)
+    supportsTemperature: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    timeout: 600000, // 10 minutes
+    description:
+      'Gemini 3.5 Flash via OAuth - frontier agentic/coding at Flash speed (requires Gemini CLI authentication)',
+    aliases: [
+      'gemini-cli',
+      'gemini-3.5-flash',
+      'gemini-3.5',
+      'gemini3.5',
+      'flash',
+      'flash-3.5',
+      'gemini-flash',
+      'gemini-flash-3.5',
+    ],
+    // Internal SDK model name passed to the Google Cloud Code endpoint
+    sdkModelName: 'gemini-3.5-flash',
+  },
+  'gemini-3.1-pro-preview': {
+    modelName: 'gemini-3.1-pro-preview',
     friendlyName: 'Gemini 3.1 Pro Preview (via CLI)',
     contextWindow: 1048576, // 1M tokens
     maxOutputTokens: 64000,
@@ -37,8 +63,13 @@ const SUPPORTED_MODELS = {
     timeout: 600000, // 10 minutes
     description:
       'Gemini 3.1 Pro Preview via OAuth - requires Gemini CLI authentication',
-    aliases: ['gemini-cli'],
-    // Internal SDK model name (user-facing "gemini" maps to SDK's "gemini-3.1-pro-preview")
+    aliases: [
+      'gemini-3.1-pro',
+      'gemini-3.1',
+      'gemini-pro',
+      'gemini-3-pro',
+      'pro',
+    ],
     sdkModelName: 'gemini-3.1-pro-preview',
   },
 };
