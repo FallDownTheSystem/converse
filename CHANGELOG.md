@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.0](https://github.com/FallDownTheSystem/converse/compare/v2.22.8...v2.23.0) (2026-05-21)
+
+
+### Features
+
+* add Gemini 3.5 Flash support to google and gemini-cli providers ([0d6b25a](https://github.com/FallDownTheSystem/converse/commit/0d6b25a2f2706caeea9c56262f8ee53aec63a9c1))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 7 updates ([#14](https://github.com/FallDownTheSystem/converse/issues/14)) ([def4b12](https://github.com/FallDownTheSystem/converse/commit/def4b121ae766982bc2663eacd8603ee04aa9e54))
+* **deps:** bump the npm-minor-and-patch group with 9 updates ([#16](https://github.com/FallDownTheSystem/converse/issues/16)) ([6621efc](https://github.com/FallDownTheSystem/converse/commit/6621efcc04d3b7c40c54f43027855edfe3e8c2f0))
+
 ## [2.22.8](https://github.com/FallDownTheSystem/converse/compare/v2.22.7...v2.22.8) (2026-05-06)
 
 
