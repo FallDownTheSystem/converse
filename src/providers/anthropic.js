@@ -13,6 +13,39 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-opus-4-8': {
+    modelName: 'claude-opus-4-8',
+    friendlyName: 'Claude Opus 4.8',
+    contextWindow: 200000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true,
+    minThinkingTokens: 1024,
+    maxThinkingTokens: 128000,
+    timeout: 600000,
+    supportsEffort: true,
+    effortGA: true,
+    supports1MContext: true,
+    supportsCompaction: true,
+    description:
+      'Claude Opus 4.8 - Most capable model for complex reasoning and agentic coding',
+    aliases: [
+      'claude-opus-4-8',
+      'claude-4.8-opus',
+      'claude-4-8-opus',
+      'opus-4.8',
+      'opus-4-8',
+      'opus4.8',
+      'opus4-8',
+      'claude-opus-4.8',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-opus-4-7': {
     modelName: 'claude-opus-4-7',
     friendlyName: 'Claude Opus 4.7',
@@ -32,7 +65,7 @@ const SUPPORTED_MODELS = {
     supports1MContext: true,
     supportsCompaction: true,
     description:
-      'Claude Opus 4.7 - Most capable model for complex reasoning and agentic coding',
+      'Claude Opus 4.7 - Previous most capable model for complex reasoning and agentic coding',
     aliases: [
       'claude-opus-4-7',
       'claude-4.7-opus',
@@ -42,8 +75,6 @@ const SUPPORTED_MODELS = {
       'opus4.7',
       'opus4-7',
       'claude-opus-4.7',
-      'opus',
-      'claude-opus',
     ],
   },
   'claude-opus-4-6': {
@@ -243,7 +274,7 @@ const THINKING_BUDGETS = {
 };
 
 /**
- * Effort parameter mapping for Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
+ * Effort parameter mapping for Opus 4.8, Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
  * Maps reasoning_effort values to Anthropic's effort parameter values
  */
 const EFFORT_MAP = {
