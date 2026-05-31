@@ -2,12 +2,13 @@
 
 ## Overview
 
-The Converse MCP Server provides four main tools through the Model Context Protocol (MCP):
+The Converse MCP Server provides five main tools through the Model Context Protocol (MCP):
 
 1. **Chat Tool** - Single-provider conversational AI with context support and AI summarization
 2. **Consensus Tool** - Multi-provider parallel execution with response aggregation and combined summaries
-3. **Check Status Tool** - Monitor and retrieve results from asynchronous operations with intelligent summaries
-4. **Cancel Job Tool** - Cancel running background operations
+3. **Conversation Tool** - Turn-based multi-model round-table where models respond sequentially, each seeing the full running transcript
+4. **Check Status Tool** - Monitor and retrieve results from asynchronous operations with intelligent summaries
+5. **Cancel Job Tool** - Cancel running background operations
 
 All tools support both **synchronous** (immediate response) and **asynchronous** (background processing) execution modes. When AI summarization is enabled, tools automatically generate titles and summaries for better context understanding.
 
@@ -347,6 +348,165 @@ conv_architecture_design/
   "enable_cross_feedback": true,
   "temperature": 0.1,
   "reasoning_effort": "high"
+}
+```
+
+### Conversation Tool
+
+**Description**: Turn-based multi-model round-table. Unlike consensus (parallel, all models answer the same prompt), models here respond **sequentially in the order given**, and each model sees the full running transcript of every turn before it. One tool call runs exactly **one lap** (one turn per model). The caller drives more laps by passing back the returned `continuation_id`; every lap appends to one shared, accumulating transcript that all models see.
+
+#### Request Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "description": "The topic or question to open the round-table with. Example: 'Critique this caching strategy and propose improvements.'"
+    },
+    "models": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "description": "Ordered list of models. ORDER MATTERS: models speak one after another in this exact order, each seeing the transcript of those before it. Example: ['codex', 'gemini', 'claude']"
+    },
+    "continuation_id": {
+      "type": "string",
+      "description": "Thread continuation ID for running more laps. Auto-generated in the first response; pass it back to run another lap where every model again sees the full accumulated transcript. You MAY change the models list on a resuming lap."
+    },
+    "turn_prompt": {
+      "type": "string",
+      "description": "Optional custom per-turn instruction appended to the round-table framing each model receives. Example: 'Focus on security implications in your turn.'"
+    },
+    "files": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "File paths shared with every participant in the lap. Supports line ranges: file.txt{10:50}."
+    },
+    "images": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Image paths for visual context (absolute paths or base64)."
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.2,
+      "description": "Response randomness. Examples: 0.1 (very focused), 0.2 (analytical), 0.5 (balanced)"
+    },
+    "reasoning_effort": {
+      "type": "string",
+      "enum": ["none", "minimal", "low", "medium", "high", "max"],
+      "default": "medium",
+      "description": "Reasoning depth for thinking models."
+    },
+    "use_websearch": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable web search for current information (models that support it)."
+    },
+    "async": {
+      "type": "boolean",
+      "default": false,
+      "description": "Execute the lap in background with per-turn progress tracking. Returns continuation_id immediately."
+    },
+    "export": {
+      "type": "boolean",
+      "default": false,
+      "description": "Export conversation to disk. Creates folder with continuation_id name containing numbered request/response files and metadata."
+    }
+  },
+  "required": ["prompt", "models"]
+}
+```
+
+#### Response Format
+
+**Synchronous Response (async=false):**
+
+The response content begins with a status line and `continuation_id:` line (the status line is omitted in the test environment), followed by a JSON result object:
+
+```
+✅ COMPLETED | CONVERSATION | conv_abc123 | 3.2s elapsed | 2/2 turns | codex, gemini
+continuation_id: conv_abc123
+
+{
+  "status": "conversation_complete",
+  "models_consulted": 2,
+  "successful_turns": 2,
+  "failed_turns": 0,
+  "turns": [
+    {
+      "model": "codex",
+      "provider": "codex",
+      "status": "success",
+      "response": "Opening analysis of the caching strategy...",
+      "position": 0
+    },
+    {
+      "model": "gemini",
+      "provider": "gemini-cli",
+      "status": "success",
+      "response": "Building on codex's point about TTLs, I'd add...",
+      "position": 1
+    }
+  ],
+  "continuation": {
+    "id": "conv_abc123",
+    "messageCount": 3
+  },
+  "settings": {
+    "temperature": 0.2,
+    "models_requested": ["codex", "gemini"]
+  }
+}
+```
+
+A turn that failed is recorded with `"status": "failed"` and an `"error"` note rather than aborting the lap; the response reports `successful_turns`/`models_consulted` accordingly and lists failed models in trailing failure details.
+
+**Asynchronous Response (async=true):**
+```json
+{
+  "content": "⏳ SUBMITTED | CONVERSATION | conv_xyz789 | 1/1 | Started: 01/12/2023 10:30:00 | \"Caching Round-Table\" | codex, gemini",
+  "continuation": {
+    "id": "conv_xyz789",
+    "status": "processing"
+  },
+  "async_execution": true
+}
+```
+
+When complete, `check_status` for the continuation_id renders the full lap transcript (the async result carries a top-level `content` field with the rendered transcript) plus the AI-generated title and final summary.
+
+#### Example Usage
+
+**Basic two-model lap:**
+```json
+{
+  "prompt": "Should we adopt event sourcing for the order service?",
+  "models": ["codex", "gemini"]
+}
+```
+
+**Continuing the round-table (another lap):**
+```json
+{
+  "prompt": "Now focus specifically on the migration path.",
+  "models": ["codex", "gemini"],
+  "continuation_id": "conv_abc123"
+}
+```
+
+**Async round-table with a custom per-turn instruction:**
+```json
+{
+  "prompt": "Review this module design.",
+  "models": ["codex", "gemini", "claude"],
+  "files": ["/project/src/orders/design.md"],
+  "turn_prompt": "Call out concrete failure modes you would test for.",
+  "async": true
 }
 ```
 
@@ -1271,7 +1431,7 @@ describe('New Provider', () => {
 
 ### Overview
 
-Both Chat and Consensus tools support asynchronous execution mode for long-running operations. When `async: true` is specified:
+The Chat, Consensus, and Conversation tools support asynchronous execution mode for long-running operations. When `async: true` is specified:
 
 1. **Immediate Response**: Returns a `continuation_id` instantly
 2. **Background Processing**: Job runs in the background with streaming support

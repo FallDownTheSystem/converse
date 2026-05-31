@@ -520,6 +520,104 @@ CODEX_SANDBOX_MODE=danger-full-access
 }
 ```
 
+## 🔄 Conversation (Round-Table) Examples
+
+The `conversation` tool runs a turn-based round-table: models respond **in the order given**, and each model sees the full running transcript of every turn before it. One call = one lap. Pass the returned `continuation_id` to run another lap; every lap appends to one shared transcript. This differs from `consensus`, where all models answer the same prompt in parallel.
+
+### Basic Two-Model Round-Table
+
+```json
+{
+  "tool": "conversation",
+  "arguments": {
+    "prompt": "Should we adopt event sourcing for the order service?",
+    "models": ["codex", "gemini"]
+  }
+}
+```
+
+On this lap, `codex` opens, then `gemini` responds having seen codex's turn. The response contains both labeled turns in order plus a `continuation_id`.
+
+### Continuing the Round-Table (More Laps)
+
+```json
+// Lap 1 returns: "continuation": { "id": "conv_abc123" }
+
+// Lap 2 — every model again sees the full accumulated transcript
+{
+  "tool": "conversation",
+  "arguments": {
+    "prompt": "Now focus specifically on the migration path from the current design.",
+    "models": ["codex", "gemini"],
+    "continuation_id": "conv_abc123"
+  }
+}
+```
+
+You may also change the model list on a resuming lap (e.g. drop a participant or add one); the shared transcript persists regardless of who ran in earlier laps:
+
+```json
+{
+  "tool": "conversation",
+  "arguments": {
+    "prompt": "Bring in a third perspective on testability.",
+    "models": ["codex", "gemini", "claude"],
+    "continuation_id": "conv_abc123"
+  }
+}
+```
+
+### Round-Table with Files and a Custom Per-Turn Instruction
+
+```json
+{
+  "tool": "conversation",
+  "arguments": {
+    "prompt": "Review this module design and push back on weak assumptions.",
+    "models": ["codex", "gemini", "claude"],
+    "files": ["/c/Users/username/project/src/orders/design.md"],
+    "turn_prompt": "Call out concrete failure modes you would test for."
+  }
+}
+```
+
+### Async Round-Table with Progress Monitoring
+
+```json
+{
+  "tool": "conversation",
+  "arguments": {
+    "prompt": "Design a rollout plan for the new pricing engine.",
+    "models": ["codex", "gemini", "claude"],
+    "async": true
+  }
+}
+```
+
+**Immediate Response:**
+```json
+{
+  "content": "⏳ SUBMITTED | CONVERSATION | conv_xyz789 | 1/1 | Started: 01/12/2023 10:30:00 | \"Pricing Engine Rollout\" | codex, gemini, claude",
+  "continuation": {
+    "id": "conv_xyz789",
+    "status": "processing"
+  },
+  "async_execution": true
+}
+```
+
+**Monitor per-turn progress, then read the full transcript on completion:**
+```json
+{
+  "tool": "check_status",
+  "arguments": {
+    "continuation_id": "conv_xyz789"
+  }
+}
+```
+
+While running, the status line shows turn progress (e.g. `2/3 turns`) and the accumulating transcript. When complete, `check_status` renders the full lap transcript along with the AI-generated title and final summary.
+
 ## 🖼️ Image Analysis Examples
 
 ### Screenshot Analysis
