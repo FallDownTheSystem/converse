@@ -82,4 +82,4 @@ jobs:
         if: steps.gate.outputs.release_created == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: npm publish --access public
