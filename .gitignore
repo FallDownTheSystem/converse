@@ -132,5 +132,4 @@ logs/
 *.bak
 .claude
 package-lock.json
-pnpm-workspace.yaml
 cache

@@ -8,14 +8,6 @@
     "converse": "bin/converse.js",
     "converse-mcp-server": "bin/converse.js"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@google/genai",
-      "node-pty",
-      "protobufjs",
-      "tree-sitter-bash"
-    ]
-  },
   "engines": {
     "node": ">=24.0.0"
   },

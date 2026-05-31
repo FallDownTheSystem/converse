@@ -1,0 +1,5 @@
+allowBuilds:
+  '@google/genai': true
+  node-pty: true
+  protobufjs: true
+  tree-sitter-bash: true
