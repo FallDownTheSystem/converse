@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.25.1](https://github.com/FallDownTheSystem/converse/compare/v2.25.0...v2.25.1) (2026-05-31)
+
+
+### Dependencies
+
+* **deps:** bump @google/genai from 1.51.0 to 2.7.0 ([595da47](https://github.com/FallDownTheSystem/converse/commit/595da47d274f060cb0662b9a67862f38ab2f304f))
+
 ## [2.25.0](https://github.com/FallDownTheSystem/converse/compare/v2.24.0...v2.25.0) (2026-05-31)
 
 
