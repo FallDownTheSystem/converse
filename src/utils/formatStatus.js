@@ -170,6 +170,14 @@ export async function formatHumanReadableStatus(
     if (jobStatus.models_list) {
       statusLine += ` | ${jobStatus.models_list}`;
     }
+  } else if (jobStatus.tool === 'conversation') {
+    // Add turn progress and models list for conversation (x/y turns)
+    if (jobStatus.conversation_progress) {
+      statusLine += ` | ${jobStatus.conversation_progress} turns`;
+    }
+    if (jobStatus.models_list) {
+      statusLine += ` | ${jobStatus.models_list}`;
+    }
   } else if (jobStatus.tool === 'chat') {
     // Add provider/model for chat
     if (jobStatus.provider && jobStatus.model) {
@@ -338,6 +346,7 @@ export function formatJobStatus(job, options = {}) {
     model: job.model || null,
     models_list: job.models_list || null,
     consensus_progress: job.consensus_progress || null,
+    conversation_progress: job.conversation_progress || null,
     // Include new metadata fields if present
     accumulated_content: job.accumulated_content || null,
     title: job.title || null,

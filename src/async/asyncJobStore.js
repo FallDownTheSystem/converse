@@ -167,9 +167,9 @@ class LRUAsyncJobStore extends AsyncJobStoreInterface {
   async create(tool, options = {}) {
     try {
       // Validate parameters
-      if (!tool || !['chat', 'consensus'].includes(tool)) {
+      if (!tool || !['chat', 'consensus', 'conversation'].includes(tool)) {
         throw new AsyncJobStoreError(
-          'Invalid tool: must be "chat" or "consensus"',
+          'Invalid tool: must be "chat", "consensus", or "conversation"',
           'INVALID_TOOL',
         );
       }

@@ -262,7 +262,7 @@ pnpm run test:prompts
 
 ### Available Tools
 
-The Converse MCP Server includes four main tools:
+The Converse MCP Server includes five main tools:
 
 1. **Chat Tool** (`chat`)
    - General conversational AI with async support
@@ -278,7 +278,25 @@ The Converse MCP Server includes four main tools:
    - Robust error handling - partial failures don't stop other models
    - Combined summaries from all providers
 
-3. **Check Status Tool** (`check_status`)
+3. **Conversation Tool** (`conversation`)
+   - Turn-based multi-model round-table: models respond SEQUENTIALLY in the order given
+   - Each model sees the full running transcript and builds on prior turns
+   - One call = one lap (one turn per model); pass `continuation_id` for more laps
+   - Contrast with consensus (parallel, same prompt). `turn_prompt` injects a custom per-turn instruction
+   - Per-turn skip-with-note failure handling, async support, file/image context
+
+   ```javascript
+   // Example request structure:
+   {
+     "prompt": "Should we adopt event sourcing for the order service?",
+     "models": ["codex", "gemini", "claude"],  // ORDER MATTERS - they speak in this order
+     "files": ["/c/Users/username/project/src/orders/design.md"],  // Optional
+     "turn_prompt": null,         // Optional custom per-turn instruction
+     "continuation_id": null      // Pass back to run another lap
+   }
+   ```
+
+4. **Check Status Tool** (`check_status`)
    - Monitor progress of asynchronous operations
    - Retrieve results from completed background jobs
    - List recent jobs with status information
