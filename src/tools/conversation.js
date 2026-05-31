@@ -110,12 +110,8 @@ function buildFramingText({ i, models, turn_prompt }) {
   const nextModel = i < total - 1 ? models[i + 1] : null;
 
   const order = models.join(', ');
-  const prevText = prevModel
-    ? prevModel
-    : 'no one (you open the round)';
-  const nextText = nextModel
-    ? nextModel
-    : 'no one (you close this round)';
+  const prevText = prevModel || 'no one (you open the round)';
+  const nextText = nextModel || 'no one (you close this round)';
   const handoffText = nextModel
     ? `Your response will be passed to the next participant (${nextModel}).`
     : 'Your response will be returned to the user, as you are the last participant this round.';
@@ -564,7 +560,6 @@ export async function conversationTool(args, dependencies) {
       }
     }
 
-    // Process context (files and images) attached to the lap user message
     const contextMessage = await buildContextMessage(
       files,
       images,
@@ -661,14 +656,16 @@ export async function conversationTool(args, dependencies) {
     // Build the lap user message (lap prompt, with context if present)
     const lapUserMessage = {
       role: 'user',
-      content: contextMessage?.content
-        ? [...contextMessage.content, { type: 'text', text: prompt }]
-        : prompt,
+      content: buildTurnUserContent(prompt, contextMessage),
     };
+
+    // Labeled lap transcript (### <model> (turn <n>):) — computed once and reused
+    // for the assistant message, the persisted state, and the response content.
+    const transcript = formatLapTranscript(lapTurns);
 
     const assistantMessage = {
       role: 'assistant',
-      content: formatLapTranscript(lapTurns),
+      content: transcript,
     };
 
     // Save conversation state (skip on abort to avoid persisting incomplete history)
@@ -720,10 +717,6 @@ export async function conversationTool(args, dependencies) {
         : '';
 
     const continuationIdLine = `continuation_id: ${continuationId}\n\n`;
-
-    // Rendered lap transcript with labeled turns (### <model> (turn <n>):).
-    // Per spec requirement 11, the response content must include this transcript.
-    const transcript = formatLapTranscript(lapTurns);
 
     const result = {
       status: 'conversation_complete',
@@ -1046,14 +1039,16 @@ async function executeConversationWithStreaming(args, dependencies, context) {
 
   const lapUserMessage = {
     role: 'user',
-    content: contextMessage?.content
-      ? [...contextMessage.content, { type: 'text', text: prompt }]
-      : prompt,
+    content: buildTurnUserContent(prompt, contextMessage),
   };
+
+  // Final lap transcript — computed once and reused for the assistant message,
+  // the persisted state, and the returned top-level content.
+  const transcript = formatLapTranscript(lapTurns);
 
   const assistantMessage = {
     role: 'assistant',
-    content: formatLapTranscript(lapTurns),
+    content: transcript,
   };
 
   // Save conversation state
@@ -1114,11 +1109,11 @@ async function executeConversationWithStreaming(args, dependencies, context) {
 
   const messageCount = (conversationState?.messages || []).length;
 
-  // CRITICAL: top-level `content` is required so check_status renders the
-  // transcript on completion (formatStatus.js only shows result.content).
+  // Top-level `content` is required: formatStatus only renders result.content
+  // when displaying a completed async job.
   return {
     status: 'conversation_complete',
-    content: formatLapTranscript(lapTurns),
+    content: transcript,
     models_consulted: models.length,
     successful_turns: turnsSuccessful,
     failed_turns: turnsFailed,
