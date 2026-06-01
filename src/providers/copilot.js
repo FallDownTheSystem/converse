@@ -249,7 +249,20 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.7 via Copilot subscription',
-    aliases: ['opus'],
+    aliases: [],
+  },
+  'claude-opus-4.8': {
+    modelName: 'claude-opus-4.8',
+    friendlyName: 'Claude Opus 4.8 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsTemperature: false,
+    supportsWebSearch: false,
+    timeout: 600000,
+    description: 'Anthropic Claude Opus 4.8 via Copilot subscription',
+    aliases: ['opus', 'claude'],
   },
 
   // Google models
