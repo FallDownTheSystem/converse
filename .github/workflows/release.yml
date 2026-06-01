@@ -78,8 +78,10 @@ jobs:
         if: steps.gate.outputs.release_created == 'true'
         run: pnpm run test:unit
 
-      - name: Publish to npm
+      - name: Ensure OIDC-capable npm (Trusted Publishing needs >=11.5.1)
         if: steps.gate.outputs.release_created == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm install -g npm@latest
+
+      - name: Publish to npm (Trusted Publishing via OIDC)
+        if: steps.gate.outputs.release_created == 'true'
         run: npm publish --access public
