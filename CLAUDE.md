@@ -45,14 +45,14 @@ This repo is fully automated for releases via [release-please](https://github.co
 
 ### How releases work
 
-- **Every push to `main` triggers a release**, and Dependabot auto-merges explicitly dispatch the same workflow after merge so dependency bumps still publish a patch release (`always-bump-patch` strategy). Workflow: `.github/workflows/release.yml`.
+- **Every push to `main` with a user-facing commit triggers a release.** release-please skips pushes whose commits are all hidden types (`ci:`, `chore:`, `docs:`, etc.) with "No user facing commits found — skipping"; force one of these with a `Release-As:` footer if you need to. Dependabot auto-merges explicitly dispatch the same workflow after merge so dependency bumps still publish a patch release (`always-bump-patch` strategy). Workflow: `.github/workflows/release.yml`.
 - The flow in a single workflow run (~50s):
 	1. release-please opens (or updates) a "chore(main): release X.Y.Z" PR with version bump + CHANGELOG.md entry.
 	2. Workflow auto-merges that PR with `gh pr merge --squash`.
 	3. release-please runs again, sees the just-merged release PR, tags `vX.Y.Z`, creates a GitHub Release.
-	4. Workflow runs `pnpm install --frozen-lockfile` + lint + typecheck + test:unit, then `npm publish --provenance`.
+	4. Workflow runs `pnpm install --frozen-lockfile` + lint + typecheck + test:unit, upgrades npm (`npm install -g npm@latest`), then `npm publish --access public`.
 - Branch protection on `main` is **off** — direct pushes are allowed and intentional, since the automation needs to push the auto-merge commit.
-- `NPM_TOKEN` is configured as a repo secret.
+- Publishing uses **npm Trusted Publishing (OIDC)** — no `NPM_TOKEN` secret. The job's `id-token: write` permission + a trusted publisher configured on npmjs.com (org `FallDownTheSystem`, repo `converse`, workflow `release.yml`) authenticate the publish, and provenance is generated automatically. Trusted Publishing requires npm >= 11.5.1, which is why the workflow upgrades npm before publishing.
 
 ### Forcing a minor or major bump
 
