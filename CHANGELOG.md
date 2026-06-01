@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.1](https://github.com/FallDownTheSystem/converse/compare/v2.26.0...v2.26.1) (2026-06-01)
+
+
+### Documentation
+
+* correct release automation notes for Trusted Publishing ([6b41673](https://github.com/FallDownTheSystem/converse/commit/6b41673bc408fd2e3e97c77e6e877aa10f218030))
+
 ## [2.26.0](https://github.com/FallDownTheSystem/converse/compare/v2.25.1...v2.26.0) (2026-06-01)
 
 
