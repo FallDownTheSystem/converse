@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.0](https://github.com/FallDownTheSystem/converse/compare/v2.25.1...v2.26.0) (2026-06-01)
+
+
+### Features
+
+* add Claude Opus 4.8 to Copilot provider ([daa7c97](https://github.com/FallDownTheSystem/converse/commit/daa7c97f09fd4323c6b63dee08d38d6df032ee8d))
+
 ## [2.25.1](https://github.com/FallDownTheSystem/converse/compare/v2.25.0...v2.25.1) (2026-05-31)
 
 
