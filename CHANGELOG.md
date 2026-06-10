@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.27.2](https://github.com/FallDownTheSystem/converse/compare/v2.27.1...v2.27.2) (2026-06-10)
+
+
+### Dependencies
+
+* pin claude-agent-sdk 0.3.169 and codex-sdk 0.138.0 for release-age policy ([ea59a01](https://github.com/FallDownTheSystem/converse/commit/ea59a0195b8cd75629daf668831d2a293a8c2957))
+
 ## [2.27.1](https://github.com/FallDownTheSystem/converse/compare/v2.27.0...v2.27.1) (2026-06-10)
 
 
