@@ -7,12 +7,11 @@
  * Key differences from traditional providers:
  * - Uses GitHub Copilot CLI subscription authentication - NOT API keys
  * - Manages a singleton CopilotClient (spawns CLI process via JSON-RPC)
- * - Creates a fresh CopilotSession per request, destroyed after each request
+ * - Creates a fresh CopilotSession per request, disconnected after each request
  * - Bridges SDK push-based events to pull-based async generator for streaming
  * - Requires GitHub CLI authenticated (gh auth login) with active Copilot subscription
  */
 
-import { register } from 'node:module';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
@@ -318,27 +317,9 @@ function isCopilotSDKAvailable() {
 }
 
 /**
- * Register a module resolution hook to fix the extensionless
- * "vscode-jsonrpc/node" import in @github/copilot-sdk >=0.1.29.
- * The SDK's session.js imports "vscode-jsonrpc/node" without a .js extension,
- * which fails under Node.js strict ESM resolution. The hook rewrites it to
- * "vscode-jsonrpc/node.js". Runs once, works regardless of package manager.
- */
-let _hookRegistered = false;
-function ensureJsonrpcResolveHook() {
-  if (_hookRegistered) return;
-  _hookRegistered = true;
-  register(`data:text/javascript,${encodeURIComponent(
-    'export function resolve(s,c,n){' +
-    'return s==="vscode-jsonrpc/node"?n("vscode-jsonrpc/node.js",c):n(s,c);}',
-  )}`);
-}
-
-/**
  * Dynamically import Copilot SDK (lazy loading)
  */
 async function getCopilotSDK() {
-  ensureJsonrpcResolveHook();
   try {
     const { CopilotClient } = await import('@github/copilot-sdk');
     return CopilotClient;
@@ -370,14 +351,13 @@ async function getCopilotClient(cwd) {
 
   clientInitPromise = (async () => {
     const CopilotClient = await getCopilotSDK();
+    const workingDirectory = cwd || process.cwd();
     clientInstance = new CopilotClient({
-      autoStart: true,
-      autoRestart: true,
       useLoggedInUser: true,
-      cwd: cwd || process.cwd(),
+      workingDirectory,
     });
     await clientInstance.start();
-    debugLog('[Copilot SDK] Client started (cwd: %s)', clientInstance.options?.cwd || cwd);
+    debugLog('[Copilot SDK] Client started (cwd: %s)', workingDirectory);
     return clientInstance;
   })();
 
@@ -808,9 +788,9 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
     }
   } finally {
     try {
-      await session.destroy();
-    } catch (destroyError) {
-      debugError('[Copilot SDK] Session destroy error', destroyError);
+      await session.disconnect();
+    } catch (disconnectError) {
+      debugError('[Copilot SDK] Session disconnect error', disconnectError);
     }
   }
 }
