@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.27.0](https://github.com/FallDownTheSystem/converse/compare/v2.26.1...v2.27.0) (2026-06-10)
+
+
+### Features
+
+* add Claude Fable 5 to Anthropic and Claude providers ([a677c33](https://github.com/FallDownTheSystem/converse/commit/a677c33e70c1c73cd635cdf299ba60556c517afd))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 11 updates ([#26](https://github.com/FallDownTheSystem/converse/issues/26)) ([e0e1445](https://github.com/FallDownTheSystem/converse/commit/e0e1445a0b776ec0e8360c6738b3a32e7d016ac6))
+* **deps:** bump the npm-minor-and-patch group with 6 updates ([#27](https://github.com/FallDownTheSystem/converse/issues/27)) ([5754541](https://github.com/FallDownTheSystem/converse/commit/5754541e607fab93defe8702d6e17c0767834cf5))
+
 ## [2.26.1](https://github.com/FallDownTheSystem/converse/compare/v2.26.0...v2.26.1) (2026-06-01)
 
 
