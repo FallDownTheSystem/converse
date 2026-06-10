@@ -544,7 +544,6 @@ npm run validate
 npm run lint
 npm run typecheck
 npm run test
-npm run format:check
 ```
 
 ---

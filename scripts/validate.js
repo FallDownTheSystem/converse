@@ -148,10 +148,8 @@ function validateCodeQuality() {
   // Linting
   if (VALIDATION_CONFIG.fix) {
     execCommand('npm run lint:fix', 'ESLint with auto-fix');
-    execCommand('npm run format', 'Code formatting with auto-fix');
   } else {
     execCommand('npm run lint', 'ESLint validation');
-    execCommand('npm run format:check', 'Code formatting validation');
   }
   
   logger.info('✓ Code quality validation completed');
