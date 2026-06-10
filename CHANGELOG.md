@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.28.0](https://github.com/FallDownTheSystem/converse/compare/v2.27.2...v2.28.0) (2026-06-10)
+
+
+### Features
+
+* replace gemini-cli provider with Antigravity CLI (agy) subprocess provider ([a274441](https://github.com/FallDownTheSystem/converse/commit/a274441254d794cd51f1d5f1bf78b21a6310905c))
+
+
+### Miscellaneous
+
+* finish prettier removal in validate script and docs ([a72ea67](https://github.com/FallDownTheSystem/converse/commit/a72ea67fb9891aac972b38b3ad8ac844d419eb39))
+
 ## [2.27.2](https://github.com/FallDownTheSystem/converse/compare/v2.27.1...v2.27.2) (2026-06-10)
 
 
