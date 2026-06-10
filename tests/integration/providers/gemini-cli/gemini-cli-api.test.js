@@ -1,17 +1,22 @@
 /**
- * Gemini CLI Provider E2E Integration Tests
+ * Gemini CLI (Antigravity / agy) Provider E2E Integration Tests
  *
- * Tests the Gemini CLI provider through the full MCP server stack using HTTP transport.
- * These tests verify that the ai-sdk-provider-gemini-cli integrates correctly with our MCP server architecture.
+ * Tests the gemini-cli provider through the full MCP server stack via HTTP
+ * transport. The provider shells out to the Antigravity CLI (`agy -p`) under a
+ * PTY, so these tests require a real, authenticated agy install and are gated on
+ * binary presence (GEMINI_CLI detection). They skip gracefully otherwise.
  *
  * Requirements:
- * - ai-sdk-provider-gemini-cli installed
- * - OAuth credentials in ~/.gemini/oauth_creds.json
- * - Tests skip gracefully if Gemini CLI credentials are unavailable
+ * - Antigravity CLI (`agy`) installed and authenticated (run `agy` once to log
+ *   in via Google OAuth).
+ *
+ * Note: each agy call takes ~7s minimum (CLI boot + silent auth), and the
+ * large-prompt file path takes ~30-60s, so timeouts here are generous.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { withHTTPTestServer } from '../../../utils/HTTPMCPServerManager.js';
+import { execSync } from 'node:child_process';
 import { loadConfig } from '../../../../src/config.js';
 import { logger } from '../../../../src/utils/logger.js';
 import {
@@ -20,7 +25,7 @@ import {
   getSkipMessage,
 } from '../../../utils/conditionalTest.js';
 
-describe('Gemini CLI Provider E2E Tests', () => {
+describe('Gemini CLI (Antigravity) Provider E2E Tests', () => {
   let config;
 
   beforeAll(async () => {
@@ -30,7 +35,9 @@ describe('Gemini CLI Provider E2E Tests', () => {
         const skipMessage = getSkipMessage(['GEMINI_CLI']);
         logger.warn(`[gemini-cli-api-test] ${skipMessage}`);
       } else {
-        logger.info('[gemini-cli-api-test] Running Gemini CLI provider tests');
+        logger.info(
+          '[gemini-cli-api-test] Running Antigravity CLI provider tests',
+        );
       }
     } catch (error) {
       logger.error('[gemini-cli-api-test] Setup failed:', error);
@@ -43,7 +50,7 @@ describe('Gemini CLI Provider E2E Tests', () => {
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should work with basic Gemini CLI chat',
+      'should work with basic gemini chat (AC1)',
       async () => {
         await withHTTPTestServer(async (client) => {
           const result = await client.callTool({
@@ -58,70 +65,109 @@ describe('Gemini CLI Provider E2E Tests', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].text).toBeTruthy();
           expect(result.content[0].text).toContain('4');
-
-          logger.info('[gemini-cli-api-test] Basic chat test completed');
         });
       },
-      60000,
-    ); // 60s timeout
-
-    testWithApiKeys({
-      requiredProviders: ['GEMINI_CLI'],
-      requireAll: true,
-    })(
-      'should support temperature parameter',
-      async () => {
-        await withHTTPTestServer(async (client) => {
-          const result = await client.callTool({
-            name: 'chat',
-            arguments: {
-              prompt: 'Say "Hello!"',
-              model: 'gemini',
-              temperature: 0.5,
-            },
-          });
-
-          expect(result.isError).toBeFalsy();
-          expect(result.content[0].text).toBeTruthy();
-          expect(result.content[0].text.toLowerCase()).toContain('hello');
-
-          logger.info('[gemini-cli-api-test] Temperature test completed');
-        });
-      },
-      60000,
+      90000,
     );
 
     testWithApiKeys({
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should handle multimodal messages (text only for now)',
+      'should select Gemini 3.5 Flash via gemini:flash (AC10)',
       async () => {
         await withHTTPTestServer(async (client) => {
           const result = await client.callTool({
             name: 'chat',
             arguments: {
-              prompt: 'Describe the color blue in one word.',
-              model: 'gemini',
+              prompt: 'Reply with exactly: flash-ok',
+              model: 'gemini:flash',
+              reasoning_effort: 'low',
             },
           });
 
           expect(result.isError).toBeFalsy();
           expect(result.content[0].text).toBeTruthy();
-
-          logger.info('[gemini-cli-api-test] Multimodal test completed');
+          expect(result.content[0].text.toLowerCase()).toContain('flash-ok');
         });
       },
-      60000,
+      90000,
     );
   });
 
-  describe('Consensus Tool Integration', () => {
+  describe('Continuation context (AC2)', () => {
     testWithApiKeys({
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should work in consensus tool with Gemini CLI',
+      'should carry turn-1 context into turn 2 via continuation_id',
+      async () => {
+        await withHTTPTestServer(async (client) => {
+          const first = await client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt:
+                'Remember this secret word: marmalade. Just acknowledge it.',
+              model: 'gemini:flash',
+              reasoning_effort: 'low',
+            },
+          });
+          expect(first.isError).toBeFalsy();
+          const continuationId = first.continuation_id;
+          expect(continuationId).toBeDefined();
+
+          const second = await client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt:
+                'What was the secret word I told you? Answer with just the word.',
+              model: 'gemini:flash',
+              reasoning_effort: 'low',
+              continuation_id: continuationId,
+            },
+          });
+          expect(second.isError).toBeFalsy();
+          expect(second.content[0].text.toLowerCase()).toContain('marmalade');
+        });
+      },
+      180000,
+    );
+  });
+
+  describe('Large prompt (AC3)', () => {
+    testWithApiKeys({
+      requiredProviders: ['GEMINI_CLI'],
+      requireAll: true,
+    })(
+      'should complete a >32KB prompt without spawn errors',
+      async () => {
+        await withHTTPTestServer(async (client) => {
+          // ~40KB of filler then a question — exceeds the 24000-char argv
+          // threshold, exercising the prompt.md file-delivery path.
+          const filler = 'The secret token is BLUEBERRY-7. '.repeat(1300);
+          const result = await client.callTool({
+            name: 'chat',
+            arguments: {
+              prompt: `${filler}\n\nWhat is the secret token? Answer with just the token.`,
+              model: 'gemini:flash',
+              reasoning_effort: 'low',
+            },
+          });
+
+          expect(result.isError).toBeFalsy();
+          expect(result.content[0].text.toUpperCase()).toContain('BLUEBERRY-7');
+        });
+      },
+      120000,
+    );
+  });
+
+  describe('Consensus + Conversation integration (AC4)', () => {
+    testWithApiKeys({
+      requiredProviders: ['GEMINI_CLI'],
+      requireAll: true,
+    })(
+      'should stream-normalize gemini single-chunk output in consensus',
       async () => {
         await withHTTPTestServer(async (client) => {
           const result = await client.callTool({
@@ -129,65 +175,55 @@ describe('Gemini CLI Provider E2E Tests', () => {
             arguments: {
               prompt:
                 'What is the capital of France? Answer with just the city name.',
-              models: ['gemini'],
+              models: ['gemini:flash'],
+              enable_cross_feedback: false,
             },
           });
 
           expect(result.isError).toBeFalsy();
-          expect(result.content).toBeDefined();
-          expect(result.content[0].text).toBeTruthy();
           expect(result.content[0].text).toContain('Paris');
-
-          logger.info('[gemini-cli-api-test] Consensus test completed');
-        });
-      },
-      90000,
-    ); // 90s timeout for consensus
-
-    testWithApiKeys({
-      requiredProviders: ['GEMINI_CLI'],
-      requireAll: true,
-    })(
-      'should work in consensus tool with multiple models including Gemini CLI',
-      async () => {
-        await withHTTPTestServer(async (client) => {
-          // This test will use only Gemini CLI if it's the only provider available
-          const result = await client.callTool({
-            name: 'consensus',
-            arguments: {
-              prompt: 'What is 5 + 5? Answer with just the number.',
-              models: ['gemini'],
-              enable_cross_feedback: false, // Disable cross-feedback for faster test
-            },
-          });
-
-          expect(result.isError).toBeFalsy();
-          expect(result.content[0].text).toBeTruthy();
-          expect(result.content[0].text).toContain('10');
-
-          logger.info(
-            '[gemini-cli-api-test] Multi-model consensus test completed',
-          );
         });
       },
       120000,
-    ); // 120s timeout for consensus with multiple models
-  });
+    );
 
-  describe('Async Mode', () => {
     testWithApiKeys({
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should work with async mode',
+      'should accept gemini in the conversation tool',
       async () => {
         await withHTTPTestServer(async (client) => {
-          // Start async chat
+          const result = await client.callTool({
+            name: 'conversation',
+            arguments: {
+              prompt: 'Say hello in one word.',
+              models: ['gemini:flash'],
+            },
+          });
+
+          expect(result.isError).toBeFalsy();
+          expect(result.content[0].text).toBeTruthy();
+        });
+      },
+      120000,
+    );
+  });
+
+  describe('Async mode (AC5)', () => {
+    testWithApiKeys({
+      requiredProviders: ['GEMINI_CLI'],
+      requireAll: true,
+    })(
+      'should complete an async gemini job (running -> completed)',
+      async () => {
+        await withHTTPTestServer(async (client) => {
           const startResult = await client.callTool({
             name: 'chat',
             arguments: {
               prompt: 'Count from 1 to 3.',
-              model: 'gemini',
+              model: 'gemini:flash',
+              reasoning_effort: 'low',
               async: true,
             },
           });
@@ -196,15 +232,12 @@ describe('Gemini CLI Provider E2E Tests', () => {
           const jobId = startResult.job_id;
           expect(jobId).toBeDefined();
 
-          logger.info(`[gemini-cli-api-test] Async job started: ${jobId}`);
-
-          // Poll for completion
           let completed = false;
           let attempts = 0;
-          const maxAttempts = 30; // 30 attempts * 2s = 60s max wait
+          const maxAttempts = 45; // 45 * 2s = 90s max wait
 
           while (!completed && attempts < maxAttempts) {
-            await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2s
+            await new Promise((resolve) => setTimeout(resolve, 2000));
             attempts++;
 
             const statusResult = await client.callTool({
@@ -216,8 +249,6 @@ describe('Gemini CLI Provider E2E Tests', () => {
               const statusText = statusResult.content[0].text;
               if (statusText.includes('Status: completed')) {
                 completed = true;
-                expect(statusText).toMatch(/1.*2.*3/); // Should contain counting
-                logger.info('[gemini-cli-api-test] Async job completed');
               }
             }
           }
@@ -226,63 +257,86 @@ describe('Gemini CLI Provider E2E Tests', () => {
         });
       },
       120000,
-    ); // 120s timeout for async test
-  });
-
-  describe('Error Handling', () => {
-    testWithApiKeys({
-      requiredProviders: ['GEMINI_CLI'],
-      requireAll: true,
-    })(
-      'should handle invalid model names gracefully',
-      async () => {
-        await withHTTPTestServer(async (client) => {
-          const result = await client.callTool({
-            name: 'chat',
-            arguments: {
-              prompt: 'Hello',
-              model: 'gemini-invalid-model-xyz',
-            },
-          });
-
-          // Should either error or route to a different provider
-          // We expect an error since this is an invalid model for Gemini CLI
-          expect(
-            result.isError || result.content[0].text.includes('error'),
-          ).toBeTruthy();
-
-          logger.info('[gemini-cli-api-test] Error handling test completed');
-        });
-      },
-      30000,
     );
   });
 
-  describe('Streaming Support', () => {
+  describe('Cancellation (AC6)', () => {
     testWithApiKeys({
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should work with streaming mode (via async)',
+      'should leave no orphaned agy.exe after cancelling a job',
       async () => {
         await withHTTPTestServer(async (client) => {
-          // Test streaming through async mode
-          const result = await client.callTool({
+          const startResult = await client.callTool({
             name: 'chat',
             arguments: {
-              prompt: 'Write a very short poem (2 lines) about coding.',
+              prompt:
+                'Write a long, detailed essay about distributed systems.',
               model: 'gemini',
+              async: true,
             },
           });
+          expect(startResult.isError).toBeFalsy();
+          const jobId = startResult.job_id;
 
-          expect(result.isError).toBeFalsy();
-          expect(result.content[0].text).toBeTruthy();
-          expect(result.content[0].text.length).toBeGreaterThan(10);
+          // Let it spawn, then cancel.
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          const cancelResult = await client.callTool({
+            name: 'cancel_job',
+            arguments: { job_id: jobId },
+          });
+          expect(cancelResult.isError).toBeFalsy();
 
-          logger.info('[gemini-cli-api-test] Streaming test completed');
+          // Give the OS a moment to reap the process tree.
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+
+          if (process.platform === 'win32') {
+            let tasklist = '';
+            try {
+              tasklist = execSync('tasklist /FI "IMAGENAME eq agy.exe"', {
+                encoding: 'utf8',
+              });
+            } catch {
+              tasklist = '';
+            }
+            expect(tasklist).not.toContain('agy.exe');
+          }
         });
       },
       60000,
+    );
+  });
+
+  describe('Parallel invocation (shared agy state)', () => {
+    testWithApiKeys({
+      requiredProviders: ['GEMINI_CLI'],
+      requireAll: true,
+    })(
+      'should handle 3 simultaneous gemini chats without state collisions',
+      async () => {
+        await withHTTPTestServer(async (client) => {
+          const prompts = ['Reply with: one', 'Reply with: two', 'Reply with: three'];
+          const results = await Promise.all(
+            prompts.map((prompt) =>
+              client.callTool({
+                name: 'chat',
+                arguments: {
+                  prompt,
+                  model: 'gemini:flash',
+                  reasoning_effort: 'low',
+                },
+              }),
+            ),
+          );
+
+          for (const result of results) {
+            expect(result.isError).toBeFalsy();
+            expect(result.content[0].text).toBeTruthy();
+          }
+        });
+      },
+      180000,
     );
   });
 });

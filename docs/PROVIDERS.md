@@ -22,7 +22,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `gemini-3-pro-preview` (alias: `pro`) - Enhanced reasoning with thinking levels (1M context, 64K output)
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
-- **Note**: The short model name `gemini` now routes to **Gemini CLI** (OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash`.
+- **Note**: The short model name `gemini` (and `gemini:flash` / `gemini:pro`) routes to the **Antigravity CLI** (`agy`, OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash` (bare `gemini-pro`/`gemini-flash` also route to the Google API).
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -111,35 +111,36 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - Use `CODEX_APPROVAL_POLICY=never` for headless server deployments
 - Always use `continuation_id` for thread continuation
 
-### Gemini CLI
-- **Authentication**: OAuth via Gemini CLI (no API key needed)
+### Gemini (Antigravity CLI)
+- **Authentication**: Google OAuth via the Antigravity CLI (`agy`) — no API key needed
 - **Setup Required**:
-  1. Install Gemini CLI globally: `npm install -g @google/gemini-cli`
-  2. Authenticate: Run `gemini` command and follow interactive prompts
-  3. Credentials stored in `~/.gemini/oauth_creds.json`
-- **Environment Variables**: None (uses OAuth credentials file)
-- **Supported Models**:
-  - `gemini` - Routes to gemini-3-pro-preview via CLI
-  - Provides access to Gemini 3.0 Pro Preview through Google subscription (Google One AI Premium or Gemini Advanced)
+  1. Install the Antigravity CLI (`agy`):
+     - Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 | iex`
+     - macOS/Linux: `curl -fsSL https://antigravity.google/cli/install.sh | bash`
+  2. Authenticate: run `agy` once interactively and complete the Google OAuth login. This also establishes workspace trust for your home directory (the provider spawns each call in a per-call subdirectory under `~/.converse/agy-runs`).
+- **Environment Variables**: None (the provider detects the `agy` binary on PATH or at the platform install location)
+- **Supported Models** (text-only — print mode has no image input channel):
+  - `gemini` (= `gemini:pro`) - Gemini 3.1 Pro
+  - `gemini:flash` - Gemini 3.5 Flash
+  - `reasoning_effort` selects the variant: `low` → (Low), `medium` → (Medium) for Flash / (High) for Pro, `high`/`max` → (High); unset defaults to (High)
 
 **Key Features:**
-- **OAuth Authentication**: Uses Google account login instead of API keys
-- **Subscription Access**: Leverage Google subscription instead of paying per API call
-- **Enhanced Features**: Access to agentic features available through CLI that aren't in standard API
-- **Model Support**: Currently supports gemini-3-pro-preview only
+- **OAuth Authentication**: Uses your Antigravity Google login instead of API keys
+- **Subscription Access**: Leverages the Antigravity weekly compute allowance instead of pay-per-API-call
+- **One-shot responses**: The provider shells out to `agy -p` under a pseudo-terminal and returns the full response in a single chunk (no token-level streaming; ~7s minimum per call, ~30-60s for very large prompts)
+
+> Note: This replaces the previous `@google/gemini-cli` (`ai-sdk-provider-gemini-cli`) integration, whose OAuth access Google sunsets on 2026-06-18.
 
 **Authentication Setup:**
 ```bash
-# Install Gemini CLI globally
-npm install -g @google/gemini-cli
+# Install the Antigravity CLI (agy)
+# Windows (PowerShell):
+irm https://antigravity.google/cli/install.ps1 | iex
+# macOS/Linux:
+curl -fsSL https://antigravity.google/cli/install.sh | bash
 
-# Run interactive authentication (one-time setup)
-gemini
-
-# Follow prompts to:
-# 1. Select authentication method (Personal OAuth recommended)
-# 2. Authorize via browser
-# 3. Credentials are saved to ~/.gemini/oauth_creds.json
+# Run interactive login (one-time setup) — also establishes workspace trust
+agy
 ```
 
 **Usage Examples:**
@@ -167,16 +168,16 @@ gemini
 ```
 
 **Best Practices:**
-- Authenticate before first use (run `gemini` CLI command)
+- Authenticate before first use (run `agy` once interactively to log in)
 - Use specific model names for Google API access (e.g., `gemini-2.5-pro`)
-- Model name `gemini` is reserved for CLI-based access
-- Check credentials file exists at `~/.gemini/oauth_creds.json` if authentication fails
+- Model names `gemini`, `gemini:pro`, and `gemini:flash` are reserved for Antigravity CLI access
+- If a call returns an empty response, the CLI is likely not authenticated — run `agy` interactively once
 
 **Differences from Google API Provider:**
-- **Authentication**: OAuth (CLI) vs API Key (Google API)
-- **Billing**: Google subscription vs pay-per-use API
-- **Model Routing**: `gemini` → CLI provider, specific names (e.g., `gemini-2.5-pro`) → API provider
-- **Models**: Only gemini-3-pro-preview vs full Gemini model family
+- **Authentication**: Google OAuth via `agy` vs API Key (Google API)
+- **Billing**: Antigravity subscription/compute allowance vs pay-per-use API
+- **Model Routing**: `gemini` / `gemini:flash` / `gemini:pro` → Antigravity CLI provider, specific names (e.g., `gemini-2.5-pro`, bare `gemini-pro`) → Google API provider
+- **Images**: Not supported (text-only) vs full multimodal on the Google API provider
 
 ### Claude Agent SDK
 - **Authentication**: Claude Code CLI login (no API key needed)
@@ -281,7 +282,7 @@ When using the chat or consensus tools, specify models using their identifiers:
 
 1. **SDK Providers** (exact matches and prefixes, checked first):
    - `codex` → Codex
-   - `gemini`, `gemini-cli` → Gemini CLI
+   - `gemini`, `gemini-cli`, and any `gemini:`-prefixed name (e.g., `gemini:flash`, `gemini:pro`) → Gemini via Antigravity CLI
    - `claude`, `claude-sdk`, `claude-code` and any `claude:`-prefixed name (e.g., `claude:fable`, `claude:opus`) → Claude Agent SDK
    - `copilot`, `copilot-sdk`, `github-copilot` and any `copilot:`-prefixed name (e.g., `copilot:codex`) → Copilot SDK
 

@@ -462,7 +462,7 @@ ${formatProviderModels('DeepSeek', allModels.deepseek)}
 ${formatProviderModels('OpenRouter', allModels.openrouter)}
 ${formatProviderModels('Codex', allModels.codex)}
 ${formatProviderModels('Claude CLI', allModels.claude)}
-${formatProviderModels('Gemini CLI', allModels['gemini-cli'])}
+${formatProviderModels('Gemini (Antigravity CLI)', allModels['gemini-cli'])}
 
 ${generateModelCategories(allModels)}
 
@@ -500,7 +500,7 @@ These providers use local CLI tools and don't require API keys:
 
 - **codex**: Requires ChatGPT login or CODEX_API_KEY environment variable
 - **claude**: Requires \`claude login\` command (Claude Code CLI authentication)
-- **gemini-cli**: Requires Gemini OAuth authentication via \`gemini\` CLI
+- **gemini-cli**: Requires the Antigravity CLI (\`agy\`) installed and authenticated via Google OAuth (run \`agy\` once interactively to log in)
 
 ## Need More Help?
 

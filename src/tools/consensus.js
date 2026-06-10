@@ -27,6 +27,10 @@ import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
 import { exportConversation } from '../utils/conversationExporter.js';
+import {
+  providerSupportsImages,
+  getProviderUnavailableMessage,
+} from '../utils/modelRouting.js';
 
 const logger = createLogger('consensus');
 
@@ -315,10 +319,19 @@ export async function consensusTool(args, dependencies) {
         'openrouter',
       ];
 
+      const requestHasImages = Array.isArray(images) && images.length > 0;
+
       for (const providerName of providerOrder) {
         if (availableProviders.length >= 3) break;
         const provider = providers[providerName];
         if (provider && provider.isAvailable(config)) {
+          // Skip text-only providers when the request includes images.
+          if (
+            requestHasImages &&
+            !providerSupportsImages(provider, providerName)
+          ) {
+            continue;
+          }
           availableProviders.push(providerName);
         }
       }
@@ -369,7 +382,7 @@ export async function consensusTool(args, dependencies) {
         failedModels.push({
           model: modelName,
           provider: providerName,
-          error: `Provider ${providerName} not available (check API key)`,
+          error: getProviderUnavailableMessage(providerName),
           status: 'failed',
         });
         continue;
@@ -794,6 +807,12 @@ function mapModelToProvider(model, providers) {
     return 'gemini-cli';
   }
 
+  // Check gemini: prefix (e.g., gemini:flash, gemini:pro) - routes to Antigravity
+  // CLI provider. Must be before the google flash/pro keyword rule so it wins.
+  if (modelLower.startsWith('gemini:')) {
+    return 'gemini-cli';
+  }
+
   // Check Claude SDK (exact match only - routes to SDK provider instead of Anthropic API)
   if (
     modelLower === 'claude' ||
@@ -1070,10 +1089,19 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
       'openrouter',
     ];
 
+    const requestHasImages = Array.isArray(images) && images.length > 0;
+
     for (const providerName of providerOrder) {
       if (availableProviders.length >= 3) break;
       const provider = providers[providerName];
       if (provider && provider.isAvailable(config)) {
+        // Skip text-only providers when the request includes images.
+        if (
+          requestHasImages &&
+          !providerSupportsImages(provider, providerName)
+        ) {
+          continue;
+        }
         availableProviders.push(providerName);
       }
     }
@@ -1125,7 +1153,7 @@ async function executeConsensusWithStreaming(args, dependencies, context) {
       failedModels.push({
         model: modelName,
         provider: providerName,
-        error: `Provider ${providerName} not available (check API key)`,
+        error: getProviderUnavailableMessage(providerName),
         status: 'failed',
       });
       continue;
@@ -1712,7 +1740,7 @@ consensusTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'List of models to consult. Examples: ["codex", "gemini", "claude", "claude:opus", "copilot", "copilot:codex"]',
+        'List of models to consult. Examples: ["codex", "gemini", "gemini:flash", "claude", "claude:opus", "copilot", "copilot:codex"]',
     },
     files: {
       type: 'array',

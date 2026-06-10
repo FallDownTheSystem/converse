@@ -534,7 +534,7 @@ When complete, `check_status` for the continuation_id renders the full lap trans
 | `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Thinking mode | Deep reasoning, architecture |
 | `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast | Quick analysis, simple queries |
 
-**Note:** The short model name `gemini` now routes to **Gemini CLI** (OAuth-based). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash`.
+**Note:** The short model name `gemini` (and `gemini:flash` / `gemini:pro`) routes to the **Antigravity CLI** (`agy`, OAuth-based). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash` (bare `gemini-pro`/`gemini-flash` also route to the Google API).
 
 ### X.AI/Grok Models
 
@@ -608,29 +608,31 @@ When complete, `check_status` for the continuation_id renders the full lap trans
 - **Direct file access**: Reads files from working directory
 - **Note**: `temperature`, `use_websearch`, and `reasoning_effort` are managed by the SDK (ignored if specified)
 
-### Gemini CLI Models (OAuth-based)
+### Gemini Models via Antigravity CLI (OAuth-based)
 
-**Gemini CLI** provides subscription-based access to Gemini models through OAuth:
+The **Antigravity CLI** (`agy`) provides subscription-based access to Gemini models through Google OAuth:
 
-- **Model**: `gemini` (routes to gemini-3-pro-preview)
-- **Authentication**: OAuth via Gemini CLI (requires one-time setup)
-- **Setup**: Install `@google/gemini-cli` globally and run `gemini` to authenticate
-- **Billing**: Uses Google subscription (Google One AI Premium or Gemini Advanced) instead of API credits
-- **Credentials**: Stored in `~/.gemini/oauth_creds.json`
-- **Features**: Access to enhanced agentic features available through CLI
-- **Context**: 1M tokens (inherited from gemini-3-pro-preview)
-- **Output**: 64K tokens
+- **Models** (text-only): `gemini` (= `gemini:pro`, Gemini 3.1 Pro), `gemini:flash` (Gemini 3.5 Flash)
+- **Authentication**: Google OAuth via `agy` (requires one-time interactive login)
+- **Setup**: Install the Antigravity CLI and run `agy` once to log in
+- **Billing**: Uses your Antigravity subscription/compute allowance instead of API credits
+- **Detection**: The provider locates the `agy` binary on PATH or at the platform install location (no credentials file)
+- **Reasoning effort**: `low`/`medium`/`high`/`max` select the model variant (e.g. Flash Low/Medium/High; Pro Low/High)
+- **Context**: 1M tokens
+- **Note**: One-shot responses (no token-level streaming); ~7s minimum per call
+
+> Replaces the previous `@google/gemini-cli` integration, whose OAuth access Google sunsets on 2026-06-18.
 
 **Authentication Setup:**
 ```bash
-# Install Gemini CLI globally
-npm install -g @google/gemini-cli
+# Install the Antigravity CLI (agy)
+# Windows (PowerShell):
+irm https://antigravity.google/cli/install.ps1 | iex
+# macOS/Linux:
+curl -fsSL https://antigravity.google/cli/install.sh | bash
 
-# Run interactive authentication
-gemini
-
-# Follow prompts to authenticate via browser
-# Credentials are saved to ~/.gemini/oauth_creds.json
+# Run interactive login (one-time) — also establishes workspace trust
+agy
 ```
 
 **Usage Example:**

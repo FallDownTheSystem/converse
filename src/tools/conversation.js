@@ -42,6 +42,8 @@ import {
   mapModelToProvider,
   resolveAutoModel,
   getDefaultModelForProvider,
+  providerSupportsImages,
+  getProviderUnavailableMessage,
 } from '../utils/modelRouting.js';
 
 const logger = createLogger('conversation');
@@ -202,7 +204,7 @@ function formatLapTranscript(lapTurns) {
  * @param {object} config - Configuration
  * @returns {Array<object>} Ordered turn plan entries
  */
-function resolveTurnPlan(models, providers, config) {
+function resolveTurnPlan(models, providers, config, hasImages = false) {
   // Single "auto" expands to the first available provider's default model only
   // (a single-model round-table is valid). Multiple explicit models resolve per-entry.
   let modelsToProcess = models;
@@ -225,6 +227,10 @@ function resolveTurnPlan(models, providers, config) {
     for (const providerName of providerOrder) {
       const provider = providers[providerName];
       if (provider && provider.isAvailable(config)) {
+        // Skip text-only providers when the request includes images.
+        if (hasImages && !providerSupportsImages(provider, providerName)) {
+          continue;
+        }
         firstAvailable = providerName;
         break;
       }
@@ -268,7 +274,7 @@ function resolveTurnPlan(models, providers, config) {
         provider: providerName,
         providerInstance: null,
         resolvedModel,
-        preFailReason: `Provider ${providerName} not available (check API key)`,
+        preFailReason: getProviderUnavailableMessage(providerName),
       };
     }
 
@@ -573,7 +579,12 @@ export async function conversationTool(args, dependencies) {
     );
 
     // Resolve ordered turn plan (unavailable models kept as pre-failed turns)
-    const turnPlan = resolveTurnPlan(models, providers, config);
+    const turnPlan = resolveTurnPlan(
+      models,
+      providers,
+      config,
+      Array.isArray(images) && images.length > 0,
+    );
 
     const startedAt = Date.now();
     const lapTurns = [];
@@ -939,7 +950,12 @@ async function executeConversationWithStreaming(args, dependencies, context) {
   );
 
   const priorTranscriptText = renderStoredTranscriptToText(conversationHistory);
-  const turnPlan = resolveTurnPlan(models, providers, config);
+  const turnPlan = resolveTurnPlan(
+    models,
+    providers,
+    config,
+    Array.isArray(images) && images.length > 0,
+  );
   const modelsList = models.join(', ');
 
   // Use passed title or generate if not provided

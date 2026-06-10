@@ -18,6 +18,8 @@ export default [
         URL: 'readonly',
         module: 'readonly',
         require: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     rules: {

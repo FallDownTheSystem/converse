@@ -12,6 +12,7 @@ import { ConfigurationError } from './utils/errorHandler.js';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { readFileSync } from 'fs';
+import { findAgyBinary } from './providers/gemini-cli.js';
 
 // Load environment variables from appropriate .env file
 // Priority: .env.test (for test env) > .env (default)
@@ -655,12 +656,11 @@ export async function loadConfig() {
       config.providers.googlecloudproject &&
       config.providers.googlecloudlocation;
     const sdkPackages = {
-      codex: '@anthropic-ai/claude-code',
+      codex: '@openai/codex-sdk',
       claude: '@anthropic-ai/claude-agent-sdk',
-      'gemini-cli': '@anthropic-ai/claude-code', // shares codex check
       copilot: '@github/copilot-sdk',
     };
-    const hasSdkProvider = Object.values(sdkPackages).some((pkg) => {
+    let hasSdkProvider = Object.values(sdkPackages).some((pkg) => {
       try {
         import.meta.resolve(pkg);
         return true;
@@ -669,9 +669,22 @@ export async function loadConfig() {
       }
     });
 
+    // gemini-cli availability comes from the Antigravity CLI binary, not an
+    // npm package — reuse the provider's probe (safe to import: node-pty is
+    // lazy-loaded at invoke time). Only probed when validation would otherwise
+    // fail, since hasSdkProvider is only read by the check below.
+    if (
+      availableKeys.length === 0 &&
+      !hasVertexAI &&
+      !hasSdkProvider &&
+      findAgyBinary() !== null
+    ) {
+      hasSdkProvider = true;
+    }
+
     if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, gemini-cli, copilot).',
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
       );
     }
 

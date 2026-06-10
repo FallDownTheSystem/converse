@@ -89,22 +89,35 @@ const API_KEY_CONFIGS = {
     },
   },
   GEMINI_CLI: {
-    envVar: null, // Gemini CLI uses OAuth credentials stored in ~/.gemini/oauth_creds.json
+    envVar: null, // Antigravity CLI (agy) uses Google OAuth login; detect the binary
     prefix: null,
     minLength: 0,
     providerName: 'Gemini CLI',
     customCheck: () => {
-      // Check if OAuth credentials file exists
+      // Check if the agy binary is on PATH or at the platform install fallback
+      // (mirrors findAgyBinary() in src/providers/gemini-cli.js).
       try {
         const fs = require('fs');
         const path = require('path');
         const os = require('os');
-        const credsPath = path.join(
-          os.homedir(),
-          '.gemini',
-          'oauth_creds.json',
-        );
-        return fs.existsSync(credsPath);
+        const isWindows = process.platform === 'win32';
+        const exe = isWindows ? 'agy.exe' : 'agy';
+
+        const pathEnv = process.env.PATH || process.env.Path || '';
+        const onPath = pathEnv
+          .split(path.delimiter)
+          .some((dir) => dir && fs.existsSync(path.join(dir, exe)));
+        if (onPath) return true;
+
+        if (isWindows) {
+          const localAppData =
+            process.env.LOCALAPPDATA ||
+            path.join(os.homedir(), 'AppData', 'Local');
+          return fs.existsSync(
+            path.join(localAppData, 'agy', 'bin', 'agy.exe'),
+          );
+        }
+        return fs.existsSync(path.join(os.homedir(), '.local', 'bin', 'agy'));
       } catch {
         return false;
       }

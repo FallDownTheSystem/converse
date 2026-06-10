@@ -24,6 +24,10 @@ import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
 import { exportConversation } from '../utils/conversationExporter.js';
 import { isRecoverableError, retryWithBackoff } from '../utils/errorHandler.js';
+import {
+  providerSupportsImages,
+  getProviderUnavailableMessage,
+} from '../utils/modelRouting.js';
 
 const logger = createLogger('chat');
 
@@ -313,9 +317,16 @@ export async function chatTool(args, dependencies) {
         'openrouter',
       ];
 
+      const requestHasImages = Array.isArray(images) && images.length > 0;
+
       for (const name of providerOrder) {
         const provider = providers[name];
         if (provider && provider.isAvailable && provider.isAvailable(config)) {
+          // When the request has images, skip text-only providers (e.g.
+          // gemini-cli, copilot) so auto routing lands on an image-capable one.
+          if (requestHasImages && !providerSupportsImages(provider, name)) {
+            continue;
+          }
           providerCandidates.push({ name, provider });
         }
       }
@@ -335,9 +346,7 @@ export async function chatTool(args, dependencies) {
       }
 
       if (!selectedProvider.isAvailable(config)) {
-        return createToolError(
-          `Provider ${providerName} is not available. Check API key configuration.`,
-        );
+        return createToolError(getProviderUnavailableMessage(providerName));
       }
 
       providerCandidates.push({
@@ -587,6 +596,12 @@ export function mapModelToProvider(model, providers) {
 
   // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
   if (modelLower === 'gemini' || modelLower === 'gemini-cli') {
+    return 'gemini-cli';
+  }
+
+  // Check gemini: prefix (e.g., gemini:flash, gemini:pro) - routes to Antigravity
+  // CLI provider. Must be before the google flash/pro keyword rule so it wins.
+  if (modelLower.startsWith('gemini:')) {
     return 'gemini-cli';
   }
 
@@ -882,9 +897,15 @@ async function executeChatWithStreaming(args, dependencies, context) {
       'openrouter',
     ];
 
+    const requestHasImages = Array.isArray(images) && images.length > 0;
+
     for (const name of providerOrder) {
       const provider = providers[name];
       if (provider && provider.isAvailable && provider.isAvailable(config)) {
+        // Skip text-only providers when the request includes images.
+        if (requestHasImages && !providerSupportsImages(provider, name)) {
+          continue;
+        }
         providerName = name;
         selectedProvider = provider;
         break;
@@ -906,9 +927,7 @@ async function executeChatWithStreaming(args, dependencies, context) {
     }
 
     if (!selectedProvider.isAvailable(config)) {
-      throw new Error(
-        `Provider ${providerName} is not available. Check API key configuration.`,
-      );
+      throw new Error(getProviderUnavailableMessage(providerName));
     }
   }
 
@@ -1156,7 +1175,7 @@ chatTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "claude", "claude:fable", "claude:opus", "copilot", "copilot:codex". Defaults to auto-selection.',
+        'AI model to use. Examples: "auto" (recommended), "codex", "gemini", "gemini:flash", "claude", "claude:fable", "claude:opus", "copilot", "copilot:codex". Defaults to auto-selection.',
     },
     files: {
       type: 'array',

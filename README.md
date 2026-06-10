@@ -424,7 +424,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 Provider priority order (subscription-based SDK providers first, then API-key providers):
 
 1. Codex (`codex`)
-2. Gemini CLI (`gemini`)
+2. Gemini via Antigravity CLI (`gemini`, `gemini:flash`)
 3. Claude Agent SDK (`claude` → Claude Fable 5)
 4. Copilot (`copilot`)
 5. OpenAI (`gpt-5`)
@@ -601,7 +601,7 @@ npm run test:watch     # Run tests in watch mode
 # Code quality
 npm run lint           # Check code style
 npm run lint:fix       # Fix code style issues
-npm run format         # Format code with Prettier
+npm run format         # Format code with ESLint (alias for lint:fix)
 npm run validate       # Full validation (lint + test)
 
 # Utilities

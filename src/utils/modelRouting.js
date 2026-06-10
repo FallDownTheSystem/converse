@@ -45,6 +45,49 @@ export function resolveAutoModel(model, providerName) {
 }
 
 /**
+ * Provider-specific setup hints appended to "Provider X is not available."
+ * errors so users know how to enable a provider. Keyed by registry name.
+ */
+const PROVIDER_SETUP_HINTS = {
+  'gemini-cli':
+    'Install the Antigravity CLI and run `agy` once to log in (https://antigravity.google)',
+};
+
+/**
+ * Build the "provider not available" error message with an optional setup hint.
+ * @param {string} providerName - Provider registry name
+ * @returns {string}
+ */
+export function getProviderUnavailableMessage(providerName) {
+  const base = `Provider ${providerName} is not available. Check API key configuration.`;
+  const hint = PROVIDER_SETUP_HINTS[providerName];
+  return hint ? `${base} ${hint}` : base;
+}
+
+/**
+ * Whether a provider's default model supports image inputs. Used by the "auto"
+ * selection paths to skip text-only providers (gemini-cli, copilot) when the
+ * request includes images. Providers without a resolvable config are treated as
+ * image-capable (fail open — they surface their own errors downstream).
+ * @param {object} providerInstance - Provider implementation
+ * @param {string} providerName - Provider registry name
+ * @returns {boolean}
+ */
+export function providerSupportsImages(providerInstance, providerName) {
+  if (!providerInstance || typeof providerInstance.getModelConfig !== 'function') {
+    return true;
+  }
+  try {
+    const defaultModel = getDefaultModelForProvider(providerName);
+    const modelConfig = providerInstance.getModelConfig(defaultModel);
+    if (!modelConfig) return true;
+    return modelConfig.supportsImages !== false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Map model name to provider name
  * @param {string} model - Model name
  * @param {object} providers - Map of available provider instances keyed by name
@@ -77,6 +120,13 @@ export function mapModelToProvider(model, providers) {
 
   // Check Gemini CLI (exact match only - routes to CLI provider instead of Google API)
   if (modelLower === 'gemini' || modelLower === 'gemini-cli') {
+    return 'gemini-cli';
+  }
+
+  // Check gemini: prefix (e.g., gemini:flash, gemini:pro) - routes to Antigravity
+  // CLI provider. Must be before the google flash/pro keyword rule below so it
+  // wins over Google API routing. Bare gemini-pro/gemini-flash still hit google.
+  if (modelLower.startsWith('gemini:')) {
     return 'gemini-cli';
   }
 
