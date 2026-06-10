@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.27.1](https://github.com/FallDownTheSystem/converse/compare/v2.27.0...v2.27.1) (2026-06-10)
+
+
+### Dependencies
+
+* **deps:** bump @github/copilot-sdk to 1.0.0 and update minor dependencies ([#28](https://github.com/FallDownTheSystem/converse/issues/28)) ([6ca4d71](https://github.com/FallDownTheSystem/converse/commit/6ca4d71a4ebc4a2729d0528a12edee66ecf42acf))
+
 ## [2.27.0](https://github.com/FallDownTheSystem/converse/compare/v2.26.1...v2.27.0) (2026-06-10)
 
 
