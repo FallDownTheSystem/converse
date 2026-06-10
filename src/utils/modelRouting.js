@@ -89,6 +89,12 @@ export function mapModelToProvider(model, providers) {
     return 'claude';
   }
 
+  // Check claude: prefix (e.g., claude:fable, claude:opus) - routes to SDK provider
+  // Must be before keyword matching to prevent misrouting to Anthropic API
+  if (modelLower.startsWith('claude:')) {
+    return 'claude';
+  }
+
   // Check Copilot SDK (exact match only - routes to SDK provider)
   if (
     modelLower === 'copilot' ||
@@ -163,6 +169,7 @@ export function mapModelToProvider(model, providers) {
   // Anthropic models
   if (
     modelLower.includes('claude') ||
+    modelLower.includes('fable') ||
     modelLower.includes('opus') ||
     modelLower.includes('sonnet') ||
     modelLower.includes('haiku')

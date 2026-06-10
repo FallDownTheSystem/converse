@@ -161,7 +161,7 @@ Get multiple AI models to analyze the same question simultaneously. Each model c
 // Asynchronous consensus (for complex analysis)
 {
   "prompt": "Review our system architecture and provide comprehensive recommendations",
-  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4-6"],
   "files": ["/path/to/architecture-docs"],
   "async": true,          // Run in background
   "enable_cross_feedback": true
@@ -268,11 +268,12 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### Anthropic Models
 
-- **claude-opus-4.1**: Highest intelligence with extended thinking (200K context)
-- **claude-sonnet-4**: Balanced performance with extended thinking (200K context)
-- **claude-3.7-sonnet**: Enhanced 3.x generation with thinking (200K context)
-- **claude-3.5-sonnet**: Fast and intelligent (200K context)
-- **claude-3.5-haiku**: Fastest model for simple queries (200K context)
+- **claude-fable-5** (alias: `fable`): Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
+- **claude-opus-4-8** (alias: `opus`): Most capable Opus for complex reasoning and agentic coding (200K context, 1M via beta, 128K output)
+- **claude-opus-4-7** / **claude-opus-4-6**: Previous Opus generations with adaptive thinking (128K output)
+- **claude-opus-4-5** / **claude-opus-4-1**: Legacy Opus models with extended thinking (64K / 32K output)
+- **claude-sonnet-4-6** (alias: `sonnet`): Best combination of speed and intelligence with adaptive thinking (64K output)
+- **claude-haiku-4-5** (alias: `haiku`): Fast and intelligent for simple queries (64K output)
 
 ### Mistral Models
 
@@ -299,6 +300,14 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
   - Typical response time: 6-20 seconds (longer for complex tasks)
   - Requires ChatGPT login or CODEX_API_KEY
   - See [Configuration](#configuration) for sandbox and approval settings
+
+### Claude Agent SDK Models
+
+- **claude** (aliases: `claude-sdk`, `claude-code`): Claude via the Claude Agent SDK
+  - Defaults to Claude Fable 5; pick a specific model with `claude:fable` or `claude:opus`
+  - Uses Claude Code CLI authentication (`claude login`) - no API key needed
+  - Direct filesystem access from working directory
+  - Unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 
 ## 📚 Help & Documentation
 
@@ -398,6 +407,13 @@ Use `"auto"` for automatic model selection, or specify exact models:
 "pro"; // -> gemini-2.5-pro
 "grok"; // -> grok-4-0709
 "grok-4"; // -> grok-4-0709
+"fable"; // -> claude-fable-5 (Anthropic API)
+"opus"; // -> claude-opus-4-8 (Anthropic API)
+
+// SDK providers (subscription-based, no API key)
+"claude"; // -> Claude Agent SDK (Claude Fable 5)
+"claude:opus"; // -> Claude Agent SDK (Claude Opus 4.8)
+"copilot:codex"; // -> GitHub Copilot SDK (gpt-5.3-codex)
 ```
 
 **Auto Model Behavior:**
@@ -405,17 +421,21 @@ Use `"auto"` for automatic model selection, or specify exact models:
 - **Chat Tool**: Selects the first available provider and uses its default model
 - **Consensus Tool**: When using `["auto"]`, automatically expands to the first 3 available providers
 
-Provider priority order (requires corresponding API key):
+Provider priority order (subscription-based SDK providers first, then API-key providers):
 
-1. OpenAI (`gpt-5`)
-2. Google (`gemini-2.5-pro`)
-3. XAI (`grok-4`)
-4. Anthropic (`claude-sonnet-4-20250514`)
-5. Mistral (`magistral-medium-2506`)
-6. DeepSeek (`deepseek-reasoner`)
-7. OpenRouter (`qwen/qwen3-coder`)
+1. Codex (`codex`)
+2. Gemini CLI (`gemini`)
+3. Claude Agent SDK (`claude` → Claude Fable 5)
+4. Copilot (`copilot`)
+5. OpenAI (`gpt-5`)
+6. Google (`gemini-pro`)
+7. XAI (`grok-4-0709`)
+8. Anthropic (`claude-sonnet-4-20250514`)
+9. Mistral (`magistral-medium-2506`)
+10. DeepSeek (`deepseek-reasoner`)
+11. OpenRouter (`qwen/qwen3-coder`)
 
-The system will use the first 3 providers that have valid API keys configured. This enables automatic multi-model consensus without manually specifying models.
+The system will use the first 3 providers that are available (authenticated SDK or valid API key). This enables automatic multi-model consensus without manually specifying models.
 
 ### Advanced Configuration
 

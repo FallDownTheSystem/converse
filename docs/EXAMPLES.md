@@ -144,7 +144,7 @@ For long-running tasks, use async mode to get immediate response and monitor pro
   "tool": "consensus",
   "arguments": {
     "prompt": "Design a scalable microservices architecture for our e-commerce platform",
-    "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+    "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4-6"],
     "files": ["/docs/requirements.md", "/docs/current-architecture.md"],
     "async": true,
     "enable_cross_feedback": true
@@ -155,7 +155,7 @@ For long-running tasks, use async mode to get immediate response and monitor pro
 **Immediate Response:**
 ```json
 {
-  "content": "⏳ PROCESSING | CONSENSUS | consensus_xyz789 | 0/3 | Started: 2023-12-01 10:30:00 | gpt-5,gemini-2.5-pro,claude-sonnet-4",
+  "content": "⏳ PROCESSING | CONSENSUS | consensus_xyz789 | 0/3 | Started: 2023-12-01 10:30:00 | gpt-5,gemini-2.5-pro,claude-sonnet-4-6",
   "continuation": {
     "id": "consensus_xyz789",
     "status": "processing"
@@ -164,7 +164,7 @@ For long-running tasks, use async mode to get immediate response and monitor pro
   "metadata": {
     "total_models": 3,
     "successful_models": 0,
-    "models_list": "gpt-5,gemini-2.5-pro,claude-sonnet-4"
+    "models_list": "gpt-5,gemini-2.5-pro,claude-sonnet-4-6"
   }
 }
 ```

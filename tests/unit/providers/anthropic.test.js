@@ -93,10 +93,35 @@ describe('Anthropic Provider', () => {
       expect(Object.keys(models).length).toBeGreaterThan(0);
 
       // Check for some expected models
+      expect(models['claude-fable-5']).toBeDefined();
       expect(models['claude-sonnet-4-6']).toBeDefined();
       expect(models['claude-sonnet-4-5-20250929']).toBeDefined();
       expect(models['claude-haiku-4-5-20251001']).toBeDefined();
       expect(models['claude-opus-4-5-20251101']).toBeDefined();
+    });
+
+    it('should get Claude Fable 5 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-fable-5');
+
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('claude-fable-5');
+      expect(config.friendlyName).toBe('Claude Fable 5');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(128000);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.supportsTemperature).toBe(false);
+      expect(config.supportsEffort).toBe(true);
+      expect(config.effortGA).toBe(true);
+    });
+
+    it('should resolve Claude Fable 5 by various aliases', () => {
+      const aliases = ['fable', 'fable-5', 'fable5', 'claude-fable'];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-fable-5');
+      });
     });
 
     it('should get model config by exact name', () => {
@@ -355,6 +380,31 @@ describe('Anthropic Provider', () => {
       const maxEffortCallArgs = mockCreate.mock.calls[0][0];
       expect(maxEffortCallArgs.thinking).toBeUndefined();
       expect(maxEffortCallArgs.max_tokens).toBe(32000);
+    });
+
+    it('should use adaptive thinking and omit temperature for Fable 5', async () => {
+      const messages = [{ role: 'user', content: 'Test fable-5' }];
+
+      await anthropicProvider.invoke(messages, {
+        model: 'claude-fable-5',
+        reasoning_effort: 'medium',
+        temperature: 0.5,
+        config: mockConfig,
+      });
+
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('claude-fable-5');
+      expect(callArgs.max_tokens).toBe(128000);
+      expect(callArgs.thinking).toEqual({
+        type: 'adaptive',
+      });
+      expect(callArgs.output_config).toEqual({
+        effort: 'high',
+      });
+      // Fable 5 removed sampling parameters - sending temperature returns 400
+      expect(callArgs.temperature).toBeUndefined();
+      // 1M context is the default on Fable 5 - no beta header required
+      expect(callArgs.betas).not.toContain('context-1m-2025-08-07');
     });
 
     it('should use adaptive thinking for Sonnet 4.6', async () => {

@@ -13,6 +13,32 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-fable-5': {
+    modelName: 'claude-fable-5',
+    friendlyName: 'Claude Fable 5',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false, // Fable 5 rejects temperature/top_p/top_k (400)
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Adaptive thinking is the only thinking mode
+    timeout: 600000,
+    supportsEffort: true,
+    effortGA: true,
+    supportsCompaction: true,
+    description:
+      'Claude Fable 5 - Most capable model for the most demanding reasoning and long-horizon agentic work',
+    aliases: [
+      'claude-fable-5',
+      'claude-fable',
+      'claude-5-fable',
+      'fable-5',
+      'fable5',
+      'fable',
+    ],
+  },
   'claude-opus-4-8': {
     modelName: 'claude-opus-4-8',
     friendlyName: 'Claude Opus 4.8',
@@ -678,10 +704,11 @@ export const anthropicProvider = {
       }
     }
 
-    // Add temperature if specified
+    // Add temperature if specified and the model accepts it
+    // (Fable 5 removed sampling parameters entirely - sending them returns 400)
     // When legacy thinking (type: "enabled") is active, temperature must be 1
     // Adaptive thinking (type: "adaptive") does not have this constraint
-    if (temperature !== undefined) {
+    if (temperature !== undefined && modelConfig.supportsTemperature !== false) {
       if (
         requestPayload.thinking &&
         requestPayload.thinking.type === 'enabled'

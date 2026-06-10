@@ -332,7 +332,7 @@ The consensus tool operates with parallel processing across multiple AI provider
 // Asynchronous consensus (for complex analysis):
 {
   "prompt": "Design a scalable architecture for our system",
-  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4"],
+  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4-6"],
   "files": ["/c/Users/username/project/docs/architecture.md"],
   "async": true,          // Run in background
   "enable_cross_feedback": true

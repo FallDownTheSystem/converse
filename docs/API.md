@@ -547,11 +547,17 @@ When complete, `check_status` for the continuation_id renders the full lap trans
 
 | Model | Alias | Context | Tokens | Features | Use Cases |
 |-------|-------|---------|--------|----------|-----------|
-| `claude-opus-4-5-20250220` | `opus-4.5`, `opus` | 200K | 32K | Extended thinking, images, caching | Most capable reasoning |
-| `claude-opus-4-1-20250805` | `opus-4.1`, `opus-4` | 200K | 32K | Extended thinking, images, caching | Complex reasoning tasks |
-| `claude-sonnet-4-5-20250929` | `sonnet-4.5`, `sonnet` | 200K | 64K | Extended thinking, images, caching | Enhanced reasoning |
-| `claude-sonnet-4-20250514` | `sonnet-4` | 200K | 64K | Extended thinking, images, caching | High performance, balanced |
-| `claude-haiku-4-5-20251001` | `haiku-4.5`, `haiku` | 200K | 64K | Extended thinking, caching | Fast and intelligent |
+| `claude-fable-5` | `fable`, `fable-5` | 1M | 128K | Adaptive thinking, effort, images, caching, compaction | Most demanding reasoning, long-horizon agentic work |
+| `claude-opus-4-8` | `opus`, `opus-4.8` | 200K (1M beta) | 128K | Adaptive thinking, effort, images, caching, compaction | Complex reasoning, agentic coding |
+| `claude-opus-4-7` | `opus-4.7` | 200K (1M beta) | 128K | Adaptive thinking, effort, images, caching, compaction | Previous Opus generation |
+| `claude-opus-4-6` | `opus-4.6` | 200K (1M beta) | 128K | Adaptive thinking, effort, images, caching, compaction | Previous Opus generation |
+| `claude-opus-4-5-20251101` | `opus-4.5` | 200K | 64K | Extended thinking, effort (beta), images, caching | Legacy Opus |
+| `claude-opus-4-1-20250805` | `opus-4.1`, `opus-4` | 200K | 32K | Extended thinking, images, caching | Legacy Opus |
+| `claude-sonnet-4-6` | `sonnet`, `sonnet-4.6` | 200K (1M beta) | 64K | Adaptive thinking, effort, images, caching, compaction | Best speed/intelligence balance |
+| `claude-sonnet-4-5-20250929` | `sonnet-4.5` | 200K (1M beta) | 64K | Extended thinking, images, caching | Legacy Sonnet |
+| `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Extended thinking, images, caching | Fast and intelligent |
+
+**Note:** Claude Fable 5 does not accept the `temperature` parameter (it is silently omitted). Models with adaptive thinking control thinking depth via `reasoning_effort`, which maps to Anthropic's `effort` parameter.
 
 **Prompt Caching (Always Enabled):**
 - System prompts are automatically cached for 1 hour using Anthropic's prompt caching
@@ -591,6 +597,16 @@ When complete, `check_status` for the continuation_id renders the full lap trans
 - **Direct file access**: Reads files from working directory (paths relative to CLIENT_CWD)
 - **Response times**: 6-20 seconds typical (complex tasks may take minutes)
 - **Authentication**: Requires ChatGPT login OR `CODEX_API_KEY` environment variable
+
+### Claude Agent SDK Models
+
+**Claude** is also available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
+
+- **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) - defaults to Claude Fable 5
+- **Model selection**: `claude:fable` (Claude Fable 5) or `claude:opus` (Claude Opus 4.8); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+- **Authentication**: Claude Code login (`claude login`) - no `ANTHROPIC_API_KEY` needed
+- **Direct file access**: Reads files from working directory
+- **Note**: `temperature`, `use_websearch`, and `reasoning_effort` are managed by the SDK (ignored if specified)
 
 ### Gemini CLI Models (OAuth-based)
 
@@ -657,6 +673,13 @@ Use `"auto"` for automatic selection or specify exact models:
 {"model": "pro"}    // -> gemini-2.5-pro  
 {"model": "grok"}   // -> grok-4-0709
 {"model": "grok-4"}  // -> grok-4-0709
+{"model": "fable"}  // -> claude-fable-5 (Anthropic API)
+{"model": "opus"}   // -> claude-opus-4-8 (Anthropic API)
+
+// SDK providers (subscription-based)
+{"model": "claude"}        // -> Claude Agent SDK (Claude Fable 5)
+{"model": "claude:opus"}   // -> Claude Agent SDK (Claude Opus 4.8)
+{"model": "copilot:codex"} // -> GitHub Copilot SDK (gpt-5.3-codex)
 ```
 
 ## Configuration

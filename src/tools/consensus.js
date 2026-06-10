@@ -803,6 +803,12 @@ function mapModelToProvider(model, providers) {
     return 'claude';
   }
 
+  // Check claude: prefix (e.g., claude:fable, claude:opus) - routes to SDK provider
+  // Must be before keyword matching to prevent misrouting to Anthropic API
+  if (modelLower.startsWith('claude:')) {
+    return 'claude';
+  }
+
   // Check Copilot SDK (exact match only - routes to SDK provider)
   if (
     modelLower === 'copilot' ||
@@ -877,6 +883,7 @@ function mapModelToProvider(model, providers) {
   // Anthropic models
   if (
     modelLower.includes('claude') ||
+    modelLower.includes('fable') ||
     modelLower.includes('opus') ||
     modelLower.includes('sonnet') ||
     modelLower.includes('haiku')
@@ -1705,7 +1712,7 @@ consensusTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'List of models to consult. Examples: ["codex", "gemini", "claude", "copilot", "copilot:codex"]',
+        'List of models to consult. Examples: ["codex", "gemini", "claude", "claude:opus", "copilot", "copilot:codex"]',
     },
     files: {
       type: 'array',

@@ -16,20 +16,46 @@
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
+// Default underlying model when the request is just "claude" (or "claude:fable")
+const DEFAULT_SDK_MODEL = 'claude-fable-5';
+
 // Supported Claude SDK models with their configurations
 const SUPPORTED_MODELS = {
-  claude: {
-    modelName: 'claude',
-    friendlyName: 'Claude (via Agent SDK)',
-    contextWindow: 200000,
-    maxOutputTokens: 8192,
+  fable: {
+    modelName: 'claude-fable-5',
+    friendlyName: 'Claude Fable 5 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
     supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 600000, // 10 minutes
-    description: 'Claude via Agent SDK - requires claude login authentication',
-    aliases: ['claude-sdk', 'claude-code'],
+    description:
+      'Claude Fable 5 via Agent SDK (default) - requires claude login authentication',
+    aliases: [
+      'claude',
+      'claude-sdk',
+      'claude-code',
+      'claude:fable',
+      'claude-fable-5',
+      'claude-fable',
+      'fable-5',
+    ],
+  },
+  opus: {
+    modelName: 'claude-opus-4-8',
+    friendlyName: 'Claude Opus 4.8 (via Agent SDK)',
+    contextWindow: 200000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true, // Supported via streaming input mode
+    supportsTemperature: false, // SDK manages temperature internally
+    supportsWebSearch: false, // SDK accesses files directly, not web
+    timeout: 600000, // 10 minutes
+    description:
+      'Claude Opus 4.8 via Agent SDK - requires claude login authentication',
+    aliases: ['claude:opus', 'claude-opus-4-8'],
   },
 };
 
@@ -79,6 +105,61 @@ async function getClaudeSDK() {
       error,
     );
   }
+}
+
+/**
+ * Look up model config from SUPPORTED_MODELS by name or alias.
+ * Strips the claude: prefix first (e.g. "claude:opus" -> "opus").
+ */
+function findModelConfig(modelName) {
+  if (typeof modelName !== 'string') return null;
+
+  let name = modelName.trim();
+  if (name.toLowerCase().startsWith('claude:')) {
+    name = name.slice('claude:'.length).trim();
+  }
+  if (!name) return SUPPORTED_MODELS.fable;
+
+  const nameLower = name.toLowerCase();
+
+  if (SUPPORTED_MODELS[nameLower]) {
+    return SUPPORTED_MODELS[nameLower];
+  }
+
+  for (const config of Object.values(SUPPORTED_MODELS)) {
+    if (
+      config.aliases &&
+      config.aliases.some((alias) => alias.toLowerCase() === nameLower)
+    ) {
+      return config;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve the requested model to the underlying SDK model ID.
+ * - "claude" (and bare "claude:") defaults to Claude Fable 5
+ * - "claude:fable" / "claude:opus" select the specific model
+ * - Unknown names are passed through (after prefix stripping) so users can
+ *   target any model ID the Agent SDK accepts (e.g. "claude:claude-sonnet-4-6")
+ */
+function resolveSdkModel(modelName) {
+  if (typeof modelName !== 'string' || !modelName.trim()) {
+    return DEFAULT_SDK_MODEL;
+  }
+
+  const config = findModelConfig(modelName);
+  if (config) {
+    return config.modelName;
+  }
+
+  let name = modelName.trim();
+  if (name.toLowerCase().startsWith('claude:')) {
+    name = name.slice('claude:'.length).trim();
+  }
+  return name || DEFAULT_SDK_MODEL;
 }
 
 /**
@@ -209,7 +290,7 @@ async function* createSdkMessageGenerator(sdkMessage) {
  * @param {Function} queryFn - The SDK query function
  * @param {string|null} prompt - String prompt for single message mode, or null for streaming input mode
  * @param {Object|null} sdkMessage - SDK user message for streaming input mode (with images)
- * @param {Object} options - SDK options (cwd, etc.)
+ * @param {Object} options - SDK options (cwd, model, etc.)
  * @param {AbortSignal} signal - Abort signal for cancellation
  */
 async function* createStreamingGenerator(
@@ -223,7 +304,7 @@ async function* createStreamingGenerator(
     // Build query options
     // Use higher maxTurns to allow for file reading operations
     const queryOptions = {
-      model: 'claude-opus-4-8', // Use Opus 4.8 for best quality
+      model: options.model || DEFAULT_SDK_MODEL,
       maxTurns: 20, // Allow multiple turns for file operations
       permissionMode: 'bypassPermissions', // Don't prompt for permissions
     };
@@ -259,14 +340,14 @@ async function* createStreamingGenerator(
     });
 
     let _sessionId = null;
-    let _modelUsed = 'claude';
+    let _modelUsed = queryOptions.model;
     let _accumulatedContent = '';
 
     // Yield start event
     yield {
       type: 'start',
       provider: 'claude',
-      model: 'claude',
+      model: queryOptions.model,
     };
 
     // Iterate over SDK messages
@@ -281,7 +362,7 @@ async function* createStreamingGenerator(
       case 'system':
         if (message.subtype === 'init') {
           _sessionId = message.session_id;
-          _modelUsed = message.model || 'claude';
+          _modelUsed = message.model || queryOptions.model;
           debugLog(
             `[Claude SDK] Session initialized: ${_sessionId}, model: ${_modelUsed}`,
           );
@@ -414,9 +495,14 @@ export const claudeProvider = {
         debugLog('[Claude SDK] Using streaming input mode for image support');
       }
 
+      // Resolve requested model (claude/claude:fable -> claude-fable-5, claude:opus -> claude-opus-4-8)
+      const sdkModel = resolveSdkModel(model);
+      debugLog(`[Claude SDK] Resolved model "${model}" -> "${sdkModel}"`);
+
       // Build SDK options
       const sdkOptions = {
         cwd: config.server?.client_cwd || process.cwd(),
+        model: sdkModel,
       };
 
       // Streaming mode
@@ -459,7 +545,7 @@ export const claudeProvider = {
         rawResponse: { content, usage },
         metadata: {
           provider: 'claude',
-          model,
+          model: sdkModel,
           usage: usage
             ? {
               input_tokens: usage.input_tokens || 0,
@@ -546,25 +632,9 @@ export const claudeProvider = {
 
   /**
    * Get model configuration for specific model
+   * Handles claude: prefixed names (e.g. "claude:opus", "claude:fable")
    */
   getModelConfig(modelName) {
-    const modelNameLower = modelName.toLowerCase();
-
-    // Check exact match
-    if (SUPPORTED_MODELS[modelNameLower]) {
-      return SUPPORTED_MODELS[modelNameLower];
-    }
-
-    // Check aliases
-    for (const [_name, config] of Object.entries(SUPPORTED_MODELS)) {
-      if (
-        config.aliases &&
-        config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
-      ) {
-        return config;
-      }
-    }
-
-    return null;
+    return findModelConfig(modelName);
   },
 };

@@ -37,12 +37,13 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.anthropic.com](https://console.anthropic.com/)
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Supported Models**:
-  - `claude-opus-4-5-20250220` - Most capable with extended thinking (32K output)
-  - `claude-opus-4-1-20250805` - Highest intelligence with extended thinking (32K output)
-  - `claude-sonnet-4-5-20250929` - Enhanced reasoning with extended thinking (64K output)
-  - `claude-sonnet-4-20250514` - Balanced performance with extended thinking (64K output)
-  - `claude-haiku-4-5-20251001` - Fast and intelligent with extended thinking (64K output)
-  - `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, `claude-3-haiku-20240307` - Previous generation
+  - `claude-fable-5` (alias `fable`) - Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
+  - `claude-opus-4-8` (alias `opus`) - Most capable Opus for complex reasoning and agentic coding (128K output)
+  - `claude-opus-4-7`, `claude-opus-4-6` - Previous Opus generations with adaptive thinking (128K output)
+  - `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` - Legacy Opus models (64K / 32K output)
+  - `claude-sonnet-4-6` (alias `sonnet`) - Best combination of speed and intelligence with adaptive thinking (64K output)
+  - `claude-sonnet-4-5-20250929` - Legacy Sonnet (64K output)
+  - `claude-haiku-4-5-20251001` (alias `haiku`) - Fast and intelligent with extended thinking (64K output)
 
 ### Mistral
 - **API Key Format**: 32+ character string
@@ -160,7 +161,7 @@ gemini
   "name": "consensus",
   "arguments": {
     "prompt": "Should we use TypeScript for this component?",
-    "models": ["gemini", "gpt-5", "claude-sonnet-4"]
+    "models": ["gemini", "gpt-5", "claude-sonnet-4-6"]
   }
 }
 ```
@@ -176,6 +177,27 @@ gemini
 - **Billing**: Google subscription vs pay-per-use API
 - **Model Routing**: `gemini` → CLI provider, specific names (e.g., `gemini-2.5-pro`) → API provider
 - **Models**: Only gemini-3-pro-preview vs full Gemini model family
+
+### Claude Agent SDK
+- **Authentication**: Claude Code CLI login (no API key needed)
+- **Setup Required**: Authenticate once with `claude login` (Claude Code CLI)
+- **Environment Variables**: None (uses Claude Code credentials)
+- **Supported Models**:
+  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Fable 5
+  - `claude:fable` - Claude Fable 5 explicitly
+  - `claude:opus` - Claude Opus 4.8
+  - Other `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+
+**Key Features:**
+- **Subscription Access**: Uses your Claude subscription instead of API credits
+- **Local File Access**: Reads files directly from the working directory
+- **Image Support**: Via the SDK's streaming input mode
+- **SDK-Managed Parameters**: `temperature`, `use_websearch`, and `reasoning_effort` are managed internally (ignored if specified)
+
+**Differences from Anthropic API Provider:**
+- **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
+- **Billing**: Claude subscription vs pay-per-use API
+- **Model Routing**: `claude` and `claude:*` → SDK provider; specific names (e.g., `claude-fable-5`, `opus`, `sonnet`) → API provider
 
 ## Configuration Examples
 
@@ -243,7 +265,7 @@ All providers support streaming responses for real-time output.
 - **Google**:
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
-- **Anthropic**: All Claude 4 series models support extended thinking with `reasoning_effort`
+- **Anthropic**: Claude Fable 5, Opus 4.6+, and Sonnet 4.6 use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
 - **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only
 
@@ -257,29 +279,38 @@ When using the chat or consensus tools, specify models using their identifiers:
 
 ### Model Routing Logic
 
-1. **Simple Names**: Models without "/" are routed by keyword matching:
+1. **SDK Providers** (exact matches and prefixes, checked first):
+   - `codex` → Codex
+   - `gemini`, `gemini-cli` → Gemini CLI
+   - `claude`, `claude-sdk`, `claude-code` and any `claude:`-prefixed name (e.g., `claude:fable`, `claude:opus`) → Claude Agent SDK
+   - `copilot`, `copilot-sdk`, `github-copilot` and any `copilot:`-prefixed name (e.g., `copilot:codex`) → Copilot SDK
+
+2. **Simple Names**: Other models without "/" are routed by keyword matching:
    - Contains "gpt", "o1", "o3", "o4" → OpenAI
-   - Contains "claude", "opus", "sonnet", "haiku" → Anthropic
+   - Contains "claude", "fable", "opus", "sonnet", "haiku" → Anthropic
    - Contains "gemini", "flash", "pro" → Google
    - Contains "grok" → X.AI
    - Contains "mistral", "magistral" → Mistral
    - Contains "deepseek", "reasoner", "r1" → DeepSeek
    - Contains "qwen", "kimi", "k2" → OpenRouter
 
-2. **Slash Format**: Models with "/" check native providers first:
+3. **Slash Format**: Models with "/" check native providers first:
    - If exact model exists in a native provider → Routes to that provider
    - If not found in any native provider → Routes to OpenRouter
    - This allows using models like "anthropic/claude-3.5-sonnet" via OpenRouter
 
-3. **OpenRouter Auto**: Special aliases route to OpenRouter's auto-selection:
+4. **OpenRouter Auto**: Special aliases route to OpenRouter's auto-selection:
    - "openrouter/auto", "openrouter auto", "auto router", "auto-router"
 
 ```javascript
 // Chat tool examples
 {
   "model": "gpt-5",               // OpenAI (keyword match)
-  "model": "claude-opus-4",       // Anthropic (keyword match, auto-resolves)
-  "model": "sonnet",              // Anthropic (keyword match)
+  "model": "fable",               // Anthropic (keyword match -> claude-fable-5)
+  "model": "opus",                // Anthropic (keyword match -> claude-opus-4-8)
+  "model": "sonnet",              // Anthropic (keyword match -> claude-sonnet-4-6)
+  "model": "claude",              // Claude Agent SDK (defaults to Claude Fable 5)
+  "model": "claude:opus",         // Claude Agent SDK (Claude Opus 4.8)
   "model": "gemini-2.5-pro",      // Google (keyword match)
   "model": "grok-4",              // X.AI (keyword match)
   "model": "mistral-large",       // Mistral (keyword match)
@@ -293,7 +324,7 @@ When using the chat or consensus tools, specify models using their identifiers:
 {
   "models": [
     {"model": "o3"},
-    {"model": "claude-sonnet-4"},
+    {"model": "claude-sonnet-4-6"},
     {"model": "gemini-2.5-pro"}
   ]
 }
@@ -308,7 +339,8 @@ When using the chat or consensus tools, specify models using their identifiers:
 
 ### Model Not Found
 - Use exact model identifiers as listed above
-- Some providers support aliases (e.g., "claude" → "claude-sonnet-4-5")
+- Some providers support aliases (e.g., "fable" → "claude-fable-5", "opus" → "claude-opus-4-8")
+- Note: bare "claude" routes to the Claude Agent SDK provider, not the Anthropic API
 - Check provider documentation for model availability in your region
 
 ### Rate Limits
