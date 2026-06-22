@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_current:
+        description: 'Publish the current main version to npm directly, bypassing release-please gating. Use to recover a tagged-but-unpublished release.'
+        type: boolean
+        default: false
+      ignore_minimum_release_age:
+        description: 'Ignore the pnpm minimumReleaseAge supply-chain policy during install (manual publish only).'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -19,11 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run release-please (open PR or tag merged release)
+        if: ${{ github.event.inputs.publish_current != 'true' }}
         uses: googleapis/release-please-action@v5
         id: release1
 
       - name: Auto-merge release PR if one was created or updated
-        if: ${{ steps.release1.outputs.prs_created == 'true' }}
+        if: ${{ github.event.inputs.publish_current != 'true' && steps.release1.outputs.prs_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -31,14 +41,14 @@ jobs:
           gh pr merge "$PR_NUMBER" --squash --repo "$GITHUB_REPOSITORY"
 
       - name: Re-run release-please to tag the just-merged release
-        if: ${{ steps.release1.outputs.prs_created == 'true' }}
+        if: ${{ github.event.inputs.publish_current != 'true' && steps.release1.outputs.prs_created == 'true' }}
         uses: googleapis/release-please-action@v5
         id: release2
 
-      - name: Determine if a release was created
+      - name: Determine if a release should be published
         id: gate
         run: |
-          if [ "${{ steps.release1.outputs.release_created }}" = "true" ] || [ "${{ steps.release2.outputs.release_created }}" = "true" ]; then
+          if [ "${{ github.event.inputs.publish_current }}" = "true" ] || [ "${{ steps.release1.outputs.release_created }}" = "true" ] || [ "${{ steps.release2.outputs.release_created }}" = "true" ]; then
             echo "release_created=true" >> "$GITHUB_OUTPUT"
           else
             echo "release_created=false" >> "$GITHUB_OUTPUT"
@@ -64,7 +74,12 @@ jobs:
 
       - name: Install dependencies
         if: steps.gate.outputs.release_created == 'true'
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ github.event.inputs.ignore_minimum_release_age }}" = "true" ]; then
+            export PNPM_CONFIG_MINIMUM_RELEASE_AGE=0
+            echo "::warning::minimumReleaseAge supply-chain policy ignored for this manual publish"
+          fi
+          pnpm install --frozen-lockfile
 
       - name: Lint
         if: steps.gate.outputs.release_created == 'true'
