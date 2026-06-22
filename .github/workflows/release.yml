@@ -54,6 +54,16 @@ jobs:
             echo "release_created=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Persist the override to $GITHUB_ENV so EVERY later pnpm invocation honors
+      # it. pnpm's verifyDepsBeforeRun default re-runs `pnpm install` (re-applying
+      # the supply-chain gate) on each `pnpm run`, so a per-step export is not
+      # enough. Skipped on normal pushes, keeping the policy enforced there.
+      - name: Configure manual-publish supply-chain bypass
+        if: steps.gate.outputs.release_created == 'true' && github.event.inputs.ignore_minimum_release_age == 'true'
+        run: |
+          echo "PNPM_CONFIG_MINIMUM_RELEASE_AGE=0" >> "$GITHUB_ENV"
+          echo "::warning::minimumReleaseAge supply-chain policy ignored for this manual publish"
+
       - uses: actions/checkout@v6
         if: steps.gate.outputs.release_created == 'true'
         with:
@@ -74,12 +84,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.gate.outputs.release_created == 'true'
-        run: |
-          if [ "${{ github.event.inputs.ignore_minimum_release_age }}" = "true" ]; then
-            export PNPM_CONFIG_MINIMUM_RELEASE_AGE=0
-            echo "::warning::minimumReleaseAge supply-chain policy ignored for this manual publish"
-          fi
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         if: steps.gate.outputs.release_created == 'true'
