@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.28.1](https://github.com/FallDownTheSystem/converse/compare/v2.28.0...v2.28.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* **copilot:** resolve CLI runtime path instead of relying on SDK heuristic ([c254dd4](https://github.com/FallDownTheSystem/converse/commit/c254dd4d0a0b8084c537d81df66abc56e6cea0b2))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 11 updates ([#35](https://github.com/FallDownTheSystem/converse/issues/35)) ([ac9ce43](https://github.com/FallDownTheSystem/converse/commit/ac9ce430725e1739a4d476e01baeaf2c7f1f8673))
+* **deps:** bump the npm-minor-and-patch group with 6 updates ([#33](https://github.com/FallDownTheSystem/converse/issues/33)) ([96afe93](https://github.com/FallDownTheSystem/converse/commit/96afe93d24d3f2217b2921ea14a658891dd948f9))
+
 ## [2.28.0](https://github.com/FallDownTheSystem/converse/compare/v2.27.2...v2.28.0) (2026-06-10)
 
 
