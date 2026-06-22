@@ -296,6 +296,12 @@ const CONFIG_SCHEMA = {
       description:
         'Default model for Copilot SDK sessions (e.g., gpt-5, claude-sonnet-4.5)',
     },
+    COPILOT_CLI_PATH: {
+      type: 'string',
+      required: false,
+      description:
+        'Explicit path to the Copilot CLI runtime (index.js or copilot binary). Overrides automatic resolution.',
+    },
   },
 
   // MCP configuration

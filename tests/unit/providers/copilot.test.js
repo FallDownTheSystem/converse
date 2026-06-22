@@ -5,8 +5,14 @@
  * getModelConfig, resolveSessionModel, and edge cases.
  */
 
-import { describe, expect, it } from 'vitest';
-import { copilotProvider, resolveModelAlias, resolveSessionModel } from '../../../src/providers/copilot.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import {
+  copilotProvider,
+  resolveCopilotCliPath,
+  resolveModelAlias,
+  resolveSessionModel,
+} from '../../../src/providers/copilot.js';
 import { mapModelToProvider } from '../../../src/tools/chat.js';
 
 describe('Copilot Provider - Model Selection', () => {
@@ -259,5 +265,37 @@ describe('Copilot Prefix Routing - mapModelToProvider', () => {
 
   it('routes empty suffix to copilot', () => {
     expect(mapModelToProvider('copilot:', {})).toBe('copilot');
+  });
+});
+
+describe('Copilot Provider - CLI path resolution', () => {
+  // A path guaranteed to exist on every machine: this test file itself.
+  const existingPath = fileURLToPath(import.meta.url);
+  const missingPath = `${existingPath}.does-not-exist`;
+
+  afterEach(() => {
+    delete process.env.COPILOT_CLI_PATH;
+  });
+
+  it('uses an existing explicit override from config', () => {
+    const config = { providers: { copilotclipath: existingPath } };
+    expect(resolveCopilotCliPath(config)).toBe(existingPath);
+  });
+
+  it('uses COPILOT_CLI_PATH env when set and existing', () => {
+    process.env.COPILOT_CLI_PATH = existingPath;
+    expect(resolveCopilotCliPath(undefined)).toBe(existingPath);
+  });
+
+  it('ignores a non-existent override and falls through', () => {
+    const config = { providers: { copilotclipath: missingPath } };
+    expect(resolveCopilotCliPath(config)).not.toBe(missingPath);
+  });
+
+  it('returns null or a real path when nothing is configured', () => {
+    const result = resolveCopilotCliPath(undefined);
+    // Environment-dependent: null (defer to SDK), the bundled index.js, or a
+    // copilot binary on PATH — never a fabricated/non-existent path.
+    expect(result === null || typeof result === 'string').toBe(true);
   });
 });

@@ -12,6 +12,9 @@
  * - Requires GitHub CLI authenticated (gh auth login) with active Copilot subscription
  */
 
+import { existsSync } from 'node:fs';
+import { delimiter, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
@@ -321,8 +324,10 @@ function isCopilotSDKAvailable() {
  */
 async function getCopilotSDK() {
   try {
-    const { CopilotClient } = await import('@github/copilot-sdk');
-    return CopilotClient;
+    const { CopilotClient, RuntimeConnection } = await import(
+      '@github/copilot-sdk'
+    );
+    return { CopilotClient, RuntimeConnection };
   } catch (error) {
     throw new CopilotProviderError(
       `Copilot SDK import failed: ${error.message}`,
@@ -330,6 +335,78 @@ async function getCopilotSDK() {
       error,
     );
   }
+}
+
+/**
+ * Locate a runnable `copilot` executable on PATH (e.g. a winget or global
+ * install). On Windows only real executables (.exe/.com) qualify — .cmd/.bat
+ * shims can't be spawned without a shell, and the SDK spawns the CLI without
+ * one, so handing it a shim would fail.
+ */
+function findCopilotBinaryOnPath() {
+  const pathDirs = (process.env.PATH || process.env.Path || '')
+    .split(delimiter)
+    .filter(Boolean);
+  const exts = process.platform === 'win32' ? ['.exe', '.com'] : [''];
+  for (const dir of pathDirs) {
+    for (const ext of exts) {
+      const candidate = join(dir, `copilot${ext}`);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve the Copilot CLI runtime path deterministically.
+ *
+ * The SDK's built-in resolver (getBundledCliPath) reconstructs
+ * `<@github/copilot root>/index.js` from the package's `./sdk` export. That
+ * assumption breaks across layouts — pnpm stores with multiple versions, global
+ * installs, and loader-style `@github/copilot` variants that ship no root
+ * `index.js` — and there is no escape hatch wired up, so a wrong/missing
+ * bundled copy takes down the whole provider (the "Copilot CLI not found at
+ * ...@github\index.js" failure). We own discovery here and hand the SDK an
+ * explicit, verified path so that entire class of resolution failures can't
+ * occur.
+ *
+ * Precedence: explicit override → bundled npm CLI (index.js, run via node) →
+ * `copilot` on PATH. Returns null to let the SDK fall back to its own
+ * resolution as a last resort (preserves behavior on flat installs).
+ */
+function resolveCopilotCliPath(config) {
+  // 1. Explicit override (COPILOT_CLI_PATH via config or env)
+  const override =
+    config?.providers?.copilotclipath || process.env.COPILOT_CLI_PATH;
+  if (override && existsSync(override)) {
+    debugLog('[Copilot SDK] Using configured CLI path: %s', override);
+    return override;
+  }
+
+  // 2. Bundled npm CLI: resolve the @github/copilot/sdk export, walk to the
+  // package root, and use its index.js. A .js path is spawned via `node`, which
+  // also sidesteps Windows .cmd/.bat shim issues.
+  try {
+    const sdkEntry = fileURLToPath(import.meta.resolve('@github/copilot/sdk'));
+    const candidate = join(dirname(dirname(sdkEntry)), 'index.js');
+    if (existsSync(candidate)) {
+      debugLog('[Copilot SDK] Using bundled CLI: %s', candidate);
+      return candidate;
+    }
+  } catch {
+    // @github/copilot not resolvable from here — fall through.
+  }
+
+  // 3. Standalone `copilot` binary on PATH.
+  const binary = findCopilotBinaryOnPath();
+  if (binary) {
+    debugLog('[Copilot SDK] Using copilot binary from PATH: %s', binary);
+    return binary;
+  }
+
+  // 4. Nothing found — defer to the SDK's own resolution.
+  debugLog('[Copilot SDK] No CLI path resolved — deferring to SDK default');
+  return null;
 }
 
 // Module-level singleton client
@@ -340,7 +417,7 @@ let clientInitPromise = null;
  * Get or create the singleton CopilotClient
  * The client manages the CLI process lifecycle via JSON-RPC
  */
-async function getCopilotClient(cwd) {
+async function getCopilotClient(cwd, config) {
   if (clientInstance) {
     return clientInstance;
   }
@@ -350,12 +427,19 @@ async function getCopilotClient(cwd) {
   }
 
   clientInitPromise = (async () => {
-    const CopilotClient = await getCopilotSDK();
+    const { CopilotClient, RuntimeConnection } = await getCopilotSDK();
     const workingDirectory = cwd || process.cwd();
-    clientInstance = new CopilotClient({
+    const clientOptions = {
       useLoggedInUser: true,
       workingDirectory,
-    });
+    };
+
+    const cliPath = resolveCopilotCliPath(config);
+    if (cliPath) {
+      clientOptions.connection = RuntimeConnection.forStdio({ path: cliPath });
+    }
+
+    clientInstance = new CopilotClient(clientOptions);
     await clientInstance.start();
     debugLog('[Copilot SDK] Client started (cwd: %s)', workingDirectory);
     return clientInstance;
@@ -795,7 +879,7 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
   }
 }
 
-export { resolveModelAlias, resolveSessionModel };
+export { resolveModelAlias, resolveSessionModel, resolveCopilotCliPath };
 
 /**
  * Copilot SDK Provider Implementation
@@ -831,7 +915,7 @@ export const copilotProvider = {
     }
     try {
       const cwd = config.server?.client_cwd || process.cwd();
-      const client = await getCopilotClient(cwd);
+      const client = await getCopilotClient(cwd, config);
       const prompt = convertMessagesToPrompt(messages);
 
       const sessionModel = resolveSessionModel(model, config);
