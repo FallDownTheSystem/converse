@@ -9,7 +9,10 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Environment Variable**: `OPENAI_API_KEY`
 - **Supported Models**:
-  - `gpt-5.1`, `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro` - GPT-5 family with advanced reasoning
+  - `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`, `sol`) - Flagship GPT-5.6, the default OpenAI model
+  - `gpt-5.6-terra` (alias: `terra`) - Lower-cost GPT-5.6, competitive with GPT-5.5
+  - `gpt-5.6-luna` (alias: `luna`) - Fastest, most affordable GPT-5.6
+  - `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.4-pro`, `gpt-5-mini`, `gpt-5-nano` - GPT-5.4/GPT-5 family
   - `o3`, `o3-pro`, `o4-mini` - Advanced reasoning models
   - `gpt-4.1` - Large context (1M tokens)
   - `o3-deep-research`, `o4-mini-deep-research` - Deep research models
@@ -92,8 +95,9 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
+  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-5.6; e.g. gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
 - **Supported Models**:
-  - `codex` - OpenAI Codex agentic coding assistant
+  - `codex` - OpenAI Codex agentic coding assistant (GPT-5.6 by default)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)

@@ -91,6 +91,9 @@ describe('OpenAI Provider', () => {
       expect('gpt-4.1-2025-04-14' in models).toBe(true);
       expect('gpt-5.4' in models).toBe(true);
       expect('gpt-5.4-pro' in models).toBe(true);
+      expect('gpt-5.6-sol' in models).toBe(true);
+      expect('gpt-5.6-terra' in models).toBe(true);
+      expect('gpt-5.6-luna' in models).toBe(true);
     });
 
     it('should include model configuration details', () => {
@@ -156,6 +159,31 @@ describe('OpenAI Provider', () => {
         expect(config).toBeTruthy();
         expect(config.modelName).toBe('gpt-5.4-pro');
       });
+    });
+
+    it('should resolve generic GPT-5 aliases to GPT-5.6 Sol', () => {
+      const aliases = ['gpt-5', 'gpt5', 'gpt 5', 'gpt-5.6', 'gpt5.6', 'sol'];
+
+      aliases.forEach((alias) => {
+        const config = openaiProvider.getModelConfig(alias);
+        expect(config).toBeTruthy();
+        expect(config.modelName).toBe('gpt-5.6-sol');
+      });
+    });
+
+    it('should resolve GPT-5.6 tier aliases', () => {
+      expect(openaiProvider.getModelConfig('terra').modelName).toBe(
+        'gpt-5.6-terra',
+      );
+      expect(openaiProvider.getModelConfig('gpt5.6-terra').modelName).toBe(
+        'gpt-5.6-terra',
+      );
+      expect(openaiProvider.getModelConfig('luna').modelName).toBe(
+        'gpt-5.6-luna',
+      );
+      expect(openaiProvider.getModelConfig('gpt5.6-luna').modelName).toBe(
+        'gpt-5.6-luna',
+      );
     });
   });
 
@@ -629,7 +657,7 @@ describe('OpenAI Provider', () => {
 
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'gpt-5.4', // 'gpt-5' resolves to 'gpt-5.4'
+        model: 'gpt-5.6-sol', // 'gpt-5' resolves to 'gpt-5.6-sol'
         api_type: 'Responses API',
       });
 

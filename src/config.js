@@ -279,9 +279,9 @@ const CONFIG_SCHEMA = {
     },
     CODEX_MODEL: {
       type: 'string',
-      default: 'gpt-5.5',
+      default: 'gpt-5.6',
       description:
-        'Default Codex model (e.g., gpt-5.5, gpt-5.3-codex, gpt-5-codex)',
+        'Default Codex model (e.g., gpt-5.6, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)',
     },
 
     // Copilot configuration

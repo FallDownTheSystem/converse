@@ -516,11 +516,13 @@ When complete, `check_status` for the continuation_id renders the full lap trans
 
 | Model | Context | Tokens | Features | Use Cases |
 |-------|---------|--------|----------|-----------|
-| `gpt-5.1` | 1M | 128K | Latest GPT | Multimodal, general purpose |
-| `gpt-5` | 1M | 64K | Advanced | Complex reasoning, analysis |
-| `gpt-5-mini` | 1M | 64K | Fast | Balanced performance/speed |
-| `gpt-5-nano` | 1M | 64K | Ultra-fast | Quick responses, simple queries |
-| `gpt-5-pro` | 1M | 128K | Pro tier | Extended capabilities |
+| `gpt-5.6-sol` (`gpt-5.6`, `gpt-5`, `sol`) | 1M | 128K | Flagship, default | Frontier reasoning, coding, agentic workflows |
+| `gpt-5.6-terra` (`terra`) | 400K | 128K | Lower cost | Strong performance at half the flagship price |
+| `gpt-5.6-luna` (`luna`) | 400K | 128K | Fastest | High-volume, latency-sensitive workloads |
+| `gpt-5.4` | 1M | 128K | Previous flagship | Complex reasoning, analysis |
+| `gpt-5.4-pro` | 1M | 272K | Pro tier | Extended capabilities (expensive) |
+| `gpt-5-mini` | 400K | 128K | Fast | Balanced performance/speed |
+| `gpt-5-nano` | 400K | 128K | Ultra-fast | Quick responses, simple queries |
 | `o3` | 200K | 100K | Reasoning | Logic, analysis, complex problems |
 | `o3-pro` | 200K | 100K | Extended reasoning | Deep analysis |
 | `o4-mini` | 200K | 100K | Fast reasoning | General purpose, rapid reasoning |

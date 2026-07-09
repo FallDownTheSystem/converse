@@ -21,7 +21,7 @@ import { normalizeExtendedPath } from '../utils/pathUtils.js';
 const SUPPORTED_MODELS = {
   codex: {
     modelName: 'codex',
-    friendlyName: 'OpenAI Codex (GPT-5.5)',
+    friendlyName: 'OpenAI Codex (GPT-5.6)',
     contextWindow: 400000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
@@ -30,7 +30,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 600000, // 10 minutes
     description:
-      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.5)',
+      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.6)',
     aliases: [
       'gpt-5-codex',
       'gpt5-codex',
@@ -39,6 +39,8 @@ const SUPPORTED_MODELS = {
       'gpt5.3-codex',
       'gpt-5.5',
       'gpt5.5',
+      'gpt-5.6-codex',
+      'gpt5.6-codex',
     ],
   },
 };

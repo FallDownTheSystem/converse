@@ -18,7 +18,7 @@ export function getDefaultModelForProvider(providerName) {
     'gemini-cli': 'gemini',
     claude: 'claude',
     copilot: 'copilot',
-    openai: 'gpt-5',
+    openai: 'gpt-5.6',
     xai: 'grok-4-0709',
     google: 'gemini-pro',
     anthropic: 'claude-sonnet-4-20250514',
@@ -27,7 +27,7 @@ export function getDefaultModelForProvider(providerName) {
     openrouter: 'qwen/qwen3-coder',
   };
 
-  return defaults[providerName] || 'gpt-5';
+  return defaults[providerName] || 'gpt-5.6';
 }
 
 /**

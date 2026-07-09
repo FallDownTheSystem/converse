@@ -10,6 +10,64 @@ import { debugLog, debugError } from '../utils/console.js';
 
 // Define supported models with their capabilities
 const SUPPORTED_MODELS = {
+  'gpt-5.6-sol': {
+    modelName: 'gpt-5.6-sol',
+    friendlyName: 'OpenAI (GPT-5.6 Sol)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsNoneReasoningEffort: true,
+    timeout: 3600000, // 1 hour
+    description:
+      'Flagship GPT-5.6 model (1M context, 128K output) - Frontier reasoning, coding, agentic workflows. Most token-efficient flagship',
+    aliases: [
+      'gpt-5.6',
+      'gpt5.6',
+      'gpt 5.6',
+      'gpt-5',
+      'gpt5',
+      'gpt 5',
+      'sol',
+      'gpt-5.6sol',
+      'gpt 5.6 sol',
+    ],
+  },
+  'gpt-5.6-terra': {
+    modelName: 'gpt-5.6-terra',
+    friendlyName: 'OpenAI (GPT-5.6 Terra)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsNoneReasoningEffort: true,
+    timeout: 1800000, // 30 minutes
+    description:
+      'Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the flagship price',
+    aliases: ['gpt5.6-terra', 'gpt-5.6terra', 'gpt 5.6 terra', 'terra'],
+  },
+  'gpt-5.6-luna': {
+    modelName: 'gpt-5.6-luna',
+    friendlyName: 'OpenAI (GPT-5.6 Luna)',
+    contextWindow: 400000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsTemperature: false,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportsNoneReasoningEffort: true,
+    timeout: 600000, // 10 minutes
+    description:
+      'Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads',
+    aliases: ['gpt5.6-luna', 'gpt-5.6luna', 'gpt 5.6 luna', 'luna'],
+  },
   'gpt-5.4': {
     modelName: 'gpt-5.4',
     friendlyName: 'OpenAI (GPT-5.4)',
@@ -25,9 +83,6 @@ const SUPPORTED_MODELS = {
     description:
       'Latest flagship model (1M context, 128K output) - Superior reasoning, coding, agentic workflows, computer use. Most token-efficient reasoning model',
     aliases: [
-      'gpt-5',
-      'gpt5',
-      'gpt 5',
       'gpt5.4',
       'gpt 5.4',
     ],
@@ -271,6 +326,22 @@ function resolveModelName(modelName) {
 }
 
 /**
+ * Resolve the reasoning effort actually sent to the API for a given model.
+ * GPT-5 Pro models only accept 'high'. GPT-5.6 models dropped 'minimal'
+ * (supported efforts: none, low, medium, high, xhigh, max), so 'minimal'
+ * maps to the closest supported value.
+ */
+function resolveReasoningEffort(resolvedModel, reasoningEffort) {
+  if (resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5')) {
+    return 'high';
+  }
+  if (resolvedModel.startsWith('gpt-5.6') && reasoningEffort === 'minimal') {
+    return 'low';
+  }
+  return reasoningEffort;
+}
+
+/**
  * Validate OpenAI API key format
  */
 function validateApiKey(apiKey) {
@@ -393,7 +464,7 @@ export const openaiProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'gpt-4o-mini',
+      model = 'gpt-5.6',
       temperature = 0.7,
       maxTokens = null,
       stream = false,
@@ -470,11 +541,8 @@ export const openaiProvider = {
         (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
         reasoning_effort
       ) {
-        // GPT-5 Pro only supports 'high' reasoning effort
-        const effectiveEffort =
-          resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5') ? 'high' : reasoning_effort;
         requestPayload.reasoning = {
-          effort: effectiveEffort,
+          effort: resolveReasoningEffort(resolvedModel, reasoning_effort),
           summary: 'auto', // Enable reasoning summaries
         };
       }
@@ -510,10 +578,10 @@ export const openaiProvider = {
         (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
         reasoning_effort
       ) {
-        // GPT-5 Pro only supports 'high' reasoning effort
-        const effectiveEffort =
-          resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5') ? 'high' : reasoning_effort;
-        requestPayload.reasoning_effort = effectiveEffort;
+        requestPayload.reasoning_effort = resolveReasoningEffort(
+          resolvedModel,
+          reasoning_effort,
+        );
       }
 
       // Add verbosity for GPT-5 models
