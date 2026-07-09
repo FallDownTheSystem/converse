@@ -98,9 +98,12 @@ jobs:
         if: steps.gate.outputs.release_created == 'true'
         run: pnpm run test:unit
 
+      # Pinned to the npm 11 line: Trusted Publishing needs >=11.5.1, and
+      # npm@latest broke publishing when 12.0.0 shipped with a missing
+      # 'sigstore' module in libnpmpublish. Bump deliberately, not by float.
       - name: Ensure OIDC-capable npm (Trusted Publishing needs >=11.5.1)
         if: steps.gate.outputs.release_created == 'true'
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
 
       - name: Publish to npm (Trusted Publishing via OIDC)
         if: steps.gate.outputs.release_created == 'true'
