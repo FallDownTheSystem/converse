@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.29.0](https://github.com/FallDownTheSystem/converse/compare/v2.28.1...v2.29.0) (2026-07-09)
+
+
+### Features
+
+* add GPT-5.6 model family (Sol, Terra, Luna) and make it the default ([c91c9d4](https://github.com/FallDownTheSystem/converse/commit/c91c9d4e4968e244fac2b3b9133f0c315d898c4d))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 10 updates ([#37](https://github.com/FallDownTheSystem/converse/issues/37)) ([4bc3576](https://github.com/FallDownTheSystem/converse/commit/4bc3576a24fb07ca9cdec2e505cfa0f5b1838c4c))
+* **deps:** bump the npm-minor-and-patch group with 6 updates ([#39](https://github.com/FallDownTheSystem/converse/issues/39)) ([069b2f0](https://github.com/FallDownTheSystem/converse/commit/069b2f0e65f52eca0c44352f91fe27cd37d5063a))
+
 ## [2.28.1](https://github.com/FallDownTheSystem/converse/compare/v2.28.0...v2.28.1) (2026-06-22)
 
 
