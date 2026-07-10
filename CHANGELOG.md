@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.29.1](https://github.com/FallDownTheSystem/converse/compare/v2.29.0...v2.29.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* default CODEX_MODEL to gpt-5.6-sol ([fc6c4fa](https://github.com/FallDownTheSystem/converse/commit/fc6c4fa56393b97b349cd41ac3a2fd8f651b1d95))
+
+
+### Documentation
+
+* **design:** define provider model modernization ([3bdf7e7](https://github.com/FallDownTheSystem/converse/commit/3bdf7e7c2e442578fd562e0932a7b0299f6a5998))
+
 ## [2.29.0](https://github.com/FallDownTheSystem/converse/compare/v2.28.1...v2.29.0) (2026-07-09)
 
 
