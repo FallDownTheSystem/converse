@@ -16,6 +16,10 @@ jobs:
   validate:
     name: Lint, typecheck, unit tests
     runs-on: ubuntu-latest
+    env:
+      # pnpm 11 enables the minimumReleaseAge supply-chain gate by default;
+      # this repo opts out so installs always accept the newest matching deps.
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: '0'
     steps:
       - uses: actions/checkout@v6
 
