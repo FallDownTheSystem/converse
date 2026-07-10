@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.29.2](https://github.com/FallDownTheSystem/converse/compare/v2.29.1...v2.29.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* require @openai/codex-sdk ^0.144.1 ([ae6ef06](https://github.com/FallDownTheSystem/converse/commit/ae6ef06ef5a7d3bb7fa9c0c0a28ca289665fefdb))
+
 ## [2.29.1](https://github.com/FallDownTheSystem/converse/compare/v2.29.0...v2.29.1) (2026-07-10)
 
 
