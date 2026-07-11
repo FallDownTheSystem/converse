@@ -101,7 +101,7 @@
     "@mistralai/mistralai": "^2.4.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@openai/codex-sdk": "^0.144.1",
-    "ai": "^6.0.208",
+    "ai": "^7.0.22",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
