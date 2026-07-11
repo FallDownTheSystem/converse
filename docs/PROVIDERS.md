@@ -22,10 +22,12 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 - **Environment Variable**: `GOOGLE_API_KEY`
 - **Supported Models**:
-  - `gemini-3-pro-preview` (alias: `pro`) - Enhanced reasoning with thinking levels (1M context, 64K output)
+  - `gemini-3.1-pro-preview` (aliases: `pro`, `gemini-pro`) - Most advanced reasoning with expanded thinking levels (1M context, 64K output)
+  - `gemini-3.5-flash` (aliases: `gemini-3.5`, `flash-3.5`) - Frontier-level agentic and coding performance at Flash speed (1M context, 65K output)
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
-- **Note**: The short model name `gemini` (and `gemini:flash` / `gemini:pro`) routes to the **Antigravity CLI** (`agy`, OAuth-based access). For Google API access, use specific model names like `gemini-2.5-pro` or `gemini-2.5-flash` (bare `gemini-pro`/`gemini-flash` also route to the Google API).
+  - `gemini-2.5-flash-lite` (alias: `flash-lite`) - Lightweight fast model (1M context, 65K output)
+- **Note**: The short model name `gemini` (and `gemini:flash` / `gemini:pro`) routes to the **Antigravity CLI** (`agy`, OAuth-based access). For Google API access, use specific model names like `gemini-3.1-pro-preview` or `gemini-2.5-flash` (bare `gemini-pro`/`gemini-flash` also route to the Google API).
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -136,8 +138,6 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Subscription Access**: Leverages the Antigravity weekly compute allowance instead of pay-per-API-call
 - **One-shot responses**: The provider shells out to `agy -p` under a pseudo-terminal and returns the full response in a single chunk (no token-level streaming; ~7s minimum per call, ~30-60s for very large prompts)
 
-> Note: This replaces the previous `@google/gemini-cli` (`ai-sdk-provider-gemini-cli`) integration, whose OAuth access Google sunsets on 2026-06-18.
-
 **Authentication Setup:**
 ```bash
 # Install the Antigravity CLI (agy)
@@ -158,7 +158,7 @@ agy
   "name": "chat",
   "arguments": {
     "prompt": "Explain async/await in JavaScript",
-    "model": "gemini"
+    "models": ["gemini"]
   }
 }
 ```
@@ -169,7 +169,7 @@ agy
   "name": "chat",
   "arguments": {
     "prompt": "Should we use TypeScript for this component?",
-    "models": ["gemini", "gpt-5", "claude-sonnet-4-6"],
+    "models": ["gemini", "gpt-5.6", "claude"],
     "mode": "consensus"
   }
 }
@@ -286,7 +286,7 @@ All providers support streaming responses for real-time output.
 - **No Support**: Anthropic, Mistral, DeepSeek, Codex
 
 ### Thinking/Reasoning Modes
-- **OpenAI**: O3 series models support `reasoning_effort` parameter
+- **OpenAI**: GPT-5 family and O3 series models support the `reasoning_effort` parameter (GPT-5.6 accepts `none` through `max`, mapping `minimal` to `low`; GPT-5 Pro is fixed at `high`)
 - **Google**:
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
@@ -331,32 +331,34 @@ When using the chat tool in any mode, specify models using their identifiers:
 4. **OpenRouter Auto**: Special aliases route to OpenRouter's auto-selection:
    - "openrouter/auto", "openrouter auto", "auto router", "auto-router"
 
-```javascript
-// Chat tool examples
-{
-  "model": "gpt-5",               // OpenAI (keyword match)
-  "model": "fable",               // Anthropic (keyword match -> claude-fable-5)
-  "model": "opus",                // Anthropic (keyword match -> claude-opus-4-8)
-  "model": "sonnet",              // Anthropic (keyword match -> claude-sonnet-4-6)
-  "model": "claude",              // Claude Agent SDK (defaults to Claude Fable 5)
-  "model": "claude:opus",         // Claude Agent SDK (Claude Opus 4.8)
-  "model": "gemini-2.5-pro",      // Google (keyword match)
-  "model": "grok-4.5",            // X.AI (keyword match)
-  "model": "mistral-large",       // Mistral (alias -> mistral-large-2512)
-  "model": "deepseek",            // DeepSeek (alias -> deepseek-v4-pro)
-  "model": "z-ai/glm-5.2",                // OpenRouter (curated slug)
-  "model": "z-ai/glm-5.2:online",         // OpenRouter with web search opt-in
-  "model": "anthropic/claude-sonnet-5",   // OpenRouter (any full slug routes as-is)
-  "model": "openrouter/auto"              // OpenRouter auto-selection
-}
+The `models` array always holds plain model-name strings. Each string routes as follows:
 
-// Consensus tool with multiple providers
+```text
+"gpt-5.6"                  // OpenAI (keyword match)
+"fable"                    // Anthropic (keyword match -> claude-fable-5)
+"opus"                     // Anthropic (keyword match -> claude-opus-4-8)
+"sonnet"                   // Anthropic (keyword match -> claude-sonnet-4-6)
+"claude"                   // Claude Agent SDK (defaults to Claude Fable 5)
+"claude:opus"              // Claude Agent SDK (Claude Opus 4.8)
+"gemini-2.5-pro"           // Google (keyword match)
+"grok-4.5"                 // X.AI (keyword match)
+"mistral-large"            // Mistral (alias -> mistral-large-2512)
+"deepseek"                 // DeepSeek (alias -> deepseek-v4-pro)
+"z-ai/glm-5.2"             // OpenRouter (curated slug)
+"z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
+"anthropic/claude-sonnet-5" // OpenRouter (any full slug routes as-is)
+"openrouter/auto"          // OpenRouter auto-selection
+```
+
+```json
+// Consensus mode with multiple providers
 {
-  "models": [
-    {"model": "o3"},
-    {"model": "claude-sonnet-4-6"},
-    {"model": "gemini-2.5-pro"}
-  ]
+  "name": "chat",
+  "arguments": {
+    "prompt": "Which database fits our workload?",
+    "models": ["gpt-5.6", "claude", "gemini-2.5-pro"],
+    "mode": "consensus"
+  }
 }
 ```
 

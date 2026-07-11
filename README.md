@@ -44,7 +44,7 @@ claude mcp add converse \
   -e DEEPSEEK_API_KEY=your_key_here \
   -e OPENROUTER_API_KEY=your_key_here \
   -e ENABLE_RESPONSE_SUMMARIZATION=true \
-  -e SUMMARIZATION_MODEL=gpt-5 \
+  -e SUMMARIZATION_MODEL=gpt-5-nano \
   -s user \
   npx converse-mcp-server
 ```
@@ -68,7 +68,7 @@ Add this configuration to your Claude Desktop settings:
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
         "ENABLE_RESPONSE_SUMMARIZATION": "true",
-        "SUMMARIZATION_MODEL": "gpt-5"
+        "SUMMARIZATION_MODEL": "gpt-5-nano"
       }
     }
   }
@@ -83,7 +83,7 @@ Add this configuration to your Claude Desktop settings:
   "args": ["/c", "npx", "converse-mcp-server"],
   "env": {
     "ENABLE_RESPONSE_SUMMARIZATION": "true",
-    "SUMMARIZATION_MODEL": "gpt-5"
+    "SUMMARIZATION_MODEL": "gpt-5-nano"
     // ... add your API keys here
   }
 }
@@ -211,19 +211,16 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### OpenAI Models
 
-- **gpt-5**: Latest flagship model (400K context, 128K output) - Superior reasoning, code generation, and analysis
-- **gpt-5-mini**: Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts
-- **gpt-5-nano**: Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification
-- **gpt-5-pro**: Most advanced reasoning model (400K context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)
-- **o3**: Strong reasoning (200K context)
-- **o3-mini**: Fast O3 variant (200K context)
-- **o3-pro**: Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE
-- **o3-deep-research**: Deep research model (200K context) - 30-90 min runtime
-- **o4-mini**: Latest reasoning model (200K context)
-- **o4-mini-deep-research**: Fast deep research model (200K context) - 15-60 min runtime
-- **gpt-4.1**: Advanced reasoning (1M context)
-- **gpt-4o**: Multimodal flagship (128K context)
-- **gpt-4o-mini**: Fast multimodal (128K context)
+- **gpt-5.6-sol** (default; aliases: `gpt-5.6`, `gpt-5`, `sol`): Flagship GPT-5.6 (1M context, 128K output) - Frontier reasoning, coding, and agentic workflows
+- **gpt-5.6-terra** (alias: `terra`): Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with the flagship at half the price
+- **gpt-5.6-luna** (alias: `luna`): Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads
+- **gpt-5.4**: Flagship-class reasoning (1M context, 128K output)
+- **gpt-5.4-pro** (alias: `gpt-5-pro`): Maximum-performance reasoning (1M context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)
+- **gpt-5-mini**, **gpt-5-nano**: Faster, cost-efficient GPT-5 tiers (400K context, 128K output)
+- **gpt-5.4-mini**, **gpt-5.4-nano**: Fast, efficient GPT-5.4 tiers (400K context, 128K output)
+- **o3**, **o3-pro**, **o4-mini**: Advanced reasoning models (200K context)
+- **gpt-4.1**: Large context (1M tokens, 32K output)
+- **o3-deep-research** (30-90 min runtime), **o4-mini-deep-research** (15-60 min runtime): Deep research models (200K context)
 
 ### Google/Gemini Models
 
@@ -235,13 +232,13 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 **Supported Models**:
 
-- **gemini-3-pro-preview** (aliases: `pro`, `gemini`): Enhanced reasoning with thinking levels (1M context, 64K output)
-- **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context, 65K output)
+- **gemini-3.1-pro-preview** (aliases: `pro`, `gemini-pro`): Most advanced reasoning with expanded thinking levels (1M context, 64K output)
+- **gemini-3.5-flash** (aliases: `gemini-3.5`, `flash-3.5`): Frontier-level agentic and coding performance at Flash speed (1M context, 65K output)
 - **gemini-2.5-pro** (alias: `pro 2.5`): Deep reasoning with thinking budget (1M context, 65K output)
-- **gemini-2.0-flash**: Latest with experimental thinking (1M context, 65K output)
-- **gemini-2.0-flash-lite**: Lightweight fast model, text-only (1M context, 65K output)
+- **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context, 65K output)
+- **gemini-2.5-flash-lite** (alias: `flash-lite`): Lightweight fast model (1M context, 65K output)
 
-**Note**: Default aliases (`gemini`, `pro`) now point to Gemini 3.0 Pro. Use `gemini-2.5-pro` explicitly if you need version 2.5.
+**Note**: The bare aliases `pro` and `gemini-pro` route to Gemini 3.1 Pro through the Google API. The short name `gemini` (and `gemini:pro`/`gemini:flash`) routes to the Antigravity CLI provider instead — see below.
 
 ### X.AI/Grok Models
 
@@ -396,14 +393,14 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 // Specific models
 "gemini-2.5-flash";
-"gpt-5";
+"gpt-5.6";
 "grok-4.5";
 "z-ai/glm-5.2"; // -> OpenRouter (full slug)
 "z-ai/glm-5.2:online"; // -> OpenRouter with web search opt-in
 
 // Using aliases
 "flash"; // -> gemini-2.5-flash
-"pro"; // -> gemini-2.5-pro
+"pro"; // -> gemini-3.1-pro-preview
 "grok"; // -> grok-4.5
 "deepseek"; // -> deepseek-v4-pro
 "mistral"; // -> mistral-medium-3-5
@@ -427,7 +424,7 @@ Provider priority order (subscription-based SDK providers first, then API-key pr
 2. Gemini via Antigravity CLI (`gemini`, `gemini:flash`)
 3. Claude Agent SDK (`claude` → Claude Fable 5)
 4. Copilot (`copilot`)
-5. OpenAI (`gpt-5`)
+5. OpenAI (`gpt-5.6`)
 6. Google (`gemini-pro`)
 7. XAI (`grok-4.5`)
 8. Anthropic (`claude-sonnet-4-20250514`)
@@ -668,7 +665,12 @@ converse/
 │   │   ├── mistral.js        # Mistral AI provider
 │   │   ├── deepseek.js       # DeepSeek provider
 │   │   ├── openrouter.js     # OpenRouter provider
-│   │   └── openai-compatible.js # Base for OpenAI-compatible APIs
+│   │   ├── openrouter-discovery.js # Request-local OpenRouter slug discovery
+│   │   ├── openai-compatible.js # Base for OpenAI-compatible APIs
+│   │   ├── codex.js          # Codex agentic SDK provider
+│   │   ├── claude.js         # Claude Agent SDK provider
+│   │   ├── gemini-cli.js     # Gemini via Antigravity CLI provider
+│   │   └── copilot.js        # GitHub Copilot SDK provider
 │   ├── tools/                # MCP tool implementations
 │   │   ├── index.js          # Tool registry
 │   │   ├── chat.js           # Unified chat tool (chat/consensus/roundtable modes)

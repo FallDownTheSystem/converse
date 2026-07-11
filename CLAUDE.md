@@ -275,7 +275,7 @@ The Converse MCP Server exposes three tools:
    { "prompt": "How should I structure auth for this API?", "models": ["auto"] }
 
    // mode "consensus" — parallel answers + cross-feedback refinement
-   { "prompt": "Microservices or monolith for 100k users?", "models": ["gpt-5.6", "grok-4", "gemini-2.5-pro"], "mode": "consensus" }
+   { "prompt": "Microservices or monolith for 100k users?", "models": ["gpt-5.6", "grok-4.5", "gemini-2.5-pro"], "mode": "consensus" }
 
    // mode "roundtable" — sequential dialogue in the given ORDER
    { "prompt": "Critique this caching strategy.", "models": ["codex", "gemini", "claude"], "mode": "roundtable" }

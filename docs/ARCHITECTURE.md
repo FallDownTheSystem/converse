@@ -248,7 +248,7 @@ Continuation Management
 Response to Client
 ```
 
-### Multi-Provider Execution (Consensus)
+### Multi-Provider Execution (Consensus mode)
 ```
 User Request
     ↓
@@ -264,7 +264,7 @@ Parallel Execution ────┬─── Provider A
     ↓
 Initial Response Collection
     ↓
-Cross-Feedback Phase (optional)
+Cross-Feedback Phase
     ↓
 Parallel Refinement ───┬─── Provider A (sees B,C)
                        ├─── Provider B (sees A,C)
@@ -299,8 +299,8 @@ export const config = {
   models: {
     aliases: {
       'flash': 'gemini-2.5-flash',
-      'pro': 'gemini-2.5-pro',
-      'grok': 'grok-4-0709'
+      'pro': 'gemini-3.1-pro-preview',
+      'grok': 'grok-4.5'
     }
   }
 };
@@ -359,7 +359,7 @@ export function getContinuation(id) {
 ## 🚀 Performance Characteristics
 
 ### Parallel Execution
-- **Consensus Tool**: Executes all providers simultaneously
+- **Consensus mode**: Executes all providers simultaneously
 - **Non-Blocking I/O**: All async operations use Promise.all()
 - **Provider Isolation**: One provider failure doesn't affect others
 - **Request Batching**: Multiple requests handled concurrently
@@ -476,7 +476,7 @@ function generateRequestId() {
 logger.info('Processing chat request', {
   requestId,
   provider: 'openai',
-  model: 'gpt-5'
+  model: 'gpt-5.6'
 });
 ```
 
