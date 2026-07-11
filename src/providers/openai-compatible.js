@@ -270,6 +270,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
     validateApiKey = defaultValidateApiKey,
     transformRequest,
     transformResponse,
+    transformStreamChunk,
+    resolveModelConfig,
     defaultParams = {},
   } = providerConfig;
 
@@ -290,13 +292,15 @@ export function createOpenAICompatibleProvider(providerConfig) {
         model = Object.keys(supportedModels)[0], // Default to first model
         maxTokens = null,
         stream = false,
-        // eslint-disable-next-line no-unused-vars
         reasoning_effort = 'medium',
         signal,
         config,
         // Filter out options not meant for the API
         continuation_id, // eslint-disable-line no-unused-vars
         continuationStore, // eslint-disable-line no-unused-vars
+        // Consumed by provider invoke overrides (e.g. OpenRouter maps this to a
+        // web plugin); never forwarded to the API payload.
+        web_search, // eslint-disable-line no-unused-vars
         ...otherOptions
       } = options;
 
@@ -330,9 +334,24 @@ export function createOpenAICompatibleProvider(providerConfig) {
         },
       };
 
-      // Add timeout if specified in model config
+      // Resolve the model config. A provider may supply an async
+      // resolveModelConfig hook to obtain a request-local config (e.g. dynamic
+      // OpenRouter metadata) — this rides through here and is NEVER merged into
+      // getSupportedModels(). It may throw (e.g. an authoritative catalog-miss)
+      // to fail before inference.
       const resolvedModel = resolveModelName(model, supportedModels);
-      const modelConfig = supportedModels[resolvedModel] || {};
+      let modelConfig = supportedModels[resolvedModel] || {};
+      if (resolveModelConfig) {
+        const dynamicConfig = await resolveModelConfig(resolvedModel, {
+          config,
+          signal,
+        });
+        if (dynamicConfig) {
+          modelConfig = dynamicConfig;
+        }
+      }
+
+      // Add timeout if specified in model config
       if (modelConfig.timeout) {
         clientOptions.timeout = modelConfig.timeout;
       }
@@ -378,14 +397,16 @@ export function createOpenAICompatibleProvider(providerConfig) {
         requestPayload.stream_options = { include_usage: true };
       }
 
-      // Note: Most OpenAI-compatible APIs don't support reasoning_effort;
-      // it is silently ignored unless the provider has custom handling
-
-      // Apply custom request transformation if provided
+      // Apply custom request transformation if provided. The context exposes the
+      // requested reasoning effort and abort signal so providers can build
+      // capability-gated reasoning fields; reasoning_effort itself is never
+      // forwarded to the API payload (it is destructured out above).
       if (transformRequest) {
         requestPayload = await transformRequest(requestPayload, {
           model: resolvedModel,
           modelConfig,
+          reasoningEffort: reasoning_effort,
+          signal,
         });
       }
 
@@ -432,8 +453,26 @@ export function createOpenAICompatibleProvider(providerConfig) {
           );
         }
 
-        const content = choice.message?.content;
-        if (!content) {
+        // A reasoning turn may carry empty visible content but present
+        // reasoning_content / reasoning_details / tool_calls — accept those and
+        // normalize nullable content to ''. An empty array does not count as
+        // present merely for being truthy.
+        const rawContent = choice.message?.content;
+        const reasoningContent = choice.message?.reasoning_content;
+        const reasoningDetails = choice.message?.reasoning_details;
+        const toolCalls = choice.message?.tool_calls;
+        const content = typeof rawContent === 'string' ? rawContent : '';
+        const hasReasoningContent =
+          typeof reasoningContent === 'string' && reasoningContent.length > 0;
+        const hasReasoningDetails =
+          Array.isArray(reasoningDetails) && reasoningDetails.length > 0;
+        const hasToolCalls = Array.isArray(toolCalls) && toolCalls.length > 0;
+        if (
+          content.length === 0 &&
+          !hasReasoningContent &&
+          !hasReasoningDetails &&
+          !hasToolCalls
+        ) {
           throw new CustomProviderError(
             'No content in response',
             ErrorCodes.NO_RESPONSE_CONTENT,
@@ -463,6 +502,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
             response_time_ms: responseTime,
             finish_reason: finishReason,
             provider: providerName.toLowerCase(),
+            ...(hasReasoningContent && { reasoning_content: reasoningContent }),
           },
         };
 
@@ -509,6 +549,13 @@ export function createOpenAICompatibleProvider(providerConfig) {
       let lastUsage = null;
       let finishReason = null;
       let finalModel = resolvedModel;
+      // Extra metadata accumulated from per-chunk hooks (reasoning_details,
+      // annotations, usage.cost/cost_details, upstream provider, request id) that
+      // the streaming path's synthetic transformResponse cannot see.
+      const streamMetadataPatch = {};
+      // Persistent per-stream scratch object handed to transformStreamChunk so a
+      // provider can accumulate state (e.g. concatenated reasoning) across chunks.
+      const streamState = { modelConfig, resolvedModel };
 
       try {
         // Check if already aborted before starting
@@ -541,8 +588,45 @@ export function createOpenAICompatibleProvider(providerConfig) {
               );
               break;
             }
+
+            // Optional per-chunk hook: yields extra normalized events, patches
+            // final metadata, can suppress default delta handling, and can
+            // terminate the stream as failed on a fatal in-band error.
+            let suppressDefault = false;
+            if (transformStreamChunk) {
+              const hookResult =
+                transformStreamChunk(chunk, streamState) || {};
+              const {
+                events = [],
+                metadataPatch = null,
+                suppressDefault: hookSuppress = false,
+                terminalError = null,
+              } = hookResult;
+              for (const extraEvent of events) {
+                yield extraEvent;
+              }
+              if (metadataPatch) {
+                Object.assign(streamMetadataPatch, metadataPatch);
+              }
+              if (terminalError) {
+                // Emit exactly one failure event and stop WITHOUT a later end
+                // event, leaving already-emitted deltas intact.
+                yield {
+                  type: 'error',
+                  error: {
+                    message: terminalError.message || 'Stream terminated',
+                    code: terminalError.code || 'STREAMING_ERROR',
+                    recoverable: false,
+                  },
+                  timestamp: new Date().toISOString(),
+                };
+                return;
+              }
+              suppressDefault = hookSuppress;
+            }
+
             const choice = chunk.choices?.[0];
-            if (choice) {
+            if (!suppressDefault && choice) {
               const content = choice.delta?.content || '';
 
               // Handle regular content
@@ -555,18 +639,22 @@ export function createOpenAICompatibleProvider(providerConfig) {
                 };
               }
 
-              // Handle reasoning/thinking content if supported
-              if (choice.delta?.reasoning && modelConfig.supportsReasoning) {
+              // Handle reasoning/thinking content if supported. DeepSeek and
+              // OpenRouter expose streamed reasoning as delta.reasoning_content.
+              if (
+                choice.delta?.reasoning_content &&
+                modelConfig.supportsReasoning
+              ) {
                 yield {
                   type: 'thinking',
-                  content: choice.delta.reasoning,
+                  content: choice.delta.reasoning_content,
                   timestamp: new Date().toISOString(),
                 };
               }
+            }
 
-              if (choice.finish_reason) {
-                finishReason = choice.finish_reason;
-              }
+            if (choice?.finish_reason) {
+              finishReason = choice.finish_reason;
             }
 
             // Handle usage information (typically in final chunk)
@@ -639,6 +727,15 @@ export function createOpenAICompatibleProvider(providerConfig) {
             model: finalModel,
           };
           finalResult = await transformResponse(finalResult, mockRawResponse);
+        }
+
+        // Merge any per-chunk metadata patches last so hook-supplied fields
+        // (reasoning_details, annotations, cost, upstream provider) win.
+        if (Object.keys(streamMetadataPatch).length > 0) {
+          finalResult.metadata = {
+            ...finalResult.metadata,
+            ...streamMetadataPatch,
+          };
         }
 
         // Yield end event with final metadata

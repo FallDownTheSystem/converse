@@ -442,6 +442,11 @@ async function runParallelPipeline(common) {
       reasoning_effort,
       config,
     };
+    // Web search opt-in from an OpenRouter `:online` decoration (parsed by the
+    // shared resolver). Only ever set for OpenRouter candidates.
+    if (candidate.resolveOptions?.web_search) {
+      options.web_search = true;
+    }
     // Codex thread reuse is chat-mode-scoped, and only Codex consumes these
     // options — passing them to other providers would leak `threadKey` into
     // their API payloads via generic option passthrough.
@@ -903,7 +908,7 @@ function resolveChatCallPlans(models, providers, config, hasImages) {
       continue;
     }
 
-    const { providerName, provider, resolvedModel, status } = resolveModelSpec(spec, providers, config);
+    const { providerName, provider, resolvedModel, status, options } = resolveModelSpec(spec, providers, config);
     if (status === 'not_found') {
       preFailed.push({
         model: spec,
@@ -922,7 +927,7 @@ function resolveChatCallPlans(models, providers, config, hasImages) {
         displayModel: spec,
         threadKey: spec,
         candidates: [
-          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec },
+          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec, resolveOptions: options },
         ],
       });
     }
@@ -950,7 +955,7 @@ function resolveConsensusCallPlans(models, providers, config, images) {
       preFailed.push({ model: spec || 'unknown', error: 'Invalid model specification' });
       continue;
     }
-    const { providerName, provider, resolvedModel, status } = resolveModelSpec(spec, providers, config);
+    const { providerName, provider, resolvedModel, status, options } = resolveModelSpec(spec, providers, config);
     if (status === 'not_found') {
       preFailed.push({ model: spec, provider: providerName, error: `Provider not found: ${providerName}` });
     } else if (status === 'unavailable') {
@@ -961,7 +966,7 @@ function resolveConsensusCallPlans(models, providers, config, images) {
         displayModel: spec,
         threadKey: spec,
         candidates: [
-          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec },
+          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec, resolveOptions: options },
         ],
       });
     }

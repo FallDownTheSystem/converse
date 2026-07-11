@@ -18,32 +18,32 @@ import { mapModelToProvider } from '../../../src/utils/modelRouting.js';
 describe('Copilot Provider - Model Selection', () => {
   describe('resolveModelAlias', () => {
     it('resolves version shortcut aliases', () => {
-      expect(resolveModelAlias('gpt-5')).toBe('gpt-5.4');
-      expect(resolveModelAlias('codex')).toBe('gpt-5.4');
-      expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-4.6');
+      expect(resolveModelAlias('gpt-5.6')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('gpt-5')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-5');
+      expect(resolveModelAlias('fable')).toBe('claude-fable-5');
       expect(resolveModelAlias('opus')).toBe('claude-opus-4.8');
       expect(resolveModelAlias('claude')).toBe('claude-opus-4.8');
-      expect(resolveModelAlias('haiku')).toBe('claude-haiku-4.5');
       expect(resolveModelAlias('gemini')).toBe('gemini-3.1-pro-preview');
+      expect(resolveModelAlias('gemini-flash')).toBe('gemini-3.5-flash');
     });
 
     it('resolves convenience aliases without -preview suffix', () => {
-      expect(resolveModelAlias('gemini-3-pro')).toBe('gemini-3-pro-preview');
       expect(resolveModelAlias('gemini-3.1-pro')).toBe('gemini-3.1-pro-preview');
     });
 
     it('resolves direct SDK model names', () => {
-      expect(resolveModelAlias('gpt-5.4')).toBe('gpt-5.4');
-      expect(resolveModelAlias('claude-sonnet-4.6')).toBe('claude-sonnet-4.6');
-      expect(resolveModelAlias('gemini-3-pro-preview')).toBe('gemini-3-pro-preview');
+      expect(resolveModelAlias('gpt-5.6-terra')).toBe('gpt-5.6-terra');
+      expect(resolveModelAlias('claude-sonnet-5')).toBe('claude-sonnet-5');
+      expect(resolveModelAlias('gemini-3.5-flash')).toBe('gemini-3.5-flash');
       expect(resolveModelAlias('gemini-3.1-pro-preview')).toBe('gemini-3.1-pro-preview');
     });
 
     it('is case-insensitive', () => {
-      expect(resolveModelAlias('GPT-5')).toBe('gpt-5.4');
-      expect(resolveModelAlias('CODEX')).toBe('gpt-5.4');
-      expect(resolveModelAlias('Sonnet')).toBe('claude-sonnet-4.6');
-      expect(resolveModelAlias('CLAUDE-SONNET-4.6')).toBe('claude-sonnet-4.6');
+      expect(resolveModelAlias('GPT-5')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('Sonnet')).toBe('claude-sonnet-5');
+      expect(resolveModelAlias('FABLE')).toBe('claude-fable-5');
+      expect(resolveModelAlias('CLAUDE-OPUS-4.8')).toBe('claude-opus-4.8');
     });
 
     it('returns null for unknown models', () => {
@@ -70,14 +70,14 @@ describe('Copilot Provider - Model Selection', () => {
 
   describe('resolveSessionModel', () => {
     it('strips copilot: prefix and resolves alias', () => {
-      expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-4.6');
+      expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-5');
+      expect(resolveSessionModel('copilot:fable', {})).toBe('claude-fable-5');
     });
 
     it('strips copilot: prefix and passes through SDK model names', () => {
-      expect(resolveSessionModel('copilot:gpt-5.4', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('copilot:claude-sonnet-4.6', {})).toBe('claude-sonnet-4.6');
+      expect(resolveSessionModel('copilot:gpt-5.6-terra', {})).toBe('gpt-5.6-terra');
+      expect(resolveSessionModel('copilot:claude-sonnet-5', {})).toBe('claude-sonnet-5');
     });
 
     it('passes through unknown models after prefix stripping', () => {
@@ -85,8 +85,8 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('is case-insensitive for prefix detection', () => {
-      expect(resolveSessionModel('CoPiLoT:GPT-5', {})).toBe('gpt-5.4');
-      expect(resolveSessionModel('COPILOT:codex', {})).toBe('gpt-5.4');
+      expect(resolveSessionModel('CoPiLoT:GPT-5', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('COPILOT:sonnet', {})).toBe('claude-sonnet-5');
     });
 
     it('falls back to default for bare copilot aliases', () => {
@@ -101,13 +101,13 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('uses COPILOT_MODEL env var as fallback with alias resolution', () => {
-      const config = { providers: { copilotmodel: 'codex' } };
-      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.4');
+      const config = { providers: { copilotmodel: 'sonnet' } };
+      expect(resolveSessionModel('copilot', config)).toBe('claude-sonnet-5');
     });
 
     it('strips copilot: prefix from COPILOT_MODEL env var', () => {
-      const config = { providers: { copilotmodel: 'copilot:codex' } };
-      expect(resolveSessionModel('copilot', config)).toBe('gpt-5.4');
+      const config = { providers: { copilotmodel: 'copilot:sonnet' } };
+      expect(resolveSessionModel('copilot', config)).toBe('claude-sonnet-5');
     });
 
     it('passes through unknown env var values', () => {
@@ -131,27 +131,27 @@ describe('Copilot Provider - Model Selection', () => {
 
   describe('getModelConfig', () => {
     it('returns config for SDK model names', () => {
-      const config = copilotProvider.getModelConfig('gpt-5.4');
+      const config = copilotProvider.getModelConfig('gpt-5.6-terra');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.4');
+      expect(config.modelName).toBe('gpt-5.6-terra');
     });
 
     it('returns config via alias lookup', () => {
       const config = copilotProvider.getModelConfig('gpt-5');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.4');
+      expect(config.modelName).toBe('gpt-5.6-sol');
     });
 
     it('handles copilot: prefix', () => {
-      const config = copilotProvider.getModelConfig('copilot:gpt-5.4');
+      const config = copilotProvider.getModelConfig('copilot:gpt-5.6-terra');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.4');
+      expect(config.modelName).toBe('gpt-5.6-terra');
     });
 
     it('handles copilot: prefix with alias', () => {
-      const config = copilotProvider.getModelConfig('copilot:codex');
+      const config = copilotProvider.getModelConfig('copilot:sonnet');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.4');
+      expect(config.modelName).toBe('claude-sonnet-5');
     });
 
     it('returns base copilot config for empty suffix', () => {
@@ -171,9 +171,9 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('is case-insensitive', () => {
-      const config = copilotProvider.getModelConfig('GPT-5.4');
+      const config = copilotProvider.getModelConfig('GPT-5.6-TERRA');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.4');
+      expect(config.modelName).toBe('gpt-5.6-terra');
     });
   });
 
@@ -202,36 +202,76 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('contains all expected model families', () => {
+    it('advertises exactly the curated catalog (base + 8 curated IDs)', () => {
       const models = copilotProvider.getSupportedModels();
-      const keys = Object.keys(models);
+      const keys = Object.keys(models).sort();
 
-      // OpenAI
-      expect(keys).toContain('gpt-4.1');
-      expect(keys).toContain('gpt-5.4');
-      expect(keys).toContain('gpt-5.4');
+      expect(keys).toEqual(
+        [
+          'copilot',
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+          'claude-fable-5',
+          'claude-sonnet-5',
+          'claude-opus-4.8',
+          'gemini-3.1-pro-preview',
+          'gemini-3.5-flash',
+        ].sort(),
+      );
+    });
 
-      // Anthropic
-      expect(keys).toContain('claude-haiku-4.5');
-      expect(keys).toContain('claude-sonnet-4.6');
-      expect(keys).toContain('claude-opus-4.6');
+    it('does not advertise retired models', () => {
+      const keys = Object.keys(copilotProvider.getSupportedModels());
+      for (const retired of [
+        'gpt-4.1',
+        'gpt-5-mini',
+        'gpt-5.1',
+        'gpt-5.1-codex',
+        'gpt-5.4',
+        'gpt-5.2-codex',
+        'gpt-5.3-codex',
+        'claude-haiku-4.5',
+        'claude-sonnet-4',
+        'claude-sonnet-4.5',
+        'claude-sonnet-4.6',
+        'claude-opus-4.5',
+        'claude-opus-4.6',
+        'claude-opus-4.7',
+        'gemini-3-pro-preview',
+      ]) {
+        expect(keys).not.toContain(retired);
+      }
+    });
 
-      // Google
-      expect(keys).toContain('gemini-3-pro-preview');
-      expect(keys).toContain('gemini-3.1-pro-preview');
+    it('flags reasoning-effort support only on the GPT-5.6 tier', () => {
+      const models = copilotProvider.getSupportedModels();
+      expect(models['gpt-5.6-sol'].supportsReasoningEffort).toBe(true);
+      expect(models['gpt-5.6-terra'].supportsReasoningEffort).toBe(true);
+      expect(models['gpt-5.6-luna'].supportsReasoningEffort).toBe(true);
+    });
+  });
+
+  describe('retired / unknown ID passthrough', () => {
+    it('forwards an unknown copilot:<id> verbatim to the SDK', () => {
+      // Retired IDs are pruned from the advertised catalog but still work as
+      // explicit selections — resolveSessionModel passes them through unchanged.
+      expect(resolveSessionModel('copilot:gpt-5.3-codex', {})).toBe('gpt-5.3-codex');
+      expect(resolveSessionModel('copilot:claude-opus-4.6', {})).toBe('claude-opus-4.6');
+      expect(resolveModelAlias('gpt-5.3-codex')).toBeNull();
     });
   });
 });
 
 describe('Copilot Prefix Routing - mapModelToProvider', () => {
   it('routes copilot:modelname to copilot provider', () => {
-    expect(mapModelToProvider('copilot:gpt-5.4', {})).toBe('copilot');
-    expect(mapModelToProvider('copilot:claude-sonnet-4.6', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:gpt-5.6-terra', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:claude-sonnet-5', {})).toBe('copilot');
     expect(mapModelToProvider('copilot:gemini-3.1-pro-preview', {})).toBe('copilot');
   });
 
   it('routes copilot:alias to copilot provider', () => {
-    expect(mapModelToProvider('copilot:codex', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:fable', {})).toBe('copilot');
     expect(mapModelToProvider('copilot:sonnet', {})).toBe('copilot');
     expect(mapModelToProvider('copilot:gpt-5', {})).toBe('copilot');
   });
@@ -243,15 +283,15 @@ describe('Copilot Prefix Routing - mapModelToProvider', () => {
   });
 
   it('does NOT route models without copilot: prefix to copilot', () => {
-    expect(mapModelToProvider('claude-sonnet-4.6', {})).toBe('anthropic');
-    expect(mapModelToProvider('gpt-5.4', {})).toBe('openai');
+    expect(mapModelToProvider('claude-sonnet-5', {})).toBe('anthropic');
+    expect(mapModelToProvider('gpt-5.6', {})).toBe('openai');
     expect(mapModelToProvider('grok-4', {})).toBe('xai');
   });
 
   it('prevents copilot:claude-sonnet from routing to anthropic', () => {
-    expect(mapModelToProvider('copilot:claude-sonnet-4.6', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:claude-sonnet-5', {})).toBe('copilot');
     expect(mapModelToProvider('copilot:opus', {})).toBe('copilot');
-    expect(mapModelToProvider('copilot:haiku', {})).toBe('copilot');
+    expect(mapModelToProvider('copilot:claude', {})).toBe('copilot');
   });
 
   it('prevents copilot:openai/gpt-5 from routing via slash format', () => {

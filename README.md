@@ -120,7 +120,7 @@ One tool, three modes. Pass a `models` array and choose a `mode`. Supports files
 // mode "consensus" — ≥2 models answer, then refine after seeing each other
 {
   "prompt": "Should we use microservices or a monolith for our e-commerce platform?",
-  "models": ["gpt-5.6", "gemini-2.5-flash", "grok-4"],
+  "models": ["gpt-5.6", "gemini-2.5-flash", "grok-4.5"],
   "mode": "consensus",
   "files": ["/path/to/requirements.md"]
 }
@@ -245,8 +245,7 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### X.AI/Grok Models
 
-- **grok-4-0709** (aliases: `grok`, `grok-4`): Latest advanced model (256K context)
-- **grok-code-fast-1**: Speedy and economical reasoning model that excels at agentic coding (256K context)
+- **grok-4.5** (default; aliases: `grok`, `grok-4.5-latest`, `grok-build-latest`): Flagship model with image input, reasoning content, and native web/X search (500K context). Reasoning maps to `low`/`medium`/`high` and cannot be disabled; web search is automatic. Older Grok IDs still pass through as explicit model strings.
 
 ### Anthropic Models
 
@@ -259,20 +258,28 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### Mistral Models
 
-- **magistral-medium**: Frontier-class reasoning model (40K context)
-- **magistral-small**: Small reasoning model (40K context)
-- **mistral-medium-3**: Frontier-class multimodal model (128K context)
+- **mistral-medium-3-5** (default; aliases: `mistral`, `mistral-medium`): Frontier-class multimodal model with adjustable reasoning (256K context)
+- **mistral-small-2603** (alias: `mistral-small`): Hybrid multimodal model unifying instruct, reasoning, and coding (256K context)
+- **mistral-large-2512** (alias: `mistral-large`): Open-weight MoE flagship, text-only, no adjustable reasoning (256K context)
+
+Reasoning maps to `high` (enabled) or `none` (disabled) on Medium 3.5 and Small; Large has no adjustable reasoning.
 
 ### DeepSeek Models
 
-- **deepseek-chat**: Strong MoE model with 671B/37B parameters (64K context)
-- **deepseek-reasoner**: Advanced reasoning model with CoT (64K context)
+- **deepseek-v4-pro** (default; aliases: `deepseek`, `deepseek-pro`): Flagship MoE model with thinking mode (1M context, 384K max output, text-only)
+- **deepseek-v4-flash** (alias: `deepseek-flash`): Faster, lower-cost V4 tier with thinking mode (1M context, 384K max output, text-only)
+
+Thinking mode maps `reasoning_effort` to `none` (off), `high` (enabled levels), or `max`.
 
 ### OpenRouter Models
 
-- **qwen3-235b-thinking**: Qwen3 with enhanced reasoning (32K context)
-- **qwen3-coder**: Specialized for programming tasks (32K context)
-- **kimi-k2**: Moonshot AI Kimi K2 with extended context (200K context)
+- **z-ai/glm-5.2** (default; aliases: `glm`, `glm-5.2`): Large-scale reasoning model, text-only (1M context)
+- **deepseek/deepseek-v4-pro**, **deepseek/deepseek-v4-flash**: DeepSeek V4 reasoning tiers, text-only (1M context)
+- **qwen/qwen3.7-max**, **qwen/qwen3.7-plus**: Flagship Qwen tiers (1M context; `plus` is image-capable)
+- **moonshotai/kimi-k2.7-code**, **moonshotai/kimi-k2.6**: Image-capable Moonshot models (256K context; `k2.7-code` always reasons)
+- **openrouter/auto**: Auto-selects the best model for your prompt
+
+Any other model works via its full `provider/model` slug or the `openrouter:` namespace — no extra configuration. Append `:online` to a slug to opt into web search (adds a real per-request cost).
 
 ### Codex Models
 
@@ -290,6 +297,15 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
   - Uses Claude Code CLI authentication (`claude login`) - no API key needed
   - Direct filesystem access from working directory
   - Unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+
+### GitHub Copilot SDK Models
+
+Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
+
+- **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
+- **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-4.8` (aliases: `opus`, `claude`)
+- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
+- Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
 ## 📚 Help & Documentation
 
@@ -334,10 +350,9 @@ LOG_LEVEL=info
 ENABLE_RESPONSE_SUMMARIZATION=true    # Enable AI-generated titles and summaries
 SUMMARIZATION_MODEL=gpt-5-nano        # Model to use for summarization (default: gpt-5-nano)
 
-# Optional: OpenRouter configuration
+# Optional: OpenRouter attribution (for ranking credit; both optional)
 OPENROUTER_REFERER=https://github.com/FallDownTheSystem/converse
 OPENROUTER_TITLE=Converse
-OPENROUTER_DYNAMIC_MODELS=true
 
 # Optional: Codex configuration
 CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login available
@@ -382,20 +397,23 @@ Use `"auto"` for automatic model selection, or specify exact models:
 // Specific models
 "gemini-2.5-flash";
 "gpt-5";
-"grok-4-0709";
+"grok-4.5";
+"z-ai/glm-5.2"; // -> OpenRouter (full slug)
+"z-ai/glm-5.2:online"; // -> OpenRouter with web search opt-in
 
 // Using aliases
 "flash"; // -> gemini-2.5-flash
 "pro"; // -> gemini-2.5-pro
-"grok"; // -> grok-4-0709
-"grok-4"; // -> grok-4-0709
+"grok"; // -> grok-4.5
+"deepseek"; // -> deepseek-v4-pro
+"mistral"; // -> mistral-medium-3-5
 "fable"; // -> claude-fable-5 (Anthropic API)
 "opus"; // -> claude-opus-4-8 (Anthropic API)
 
 // SDK providers (subscription-based, no API key)
 "claude"; // -> Claude Agent SDK (Claude Fable 5)
 "claude:opus"; // -> Claude Agent SDK (Claude Opus 4.8)
-"copilot:codex"; // -> GitHub Copilot SDK (gpt-5.3-codex)
+"copilot:gpt-5.6-terra"; // -> GitHub Copilot SDK
 ```
 
 **Auto Model Behavior:**
@@ -411,11 +429,11 @@ Provider priority order (subscription-based SDK providers first, then API-key pr
 4. Copilot (`copilot`)
 5. OpenAI (`gpt-5`)
 6. Google (`gemini-pro`)
-7. XAI (`grok-4-0709`)
+7. XAI (`grok-4.5`)
 8. Anthropic (`claude-sonnet-4-20250514`)
-9. Mistral (`magistral-medium-2506`)
-10. DeepSeek (`deepseek-reasoner`)
-11. OpenRouter (`qwen/qwen3-coder`)
+9. Mistral (`mistral-medium-3-5`)
+10. DeepSeek (`deepseek-v4-pro`)
+11. OpenRouter (`z-ai/glm-5.2`)
 
 The system will use the first 3 providers that are available (authenticated SDK or valid API key). This enables automatic multi-model consensus without manually specifying models.
 

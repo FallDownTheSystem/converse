@@ -24,6 +24,7 @@ const EVENT_TYPES = {
   END: 'end',
   ERROR: 'error',
   REASONING_SUMMARY: 'reasoning_summary',
+  REASONING: 'reasoning',
 };
 
 /**
@@ -174,6 +175,7 @@ class ProviderStreamNormalizer {
 
     let hasStarted = false;
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
     let accumulatedUsage = null;
     let finishReason = null;
     const searchMetadata = {};
@@ -191,6 +193,13 @@ class ProviderStreamNormalizer {
         if (event.type === 'delta') {
           accumulatedContent += event.content || '';
           yield this.createDeltaEvent(event.content || '', provider, model);
+          continue;
+        }
+
+        // Handle reasoning/thinking events (kept separate from answer text)
+        if (event.type === 'thinking') {
+          accumulatedReasoning += event.content || '';
+          yield this.createReasoningEvent(event.content || '', provider, model);
           continue;
         }
 
@@ -212,6 +221,7 @@ class ProviderStreamNormalizer {
           const endMetadata = {
             ...event.metadata,
             ...searchMetadata,
+            ...(accumulatedReasoning && { reasoning: accumulatedReasoning }),
           };
 
           yield this.createEndEvent(
@@ -424,6 +434,7 @@ class ProviderStreamNormalizer {
 
     let hasStarted = false;
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
     let accumulatedUsage = null;
     let finishReason = null;
 
@@ -443,6 +454,13 @@ class ProviderStreamNormalizer {
           continue;
         }
 
+        // Handle reasoning/thinking events (kept separate from answer text)
+        if (event.type === 'thinking') {
+          accumulatedReasoning += event.content || '';
+          yield this.createReasoningEvent(event.content || '', provider, model);
+          continue;
+        }
+
         // Handle usage events
         if (event.type === 'usage') {
           accumulatedUsage = event.usage;
@@ -453,13 +471,17 @@ class ProviderStreamNormalizer {
         // Handle end event
         if (event.type === 'end') {
           finishReason = event.stop_reason || event.metadata?.finish_reason;
+          const endMetadata = {
+            ...event.metadata,
+            ...(accumulatedReasoning && { reasoning: accumulatedReasoning }),
+          };
           yield this.createEndEvent(
             {
               content: event.content || accumulatedContent,
               stopReason: finishReason,
               usage: event.metadata?.usage || accumulatedUsage,
               responseTime: Date.now() - startTime,
-              metadata: event.metadata,
+              metadata: endMetadata,
             },
             provider,
             model,
@@ -494,6 +516,7 @@ class ProviderStreamNormalizer {
 
     let hasStarted = false;
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
     let accumulatedUsage = null;
     let finishReason = null;
     const reasoningMetadata = {};
@@ -516,6 +539,13 @@ class ProviderStreamNormalizer {
           continue;
         }
 
+        // Handle reasoning/thinking events (kept separate from answer text)
+        if (event.type === 'thinking') {
+          accumulatedReasoning += event.content || '';
+          yield this.createReasoningEvent(event.content || '', provider, model);
+          continue;
+        }
+
         // Handle usage events (with DeepSeek-specific reasoning tokens)
         if (event.type === 'usage') {
           accumulatedUsage = event.usage;
@@ -532,6 +562,7 @@ class ProviderStreamNormalizer {
           const endMetadata = {
             ...event.metadata,
             ...reasoningMetadata,
+            ...(accumulatedReasoning && { reasoning: accumulatedReasoning }),
           };
 
           yield this.createEndEvent(
@@ -575,6 +606,7 @@ class ProviderStreamNormalizer {
 
     let hasStarted = false;
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
     let accumulatedUsage = null;
     let finishReason = null;
     let routingMetadata = {};
@@ -595,6 +627,13 @@ class ProviderStreamNormalizer {
           continue;
         }
 
+        // Handle reasoning/thinking events (kept separate from answer text)
+        if (event.type === 'thinking') {
+          accumulatedReasoning += event.content || '';
+          yield this.createReasoningEvent(event.content || '', provider, model);
+          continue;
+        }
+
         // Handle usage events (with OpenRouter-specific routing metadata)
         if (event.type === 'usage') {
           accumulatedUsage = event.usage;
@@ -611,6 +650,7 @@ class ProviderStreamNormalizer {
           const endMetadata = {
             ...event.metadata,
             ...routingMetadata,
+            ...(accumulatedReasoning && { reasoning: accumulatedReasoning }),
           };
 
           yield this.createEndEvent(
@@ -767,6 +807,24 @@ class ProviderStreamNormalizer {
           // Preserve provider-specific usage fields
           ...usage,
         },
+      },
+    };
+  }
+
+  /**
+   * Create standardized streamed-reasoning event. Distinct from a delta so
+   * downstream consumers keep reasoning separate from the visible answer.
+   */
+  createReasoningEvent(content, provider, model) {
+    return {
+      type: EVENT_TYPES.REASONING,
+      provider,
+      model,
+      timestamp: Date.now(),
+      data: {
+        content: content || '',
+        role: 'assistant',
+        isReasoning: true,
       },
     };
   }

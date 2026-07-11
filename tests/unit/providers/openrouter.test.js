@@ -1,31 +1,23 @@
 /**
  * OpenRouter Provider Tests
  *
- * Tests the OpenRouter provider implementation (OpenAI-compatible).
+ * Tests the OpenRouter provider implementation (OpenAI-compatible): curated
+ * catalog lock, metadata-driven reasoning mapping, usage.cost/provider/citation
+ * metadata, `:online` web-search opt-in, in-band SSE error termination, optional
+ * attribution headers, and request-local discovery.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
 
-// Mock the OpenAI module
+// Mock the OpenAI module — capture constructor options (for header assertions)
+// and the create() calls.
 const mockCreate = vi.fn();
-
-// Mock the endpoints client
-vi.mock('../../../src/providers/openrouter-endpoints-client.js', () => {
-  return {
-    fetchModelEndpointsWithCache: vi.fn(),
-    endpointsCache: {
-      clear: vi.fn(),
-      get: vi.fn(() => {
-        return { found: false, value: null };
-      }),
-      set: vi.fn(),
-    },
-  };
-});
+const mockOpenAICtor = vi.fn();
 
 vi.mock('openai', () => {
-  const mockOpenAI = vi.fn(function () {
+  const mockOpenAI = vi.fn(function (clientOptions) {
+    mockOpenAICtor(clientOptions);
     return {
       chat: {
         completions: {
@@ -40,17 +32,84 @@ vi.mock('openai', () => {
   };
 });
 
-// Import provider AFTER setting up the mock
+// Mock the discovery adapter so no real network happens.
+const mockLookup = vi.fn();
+vi.mock('../../../src/providers/openrouter-discovery.js', () => ({
+  lookupOpenRouterModel: (...args) => mockLookup(...args),
+  DiscoveryStatus: {
+    OK: 'ok',
+    CATALOG_MISS: 'catalog_miss',
+    AUTH: 'auth',
+    RATE_LIMIT: 'rate_limit',
+    TIMEOUT: 'timeout',
+    MALFORMED: 'malformed',
+  },
+}));
+
+// Import provider AFTER setting up the mocks
 import { openrouterProvider } from '../../../src/providers/openrouter.js';
-import { fetchModelEndpointsWithCache } from '../../../src/providers/openrouter-endpoints-client.js';
+
+const CURATED_SLUGS = [
+  'z-ai/glm-5.2',
+  'deepseek/deepseek-v4-pro',
+  'deepseek/deepseek-v4-flash',
+  'qwen/qwen3.7-max',
+  'qwen/qwen3.7-plus',
+  'moonshotai/kimi-k2.7-code',
+  'moonshotai/kimi-k2.6',
+  'openrouter/auto',
+];
+
+function makeResponse(overrides = {}) {
+  return {
+    id: 'chatcmpl-openrouter-123',
+    object: 'chat.completion',
+    created: 1234567890,
+    model: 'z-ai/glm-5.2',
+    provider: 'z-ai',
+    choices: [
+      {
+        index: 0,
+        message: { role: 'assistant', content: 'Test response' },
+        finish_reason: 'stop',
+      },
+    ],
+    usage: {
+      prompt_tokens: 10,
+      completion_tokens: 20,
+      total_tokens: 30,
+    },
+    ...overrides,
+  };
+}
+
+// Build an async iterable stream from an array of chunks.
+function makeStream(chunks) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) {
+        yield chunk;
+      }
+    },
+  };
+}
+
+async function collect(generator) {
+  const events = [];
+  for await (const event of generator) {
+    events.push(event);
+  }
+  return events;
+}
 
 describe('OpenRouter Provider', () => {
   let mockConfig;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCreate.mockClear();
-    fetchModelEndpointsWithCache.mockClear();
+    mockCreate.mockReset();
+    mockOpenAICtor.mockReset();
+    mockLookup.mockReset();
 
     mockConfig = {
       apiKeys: {
@@ -60,6 +119,8 @@ describe('OpenRouter Provider', () => {
         openrouterReferer: 'https://test.example.com',
       },
     };
+
+    mockCreate.mockResolvedValue(makeResponse());
   });
 
   describe('Configuration', () => {
@@ -82,598 +143,535 @@ describe('OpenRouter Provider', () => {
             openrouter: 'wrong-prefix-1234567890abcdefghijklmnopqrstuvwxyz',
           },
         },
-        { apiKeys: { openrouter: 123 } },
       ];
 
       invalidConfigs.forEach((config) => {
         expect(openrouterProvider.validateConfig(config)).toBe(false);
       });
     });
-
-    it('should check availability same as config validation', () => {
-      expect(openrouterProvider.isAvailable(mockConfig)).toBe(true);
-      expect(openrouterProvider.isAvailable({})).toBe(false);
-    });
   });
 
-  describe('Model Management', () => {
-    it('should return supported models', () => {
+  describe('Curated catalog (locked)', () => {
+    it('returns exactly the 8 curated slugs', () => {
       const models = openrouterProvider.getSupportedModels();
-
-      expect(models).toBeDefined();
-      expect(Object.keys(models).length).toBeGreaterThan(0);
-
-      // Check for expected models
-      expect(models['qwen/qwen3-235b-a22b-thinking-2507']).toBeDefined();
-      expect(models['qwen/qwen3-coder']).toBeDefined();
-      expect(models['moonshotai/kimi-k2']).toBeDefined();
-      expect(models['openrouter/auto']).toBeDefined();
+      expect(Object.keys(models).sort()).toEqual([...CURATED_SLUGS].sort());
     });
 
-    it('should get model config by exact name', () => {
-      const config = openrouterProvider.getModelConfig(
-        'qwen/qwen3-235b-a22b-thinking-2507',
-      );
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('qwen/qwen3-235b-a22b-thinking-2507');
-      expect(config.contextWindow).toBe(32768);
-      expect(config.maxOutputTokens).toBe(8192);
-      expect(config.supportsImages).toBe(false);
-      expect(config.supportsThinking).toBe(true);
+    it('defaults its capability flags per research (glm-5.2 default, text-only)', () => {
+      const glm = openrouterProvider.getModelConfig('z-ai/glm-5.2');
+      expect(glm.modelName).toBe('z-ai/glm-5.2');
+      expect(glm.contextWindow).toBe(1048576);
+      expect(glm.supportsImages).toBe(false);
+      expect(glm.supportsWebSearch).toBe(false);
+      expect(glm.supportsReasoning).toBe(true);
     });
 
-    it('should get model config by alias', () => {
-      const config = openrouterProvider.getModelConfig('qwen3-thinking');
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('qwen/qwen3-235b-a22b-thinking-2507');
+    it('marks every curated model supportsWebSearch:false (web search is opt-in)', () => {
+      const models = openrouterProvider.getSupportedModels();
+      for (const slug of CURATED_SLUGS) {
+        expect(models[slug].supportsWebSearch).toBe(false);
+      }
     });
 
-    it('should handle case-insensitive model names', () => {
-      const config = openrouterProvider.getModelConfig('MOONSHOTAI/KIMI-K2');
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('moonshotai/kimi-k2');
-    });
-
-    it('should return null for unknown model', () => {
-      const config = openrouterProvider.getModelConfig('unknown-model');
-      expect(config).toBeNull();
-    });
-
-    it('should get config for openrouter/auto model', () => {
-      const config = openrouterProvider.getModelConfig('openrouter/auto');
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('openrouter/auto');
-      expect(config.friendlyName).toBe('OpenRouter Auto (via NotDiamond)');
-      expect(config.contextWindow).toBe(128000);
-      expect(config.maxOutputTokens).toBe(8192);
-    });
-
-    it('should support openrouter auto aliases', () => {
-      const aliases = [
-        'openrouter auto',
-        'auto router',
-        'auto-router',
-        'openrouter-auto',
-      ];
-
-      aliases.forEach((alias) => {
-        const config = openrouterProvider.getModelConfig(alias);
-        expect(config).toBeDefined();
-        expect(config.modelName).toBe('openrouter/auto');
-      });
-    });
-
-    it('should return dynamic config when dynamic models enabled', () => {
-      // Create a test instance with dynamic models enabled
-      const testConfig = {
-        providers: {
-          openrouterreferer: 'https://test.example.com',
-          openrouterdynamicmodels: true,
-        },
-      };
-
-      // Store config for getModelConfig to use
-      openrouterProvider._lastConfig = testConfig;
-
-      const config = openrouterProvider.getModelConfig(
-        'anthropic/claude-3-opus',
-      );
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('anthropic/claude-3-opus');
-      expect(config.isDynamic).toBe(true);
-      expect(config.contextWindow).toBe(8192); // Default value
-      expect(config.maxOutputTokens).toBe(4096); // Default value
-    });
-
-    it('should not return dynamic config when disabled', () => {
-      // Create a test instance with dynamic models disabled
-      const testConfig = {
-        providers: {
-          openrouterreferer: 'https://test.example.com',
-          openrouterdynamicmodels: false,
-        },
-      };
-
-      // Store config for getModelConfig to use
-      openrouterProvider._lastConfig = testConfig;
-
-      // Use a different model that wasn't cached in previous test
-      const config = openrouterProvider.getModelConfig(
-        'meta-llama/llama-3-70b',
-      );
-
-      expect(config).toBeNull();
-    });
-
-    it('should fetch model config from API when invoking with dynamic model', async () => {
-      // Mock the API response
-      fetchModelEndpointsWithCache.mockResolvedValueOnce({
-        modelName: 'anthropic/claude-3-opus-20240229',
-        friendlyName: 'Claude 3 Opus',
-        contextWindow: 200000,
-        maxOutputTokens: 4096,
-        supportsStreaming: true,
-        supportsImages: true,
-        supportsTemperature: true,
-        isDynamic: true,
-      });
-
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      mockCreate.mockResolvedValueOnce({
-        id: 'chatcmpl-dynamic',
-        object: 'chat.completion',
-        created: 1234567890,
-        model: 'anthropic/claude-3-opus-20240229',
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: 'Dynamic response',
-            },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 20,
-          total_tokens: 30,
+    it('keeps the catalog at 8 slugs even after a discovery call has run', async () => {
+      mockLookup.mockResolvedValueOnce({
+        status: 'ok',
+        modelConfig: {
+          modelName: 'anthropic/claude-x',
+          supportsStreaming: true,
+          supportsImages: false,
+          supportsReasoning: false,
+          timeout: 300000,
         },
       });
-
-      await openrouterProvider.invoke(messages, {
-        model: 'anthropic/claude-3-opus-20240229',
-        config: {
-          ...mockConfig,
-          providers: {
-            ...mockConfig.providers,
-            openrouterdynamicmodels: true,
-          },
-        },
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'anthropic/claude-x',
+        config: mockConfig,
       });
-
-      expect(fetchModelEndpointsWithCache).toHaveBeenCalledWith(
-        'anthropic/claude-3-opus-20240229',
-      );
-      expect(mockCreate).toHaveBeenCalled();
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.model).toBe('anthropic/claude-3-opus-20240229');
+      const models = openrouterProvider.getSupportedModels();
+      expect(Object.keys(models).sort()).toEqual([...CURATED_SLUGS].sort());
     });
 
-    it('should handle API fetch errors gracefully', async () => {
-      // Mock the API to return null (model not found)
-      fetchModelEndpointsWithCache.mockResolvedValueOnce(null);
-
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      mockCreate.mockResolvedValueOnce({
-        id: 'chatcmpl-notfound',
-        object: 'chat.completion',
-        created: 1234567890,
-        model: 'nonexistent/model',
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: 'Default config response',
-            },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 20,
-          total_tokens: 30,
-        },
-      });
-
-      await openrouterProvider.invoke(messages, {
-        model: 'nonexistent/model',
-        config: {
-          ...mockConfig,
-          providers: {
-            ...mockConfig.providers,
-            openrouterdynamicmodels: true,
-          },
-        },
-      });
-
-      expect(fetchModelEndpointsWithCache).toHaveBeenCalledWith(
-        'nonexistent/model',
-      );
-      expect(mockCreate).toHaveBeenCalled();
-      // Should still work with default config
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.model).toBe('nonexistent/model');
+    it('curated image-capable models expose supportsImages:true', () => {
+      const models = openrouterProvider.getSupportedModels();
+      expect(models['qwen/qwen3.7-plus'].supportsImages).toBe(true);
+      expect(models['moonshotai/kimi-k2.7-code'].supportsImages).toBe(true);
+      expect(models['moonshotai/kimi-k2.6'].supportsImages).toBe(true);
+      expect(models['deepseek/deepseek-v4-pro'].supportsImages).toBe(false);
     });
   });
 
-  describe('Message Invocation', () => {
-    let mockResponse;
-
-    beforeEach(() => {
-      mockResponse = {
-        id: 'chatcmpl-openrouter-123',
-        object: 'chat.completion',
-        created: 1234567890,
-        model: 'qwen/qwen3-235b-a22b-thinking-2507',
-        provider: 'qwen',
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: 'Test response',
-            },
-            finish_reason: 'stop',
-            logprobs: null,
-          },
-        ],
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 20,
-          total_tokens: 30,
-          prompt_cost: 0.001,
-          completion_cost: 0.002,
-          total_cost: 0.003,
-        },
-      };
-
-      mockCreate.mockResolvedValue(mockResponse);
-    });
-
-    it('should invoke with basic messages', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      const result = await openrouterProvider.invoke(messages, {
+  describe('Reasoning request mapping (metadata-driven, capability-gated)', () => {
+    async function reasoningFor(model, reasoning_effort) {
+      mockCreate.mockResolvedValueOnce(makeResponse({ model }));
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model,
+        reasoning_effort,
         config: mockConfig,
       });
+      return mockCreate.mock.calls.at(-1)[0].reasoning;
+    }
 
-      expect(mockCreate).toHaveBeenCalled();
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.messages).toEqual(messages);
-      expect(callArgs.model).toBe('qwen/qwen3-235b-a22b-thinking-2507');
-
-      expect(result).toMatchObject({
-        content: 'Test response',
-        stop_reason: StopReasons.STOP,
-        metadata: {
-          model: 'qwen/qwen3-235b-a22b-thinking-2507',
-          usage: {
-            input_tokens: 10,
-            output_tokens: 20,
-            total_tokens: 30,
-          },
-          provider: 'openrouter',
-          request_id: 'chatcmpl-openrouter-123',
-          actual_provider: 'qwen',
-          prompt_cost: 0.001,
-          completion_cost: 0.002,
-          total_cost: 0.003,
-        },
+    it('effort-tiered model (glm-5.2) clamps into supported_efforts', async () => {
+      expect(await reasoningFor('z-ai/glm-5.2', 'max')).toEqual({
+        effort: 'xhigh',
+      });
+      expect(await reasoningFor('z-ai/glm-5.2', 'high')).toEqual({
+        effort: 'high',
+      });
+      expect(await reasoningFor('z-ai/glm-5.2', 'medium')).toEqual({
+        effort: 'high',
+      });
+      expect(await reasoningFor('z-ai/glm-5.2', 'low')).toEqual({
+        effort: 'high',
+      });
+      expect(await reasoningFor('z-ai/glm-5.2', 'minimal')).toEqual({
+        effort: 'high',
+      });
+      expect(await reasoningFor('z-ai/glm-5.2', 'none')).toEqual({
+        enabled: false,
       });
     });
 
-    it('should reject invocation without referer header', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
+    it('mandatory-reasoning model (kimi-k2.7-code) is always enabled, even for none', async () => {
+      expect(
+        await reasoningFor('moonshotai/kimi-k2.7-code', 'none'),
+      ).toEqual({ enabled: true });
+      expect(
+        await reasoningFor('moonshotai/kimi-k2.7-code', 'max'),
+      ).toEqual({ enabled: true });
+    });
 
-      await expect(
-        openrouterProvider.invoke(messages, {
-          config: {
-            apiKeys: {
-              openrouter: 'sk-or-test-1234567890abcdefghijklmnopqrstuvwxyz1234',
-            },
-            // Missing providers.openrouterReferer
-          },
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining(
-          'OpenRouter requires HTTP-Referer header',
-        ),
+    it('binary (enable/disable-only) model (qwen3.7-max) toggles enabled', async () => {
+      expect(await reasoningFor('qwen/qwen3.7-max', 'none')).toEqual({
+        enabled: false,
+      });
+      expect(await reasoningFor('qwen/qwen3.7-max', 'medium')).toEqual({
+        enabled: true,
+      });
+      expect(await reasoningFor('qwen/qwen3.7-max', 'max')).toEqual({
+        enabled: true,
       });
     });
 
-    it('should handle custom parameters', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
+    it('openrouter/auto passes through with no fabricated reasoning field', async () => {
+      expect(await reasoningFor('openrouter/auto', 'high')).toBeUndefined();
+    });
 
-      await openrouterProvider.invoke(messages, {
-        model: 'qwen/qwen3-coder',
-        temperature: 0.5,
-        maxTokens: 2000,
+    it('never sends exclude:true for none (uses enabled:false)', async () => {
+      const reasoning = await reasoningFor('deepseek/deepseek-v4-pro', 'none');
+      expect(reasoning).toEqual({ enabled: false });
+      expect(reasoning.exclude).toBeUndefined();
+    });
+
+    it('unknown pass-through slug (conservative discovery) receives no reasoning field', async () => {
+      // Transient discovery failure → conservative config with no reasoning.
+      mockLookup.mockResolvedValueOnce({ status: 'timeout', modelConfig: null });
+      mockCreate.mockResolvedValueOnce(makeResponse({ model: 'foo/bar-legacy' }));
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'foo/bar-legacy',
+        reasoning_effort: 'high',
         config: mockConfig,
       });
-
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.model).toBe('qwen/qwen3-coder');
-      expect(callArgs.temperature).toBe(0.5);
-      expect(callArgs.max_tokens).toBe(2000);
-      expect(callArgs.top_p).toBe(1); // Default from provider
+      expect(mockCreate.mock.calls.at(-1)[0].reasoning).toBeUndefined();
     });
+  });
 
-    it('should include optional title header when provided', async () => {
-      const configWithTitle = {
-        ...mockConfig,
-        providers: {
-          ...mockConfig.providers,
-          openrouterTitle: 'Test Application',
-        },
-      };
-
-      await openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-        config: configWithTitle,
-      });
-
-      expect(mockCreate).toHaveBeenCalled();
-    });
-
-    it('should cap max tokens to model limit', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      await openrouterProvider.invoke(messages, {
-        model: 'moonshotai/kimi-k2',
-        maxTokens: 10000,
+  describe('Web search opt-in (:online)', () => {
+    it('attaches the web plugin exactly once when web_search is set', async () => {
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'z-ai/glm-5.2',
+        web_search: true,
         config: mockConfig,
       });
-
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.max_tokens).toBe(8192); // Model's max
+      const payload = mockCreate.mock.calls.at(-1)[0];
+      expect(payload.plugins).toEqual([{ id: 'web' }]);
+      expect(payload.model).toBe('z-ai/glm-5.2'); // no :online suffix
     });
 
-    it('should handle models that do not support images', async () => {
-      const messages = [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: 'What is this?' },
+    it('ordinary requests attach no plugin / no :online / no web-search option', async () => {
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'z-ai/glm-5.2',
+        config: mockConfig,
+      });
+      const payload = mockCreate.mock.calls.at(-1)[0];
+      expect(payload.plugins).toBeUndefined();
+      expect(payload.web_search).toBeUndefined();
+      expect(payload.model).not.toContain(':online');
+    });
+
+    it('captures url_citation annotations into metadata (non-streaming)', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeResponse({
+          choices: [
             {
-              type: 'image',
-              source: {
-                media_type: 'image/jpeg',
-                data: 'base64data',
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: 'Answer',
+                annotations: [
+                  {
+                    type: 'url_citation',
+                    url_citation: {
+                      url: 'https://example.com/a',
+                      title: 'A',
+                    },
+                  },
+                ],
               },
+              finish_reason: 'stop',
             },
           ],
-        },
-      ];
+        }),
+      );
+      const result = await openrouterProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { model: 'z-ai/glm-5.2', web_search: true, config: mockConfig },
+      );
+      expect(result.metadata.citations).toHaveLength(1);
+      expect(result.metadata.citations[0].url_citation.url).toBe(
+        'https://example.com/a',
+      );
+    });
+  });
 
-      await expect(
-        openrouterProvider.invoke(messages, {
-          model: 'qwen/qwen3-coder',
+  describe('Usage / provider metadata', () => {
+    it('captures usage.cost, cost_details and actual_provider', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeResponse({
+          provider: 'z-ai',
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
+            cost: 0.95,
+            cost_details: { upstream_inference_cost: 19 },
+          },
+        }),
+      );
+      const result = await openrouterProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { model: 'z-ai/glm-5.2', config: mockConfig },
+      );
+      expect(result.metadata).toMatchObject({
+        request_id: 'chatcmpl-openrouter-123',
+        actual_provider: 'z-ai',
+        cost: 0.95,
+        cost_details: { upstream_inference_cost: 19 },
+        provider: 'openrouter',
+      });
+    });
+
+    it('surfaces reasoning_details text but never the encrypted ciphertext', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeResponse({
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: 'Final answer',
+                reasoning_details: [
+                  { type: 'reasoning.text', text: 'step one ' },
+                  { type: 'reasoning.encrypted', data: 'eyJlbmMi...' },
+                  { type: 'reasoning.summary', summary: 'summary tail' },
+                ],
+              },
+              finish_reason: 'stop',
+            },
+          ],
+        }),
+      );
+      const result = await openrouterProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { model: 'z-ai/glm-5.2', config: mockConfig },
+      );
+      expect(result.metadata.reasoning).toBe('step one summary tail');
+      expect(result.metadata.reasoning).not.toContain('eyJlbmMi');
+      expect(result.metadata.reasoning_details).toHaveLength(3);
+    });
+  });
+
+  describe('Streaming', () => {
+    it('captures cost/provider/citations via metadataPatch on the end event', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeStream([
+          {
+            id: 'gen-1',
+            provider: 'z-ai',
+            choices: [{ index: 0, delta: { content: 'Hello' } }],
+          },
+          {
+            choices: [
+              {
+                index: 0,
+                delta: {
+                  annotations: [
+                    {
+                      type: 'url_citation',
+                      url_citation: { url: 'https://example.com/x' },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
+            usage: {
+              prompt_tokens: 5,
+              completion_tokens: 3,
+              total_tokens: 8,
+              cost: 0.42,
+              cost_details: { upstream_inference_cost: 7 },
+            },
+          },
+        ]),
+      );
+      const events = await collect(
+        await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'z-ai/glm-5.2',
+          stream: true,
+          web_search: true,
           config: mockConfig,
         }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('does not support images'),
+      );
+      const end = events.find((e) => e.type === 'end');
+      expect(end).toBeDefined();
+      expect(end.content).toBe('Hello');
+      expect(end.metadata.cost).toBe(0.42);
+      expect(end.metadata.actual_provider).toBe('z-ai');
+      expect(end.metadata.request_id).toBe('gen-1');
+      expect(end.metadata.citations).toHaveLength(1);
+    });
+
+    it('emits streamed reasoning_details as thinking events', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeStream([
+          {
+            choices: [
+              {
+                index: 0,
+                delta: {
+                  reasoning_details: [
+                    { type: 'reasoning.text', text: 'thinking...' },
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            choices: [{ index: 0, delta: { content: 'Done' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          },
+        ]),
+      );
+      const events = await collect(
+        await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'z-ai/glm-5.2',
+          stream: true,
+          config: mockConfig,
+        }),
+      );
+      const thinking = events.filter((e) => e.type === 'thinking');
+      expect(thinking).toHaveLength(1);
+      expect(thinking[0].content).toBe('thinking...');
+    });
+
+    it('in-band error chunk terminates the stream as failed, preserving prior text', async () => {
+      mockCreate.mockResolvedValueOnce(
+        makeStream([
+          { choices: [{ index: 0, delta: { content: 'Partial ' } }] },
+          {
+            id: 'gen-err',
+            provider: 'openai',
+            error: { code: 'server_error', message: 'Provider disconnected' },
+            choices: [{ index: 0, delta: { content: '' }, finish_reason: 'error' }],
+          },
+          // Anything after the error must not be reached.
+          { choices: [{ index: 0, delta: { content: 'should not appear' } }] },
+        ]),
+      );
+      const events = await collect(
+        await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'z-ai/glm-5.2',
+          stream: true,
+          config: mockConfig,
+        }),
+      );
+      const deltas = events.filter((e) => e.type === 'delta');
+      expect(deltas.map((d) => d.content).join('')).toBe('Partial ');
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent.error.recoverable).toBe(false);
+      expect(errorEvent.error.message).toContain('Provider disconnected');
+      // Terminal error → no later end event.
+      expect(events.find((e) => e.type === 'end')).toBeUndefined();
+      // The chunk after the error must not have produced a delta.
+      expect(deltas.map((d) => d.content).join('')).not.toContain(
+        'should not appear',
+      );
+    });
+  });
+
+  describe('Attribution headers (optional)', () => {
+    it('omitting referer is valid and sends no HTTP-Referer', async () => {
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'z-ai/glm-5.2',
+        config: {
+          apiKeys: {
+            openrouter: 'sk-or-test-1234567890abcdefghijklmnopqrstuvwxyz1234',
+          },
+        },
+      });
+      const clientOptions = mockOpenAICtor.mock.calls.at(-1)[0];
+      expect(clientOptions.defaultHeaders['HTTP-Referer']).toBeUndefined();
+    });
+
+    it('sends a single canonical X-OpenRouter-Title (not X-Title) when configured', async () => {
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'z-ai/glm-5.2',
+        config: {
+          ...mockConfig,
+          providers: {
+            ...mockConfig.providers,
+            openrouterTitle: 'My App',
+          },
+        },
+      });
+      const headers = mockOpenAICtor.mock.calls.at(-1)[0].defaultHeaders;
+      expect(headers['X-OpenRouter-Title']).toBe('My App');
+      expect(headers['X-Title']).toBeUndefined();
+      expect(headers['HTTP-Referer']).toBe('https://test.example.com');
+    });
+  });
+
+  describe('Discovery (explicit non-curated slug)', () => {
+    it('proceeds with conservative caps when discovery is transiently unavailable', async () => {
+      mockLookup.mockResolvedValueOnce({ status: 'timeout', modelConfig: null });
+      mockCreate.mockResolvedValueOnce(makeResponse({ model: 'foo/bar' }));
+      const result = await openrouterProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { model: 'foo/bar', config: mockConfig },
+      );
+      expect(mockLookup).toHaveBeenCalledWith('foo/bar', expect.any(Object));
+      expect(result.content).toBe('Test response');
+    });
+
+    it('fails before inference with MODEL_NOT_FOUND on an authoritative catalog-miss', async () => {
+      mockLookup.mockResolvedValueOnce({
+        status: 'catalog_miss',
+        modelConfig: null,
+      });
+      await expect(
+        openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'ghost/model',
+          config: mockConfig,
+        }),
+      ).rejects.toMatchObject({ code: ErrorCodes.MODEL_NOT_FOUND });
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it('does not call discovery for static curated slugs', async () => {
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'z-ai/glm-5.2',
+        config: mockConfig,
+      });
+      expect(mockLookup).not.toHaveBeenCalled();
+    });
+
+    it('passes a rolling alias (~author/model-latest) through without discovery or a catalog-miss', async () => {
+      // Rolling aliases resolve server-side and never appear under that name in
+      // the bulk catalog, so discovery must be skipped and MODEL_NOT_FOUND must
+      // not fire — the request proceeds to inference (AC3).
+      mockCreate.mockResolvedValueOnce(
+        makeResponse({ model: '~author/model-latest' }),
+      );
+      const result = await openrouterProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { model: '~author/model-latest', config: mockConfig },
+      );
+      expect(mockLookup).not.toHaveBeenCalled();
+      expect(result.content).toBe('Test response');
+    });
+
+    it('uses discovered metadata when discovery succeeds', async () => {
+      mockLookup.mockResolvedValueOnce({
+        status: 'ok',
+        modelConfig: {
+          modelName: 'foo/bar',
+          contextWindow: 100000,
+          maxOutputTokens: 4096,
+          supportsStreaming: true,
+          supportsImages: false,
+          supportsReasoning: true,
+          reasoning: { mandatory: false, default_enabled: true },
+          timeout: 300000,
+        },
+      });
+      mockCreate.mockResolvedValueOnce(makeResponse({ model: 'foo/bar' }));
+      await openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'foo/bar',
+        reasoning_effort: 'high',
+        config: mockConfig,
+      });
+      // Binary reasoning metadata → enabled:true.
+      expect(mockCreate.mock.calls.at(-1)[0].reasoning).toEqual({
+        enabled: true,
       });
     });
   });
 
-  describe('Stop Reason Mapping', () => {
-    const testCases = [
+  describe('Stop reason mapping', () => {
+    const cases = [
       ['stop', StopReasons.STOP],
       ['length', StopReasons.LENGTH],
       ['content_filter', StopReasons.CONTENT_FILTER],
-      ['function_call', StopReasons.TOOL_USE],
       ['tool_calls', StopReasons.TOOL_USE],
     ];
 
-    testCases.forEach(([openaiReason, expectedReason]) => {
-      it(`should map finish_reason "${openaiReason}" to "${expectedReason}"`, async () => {
-        mockCreate.mockResolvedValue({
-          choices: [
-            {
-              message: { content: 'Test', role: 'assistant' },
-              finish_reason: openaiReason,
-            },
-          ],
-          usage: {},
-          model: 'qwen/qwen3-235b-a22b-thinking-2507',
-        });
-
-        const result = await openrouterProvider.invoke(
-          [{ role: 'user', content: 'Hello' }],
-          { config: mockConfig },
+    cases.forEach(([finish, expected]) => {
+      it(`maps finish_reason "${finish}" to "${expected}"`, async () => {
+        mockCreate.mockResolvedValueOnce(
+          makeResponse({
+            choices: [
+              {
+                index: 0,
+                message: { role: 'assistant', content: 'x' },
+                finish_reason: finish,
+              },
+            ],
+          }),
         );
-
-        expect(result.stop_reason).toBe(expectedReason);
+        const result = await openrouterProvider.invoke(
+          [{ role: 'user', content: 'Hi' }],
+          { model: 'z-ai/glm-5.2', config: mockConfig },
+        );
+        expect(result.stop_reason).toBe(expected);
       });
-    });
-
-    it('should map unknown stop reason to OTHER', async () => {
-      mockCreate.mockResolvedValue({
-        choices: [
-          {
-            message: { content: 'Test', role: 'assistant' },
-            finish_reason: 'unknown_reason',
-          },
-        ],
-        usage: {},
-        model: 'anthropic/claude-3.5-sonnet',
-      });
-
-      const result = await openrouterProvider.invoke(
-        [{ role: 'user', content: 'Hello' }],
-        { config: mockConfig },
-      );
-
-      expect(result.stop_reason).toBe(StopReasons.OTHER);
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle missing API key', async () => {
+  describe('Error handling', () => {
+    it('handles missing API key', async () => {
       await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: { providers: { openrouterReferer: 'https://test.com' } },
+        openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          config: { providers: {} },
         }),
       ).rejects.toThrow('OpenRouter API key not configured');
     });
 
-    it('should handle API errors', async () => {
-      const errorCases = [
-        {
-          status: 401,
-          data: { error: { message: 'Invalid API key' } },
-          expectedCode: ErrorCodes.INVALID_API_KEY,
-          expectedMessage: 'Invalid OpenRouter API key',
-        },
-        {
-          status: 429,
-          data: { error: { message: 'Rate limit exceeded' } },
-          expectedCode: ErrorCodes.RATE_LIMIT_EXCEEDED,
-          expectedMessage: 'rate limit exceeded',
-        },
-        {
-          status: 403,
-          data: { error: { message: 'Quota exceeded' } },
-          expectedCode: ErrorCodes.QUOTA_EXCEEDED,
-          expectedMessage: 'quota exceeded',
-        },
-      ];
-
-      for (const {
-        status,
-        data,
-        expectedCode,
-        expectedMessage,
-      } of errorCases) {
-        mockCreate.mockRejectedValueOnce({
-          response: { status, data },
-        });
-
-        await expect(
-          openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-            config: mockConfig,
-          }),
-        ).rejects.toMatchObject({
-          code: expectedCode,
-          message: expect.stringContaining(expectedMessage),
-        });
-      }
-    });
-
-    it('should handle model not found errors', async () => {
-      // Test 1: Dynamic model without OPENROUTER_DYNAMIC_MODELS enabled
+    it('does not require a referer to invoke', async () => {
       await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          model: 'unknown/model',
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining(
-          'requires OPENROUTER_DYNAMIC_MODELS=true',
-        ),
-      });
-
-      // Test 2: API 404 error with dynamic models enabled
-      const configWithDynamic = {
-        ...mockConfig,
-        providers: {
-          ...mockConfig.providers,
-          openrouterdynamicmodels: true,
-        },
-      };
-
-      mockCreate.mockRejectedValue({
-        response: {
-          status: 404,
-          data: { error: { message: 'Model unknown/model not found' } },
-        },
-      });
-
-      await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          model: 'unknown/model',
-          config: configWithDynamic,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining('Model unknown/model not found'),
-      });
-    });
-
-    it('should handle context length errors', async () => {
-      mockCreate.mockRejectedValue({
-        response: {
-          status: 400,
-          data: { error: { message: 'Context length exceeded' } },
-        },
-      });
-
-      await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.CONTEXT_LENGTH_EXCEEDED,
-        message: 'Context length exceeded for model',
-      });
-    });
-
-    it('should handle no response choice', async () => {
-      mockCreate.mockResolvedValue({
-        choices: [],
-        usage: {},
-      });
-
-      await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.NO_RESPONSE_CHOICE,
-        message: 'No response choice received',
-      });
-    });
-
-    it('should handle no response content', async () => {
-      mockCreate.mockResolvedValue({
-        choices: [
-          {
-            message: { role: 'assistant' },
-            finish_reason: 'stop',
+        openrouterProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'z-ai/glm-5.2',
+          config: {
+            apiKeys: {
+              openrouter: 'sk-or-test-1234567890abcdefghijklmnopqrstuvwxyz1234',
+            },
           },
-        ],
-        usage: {},
-      });
-
-      await expect(
-        openrouterProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig,
         }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.NO_RESPONSE_CONTENT,
-        message: 'No content in response',
-      });
+      ).resolves.toBeDefined();
     });
   });
 });

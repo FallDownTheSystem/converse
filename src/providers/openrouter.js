@@ -1,116 +1,177 @@
 /**
  * OpenRouter Provider
  *
- * Provider implementation for OpenRouter's unified API gateway using OpenAI-compatible API.
- * Implements the unified interface: async invoke(messages, options) => { content, stop_reason, rawResponse }
+ * Provider implementation for OpenRouter's unified API gateway, built on the
+ * shared OpenAI-compatible base. Exposes a curated static catalog of current
+ * flagship slugs; any other explicit `provider/model` slug is discovered
+ * request-locally through the Foundation discovery adapter (never merged into
+ * getSupportedModels()).
  *
- * OpenRouter provides access to multiple AI models through a single API endpoint.
- * IMPORTANT: Requires HTTP-Referer header for compliance tracking.
+ * Capability notes:
+ *   - Web search is explicit opt-in via the `:online` slug decoration (parsed by
+ *     the shared resolver into `options.web_search`) because OpenRouter web
+ *     search adds real per-request cost. `supportsWebSearch` stays false on every
+ *     curated model; the plugin is attached from the flag, never silently.
+ *   - Reasoning is metadata-driven from each model's structured `reasoning`
+ *     object and capability-gated: unknown/retired pass-through IDs get no
+ *     reasoning field.
+ *   - Attribution headers (`HTTP-Referer`, canonical `X-OpenRouter-Title`) are
+ *     optional; omitting them only forgoes OpenRouter ranking credit.
  */
 
 import { createOpenAICompatibleProvider } from './openai-compatible.js';
 import { debugLog } from '../utils/console.js';
 import { ProviderError, ErrorCodes } from './interface.js';
-import { fetchModelEndpointsWithCache } from './openrouter-endpoints-client.js';
+import {
+  lookupOpenRouterModel,
+  DiscoveryStatus,
+} from './openrouter-discovery.js';
 
-// Define supported OpenRouter models with their capabilities
-// Only including the three specific models requested
+// Curated static catalog (verified live 2026-07-11). getSupportedModels() must
+// return exactly these 8 slugs even after a discovery call has run — dynamic
+// metadata is request-local and never merged here.
+//
+// Each entry carries a structured `reasoning` object mirroring the discovery
+// adapter's shape so the reasoning mapper (buildOpenRouterReasoning) is uniform
+// across static and discovered models:
+//   - effort-tiered: { supported_efforts: ['xhigh','high'], default_effort:'high' }
+//   - enable/disable-only (binary): { mandatory:false, default_enabled:true }
+//   - mandatory: { mandatory:true } (reasoning cannot be disabled)
+//   - passthrough: { passthrough:true } (openrouter/auto — the router chooses)
 const SUPPORTED_MODELS = {
-  'qwen/qwen3-235b-a22b-thinking-2507': {
-    modelName: 'qwen/qwen3-235b-a22b-thinking-2507',
-    friendlyName: 'Qwen3 235B Thinking (via OpenRouter)',
-    contextWindow: 32768,
-    maxOutputTokens: 8192,
+  'z-ai/glm-5.2': {
+    modelName: 'z-ai/glm-5.2',
+    friendlyName: 'Z.ai GLM 5.2 (via OpenRouter)',
+    contextWindow: 1048576,
+    maxOutputTokens: 131072,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    supportsThinking: true,
+    supportsReasoning: true,
+    reasoning: {
+      mandatory: false,
+      default_enabled: true,
+      supported_efforts: ['xhigh', 'high'],
+      default_effort: 'high',
+    },
     timeout: 300000,
     description:
-      'Qwen3 235B Thinking model with enhanced reasoning capabilities',
-    aliases: [
-      'qwen3-thinking',
-      'qwen-thinking',
-      'qwen3 thinking',
-      'qwen thinking',
-      'qwen3-235b-thinking',
-    ],
+      'Z.ai GLM 5.2 — large-scale reasoning model with a 1M-token context',
+    aliases: ['glm-5.2', 'glm5.2', 'glm'],
   },
-  'qwen/qwen3-coder': {
-    modelName: 'qwen/qwen3-coder',
-    friendlyName: 'Qwen3 Coder (via OpenRouter)',
-    contextWindow: 32768,
-    maxOutputTokens: 8192,
+  'deepseek/deepseek-v4-pro': {
+    modelName: 'deepseek/deepseek-v4-pro',
+    friendlyName: 'DeepSeek V4 Pro (via OpenRouter)',
+    contextWindow: 1048576,
+    maxOutputTokens: 384000,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
+    supportsReasoning: true,
+    reasoning: {
+      mandatory: false,
+      default_enabled: true,
+      supported_efforts: ['xhigh', 'high'],
+      default_effort: 'high',
+    },
     timeout: 300000,
-    description: 'Qwen3 Coder specialized for programming tasks',
-    aliases: [
-      'qwen3-coder',
-      'qwen-coder',
-      'qwen3 coder',
-      'qwen coder',
-      'qwen-3-coder',
-    ],
+    description: 'DeepSeek V4 Pro reasoning model (via OpenRouter)',
+    aliases: [],
   },
-  'moonshotai/kimi-k2': {
-    modelName: 'moonshotai/kimi-k2',
-    friendlyName: 'Kimi K2 (via OpenRouter)',
-    contextWindow: 200000,
-    maxOutputTokens: 8192,
+  'deepseek/deepseek-v4-flash': {
+    modelName: 'deepseek/deepseek-v4-flash',
+    friendlyName: 'DeepSeek V4 Flash (via OpenRouter)',
+    contextWindow: 1048576,
+    maxOutputTokens: 384000,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
+    supportsReasoning: true,
+    reasoning: {
+      mandatory: false,
+      default_enabled: true,
+      supported_efforts: ['xhigh', 'high'],
+      default_effort: 'high',
+    },
     timeout: 300000,
-    description: 'Moonshot AI Kimi K2 with extended context window',
-    aliases: [
-      'kimi-k2',
-      'moonshot-kimi',
-      'kimi k2',
-      'kimi',
-      'moonshot kimi',
-      'moonshot-k2',
-      'k2',
-    ],
+    description: 'DeepSeek V4 Flash — faster, lower-cost DeepSeek V4 tier',
+    aliases: [],
+  },
+  'qwen/qwen3.7-max': {
+    modelName: 'qwen/qwen3.7-max',
+    friendlyName: 'Qwen3.7 Max (via OpenRouter)',
+    contextWindow: 1000000,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoning: true,
+    // Enable/disable-only — no effort tiers exposed.
+    reasoning: { mandatory: false, default_enabled: true },
+    timeout: 300000,
+    description: 'Qwen3.7 Max — flagship Qwen with a 1M-token context',
+    aliases: ['qwen3.7-max'],
+  },
+  'qwen/qwen3.7-plus': {
+    modelName: 'qwen/qwen3.7-plus',
+    friendlyName: 'Qwen3.7 Plus (via OpenRouter)',
+    contextWindow: 1000000,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsReasoning: true,
+    // Enable/disable-only — no effort tiers exposed.
+    reasoning: { mandatory: false, default_enabled: true },
+    timeout: 300000,
+    description: 'Qwen3.7 Plus — image-capable Qwen with a 1M-token context',
+    aliases: ['qwen3.7-plus'],
+  },
+  'moonshotai/kimi-k2.7-code': {
+    modelName: 'moonshotai/kimi-k2.7-code',
+    friendlyName: 'Kimi K2.7 Code (via OpenRouter)',
+    contextWindow: 262144,
+    maxOutputTokens: 262144,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsReasoning: true,
+    // Mandatory reasoning — cannot be disabled.
+    reasoning: { mandatory: true, default_enabled: true },
+    timeout: 300000,
+    description: 'Moonshot Kimi K2.7 Code — coding model with mandatory reasoning',
+    aliases: ['kimi-k2.7-code'],
+  },
+  'moonshotai/kimi-k2.6': {
+    modelName: 'moonshotai/kimi-k2.6',
+    friendlyName: 'Kimi K2.6 (via OpenRouter)',
+    contextWindow: 262144,
+    maxOutputTokens: 262144,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsReasoning: true,
+    // Enable/disable-only — no effort tiers exposed.
+    reasoning: { mandatory: false, default_enabled: true },
+    timeout: 300000,
+    description: 'Moonshot Kimi K2.6 — image-capable general model',
+    aliases: ['kimi-k2.6'],
   },
   'openrouter/auto': {
     modelName: 'openrouter/auto',
-    friendlyName: 'OpenRouter Auto (via NotDiamond)',
-    contextWindow: 128000, // Safe default for auto-routing
-    maxOutputTokens: 8192, // Safe default
+    friendlyName: 'OpenRouter Auto',
+    contextWindow: 2000000,
+    maxOutputTokens: 131072,
     supportsStreaming: true,
-    supportsImages: false, // Conservative default
+    supportsImages: true,
     supportsWebSearch: false,
+    supportsReasoning: true,
+    // Router selects the underlying model (and its effort) — do not fabricate a
+    // reasoning field.
+    reasoning: { passthrough: true },
     timeout: 300000,
-    description:
-      'Auto-selects the best model for your prompt using NotDiamond routing',
-    aliases: [
-      'openrouter auto',
-      'auto router',
-      'auto-router',
-      'openrouter-auto',
-    ],
-  },
-  'z-ai/glm-4.6': {
-    modelName: 'z-ai/glm-4.6',
-    friendlyName: 'Z.AI GLM 4.6 (via OpenRouter)',
-    contextWindow: 202752,
-    maxOutputTokens: 8192,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsWebSearch: false,
-    timeout: 300000,
-    description:
-      'Z.AI GLM 4.6 with 200K context - improved coding, reasoning, and agent performance',
-    aliases: [
-      'glm-4.6',
-      'glm4.6',
-      'glm 4.6',
-      'z-ai glm',
-      'z-ai-glm',
-      'zai-glm',
-    ],
+    description: 'Auto-selects the best model for your prompt via OpenRouter',
+    aliases: ['auto-router', 'openrouter-auto'],
   },
 };
 
@@ -135,82 +196,355 @@ function validateApiKey(apiKey) {
 }
 
 /**
- * Get custom headers for OpenRouter
+ * Build optional OpenRouter attribution headers. Both are optional — omitting
+ * them only forgoes ranking credit, it never breaks a request. When a title is
+ * configured, emit a single canonical `X-OpenRouter-Title` (not the legacy
+ * `X-Title`), while still accepting the legacy `openrouterreferer`/
+ * `openroutertitle` config-key spellings as input.
  */
 function getCustomHeaders(config) {
   const headers = {};
 
-  // REQUIRED: HTTP-Referer header for compliance
-  // Handle both camelCase (from tests) and lowercase (from config.js) keys
   const referer =
     config?.providers?.openrouterreferer ||
-    config?.providers?.openrouterReferer ||
-    'https://github.com/FallDownTheSystem/converse';
-  headers['HTTP-Referer'] = referer;
+    config?.providers?.openrouterReferer;
+  if (referer) {
+    headers['HTTP-Referer'] = referer;
+  }
 
-  // Optional: X-Title header for request tracking
   const title =
     config?.providers?.openroutertitle || config?.providers?.openrouterTitle;
   if (title) {
-    headers['X-Title'] = title;
+    headers['X-OpenRouter-Title'] = title;
   }
-
-  debugLog(`[OpenRouter] Using referer: ${referer}`);
 
   return headers;
 }
 
 /**
- * Transform request to handle OpenRouter-specific requirements
+ * Concatenate the visible reasoning text from a `reasoning_details[]` array.
+ * `reasoning.text` and `reasoning.summary` are visible; `reasoning.encrypted`
+ * is provider-side ciphertext and is NEVER rendered as visible reasoning.
+ * @param {Array<object>} details
+ * @returns {string}
  */
-async function transformRequest(requestPayload, { modelConfig }) {
-  // OpenRouter supports additional parameters
-  const transformed = { ...requestPayload };
+function extractReasoningText(details) {
+  if (!Array.isArray(details)) return '';
+  const parts = [];
+  for (const detail of details) {
+    if (!detail || typeof detail !== 'object') continue;
+    if (detail.type === 'reasoning.text' && typeof detail.text === 'string') {
+      parts.push(detail.text);
+    } else if (
+      detail.type === 'reasoning.summary' &&
+      typeof detail.summary === 'string'
+    ) {
+      parts.push(detail.summary);
+    }
+    // reasoning.encrypted → intentionally skipped (never surfaced as reasoning)
+  }
+  return parts.join('');
+}
 
-  // Ensure model name includes provider prefix if not already present
-  if (!transformed.model.includes('/')) {
-    debugLog(
-      `[OpenRouter] Warning: Model name '${transformed.model}' should include provider prefix (e.g., 'anthropic/claude-3.5-sonnet')`,
-    );
+/**
+ * Map a Converse reasoning_effort level to OpenRouter's `reasoning` request
+ * field, driven by the model's structured `reasoning` metadata. Capability-gated:
+ * returns null (no field) unless the resolved modelConfig indicates reasoning
+ * support, so unknown/retired pass-through IDs never receive reasoning params.
+ *
+ *   1. passthrough (openrouter/auto)  → null (router decides)
+ *   2. mandatory (kimi-k2.7-code)     → { enabled: true } (cannot disable)
+ *   3. effort-tiered (glm/deepseek)   → clamp into supported_efforts
+ *                                       (max→xhigh, else→high; none→disabled)
+ *   4. enable/disable-only (qwen/kimi) → { enabled: false } for none, else true
+ *   5. unavailable metadata           → null (omit conservatively)
+ *
+ * `none` uses `{ enabled: false }` where disabling is allowed — never
+ * `exclude: true` (exclude still reasons, just hides it).
+ * @param {object} modelConfig
+ * @param {string} reasoningEffort - Raw Converse level
+ * @returns {object|null}
+ */
+function buildOpenRouterReasoning(modelConfig, reasoningEffort) {
+  if (!modelConfig?.supportsReasoning) return null;
+  const reasoning = modelConfig.reasoning;
+  if (!reasoning) return null;
+
+  if (reasoning.passthrough) return null;
+  if (reasoning.mandatory) return { enabled: true };
+
+  const level = reasoningEffort || 'medium';
+
+  if (
+    Array.isArray(reasoning.supported_efforts) &&
+    reasoning.supported_efforts.length > 0
+  ) {
+    if (level === 'none') return { enabled: false };
+    const wanted = level === 'max' ? 'xhigh' : 'high';
+    const efforts = reasoning.supported_efforts;
+    const effort = efforts.includes(wanted)
+      ? wanted
+      : efforts.includes('high')
+        ? 'high'
+        : efforts[0];
+    return { effort };
   }
 
-  // OpenRouter supports provider-specific parameters through 'provider' field
-  // This is useful for passing model-specific settings
-  if (modelConfig.providerSettings) {
-    transformed.provider = modelConfig.providerSettings;
+  // Enable/disable-only.
+  if (level === 'none') return { enabled: false };
+  return { enabled: true };
+}
+
+/**
+ * Transform request: attach the metadata-driven, capability-gated `reasoning`
+ * field. The requested effort arrives via the Foundation-widened context.
+ */
+async function transformRequest(requestPayload, { modelConfig, reasoningEffort }) {
+  const transformed = { ...requestPayload };
+
+  const reasoning = buildOpenRouterReasoning(modelConfig, reasoningEffort);
+  if (reasoning) {
+    transformed.reasoning = reasoning;
   }
 
   return transformed;
 }
 
 /**
- * Transform response to handle OpenRouter-specific fields
+ * Transform response (non-streaming): capture OpenRouter-specific metadata.
+ * Usage cost is automatic now — read `usage.cost` and `usage.cost_details`
+ * (the legacy `prompt_cost`/`completion_cost`/`total_cost` fields do not exist).
+ * Preserve the top-level upstream `provider`, the request id, typed
+ * `reasoning_details` (with a visible-text projection), and `url_citation`
+ * annotations. In streaming these ride the streaming metadataPatch instead (the
+ * synthetic streaming rawResponse lacks the message body).
  */
 async function transformResponse(result, rawResponse) {
-  // OpenRouter adds additional metadata
   if (rawResponse.id) {
     result.metadata.request_id = rawResponse.id;
   }
 
-  // OpenRouter provides pricing information
-  if (rawResponse.usage) {
-    if (rawResponse.usage.prompt_cost) {
-      result.metadata.prompt_cost = rawResponse.usage.prompt_cost;
+  const usage = rawResponse.usage;
+  if (usage) {
+    if (typeof usage.cost === 'number') {
+      result.metadata.cost = usage.cost;
     }
-    if (rawResponse.usage.completion_cost) {
-      result.metadata.completion_cost = rawResponse.usage.completion_cost;
-    }
-    if (rawResponse.usage.total_cost) {
-      result.metadata.total_cost = rawResponse.usage.total_cost;
+    if (usage.cost_details) {
+      result.metadata.cost_details = usage.cost_details;
     }
   }
 
-  // OpenRouter may return the actual provider used
   if (rawResponse.provider) {
     result.metadata.actual_provider = rawResponse.provider;
   }
 
+  const message = rawResponse.choices?.[0]?.message;
+  if (message) {
+    if (
+      Array.isArray(message.reasoning_details) &&
+      message.reasoning_details.length > 0
+    ) {
+      result.metadata.reasoning_details = message.reasoning_details;
+      const reasoningText = extractReasoningText(message.reasoning_details);
+      if (reasoningText) {
+        result.metadata.reasoning = reasoningText;
+      }
+    }
+    if (Array.isArray(message.annotations) && message.annotations.length > 0) {
+      const citations = message.annotations.filter(
+        (annotation) => annotation?.type === 'url_citation',
+      );
+      if (citations.length > 0) {
+        result.metadata.citations = citations;
+      }
+    }
+  }
+
   return result;
+}
+
+/**
+ * Per-chunk streaming hook. Emits streamed reasoning as `thinking` events (so it
+ * survives the normalizer), accumulates typed reasoning_details / `url_citation`
+ * annotations / cost / upstream provider / request id into the final metadata,
+ * and terminates the stream as FAILED on an in-band SSE error — detected
+ * independently as a top-level `error` object OR `finish_reason: "error"` —
+ * while leaving already-emitted deltas intact.
+ * @param {object} chunk - Parsed SSE chunk
+ * @param {object} streamState - Persistent per-stream scratch object
+ * @returns {{events: Array, metadataPatch: (object|null), suppressDefault: boolean, terminalError: (object|null)}}
+ */
+function transformStreamChunk(chunk, streamState) {
+  const choice = chunk?.choices?.[0];
+
+  // In-band SSE errors terminate the stream as failed. Detect a top-level error
+  // object and finish_reason==='error' independently.
+  if (chunk?.error) {
+    return {
+      events: [],
+      metadataPatch: null,
+      suppressDefault: true,
+      terminalError: {
+        message: chunk.error.message || 'OpenRouter stream error',
+        code:
+          typeof chunk.error.code === 'string'
+            ? chunk.error.code
+            : 'OPENROUTER_STREAM_ERROR',
+      },
+    };
+  }
+  if (choice?.finish_reason === 'error') {
+    return {
+      events: [],
+      metadataPatch: null,
+      suppressDefault: true,
+      terminalError: {
+        message: 'OpenRouter stream terminated (finish_reason=error)',
+        code: 'OPENROUTER_STREAM_ERROR',
+      },
+    };
+  }
+
+  const events = [];
+
+  // Streamed reasoning_details → thinking events; accumulate the full typed
+  // array for the end metadata. The thinking text carries the reasoning to the
+  // normalizer (which accumulates it into metadata.reasoning) — so we do NOT
+  // also put a reasoning text string in the metadataPatch (avoids double count).
+  const deltaDetails = choice?.delta?.reasoning_details;
+  if (Array.isArray(deltaDetails) && deltaDetails.length > 0) {
+    if (!streamState.reasoningDetails) streamState.reasoningDetails = [];
+    for (const detail of deltaDetails) {
+      streamState.reasoningDetails.push(detail);
+    }
+    const text = extractReasoningText(deltaDetails);
+    if (text) {
+      events.push({
+        type: 'thinking',
+        content: text,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  // Accumulate url_citation annotations, deduped by URL across chunks.
+  const deltaAnnotations =
+    choice?.delta?.annotations || choice?.message?.annotations;
+  if (Array.isArray(deltaAnnotations) && deltaAnnotations.length > 0) {
+    if (!streamState.annotations) streamState.annotations = [];
+    if (!streamState.citationUrls) streamState.citationUrls = new Set();
+    for (const annotation of deltaAnnotations) {
+      const url = annotation?.url_citation?.url;
+      if (
+        annotation?.type === 'url_citation' &&
+        url &&
+        !streamState.citationUrls.has(url)
+      ) {
+        streamState.citationUrls.add(url);
+        streamState.annotations.push(annotation);
+      }
+    }
+  }
+
+  const patch = {};
+  if (chunk?.usage) {
+    if (typeof chunk.usage.cost === 'number') patch.cost = chunk.usage.cost;
+    if (chunk.usage.cost_details) patch.cost_details = chunk.usage.cost_details;
+  }
+  if (chunk?.provider) patch.actual_provider = chunk.provider;
+  if (chunk?.id && !streamState.requestIdCaptured) {
+    patch.request_id = chunk.id;
+    streamState.requestIdCaptured = true;
+  }
+  // Live references, not snapshots: streamState is per-stream scratch that is
+  // never mutated after the stream ends, and only the final merged patch is
+  // consumed — re-slicing the growing arrays every chunk would be O(n²).
+  if (streamState.reasoningDetails?.length) {
+    patch.reasoning_details = streamState.reasoningDetails;
+  }
+  if (streamState.annotations?.length) {
+    patch.citations = streamState.annotations;
+  }
+
+  return {
+    events,
+    metadataPatch: Object.keys(patch).length > 0 ? patch : null,
+    suppressDefault: false,
+    terminalError: null,
+  };
+}
+
+/**
+ * Conservative request-local config for an explicit slug when discovery is
+ * transiently unavailable (auth/rate_limit/timeout/malformed). Lets the request
+ * proceed with cautious capabilities: reasoning is omitted (capability-gated
+ * off), and `supportsImages` is left undefined so images are not hard-blocked
+ * during a discovery outage.
+ */
+function createConservativeModelConfig(modelName) {
+  return {
+    modelName,
+    friendlyName: `${modelName} (via OpenRouter)`,
+    contextWindow: 8192,
+    maxOutputTokens: 8192,
+    supportsStreaming: true,
+    supportsWebSearch: false,
+    timeout: 300000,
+    isDynamic: true,
+  };
+}
+
+/**
+ * Request-local model-config resolver. Static curated
+ * models are authoritative and never trigger discovery. An explicit non-curated
+ * `provider/model` slug is looked up through the discovery adapter:
+ *   - ok         → use the discovered metadata;
+ *   - catalog_miss → throw MODEL_NOT_FOUND (fails before inference);
+ *   - transient  → proceed with conservative capabilities.
+ * Dynamic metadata stays request-local and is never merged into
+ * getSupportedModels().
+ */
+async function resolveModelConfig(resolvedModel, { signal }) {
+  // A `:free`-style decoration may ride on the request model; discovery/static
+  // lookup uses the bare base slug.
+  const base = String(resolvedModel).split(':')[0];
+
+  const staticConfig = SUPPORTED_MODELS[base];
+  if (staticConfig) {
+    return staticConfig;
+  }
+
+  // Rolling aliases (`~author/model-latest`) are explicit opt-in pass-through
+  // values: OpenRouter resolves them server-side and they never appear under
+  // that name in the bulk catalog, so validating them through discovery would
+  // wrongly fail them as absent. Proceed with conservative capabilities and let
+  // the API resolve the target.
+  if (base.startsWith('~')) {
+    return createConservativeModelConfig(base);
+  }
+
+  // Not a slash-format slug: nothing to discover; the base falls back to an
+  // empty config (unknown-ID passthrough).
+  if (!base.includes('/')) {
+    return null;
+  }
+
+  const { status, modelConfig } = await lookupOpenRouterModel(base, { signal });
+
+  if (status === DiscoveryStatus.OK && modelConfig) {
+    return modelConfig;
+  }
+  if (status === DiscoveryStatus.CATALOG_MISS) {
+    throw new OpenRouterProviderError(
+      `Model '${base}' was not found in the OpenRouter catalog`,
+      ErrorCodes.MODEL_NOT_FOUND,
+    );
+  }
+
+  debugLog(
+    `[OpenRouter] Discovery unavailable for ${base} (${status}); proceeding with conservative capabilities`,
+  );
+  return createConservativeModelConfig(base);
 }
 
 /**
@@ -223,198 +557,40 @@ export const openrouterProvider = createOpenAICompatibleProvider({
   validateApiKey,
   transformRequest,
   transformResponse,
-  customHeaders: {}, // Headers are dynamic, set via getCustomHeaders
+  transformStreamChunk,
+  resolveModelConfig,
+  customHeaders: {}, // Attribution headers are dynamic, injected via invoke override
   defaultParams: {
-    // OpenRouter default parameters
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
   },
 });
 
-/**
- * Check if a model string follows OpenRouter's provider/model format
- */
-function isOpenRouterModelFormat(modelName) {
-  return typeof modelName === 'string' && modelName.includes('/');
-}
-
-/**
- * Create a dynamic model configuration from minimal information
- */
-function createDynamicModelConfig(modelName) {
-  return {
-    modelName,
-    friendlyName: `${modelName} (via OpenRouter)`,
-    contextWindow: 8192, // Safe default
-    maxOutputTokens: 4096, // Safe default
-    supportsStreaming: true,
-    supportsImages: false, // Conservative default
-    supportsWebSearch: false,
-    timeout: 300000,
-    description: `Dynamic model: ${modelName}`,
-    isDynamic: true, // Flag to identify dynamic models
-  };
-}
-
-// Store for dynamically discovered models
-const dynamicModels = new Map();
-
-// Override methods to support dynamic models
-const originalGetSupportedModels = openrouterProvider.getSupportedModels;
-openrouterProvider.getSupportedModels = function () {
-  const staticModels = originalGetSupportedModels.call(this);
-
-  // Merge dynamic models if any exist
-  if (dynamicModels.size > 0) {
-    const allModels = { ...staticModels };
-    for (const [modelName, config] of dynamicModels) {
-      allModels[modelName] = config;
-    }
-    return allModels;
-  }
-
-  return staticModels;
-};
-
-// Create an async version of getModelConfig for API fetching
-openrouterProvider.getModelConfigAsync = async function (modelName) {
-  // First check static models
-  const staticConfig = this.getModelConfig(modelName);
-  if (staticConfig && !staticConfig.isDynamic) {
-    return staticConfig;
-  }
-
-  // Check if already in dynamic models cache
-  if (dynamicModels.has(modelName)) {
-    return dynamicModels.get(modelName);
-  }
-
-  // If dynamic models are enabled and model follows format, fetch from API
-  const config = this._lastConfig || {};
-  const dynamicModelsEnabled =
-    config?.providers?.openrouterdynamicmodels ||
-    config?.providers?.openrouterDynamicModels;
-  if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
-    debugLog(`[OpenRouter] Fetching dynamic model config for: ${modelName}`);
-
-    // Fetch from API with caching
-    const apiConfig = await fetchModelEndpointsWithCache(modelName);
-
-    if (apiConfig) {
-      // Store in dynamic models cache
-      dynamicModels.set(modelName, apiConfig);
-      return apiConfig;
-    } else {
-      // Model not found on API, create default config to avoid repeated lookups
-      const defaultConfig = createDynamicModelConfig(modelName);
-      defaultConfig.notFoundOnApi = true;
-      dynamicModels.set(modelName, defaultConfig);
-      return defaultConfig;
-    }
-  }
-
-  return null;
-};
-
-const originalGetModelConfig = openrouterProvider.getModelConfig;
-openrouterProvider.getModelConfig = function (modelName) {
-  // First check static models
-  const staticConfig = originalGetModelConfig.call(this, modelName);
-  if (staticConfig) {
-    return staticConfig;
-  }
-
-  // Check dynamic models cache
-  if (dynamicModels.has(modelName)) {
-    return dynamicModels.get(modelName);
-  }
-
-  // Check if dynamic models are enabled
-  const config = this._lastConfig || {};
-  const dynamicModelsEnabled =
-    config?.providers?.openrouterdynamicmodels ||
-    config?.providers?.openrouterDynamicModels;
-
-  // Only allow dynamic models if explicitly enabled AND model has slash format
-  if (dynamicModelsEnabled && isOpenRouterModelFormat(modelName)) {
-    // Note: This is a fallback for synchronous calls
-    // The async version should be preferred for accurate model info
-    const dynamicConfig = createDynamicModelConfig(modelName);
-    dynamicConfig.needsApiUpdate = true;
-    return dynamicConfig;
-  }
-
-  // If model has slash format but dynamic models disabled, return null
-  // This will cause the model to be rejected as not found
-  return null;
-};
-
-// Override the invoke method to add dynamic headers and model support
+// Override invoke to inject optional attribution headers and translate the
+// resolver's `:online` web-search opt-in into an OpenRouter `web` plugin. All
+// dynamic-model handling lives in the resolveModelConfig hook above.
 const originalInvoke = openrouterProvider.invoke;
 openrouterProvider.invoke = async function (messages, options = {}) {
-  // Store config for use in getModelConfig
-  this._lastConfig = options.config;
-
-  // Validate referer configuration
-  // Handle both camelCase (from tests) and lowercase (from config.js) keys
-  if (
-    !options.config?.providers?.openrouterreferer &&
-    !options.config?.providers?.openrouterReferer
-  ) {
-    throw new OpenRouterProviderError(
-      'OpenRouter requires HTTP-Referer header. Please set OPENROUTER_REFERER in your environment',
-      ErrorCodes.INVALID_REQUEST,
-    );
-  }
-
-  // Check if we need to fetch dynamic model config
-  const modelName = options.model;
-  if (modelName) {
-    const existingConfig = this.getModelConfig(modelName);
-
-    // If model not found and has slash format, check if dynamic models are enabled
-    if (!existingConfig && isOpenRouterModelFormat(modelName)) {
-      const dynamicModelsEnabled =
-        options.config?.providers?.openrouterdynamicmodels ||
-        options.config?.providers?.openrouterDynamicModels;
-      if (!dynamicModelsEnabled) {
-        throw new OpenRouterProviderError(
-          `Model '${modelName}' requires OPENROUTER_DYNAMIC_MODELS=true to be set`,
-          ErrorCodes.MODEL_NOT_FOUND,
-        );
-      }
-    }
-
-    // If the model needs API update, fetch it now
-    if (existingConfig?.needsApiUpdate) {
-      const dynamicModelsEnabled =
-        options.config?.providers?.openrouterdynamicmodels ||
-        options.config?.providers?.openrouterDynamicModels;
-      if (dynamicModelsEnabled) {
-        debugLog(`[OpenRouter] Fetching API config for model: ${modelName}`);
-        await this.getModelConfigAsync(modelName);
-      }
-    }
-  }
-
-  // Create a modified config with custom headers
   const modifiedOptions = {
     ...options,
     config: {
       ...options.config,
-      // Inject custom headers into the provider config
       providers: {
-        ...options.config.providers,
+        ...options.config?.providers,
         _customHeaders: getCustomHeaders(options.config),
       },
     },
   };
 
-  // Call original invoke with modified options
+  // Web search is strictly opt-in: the shared resolver sets options.web_search
+  // from a parsed `:online` decoration. Attach the web plugin exactly once
+  // (never both a `:online` slug and a plugin). Ordinary requests attach
+  // nothing — no plugin, no `:online`, no web-search option.
+  if (options.web_search) {
+    const existing = Array.isArray(options.plugins) ? options.plugins : [];
+    modifiedOptions.plugins = [...existing, { id: 'web' }];
+  }
+
   return originalInvoke.call(this, messages, modifiedOptions);
 };
-
-// Note: The base module needs to be updated to use _customHeaders if present
-// This is a temporary workaround - in production, the openai-compatible.js
-// should be updated to accept a function for customHeaders

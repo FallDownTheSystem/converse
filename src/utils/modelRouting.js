@@ -39,15 +39,147 @@ export function getDefaultModelForProvider(providerName) {
     claude: 'claude',
     copilot: 'copilot',
     openai: 'gpt-5.6',
-    xai: 'grok-4-0709',
+    xai: 'grok-4.5',
     google: 'gemini-pro',
     anthropic: 'claude-sonnet-4-20250514',
-    mistral: 'magistral-medium-2506',
-    deepseek: 'deepseek-reasoner',
-    openrouter: 'qwen/qwen3-coder',
+    mistral: 'mistral-medium-3-5',
+    deepseek: 'deepseek-v4-pro',
+    openrouter: 'z-ai/glm-5.2',
   };
 
   return defaults[providerName] || 'gpt-5.6';
+}
+
+/**
+ * Curated friendly-alias → { provider, canonicalModel } table. Single source of
+ * truth for routing the bare friendly aliases of the API-key providers (xAI,
+ * Mistral, DeepSeek) to their canonical current-generation model IDs, so the
+ * routing-parity checks are enumerable and capability-gating gets a deterministic
+ * canonical ID regardless of provider-level alias quirks. Copilot's aliases stay
+ * inside copilot.js because they are reached only via the `copilot:` namespace
+ * (bare `gpt-*`/`claude-*`/`gemini-*` keyword-route to their native API providers).
+ * OpenRouter models are reached by full slug or the `openrouter:` namespace, not
+ * by friendly aliases. Keys are lowercase.
+ * @type {Object<string, {provider: string, canonicalModel: string}>}
+ */
+export const CURATED_MODEL_ALIASES = {
+  // xAI
+  grok: { provider: 'xai', canonicalModel: 'grok-4.5' },
+  'grok-4.5': { provider: 'xai', canonicalModel: 'grok-4.5' },
+  'grok-4.5-latest': { provider: 'xai', canonicalModel: 'grok-4.5' },
+  'grok-build-latest': { provider: 'xai', canonicalModel: 'grok-4.5' },
+  // Mistral
+  mistral: { provider: 'mistral', canonicalModel: 'mistral-medium-3-5' },
+  'mistral-medium': { provider: 'mistral', canonicalModel: 'mistral-medium-3-5' },
+  'mistral-medium-3-5': { provider: 'mistral', canonicalModel: 'mistral-medium-3-5' },
+  'mistral-small': { provider: 'mistral', canonicalModel: 'mistral-small-2603' },
+  'mistral-small-2603': { provider: 'mistral', canonicalModel: 'mistral-small-2603' },
+  'mistral-large': { provider: 'mistral', canonicalModel: 'mistral-large-2512' },
+  'mistral-large-2512': { provider: 'mistral', canonicalModel: 'mistral-large-2512' },
+  // DeepSeek (native — OpenRouter DeepSeek models use their full slug instead)
+  deepseek: { provider: 'deepseek', canonicalModel: 'deepseek-v4-pro' },
+  'deepseek-pro': { provider: 'deepseek', canonicalModel: 'deepseek-v4-pro' },
+  'deepseek-v4-pro': { provider: 'deepseek', canonicalModel: 'deepseek-v4-pro' },
+  'deepseek-flash': { provider: 'deepseek', canonicalModel: 'deepseek-v4-flash' },
+  'deepseek-v4-flash': { provider: 'deepseek', canonicalModel: 'deepseek-v4-flash' },
+};
+
+/**
+ * Parse OpenRouter model decorations off a slug. `:online` is consumed into a
+ * `webSearch` flag (the provider attaches the web plugin from the flag) and is
+ * never carried on the request/lookup ID; other suffixes such as `:free` are
+ * preserved on the request model but stripped from the bare lookup base.
+ * @param {string} slug - Slug with the `openrouter:` namespace already removed
+ * @returns {{ base: string, modelForRequest: string, webSearch: boolean }}
+ */
+function parseOpenRouterDecorations(slug) {
+  const segments = String(slug).split(':');
+  const base = segments[0];
+  const decorations = segments.slice(1);
+  const webSearch = decorations.includes('online');
+  const kept = decorations.filter((d) => d !== 'online');
+  const modelForRequest = kept.length ? `${base}:${kept.join(':')}` : base;
+  return { base, modelForRequest, webSearch };
+}
+
+/**
+ * Classify a model spec into { providerName, canonicalModel, options } by the
+ * design resolution order: explicit namespace prefix, curated friendly alias,
+ * full OpenRouter slug / `openrouter:` prefix (no env gate), then keyword/
+ * passthrough. `options` carries flags derived from decorations (e.g.
+ * `web_search` from an OpenRouter `:online`). Unknown explicit IDs pass through
+ * unchanged (never silently substituted).
+ * @param {string} spec - Model specification
+ * @param {object} providers - Provider instances
+ * @returns {{ providerName: string, canonicalModel: string, options: object }}
+ */
+function classifyModelSpec(spec, providers) {
+  const raw = String(spec);
+  const lower = raw.toLowerCase();
+  const options = {};
+
+  if (lower === 'auto') {
+    const providerName = mapModelToProvider('auto', providers);
+    return {
+      providerName,
+      canonicalModel: getDefaultModelForProvider(providerName),
+      options,
+    };
+  }
+
+  // Explicit OpenRouter namespace: route without OPENROUTER_DYNAMIC_MODELS and
+  // parse `:online`/`:free` decorations before any lookup.
+  if (lower.startsWith('openrouter:')) {
+    const { modelForRequest, webSearch } = parseOpenRouterDecorations(
+      raw.slice('openrouter:'.length),
+    );
+    if (webSearch) options.web_search = true;
+    return { providerName: 'openrouter', canonicalModel: modelForRequest, options };
+  }
+
+  // Other explicit namespaces pass the spec through unchanged; the target
+  // provider strips its own prefix (preserves current copilot/claude/gemini-cli
+  // behavior).
+  if (
+    lower.startsWith('copilot:') ||
+    lower.startsWith('claude:') ||
+    lower.startsWith('gemini:')
+  ) {
+    return {
+      providerName: mapModelToProvider(raw, providers),
+      canonicalModel: raw,
+      options,
+    };
+  }
+
+  // Curated friendly alias → provider + canonical ID.
+  const curated = CURATED_MODEL_ALIASES[lower];
+  if (curated) {
+    return {
+      providerName: curated.provider,
+      canonicalModel: curated.canonicalModel,
+      options,
+    };
+  }
+
+  // Full provider/model slug: a native provider that statically owns the bare
+  // model wins; otherwise it is an OpenRouter slug (decorations parsed).
+  if (raw.includes('/')) {
+    const { base, modelForRequest, webSearch } = parseOpenRouterDecorations(raw);
+    const providerName = mapModelToProvider(base, providers);
+    if (providerName === 'openrouter' && webSearch) {
+      options.web_search = true;
+    }
+    return { providerName, canonicalModel: modelForRequest, options };
+  }
+
+  // Keyword routing / unknown-ID passthrough (unchanged model string).
+  const providerName = mapModelToProvider(raw, providers);
+  return {
+    providerName,
+    canonicalModel: resolveAutoModel(raw, providerName),
+    options,
+  };
 }
 
 /**
@@ -138,14 +270,16 @@ export function getAvailableProviders(providers, config, { hasImages = false, li
  * @param {string} spec - Model specification
  * @param {object} providers - Provider instances
  * @param {object} config - Configuration
- * @returns {{ providerName: string, provider: object, resolvedModel: string, status: string }}
+ * @returns {{ providerName: string, provider: object, resolvedModel: string, status: string, options: object }}
  */
 export function resolveModelSpec(spec, providers, config) {
-  const providerName = mapModelToProvider(spec, providers);
+  const { providerName, canonicalModel, options } = classifyModelSpec(
+    spec,
+    providers,
+  );
   const provider = providers[providerName];
-  const resolvedModel = resolveAutoModel(spec, providerName);
   const status = !provider ? 'not_found' : !provider.isAvailable(config) ? 'unavailable' : 'ok';
-  return { providerName, provider, resolvedModel, status };
+  return { providerName, provider, resolvedModel: canonicalModel, status, options };
 }
 
 /**
@@ -219,6 +353,14 @@ export function mapModelToProvider(model, providers) {
   // Must be before slash-format and keyword matching to prevent misrouting
   if (modelLower.startsWith('copilot:')) {
     return 'copilot';
+  }
+
+  // Check openrouter: prefix (e.g., openrouter:z-ai/glm-5.2). Routes to
+  // OpenRouter without the OPENROUTER_DYNAMIC_MODELS gate. Must be before the
+  // slash-format check so the namespaced slug is not probed against native
+  // providers.
+  if (modelLower.startsWith('openrouter:')) {
+    return 'openrouter';
   }
 
   // Check OpenRouter-specific patterns first

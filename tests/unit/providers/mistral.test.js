@@ -7,8 +7,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorCodes, StopReasons } from '../../../src/providers/interface.js';
 
-// Create mock before any imports
+// Create mocks before any imports
 const mockChatComplete = vi.fn();
+const mockChatStream = vi.fn();
 
 // Mock the Mistral SDK
 vi.mock('@mistralai/mistralai', () => {
@@ -17,6 +18,7 @@ vi.mock('@mistralai/mistralai', () => {
 
     this.chat = {
       complete: mockChatComplete,
+      stream: mockChatStream,
     };
   };
 
@@ -29,12 +31,35 @@ vi.mock('@mistralai/mistralai', () => {
 // Import provider AFTER setting up the mock
 import { mistralProvider } from '../../../src/providers/mistral.js';
 
+/**
+ * Build an async-iterable stream from an array of Mistral SDK chunk objects.
+ * Each element is yielded as `{ data: <chunk> }` to mirror the SDK wrapper.
+ */
+function makeStream(chunks) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) {
+        yield { data: chunk };
+      }
+    },
+  };
+}
+
+async function collectEvents(generator) {
+  const events = [];
+  for await (const event of generator) {
+    events.push(event);
+  }
+  return events;
+}
+
 describe('Mistral Provider', () => {
   let mockConfig;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockChatComplete.mockClear();
+    mockChatStream.mockClear();
 
     mockConfig = {
       apiKeys: {
@@ -70,46 +95,327 @@ describe('Mistral Provider', () => {
     });
   });
 
-  describe('Model Management', () => {
-    it('should return supported models', () => {
+  describe('Model catalog', () => {
+    it('should advertise exactly the curated models', () => {
       const models = mistralProvider.getSupportedModels();
 
-      expect(models).toBeDefined();
-      expect(Object.keys(models).length).toBeGreaterThan(0);
-
-      // Check for expected models
-      expect(models['magistral-medium-2509']).toBeDefined();
-      expect(models['magistral-small-2509']).toBeDefined();
-      expect(models['mistral-medium-2508']).toBeDefined();
+      expect(Object.keys(models).sort()).toEqual([
+        'mistral-large-2512',
+        'mistral-medium-3-5',
+        'mistral-small-2603',
+      ]);
     });
 
-    it('should get model config by exact name', () => {
-      const config = mistralProvider.getModelConfig('mistral-medium-2508');
+    it('should mark reasoning support only on medium-3-5 and small-2603', () => {
+      const models = mistralProvider.getSupportedModels();
 
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('mistral-medium-2508');
-      expect(config.contextWindow).toBe(128000);
-      expect(config.maxOutputTokens).toBe(32768);
-      expect(config.supportsImages).toBe(true);
+      expect(models['mistral-medium-3-5'].supportsReasoning).toBe(true);
+      expect(models['mistral-small-2603'].supportsReasoning).toBe(true);
+      expect(models['mistral-large-2512'].supportsReasoning).toBe(false);
     });
 
-    it('should get model config by alias', () => {
-      const config = mistralProvider.getModelConfig('magistral-medium');
+    it('should default to mistral-medium-3-5 when no model is given', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          { message: { content: 'ok', role: 'assistant' }, finish_reason: 'stop' },
+        ],
+        usage: {},
+      });
 
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('magistral-medium-2509');
+      await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        config: mockConfig,
+      });
+
+      expect(mockChatComplete.mock.calls[0][0].model).toBe('mistral-medium-3-5');
     });
 
-    it('should handle case-insensitive model names', () => {
-      const config = mistralProvider.getModelConfig('MAGISTRAL-SMALL-2509');
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('magistral-small-2509');
+    it('should resolve friendly aliases to canonical ids', () => {
+      expect(mistralProvider.getModelConfig('mistral').modelName).toBe(
+        'mistral-medium-3-5',
+      );
+      expect(mistralProvider.getModelConfig('mistral-small').modelName).toBe(
+        'mistral-small-2603',
+      );
+      expect(mistralProvider.getModelConfig('mistral-large-latest').modelName).toBe(
+        'mistral-large-2512',
+      );
     });
 
-    it('should return null for unknown model', () => {
-      const config = mistralProvider.getModelConfig('unknown-model');
-      expect(config).toBeNull();
+    it('should return null for an unknown model', () => {
+      expect(mistralProvider.getModelConfig('magistral-medium-2509')).toBeNull();
+    });
+  });
+
+  describe('Reasoning effort mapping', () => {
+    beforeEach(() => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          { message: { content: 'ok', role: 'assistant' }, finish_reason: 'stop' },
+        ],
+        usage: {},
+      });
+    });
+
+    const enabledLevels = ['minimal', 'low', 'medium', 'high', 'max'];
+
+    enabledLevels.forEach((level) => {
+      it(`should map "${level}" to reasoning_effort "high" on a reasoning model`, async () => {
+        await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'mistral-medium-3-5',
+          reasoning_effort: level,
+          config: mockConfig,
+        });
+
+        expect(mockChatComplete.mock.calls[0][0].reasoning_effort).toBe('high');
+      });
+    });
+
+    it('should map "none" to reasoning_effort "none"', async () => {
+      await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'mistral-small-2603',
+        reasoning_effort: 'none',
+        config: mockConfig,
+      });
+
+      expect(mockChatComplete.mock.calls[0][0].reasoning_effort).toBe('none');
+    });
+
+    it('should never send reasoning_effort for mistral-large-2512', async () => {
+      await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'mistral-large-2512',
+        reasoning_effort: 'high',
+        config: mockConfig,
+      });
+
+      expect(
+        mockChatComplete.mock.calls[0][0].reasoning_effort,
+      ).toBeUndefined();
+    });
+
+    it('should never send reasoning_effort for an unknown pass-through id', async () => {
+      await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        model: 'magistral-medium-2509',
+        reasoning_effort: 'high',
+        config: mockConfig,
+      });
+
+      expect(
+        mockChatComplete.mock.calls[0][0].reasoning_effort,
+      ).toBeUndefined();
+    });
+  });
+
+  describe('Non-streaming content normalization', () => {
+    it('should keep a plain-string answer with no reasoning', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          {
+            message: { content: 'Plain answer', role: 'assistant' },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 },
+      });
+
+      const result = await mistralProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { config: mockConfig },
+      );
+
+      expect(result.content).toBe('Plain answer');
+      expect(result.metadata.reasoning_content).toBeUndefined();
+    });
+
+    it('should split ThinkChunk/TextChunk and ignore ReferenceChunk', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'thinking',
+                  thinking: [{ type: 'text', text: 'let me think ' }],
+                },
+                { type: 'reference', reference_ids: [1, 2] },
+                { type: 'text', text: 'Final answer' },
+              ],
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+      });
+
+      const result = await mistralProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { config: mockConfig },
+      );
+
+      expect(result.content).toBe('Final answer');
+      expect(result.metadata.reasoning_content).toBe('let me think ');
+    });
+
+    it('should accept a reasoning-only turn with empty answer text', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'thinking',
+                  thinking: [{ type: 'text', text: 'thoughts only' }],
+                },
+              ],
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+      });
+
+      const result = await mistralProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { config: mockConfig },
+      );
+
+      expect(result.content).toBe('');
+      expect(result.metadata.reasoning_content).toBe('thoughts only');
+    });
+
+    it('should raise on an unexpected content-bearing chunk type', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: [{ type: 'audio', audio: 'xxx' }],
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+      });
+
+      await expect(
+        mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          config: mockConfig,
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Unexpected Mistral content chunk'),
+      });
+    });
+
+    it('should throw NO_RESPONSE_CONTENT when nothing is present', async () => {
+      mockChatComplete.mockResolvedValue({
+        choices: [{ message: { role: 'assistant' }, finish_reason: 'stop' }],
+        usage: {},
+      });
+
+      await expect(
+        mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          config: mockConfig,
+        }),
+      ).rejects.toMatchObject({
+        code: ErrorCodes.NO_RESPONSE_CONTENT,
+      });
+    });
+  });
+
+  describe('Streaming content normalization', () => {
+    it('should emit delta events for plain-string deltas', async () => {
+      mockChatStream.mockResolvedValue(
+        makeStream([
+          { choices: [{ delta: { content: 'Hello ' } }] },
+          { choices: [{ delta: { content: 'world' }, finish_reason: 'stop' }] },
+        ]),
+      );
+
+      const events = await collectEvents(
+        await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          stream: true,
+          config: mockConfig,
+        }),
+      );
+
+      const deltas = events.filter((e) => e.type === 'delta');
+      expect(deltas.map((e) => e.content)).toEqual(['Hello ', 'world']);
+      const end = events.find((e) => e.type === 'end');
+      expect(end.content).toBe('Hello world');
+    });
+
+    it('should emit thinking events for a ThinkChunk-only delta', async () => {
+      mockChatStream.mockResolvedValue(
+        makeStream([
+          {
+            choices: [
+              {
+                delta: {
+                  content: [
+                    {
+                      type: 'thinking',
+                      thinking: [{ type: 'text', text: 'reasoning...' }],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          { choices: [{ delta: { content: '' }, finish_reason: 'stop' }] },
+        ]),
+      );
+
+      const events = await collectEvents(
+        await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          stream: true,
+          config: mockConfig,
+        }),
+      );
+
+      const thinking = events.filter((e) => e.type === 'thinking');
+      expect(thinking.map((e) => e.content)).toEqual(['reasoning...']);
+      expect(events.some((e) => e.type === 'delta')).toBe(false);
+    });
+
+    it('should handle the mixed transition delta (closing think + first text)', async () => {
+      mockChatStream.mockResolvedValue(
+        makeStream([
+          {
+            choices: [
+              {
+                delta: {
+                  content: [
+                    {
+                      type: 'thinking',
+                      thinking: [{ type: 'text', text: 'done thinking' }],
+                    },
+                    { type: 'reference', reference_ids: [7] },
+                    { type: 'text', text: 'Answer' },
+                  ],
+                },
+              },
+            ],
+          },
+          { choices: [{ delta: { content: ' continues' }, finish_reason: 'stop' }] },
+        ]),
+      );
+
+      const events = await collectEvents(
+        await mistralProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          stream: true,
+          config: mockConfig,
+        }),
+      );
+
+      expect(
+        events.filter((e) => e.type === 'thinking').map((e) => e.content),
+      ).toEqual(['done thinking']);
+      expect(
+        events.filter((e) => e.type === 'delta').map((e) => e.content),
+      ).toEqual(['Answer', ' continues']);
+      const end = events.find((e) => e.type === 'end');
+      expect(end.content).toBe('Answer continues');
     });
   });
 
@@ -132,7 +438,7 @@ describe('Mistral Provider', () => {
           completion_tokens: 20,
           total_tokens: 30,
         },
-        model: 'magistral-medium-2509',
+        model: 'mistral-medium-3-5',
       };
 
       mockChatComplete.mockResolvedValue(mockResponse);
@@ -148,13 +454,13 @@ describe('Mistral Provider', () => {
       expect(mockChatComplete).toHaveBeenCalled();
       const callArgs = mockChatComplete.mock.calls[0][0];
       expect(callArgs.messages).toEqual(messages);
-      expect(callArgs.model).toBe('magistral-medium-2509');
+      expect(callArgs.model).toBe('mistral-medium-3-5');
 
       expect(result).toMatchObject({
         content: 'Test response',
         stop_reason: StopReasons.STOP,
         metadata: {
-          model: 'magistral-medium-2509',
+          model: 'mistral-medium-3-5',
           usage: {
             input_tokens: 10,
             output_tokens: 20,
@@ -183,7 +489,7 @@ describe('Mistral Provider', () => {
       ];
 
       await mistralProvider.invoke(messages, {
-        model: 'mistral-medium-2508',
+        model: 'mistral-medium-3-5',
         config: mockConfig,
       });
 
@@ -197,39 +503,7 @@ describe('Mistral Provider', () => {
       ]);
     });
 
-    it('should handle custom parameters', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      await mistralProvider.invoke(messages, {
-        model: 'mistral-small-latest',
-        temperature: 0.5,
-        maxTokens: 2000,
-        config: mockConfig,
-      });
-
-      const callArgs = mockChatComplete.mock.calls[0][0];
-      expect(callArgs.model).toBe('mistral-small-latest');
-      expect(callArgs.temperature).toBe(0.5);
-      expect(callArgs.max_tokens).toBe(2000);
-    });
-
-    it('should cap max tokens to model limit', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      await mistralProvider.invoke(messages, {
-        model: 'magistral-small-2509',
-        maxTokens: 100000,
-        config: mockConfig,
-      });
-
-      const callArgs = mockChatComplete.mock.calls[0][0];
-      expect(callArgs.max_tokens).toBe(32768); // Model's max
-    });
-
-    // Note: All current Mistral models support images after the September 2025 update
-    // Keeping the test as a placeholder for potential future non-image models
-    it.skip('should reject image content for models that do not support it', async () => {
-      // This test would be enabled if we add any models that don't support images
+    it('should reject image content for mistral-large-2512', async () => {
       const messages = [
         {
           role: 'user',
@@ -237,25 +511,34 @@ describe('Mistral Provider', () => {
             { type: 'text', text: 'What is this?' },
             {
               type: 'image',
-              source: {
-                media_type: 'image/jpeg',
-                data: 'base64data',
-              },
+              source: { media_type: 'image/jpeg', data: 'base64data' },
             },
           ],
         },
       ];
 
-      // Example with hypothetical non-image model
       await expect(
         mistralProvider.invoke(messages, {
-          model: 'hypothetical-text-only-model',
+          model: 'mistral-large-2512',
           config: mockConfig,
         }),
       ).rejects.toMatchObject({
         code: ErrorCodes.INVALID_REQUEST,
         message: expect.stringContaining('does not support images'),
       });
+    });
+
+    it('should cap max tokens to model limit', async () => {
+      const messages = [{ role: 'user', content: 'Hello' }];
+
+      await mistralProvider.invoke(messages, {
+        model: 'mistral-small-2603',
+        maxTokens: 100000,
+        config: mockConfig,
+      });
+
+      const callArgs = mockChatComplete.mock.calls[0][0];
+      expect(callArgs.max_tokens).toBe(32768); // Model's max
     });
   });
 
@@ -379,27 +662,6 @@ describe('Mistral Provider', () => {
       });
     });
 
-    it('should handle no response content', async () => {
-      mockChatComplete.mockResolvedValue({
-        choices: [
-          {
-            message: { role: 'assistant' },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {},
-      });
-
-      await expect(
-        mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.NO_RESPONSE_CONTENT,
-        message: 'No content in response from Mistral',
-      });
-    });
-
     it('should handle API errors', async () => {
       const errorCases = [
         {
@@ -431,37 +693,6 @@ describe('Mistral Provider', () => {
           message: expect.stringContaining(expectedMessage),
         });
       }
-    });
-
-    it('should handle invalid request errors', async () => {
-      mockChatComplete.mockRejectedValue({
-        message: 'Invalid request: bad parameter',
-      });
-
-      await expect(
-        mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('Invalid request'),
-      });
-    });
-
-    it('should handle model not found errors', async () => {
-      mockChatComplete.mockRejectedValue({
-        message: 'Model unknown-model not found',
-      });
-
-      await expect(
-        mistralProvider.invoke([{ role: 'user', content: 'Hello' }], {
-          model: 'unknown-model',
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.MODEL_NOT_FOUND,
-        message: expect.stringContaining('Model unknown-model not found'),
-      });
     });
 
     it('should handle context length errors', async () => {

@@ -128,24 +128,20 @@ describe('Model Mapping', () => {
 
       // OpenRouter models
       expect(
-        providers.openrouter.getModelConfig(
-          'qwen/qwen3-235b-a22b-thinking-2507',
-        ),
+        providers.openrouter.getModelConfig('z-ai/glm-5.2'),
       ).toBeTruthy();
       expect(
-        providers.openrouter.getModelConfig('moonshotai/kimi-k2'),
+        providers.openrouter.getModelConfig('moonshotai/kimi-k2.6'),
       ).toBeTruthy();
       expect(
         providers.openrouter.getModelConfig('openrouter/auto'),
       ).toBeTruthy();
 
       // Test aliases
+      expect(providers.openrouter.getModelConfig('glm')).toBeTruthy();
+      expect(providers.openrouter.getModelConfig('kimi-k2.6')).toBeTruthy();
       expect(
-        providers.openrouter.getModelConfig('qwen3-thinking'),
-      ).toBeTruthy();
-      expect(providers.openrouter.getModelConfig('kimi-k2')).toBeTruthy();
-      expect(
-        providers.openrouter.getModelConfig('openrouter auto'),
+        providers.openrouter.getModelConfig('openrouter-auto'),
       ).toBeTruthy();
     });
   });
@@ -180,7 +176,7 @@ describe('Model Mapping', () => {
           reason: 'Slash format but model does not exist in OpenAI',
         },
         {
-          model: 'qwen/qwen3-235b-a22b-thinking-2507',
+          model: 'z-ai/glm-5.2',
           shouldExistIn: 'openrouter',
           reason: 'OpenRouter-specific model',
         },

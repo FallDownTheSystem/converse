@@ -8,69 +8,140 @@
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 
-// Define supported Mistral models with their capabilities
+// Define supported Mistral models with their capabilities.
+// Reasoning (`reasoning_effort`) is supported only on Medium 3.5 and Small 4;
+// Mistral Large 3 has no adjustable reasoning (see resolveReasoningEffort).
 const SUPPORTED_MODELS = {
-  'magistral-medium-2509': {
-    modelName: 'magistral-medium-2509',
-    friendlyName: 'Magistral Medium 1.2',
-    contextWindow: 128000,
-    maxOutputTokens: 32768,
-    supportsStreaming: true,
-    supportsImages: true, // Version 1.2 adds vision support
-    supportsWebSearch: false,
-    supportsReasoning: true,
-    timeout: 300000,
-    description:
-      'Magistral Medium 1.2 - Frontier-class reasoning model with vision support (September 2025)',
-    aliases: [
-      'magistral-medium',
-      'magistral-medium-latest',
-      'magistral',
-      'magistral medium',
-      'magistral-medium-1.2',
-    ],
-  },
-  'magistral-small-2509': {
-    modelName: 'magistral-small-2509',
-    friendlyName: 'Magistral Small 1.2',
-    contextWindow: 128000,
-    maxOutputTokens: 32768,
-    supportsStreaming: true,
-    supportsImages: true, // Version 1.2 adds vision support
-    supportsWebSearch: false,
-    supportsReasoning: true,
-    timeout: 180000,
-    description:
-      'Magistral Small 1.2 - Small reasoning model with vision support (September 2025)',
-    aliases: [
-      'magistral-small',
-      'magistral-small-latest',
-      'magistral small',
-      'magistral-small-1.2',
-    ],
-  },
-  'mistral-medium-2508': {
-    modelName: 'mistral-medium-2508',
-    friendlyName: 'Mistral Medium 3.1',
-    contextWindow: 128000,
+  'mistral-medium-3-5': {
+    modelName: 'mistral-medium-3-5',
+    friendlyName: 'Mistral Medium 3.5',
+    contextWindow: 256000,
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true,
     supportsWebSearch: false,
+    supportsReasoning: true,
     timeout: 300000,
     description:
-      'Mistral Medium 3.1 - Frontier-class multimodal model with improved tone and performance (August 2025)',
+      'Mistral Medium 3.5 - Frontier-class multimodal model with adjustable reasoning',
     aliases: [
-      'mistral-medium-3.1',
-      'mistral-medium-latest',
-      'mistral-medium',
-      'mistral medium 3.1',
       'mistral',
-      'medium-3.1',
-      'mistral-medium-3',
+      'mistral-medium',
+      'mistral-medium-latest',
+      'mistral-medium-3.5',
     ],
   },
+  'mistral-small-2603': {
+    modelName: 'mistral-small-2603',
+    friendlyName: 'Mistral Small 4',
+    contextWindow: 256000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsReasoning: true,
+    timeout: 180000,
+    description:
+      'Mistral Small 4 - Hybrid multimodal model unifying instruct, reasoning, and coding',
+    aliases: ['mistral-small', 'mistral-small-latest'],
+  },
+  'mistral-large-2512': {
+    modelName: 'mistral-large-2512',
+    friendlyName: 'Mistral Large 3',
+    contextWindow: 256000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoning: false,
+    timeout: 300000,
+    description:
+      'Mistral Large 3 - Open-weight MoE flagship (no adjustable reasoning)',
+    aliases: ['mistral-large', 'mistral-large-latest'],
+  },
 };
+
+/**
+ * Map a Converse reasoning_effort level to Mistral's documented request value.
+ * Mistral documents only "high" and "none". Every enabled level maps to "high"
+ * to preserve enabled-reasoning intent (Converse's default `medium` runs
+ * thinking-on); only `none` disables. Returns null when reasoning must not be
+ * forwarded — i.e. the model does not support it (Large 3) or is an unknown
+ * pass-through ID (capability-gated).
+ */
+function resolveReasoningEffort(level, modelConfig) {
+  if (!modelConfig?.supportsReasoning) {
+    return null;
+  }
+  return level === 'none' ? 'none' : 'high';
+}
+
+/**
+ * Walk a Mistral `message.content` array, separating reasoning (ThinkChunk)
+ * from the visible answer (TextChunk). A ReferenceChunk carries citation
+ * metadata only (reference_ids, no visible text) and is ignored for text.
+ * Any other content-bearing chunk type is unexpected and raises.
+ * @returns {{ text: string, reasoning: string }}
+ */
+function normalizeContentChunks(content) {
+  let text = '';
+  let reasoning = '';
+
+  for (const chunk of content) {
+    const type = chunk?.type;
+    if (type === 'thinking') {
+      for (const inner of chunk.thinking || []) {
+        if (inner?.type === 'text') {
+          reasoning += inner.text || '';
+        }
+      }
+    } else if (type === 'text') {
+      text += chunk.text || '';
+    } else if (type === 'reference') {
+      // Citation metadata (reference_ids) — no visible text; ignore.
+    } else {
+      throw new MistralProviderError(
+        `Unexpected Mistral content chunk type "${type}"`,
+        ErrorCodes.API_ERROR,
+      );
+    }
+  }
+
+  return { text, reasoning };
+}
+
+/**
+ * Convert one streaming `delta.content` array into ordered normalized events.
+ * ThinkChunk → thinking, TextChunk → delta, ReferenceChunk → ignored. Unknown
+ * chunk types in a streamed delta are skipped (non-fatal) rather than aborting
+ * an in-flight stream.
+ * @returns {Array<{ kind: 'delta'|'thinking', text: string }>}
+ */
+function streamEventsFromDelta(delta) {
+  const events = [];
+
+  for (const chunk of delta) {
+    const type = chunk?.type;
+    if (type === 'thinking') {
+      let thinkText = '';
+      for (const inner of chunk.thinking || []) {
+        if (inner?.type === 'text') {
+          thinkText += inner.text || '';
+        }
+      }
+      if (thinkText) {
+        events.push({ kind: 'thinking', text: thinkText });
+      }
+    } else if (type === 'text') {
+      if (chunk.text) {
+        events.push({ kind: 'delta', text: chunk.text });
+      }
+    }
+    // ReferenceChunk and any unknown chunk type carry no visible delta text.
+  }
+
+  return events;
+}
 
 /**
  * Map Mistral finish reasons to unified format
@@ -253,13 +324,13 @@ export const mistralProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'magistral-medium-2509',
+      model = 'mistral-medium-3-5',
       maxTokens = null,
       stream = false,
-      // eslint-disable-next-line no-unused-vars
-      reasoning_effort = 'medium', // Not supported by Mistral, ignored
+      reasoning_effort = 'medium',
       config,
       // Filter out options not meant for the API
+      web_search, // eslint-disable-line no-unused-vars
       continuation_id, // eslint-disable-line no-unused-vars
       continuationStore, // eslint-disable-line no-unused-vars
       ...otherOptions
@@ -317,6 +388,13 @@ export const mistralProvider = {
       ...otherOptions,
     };
 
+    // Forward reasoning effort only when the resolved model supports it
+    // (Mistral Large 3 and unknown pass-through IDs receive no reasoning param).
+    const reasoningEffort = resolveReasoningEffort(reasoning_effort, modelConfig);
+    if (reasoningEffort) {
+      requestPayload.reasoning_effort = reasoningEffort;
+    }
+
     // Add max tokens if specified
     if (maxTokens) {
       const tokenLimit = Math.min(
@@ -359,8 +437,24 @@ export const mistralProvider = {
         );
       }
 
-      const content = choice.message?.content;
-      if (!content) {
+      // Content may be a plain string or an array of ThinkChunk/TextChunk/
+      // ReferenceChunk (when reasoning_effort="high" or citations are used).
+      const rawContent = choice.message?.content;
+      let content = '';
+      let reasoningContent = '';
+      if (typeof rawContent === 'string') {
+        content = rawContent;
+      } else if (Array.isArray(rawContent)) {
+        const parsed = normalizeContentChunks(rawContent);
+        content = parsed.text;
+        reasoningContent = parsed.reasoning;
+      }
+
+      // A reasoning turn may carry empty visible content but present reasoning
+      // or tool calls — accept those (an empty tool_calls array does not count).
+      const toolCalls = choice.message?.tool_calls;
+      const hasToolCalls = Array.isArray(toolCalls) && toolCalls.length > 0;
+      if (!content && !reasoningContent && !hasToolCalls) {
         throw new MistralProviderError(
           'No content in response from Mistral',
           ErrorCodes.NO_RESPONSE_CONTENT,
@@ -393,6 +487,7 @@ export const mistralProvider = {
           finish_reason: finishReason,
           provider: 'mistral',
           rate_limit: rateLimitInfo,
+          ...(reasoningContent && { reasoning_content: reasoningContent }),
         },
       };
     } catch (error) {
@@ -465,14 +560,14 @@ export const mistralProvider = {
    * @param {Object} mistral - Mistral client instance
    * @param {Object} requestPayload - Request payload for the API
    * @param {string} resolvedModel - Resolved model name
-   * @param {Object} modelConfig - Model configuration
+   * @param {Object} _modelConfig - Model configuration (reserved)
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
   async *_createStreamingGenerator(
     mistral,
     requestPayload,
     resolvedModel,
-    modelConfig,
+    _modelConfig,
   ) {
     debugLog(
       `[Mistral] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages`,
@@ -501,17 +596,39 @@ export const mistralProvider = {
           // Mistral wraps the response in a "data" field
           const chunkData = chunk.data || chunk;
 
-          // Extract content from the chunk
+          // Extract content from the chunk. delta.content may be a plain
+          // string (answer phase / reasoning_effort="none"), a list of
+          // ThinkChunks (thinking phase), or a mixed list carrying a closing
+          // ThinkChunk plus the first TextChunk in one delta (transition).
           const choice = chunkData.choices?.[0];
           if (choice) {
-            const content = choice.delta?.content || '';
-            if (content) {
-              totalContent += content;
-              yield {
-                type: 'delta',
-                content,
-                timestamp: new Date().toISOString(),
-              };
+            const delta = choice.delta?.content;
+            if (typeof delta === 'string') {
+              if (delta) {
+                totalContent += delta;
+                yield {
+                  type: 'delta',
+                  content: delta,
+                  timestamp: new Date().toISOString(),
+                };
+              }
+            } else if (Array.isArray(delta)) {
+              for (const event of streamEventsFromDelta(delta)) {
+                if (event.kind === 'delta') {
+                  totalContent += event.text;
+                  yield {
+                    type: 'delta',
+                    content: event.text,
+                    timestamp: new Date().toISOString(),
+                  };
+                } else {
+                  yield {
+                    type: 'thinking',
+                    content: event.text,
+                    timestamp: new Date().toISOString(),
+                  };
+                }
+              }
             }
 
             // Capture finish reason when available

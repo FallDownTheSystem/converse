@@ -32,8 +32,10 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.x.ai](https://console.x.ai/)
 - **Environment Variable**: `XAI_API_KEY`
 - **Supported Models**:
-  - `grok-4-0709` - Latest with image support and web search
-  - `grok-code-fast-1` - Speedy and economical reasoning model that excels at agentic coding
+  - `grok-4.5` (default; aliases: `grok`, `grok-4.5-latest`, `grok-build-latest`) - Flagship model with image input, reasoning content, and native web/X search (500K context)
+- **Reasoning**: `reasoning_effort` maps to Grok's `low`/`medium`/`high`. Grok 4.5 always reasons and cannot be turned off, so `none`/`minimal`/`low` clamp to `low`, `medium` stays `medium`, and `high`/`max` clamp to `high`.
+- **Web search**: Automatic — native web/X search (Agent Tools) is attached on every Grok 4.5 request; the model decides per-request whether to search, and any citations are returned in metadata.
+- **Retired IDs**: Older Grok identifiers (e.g. `grok-4-0709`, `grok-code-fast-1`) still pass through as explicit model strings, but xAI does not surface a retirement error for them — it silently remaps them upstream to a current model (HTTP 200). Use `grok-4.5` for predictable results.
 
 ### Anthropic (Claude)
 - **API Key Format**: `sk-ant-...` (starts with `sk-ant-`)
@@ -53,39 +55,40 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.mistral.ai](https://console.mistral.ai/)
 - **Environment Variable**: `MISTRAL_API_KEY`
 - **Supported Models**:
-  - `mistral-large-latest` - Most capable model
-  - `mistral-medium-latest` - Balanced performance
-  - `mistral-small-latest` - Fast and efficient
-  - `open-mistral-7b`, `open-mixtral-8x7b`, `open-mixtral-8x22b` - Open-source models
+  - `mistral-medium-3-5` (default; aliases: `mistral`, `mistral-medium`, `mistral-medium-latest`) - Frontier-class multimodal model with adjustable reasoning (256K context)
+  - `mistral-small-2603` (aliases: `mistral-small`, `mistral-small-latest`) - Hybrid multimodal model unifying instruct, reasoning, and coding (256K context)
+  - `mistral-large-2512` (aliases: `mistral-large`, `mistral-large-latest`) - Open-weight MoE flagship, text-only (256K context)
+- **Reasoning**: Mistral exposes only `high` and `none`. On the reasoning-capable models (`mistral-medium-3-5`, `mistral-small-2603`), every enabled `reasoning_effort` level maps to `high` and only `none` disables thinking. `mistral-large-2512` has no adjustable reasoning, so `reasoning_effort` is never sent for it.
+- **Images**: `mistral-medium-3-5` and `mistral-small-2603` accept image input; `mistral-large-2512` is text-only.
 
 ### DeepSeek
 - **API Key Format**: 32+ character string
 - **Get Key**: [platform.deepseek.com](https://platform.deepseek.com/)
 - **Environment Variable**: `DEEPSEEK_API_KEY`
 - **Supported Models**:
-  - `deepseek-chat` - Advanced conversational model
-  - `deepseek-coder` - Specialized for code generation
+  - `deepseek-v4-pro` (default; aliases: `deepseek`, `deepseek-pro`) - Flagship MoE model with thinking mode (1M context, 384K max output, text-only)
+  - `deepseek-v4-flash` (alias: `deepseek-flash`) - Faster, lower-cost V4 tier with thinking mode (1M context, 384K max output, text-only)
+- **Reasoning**: DeepSeek V4 exposes thinking mode via a `thinking` toggle plus a `reasoning_effort` of `high` or `max`. `none` disables thinking; `minimal`/`low`/`medium`/`high` enable thinking at `high`; `max` enables thinking at `max`.
 
 ### OpenRouter
 - **API Key Format**: `sk-or-...` (starts with `sk-or-`)
 - **Get Key**: [openrouter.ai/keys](https://openrouter.ai/keys)
-- **Environment Variables**: 
+- **Environment Variables**:
   - `OPENROUTER_API_KEY` - Your API key
-  - `OPENROUTER_REFERER` - Required referer URL (e.g., your GitHub repo)
-  - `OPENROUTER_TITLE` - Optional title for request tracking
-  - `OPENROUTER_DYNAMIC_MODELS` - Enable dynamic model discovery (default: false, required for `provider/model` format)
-- **Static Models**: Pre-configured models available without dynamic discovery
-  - `qwen/qwen3-235b-a22b-thinking-2507` - Qwen3 235B with thinking capabilities
-  - `qwen/qwen3-coder` - Qwen3 specialized for coding
-  - `moonshotai/kimi-k2` - Kimi K2 with 200K context window
-  - `openrouter/auto` - Auto-selects best model using NotDiamond routing
-- **Dynamic Models**: Requires `OPENROUTER_DYNAMIC_MODELS=true` to use any model in `provider/model` format
-  - `anthropic/claude-3.5-sonnet`
-  - `openai/gpt-4-turbo`
-  - `google/gemini-pro`
-  - `mistralai/mistral-large`
-  - `meta-llama/llama-3.1-405b-instruct`
-  - And many more - see [openrouter.ai/models](https://openrouter.ai/models)
+  - `OPENROUTER_REFERER` - Optional referer URL (e.g., your GitHub repo) for OpenRouter ranking credit; omitting it is valid
+  - `OPENROUTER_TITLE` - Optional title for OpenRouter ranking credit
+- **Curated Models** (default `z-ai/glm-5.2`):
+  - `z-ai/glm-5.2` (aliases: `glm`, `glm-5.2`) - Large-scale reasoning model, text-only (1M context)
+  - `deepseek/deepseek-v4-pro` - DeepSeek V4 Pro reasoning model, text-only (1M context, 384K output)
+  - `deepseek/deepseek-v4-flash` - Faster, lower-cost DeepSeek V4 tier, text-only (1M context, 384K output)
+  - `qwen/qwen3.7-max` (alias: `qwen3.7-max`) - Flagship Qwen, text-only (1M context)
+  - `qwen/qwen3.7-plus` (alias: `qwen3.7-plus`) - Image-capable Qwen (1M context)
+  - `moonshotai/kimi-k2.7-code` (alias: `kimi-k2.7-code`) - Coding model, image-capable, reasoning always on (256K context)
+  - `moonshotai/kimi-k2.6` (alias: `kimi-k2.6`) - Image-capable general model (256K context)
+  - `openrouter/auto` - Auto-selects the best model for your prompt
+- **Any other model**: Use the full `provider/model` slug directly (e.g. `anthropic/claude-sonnet-5`, `meta-llama/llama-3.1-405b-instruct`) or the `openrouter:` namespace (e.g. `openrouter:z-ai/glm-5.2`). No extra configuration is needed — slugs route to OpenRouter as-is. A slug absent from OpenRouter's live catalog fails before inference with `MODEL_NOT_FOUND`. See [openrouter.ai/models](https://openrouter.ai/models) for the full catalog.
+- **Reasoning**: Per-model. `z-ai/glm-5.2` and the `deepseek/deepseek-v4-*` slugs are effort-tiered (`max` → `xhigh`, other enabled levels → `high`, `none` disables); `qwen/qwen3.7-*` and `moonshotai/kimi-k2.6` are enable/disable only (`none` disables, any other level enables); `moonshotai/kimi-k2.7-code` always reasons and cannot be disabled; `openrouter/auto` lets the router choose.
+- **Web search (opt-in, adds cost)**: OpenRouter web search is off by default because it incurs a real per-request charge. Enable it explicitly by appending `:online` to a slug (e.g. `z-ai/glm-5.2:online` or `openrouter:qwen/qwen3.7-max:online`). When enabled, `annotations[].url_citation` citations are captured into metadata. Ordinary requests never attach a web-search plugin.
 
 ### Codex
 - **API Key Format**: Optional (uses ChatGPT login by default)
@@ -205,6 +208,23 @@ agy
 - **Billing**: Claude subscription vs pay-per-use API
 - **Model Routing**: `claude` and `claude:*` → SDK provider; specific names (e.g., `claude-fable-5`, `opus`, `sonnet`) → API provider
 
+### GitHub Copilot SDK
+- **Authentication**: GitHub Copilot subscription via the Copilot CLI (`gh auth login` with an active Copilot subscription) — no API key needed
+- **Setup Required**: Authenticate the GitHub CLI and ensure your account has an active Copilot subscription
+- **Environment Variables**: None
+- **Supported Models** (reach them with the `copilot:` namespace, e.g. `copilot:gpt-5.6-terra`):
+  - `copilot` - Uses Copilot's default or env-configured model
+  - OpenAI: `gpt-5.6-sol` (aliases: bare `gpt-5.6`, `gpt-5`), `gpt-5.6-terra` (recommended balanced tier), `gpt-5.6-luna`
+  - Anthropic: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-4.8` (aliases: `opus`, `claude`)
+  - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
+- **Reasoning**: The `gpt-5.6-sol`/`terra`/`luna` tiers accept `reasoning_effort`.
+- **Explicit pass-through**: Any other `copilot:<id>` model string is forwarded to the Copilot backend verbatim, so IDs outside the curated list still work while the backend accepts them.
+
+**Key Features:**
+- **Subscription Access**: Uses your GitHub Copilot subscription instead of API credits
+- **Multiple Backends**: OpenAI, Anthropic, and Google models through a single subscription
+- **Model IDs**: Lowercase dot-versioned (e.g. `claude-opus-4.8`, `gemini-3.1-pro-preview`)
+
 ## Configuration Examples
 
 ### Basic Configuration (.env file)
@@ -215,12 +235,10 @@ ANTHROPIC_API_KEY=sk-ant-your_key_here
 MISTRAL_API_KEY=your_mistral_key_here
 DEEPSEEK_API_KEY=your_deepseek_key_here
 
-# OpenRouter requires both API key and referer
+# OpenRouter needs only an API key; any provider/model slug works directly
 OPENROUTER_API_KEY=sk-or-your_key_here
+# Optional: referer and title for OpenRouter ranking credit
 OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
-# Optional: Enable dynamic model discovery to use any OpenRouter model
-OPENROUTER_DYNAMIC_MODELS=true
-# Optional: Add title for request tracking
 OPENROUTER_TITLE=Converse
 
 # Codex - Optional API key (uses ChatGPT login by default)
@@ -244,7 +262,6 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
-        "OPENROUTER_DYNAMIC_MODELS": "true",
         "OPENROUTER_TITLE": "Converse"
       }
     }
@@ -258,13 +275,15 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 All providers support streaming responses for real-time output.
 
 ### Image Support
-- **Full Support**: OpenAI, Google, X.AI (Grok-4), Anthropic (Claude-4 series, Claude-3-Opus)
-- **Via OpenRouter**: Depends on the underlying model
-- **No Support**: DeepSeek, Mistral (except Large), Codex
+- **Full Support**: OpenAI, Google, X.AI (Grok 4.5), Anthropic (Claude-4 series, Claude-3-Opus)
+- **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` accept images; `mistral-large-2512` is text-only
+- **Via OpenRouter**: Depends on the model — `qwen/qwen3.7-plus`, `moonshotai/kimi-k2.7-code`, and `moonshotai/kimi-k2.6` accept images; `z-ai/glm-5.2` and the `deepseek/deepseek-v4-*` slugs are text-only
+- **No Support**: DeepSeek (native), Codex
 
 ### Web Search
-- **Native Support**: OpenAI, Google, X.AI (Grok-4)
-- **No Support**: Anthropic, Mistral, DeepSeek, OpenRouter, Codex
+- **Automatic where supported**: OpenAI, Google, and X.AI (Grok 4.5, via Agent Tools) attach web search on every request for capable models; the model decides whether to use it
+- **OpenRouter (opt-in, adds cost)**: Off by default; append `:online` to a slug to enable it per request (real per-request charge), with citations captured into metadata
+- **No Support**: Anthropic, Mistral, DeepSeek, Codex
 
 ### Thinking/Reasoning Modes
 - **OpenAI**: O3 series models support `reasoning_effort` parameter
@@ -272,6 +291,10 @@ All providers support streaming responses for real-time output.
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
 - **Anthropic**: Claude Fable 5, Opus 4.6+, and Sonnet 4.6 use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
+- **X.AI**: Grok 4.5 maps `reasoning_effort` to `low`/`medium`/`high` and always reasons (cannot be disabled)
+- **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` map `reasoning_effort` to `high` (enabled) or `none` (disabled); `mistral-large-2512` has no adjustable reasoning
+- **DeepSeek**: V4 models use thinking mode via `reasoning_effort` (`none` disables; enabled levels use `high`, `max` uses `max`)
+- **OpenRouter**: Reasoning is per-model (effort-tiered, enable/disable-only, mandatory, or router-chosen — see the OpenRouter section)
 - **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only
 
@@ -318,11 +341,12 @@ When using the chat tool in any mode, specify models using their identifiers:
   "model": "claude",              // Claude Agent SDK (defaults to Claude Fable 5)
   "model": "claude:opus",         // Claude Agent SDK (Claude Opus 4.8)
   "model": "gemini-2.5-pro",      // Google (keyword match)
-  "model": "grok-4",              // X.AI (keyword match)
-  "model": "mistral-large",       // Mistral (keyword match)
-  "model": "deepseek-chat",       // DeepSeek (keyword match)
-  "model": "anthropic/claude-sonnet-4",   // OpenRouter (slash format, not in Anthropic)
-  "model": "qwen/qwen3-coder",            // OpenRouter (static model)
+  "model": "grok-4.5",            // X.AI (keyword match)
+  "model": "mistral-large",       // Mistral (alias -> mistral-large-2512)
+  "model": "deepseek",            // DeepSeek (alias -> deepseek-v4-pro)
+  "model": "z-ai/glm-5.2",                // OpenRouter (curated slug)
+  "model": "z-ai/glm-5.2:online",         // OpenRouter with web search opt-in
+  "model": "anthropic/claude-sonnet-5",   // OpenRouter (any full slug routes as-is)
   "model": "openrouter/auto"              // OpenRouter auto-selection
 }
 
@@ -354,14 +378,12 @@ When using the chat tool in any mode, specify models using their identifiers:
 - OpenRouter provides unified rate limiting across providers
 - Consider using multiple providers for better availability
 
-### OpenRouter Compliance
-- The `OPENROUTER_REFERER` header is **required**
-- Use your application URL or GitHub repository
-- This helps OpenRouter track usage for compliance
+### OpenRouter Attribution
+- `OPENROUTER_REFERER` and `OPENROUTER_TITLE` are optional — set them to your application URL / name for OpenRouter ranking credit
+- Omitting them is valid and never blocks a request
 
-### OpenRouter Dynamic Models
-- Enable with `OPENROUTER_DYNAMIC_MODELS=true`
-- First request to a new model may be slower (fetches capabilities)
-- Model capabilities are cached for 24 hours
-- Use any model from [openrouter.ai/models](https://openrouter.ai/models)
-- Models must use `provider/model` format (e.g., `meta-llama/llama-3.2-90b`)
+### OpenRouter Model Selection
+- The 8 curated slugs work out of the box; the default is `z-ai/glm-5.2`
+- Any other model works via its full `provider/model` slug or the `openrouter:` namespace — no extra configuration
+- The first request to a non-curated slug fetches its capabilities from OpenRouter's live catalog; a slug absent from that catalog fails before inference with `MODEL_NOT_FOUND`
+- Append `:online` to a slug to enable web search for that request (adds a real per-request cost)

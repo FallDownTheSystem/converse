@@ -222,13 +222,14 @@ const CONFIG_SCHEMA = {
     OPENROUTER_TITLE: {
       type: 'string',
       required: false,
-      description: 'OpenRouter X-Title header for request tracking',
+      description:
+        'Optional OpenRouter attribution title, sent as the canonical X-OpenRouter-Title header',
     },
     OPENROUTER_DYNAMIC_MODELS: {
       type: 'boolean',
       default: false,
       description:
-        'Enable dynamic model discovery via OpenRouter endpoints API',
+        'Accepted but unnecessary — full OpenRouter provider/model slugs always resolve without it',
     },
 
     // Google Vertex AI configuration
@@ -294,7 +295,7 @@ const CONFIG_SCHEMA = {
       type: 'string',
       required: false,
       description:
-        'Default model for Copilot SDK sessions (e.g., gpt-5, claude-sonnet-4.5)',
+        'Default model for Copilot SDK sessions (e.g., gpt-5.6-sol, claude-sonnet-5)',
     },
     COPILOT_CLI_PATH: {
       type: 'string',

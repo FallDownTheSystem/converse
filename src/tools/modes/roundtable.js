@@ -204,11 +204,8 @@ export function resolveTurnPlan(models, providers, config, hasImages = false) {
       };
     }
 
-    const { providerName, provider, resolvedModel, status } = resolveModelSpec(
-      modelName,
-      providers,
-      config,
-    );
+    const { providerName, provider, resolvedModel, status, options } =
+      resolveModelSpec(modelName, providers, config);
 
     if (status === 'not_found') {
       return {
@@ -235,6 +232,7 @@ export function resolveTurnPlan(models, providers, config, hasImages = false) {
       provider: providerName,
       providerInstance: provider,
       resolvedModel,
+      resolveOptions: options,
       preFailReason: null,
     };
   });
@@ -446,6 +444,9 @@ export async function runRoundtableLap({
           signal: activeSignal,
           config,
           model: plan.resolvedModel,
+          // Web search opt-in from an OpenRouter `:online` decoration; only ever
+          // set for OpenRouter turns.
+          ...(plan.resolveOptions?.web_search && { web_search: true }),
         },
         context,
         providerStreamNormalizer,

@@ -288,20 +288,38 @@ async function runPhase({
             throw error;
           }
 
-          // Clear this call's streamed preview/partial before the next candidate.
+          const isLastCandidate = ci === callPlan.candidates.length - 1;
+          const terminal =
+            isLastCandidate || !shouldFailoverToNextProvider(error);
+
+          // Partial text streamed before the error. On a terminal failure we
+          // RETAIN it (design: partial text received before an in-band stream
+          // error is kept, with the operation ultimately marked failed rather
+          // than successfully completed); on failover we clear it so the next
+          // candidate starts clean — it may later overwrite the preview as it
+          // streams.
+          const partial = providerContents[index] || '';
+
           if (context) {
-            providerContents[index] = '';
-            await context.updateJob({
-              [`provider_${index}_status`]: 'failed',
-              [`provider_${index}_error`]: error.message,
-              [`provider_${index}_preview`]: null,
-              accumulated_content: combineContents(providerContents),
-            });
+            if (terminal) {
+              await context.updateJob({
+                [`provider_${index}_status`]: 'failed',
+                [`provider_${index}_error`]: error.message,
+                accumulated_content: combineContents(providerContents),
+              });
+            } else {
+              providerContents[index] = '';
+              await context.updateJob({
+                [`provider_${index}_status`]: 'failed',
+                [`provider_${index}_error`]: error.message,
+                [`provider_${index}_preview`]: null,
+                accumulated_content: combineContents(providerContents),
+              });
+            }
           }
 
-          const isLastCandidate = ci === callPlan.candidates.length - 1;
-          if (isLastCandidate || !shouldFailoverToNextProvider(error)) {
-            return {
+          if (terminal) {
+            const failure = {
               modelSpec: callPlan.modelSpec,
               model: callPlan.displayModel,
               provider: candidate.name,
@@ -311,6 +329,10 @@ async function runPhase({
               error: error.message,
               metadata: {},
             };
+            if (partial) {
+              failure.partial_content = partial.slice(0, 2000);
+            }
+            return failure;
           }
           // otherwise continue to the next candidate
         }

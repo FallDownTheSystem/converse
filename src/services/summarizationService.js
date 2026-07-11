@@ -17,11 +17,11 @@ const logger = createLogger('summarization');
 const FAST_MODELS = {
   openai: 'gpt-5-nano', // Fastest GPT-5 model with minimal reasoning
   google: 'flash',
-  xai: 'grok-4',
+  xai: 'grok-4.5',
   anthropic: 'claude-3-5-haiku-latest',
   mistral: 'mistral-small-latest',
-  deepseek: 'deepseek-chat',
-  openrouter: 'qwen/qwen-2.5-32b-instruct',
+  deepseek: 'deepseek-v4-flash',
+  openrouter: 'z-ai/glm-5.2',
 };
 
 export class SummarizationService {

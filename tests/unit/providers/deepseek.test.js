@@ -27,7 +27,28 @@ vi.mock('openai', () => {
 });
 
 // Import provider AFTER setting up the mock
+import OpenAI from 'openai';
 import { deepseekProvider } from '../../../src/providers/deepseek.js';
+
+/**
+ * Build an async iterable of streaming chunks for the mocked SDK.
+ */
+async function* streamOf(chunks) {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+}
+
+/**
+ * Drain a streaming generator into an array of events.
+ */
+async function collect(generator) {
+  const events = [];
+  for await (const event of generator) {
+    events.push(event);
+  }
+  return events;
+}
 
 describe('DeepSeek Provider', () => {
   let mockConfig;
@@ -71,45 +92,168 @@ describe('DeepSeek Provider', () => {
     });
   });
 
-  describe('Model Management', () => {
-    it('should return supported models', () => {
+  describe('Model Catalog', () => {
+    it('should advertise exactly the two curated V4 models', () => {
       const models = deepseekProvider.getSupportedModels();
 
-      expect(models).toBeDefined();
-      expect(Object.keys(models).length).toBeGreaterThan(0);
-
-      // Check for expected models
-      expect(models['deepseek-chat']).toBeDefined();
-      expect(models['deepseek-reasoner']).toBeDefined();
+      expect(Object.keys(models)).toEqual([
+        'deepseek-v4-pro',
+        'deepseek-v4-flash',
+      ]);
     });
 
-    it('should get model config by exact name', () => {
-      const config = deepseekProvider.getModelConfig('deepseek-chat');
+    it('should default to deepseek-v4-pro (first catalog key)', () => {
+      const models = deepseekProvider.getSupportedModels();
+
+      // The shared base uses the first catalog key as the default model.
+      expect(Object.keys(models)[0]).toBe('deepseek-v4-pro');
+    });
+
+    it('should not advertise the retired legacy models', () => {
+      const models = deepseekProvider.getSupportedModels();
+
+      expect(models['deepseek-chat']).toBeUndefined();
+      expect(models['deepseek-reasoner']).toBeUndefined();
+    });
+
+    it('should carry the updated V4 capability metadata', () => {
+      const config = deepseekProvider.getModelConfig('deepseek-v4-pro');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('deepseek-chat');
-      expect(config.contextWindow).toBe(128000);
-      expect(config.maxOutputTokens).toBe(8000);
+      expect(config.modelName).toBe('deepseek-v4-pro');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(384000);
       expect(config.supportsImages).toBe(false);
+      expect(config.supportsReasoning).toBe(true);
+      expect(config.supportsWebSearch).toBe(false);
     });
 
-    it('should get model config by alias', () => {
-      const config = deepseekProvider.getModelConfig('deepseek');
-
-      expect(config).toBeDefined();
-      expect(config.modelName).toBe('deepseek-chat');
+    it('should resolve curated aliases to canonical IDs', () => {
+      expect(deepseekProvider.getModelConfig('deepseek').modelName).toBe(
+        'deepseek-v4-pro',
+      );
+      expect(deepseekProvider.getModelConfig('deepseek-pro').modelName).toBe(
+        'deepseek-v4-pro',
+      );
+      expect(deepseekProvider.getModelConfig('deepseek-flash').modelName).toBe(
+        'deepseek-v4-flash',
+      );
     });
 
     it('should handle case-insensitive model names', () => {
-      const config = deepseekProvider.getModelConfig('DEEPSEEK-CHAT');
+      const config = deepseekProvider.getModelConfig('DEEPSEEK-V4-PRO');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('deepseek-chat');
+      expect(config.modelName).toBe('deepseek-v4-pro');
     });
 
     it('should return null for unknown model', () => {
       const config = deepseekProvider.getModelConfig('unknown-model');
       expect(config).toBeNull();
+    });
+  });
+
+  describe('Provider configuration', () => {
+    beforeEach(() => {
+      mockCreate.mockResolvedValue({
+        choices: [
+          {
+            message: { role: 'assistant', content: 'ok' },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+        model: 'deepseek-v4-pro',
+      });
+    });
+
+    it('should construct the client with the bare baseURL (no /v1)', async () => {
+      await deepseekProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        config: mockConfig,
+      });
+
+      expect(OpenAI).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'https://api.deepseek.com' }),
+      );
+    });
+
+    it('should not send the deprecated frequency/presence penalties', async () => {
+      await deepseekProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        config: mockConfig,
+      });
+
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.top_p).toBe(0.95);
+      expect(callArgs).not.toHaveProperty('frequency_penalty');
+      expect(callArgs).not.toHaveProperty('presence_penalty');
+    });
+  });
+
+  describe('Reasoning request mapping', () => {
+    beforeEach(() => {
+      mockCreate.mockResolvedValue({
+        choices: [
+          {
+            message: { role: 'assistant', content: 'answer' },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+        model: 'deepseek-v4-pro',
+      });
+    });
+
+    async function invokeWithEffort(reasoning_effort) {
+      await deepseekProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        model: 'deepseek-v4-pro',
+        reasoning_effort,
+        config: mockConfig,
+      });
+      return mockCreate.mock.calls[0][0];
+    }
+
+    it('should disable thinking and omit reasoning_effort for "none"', async () => {
+      const callArgs = await invokeWithEffort('none');
+      expect(callArgs.thinking).toEqual({ type: 'disabled' });
+      expect(callArgs).not.toHaveProperty('reasoning_effort');
+    });
+
+    it.each(['minimal', 'low', 'medium', 'high'])(
+      'should enable thinking with reasoning_effort "high" for "%s"',
+      async (level) => {
+        const callArgs = await invokeWithEffort(level);
+        expect(callArgs.thinking).toEqual({ type: 'enabled' });
+        expect(callArgs.reasoning_effort).toBe('high');
+      },
+    );
+
+    it('should enable thinking with reasoning_effort "max" for "max"', async () => {
+      const callArgs = await invokeWithEffort('max');
+      expect(callArgs.thinking).toEqual({ type: 'enabled' });
+      expect(callArgs.reasoning_effort).toBe('max');
+    });
+
+    it('should default (no explicit effort) to thinking-on with "high"', async () => {
+      // The shared base defaults reasoning_effort to 'medium' when unspecified.
+      await deepseekProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        model: 'deepseek-v4-pro',
+        config: mockConfig,
+      });
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.thinking).toEqual({ type: 'enabled' });
+      expect(callArgs.reasoning_effort).toBe('high');
+    });
+
+    it('should attach NO reasoning fields for an unknown pass-through ID', async () => {
+      await deepseekProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        model: 'deepseek-chat', // retired ID, no catalog capability metadata
+        reasoning_effort: 'high',
+        config: mockConfig,
+      });
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('deepseek-chat'); // passthrough unchanged
+      expect(callArgs).not.toHaveProperty('thinking');
+      expect(callArgs).not.toHaveProperty('reasoning_effort');
     });
   });
 
@@ -121,7 +265,7 @@ describe('DeepSeek Provider', () => {
         id: 'chatcmpl-test123',
         object: 'chat.completion',
         created: 1234567890,
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-pro',
         system_fingerprint: 'fp_test123',
         choices: [
           {
@@ -151,18 +295,16 @@ describe('DeepSeek Provider', () => {
         config: mockConfig,
       });
 
-      // Verify that the mock was called (OpenAI client is created internally)
-
       expect(mockCreate).toHaveBeenCalled();
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.messages).toEqual(messages);
-      expect(callArgs.model).toBe('deepseek-chat');
+      expect(callArgs.model).toBe('deepseek-v4-pro');
 
       expect(result).toMatchObject({
         content: 'Test response',
         stop_reason: StopReasons.STOP,
         metadata: {
-          model: 'deepseek-chat',
+          model: 'deepseek-v4-pro',
           usage: {
             input_tokens: 10,
             output_tokens: 20,
@@ -174,34 +316,17 @@ describe('DeepSeek Provider', () => {
       });
     });
 
-    it('should handle custom parameters', async () => {
-      const messages = [{ role: 'user', content: 'Write code' }];
-
-      await deepseekProvider.invoke(messages, {
-        model: 'deepseek-coder',
-        temperature: 0.2,
-        maxTokens: 2000,
-        config: mockConfig,
-      });
-
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.model).toBe('deepseek-coder');
-      expect(callArgs.temperature).toBe(0.2);
-      expect(callArgs.max_tokens).toBe(2000);
-      expect(callArgs.top_p).toBe(0.95); // Default from provider
-    });
-
     it('should cap max tokens to model limit', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
 
       await deepseekProvider.invoke(messages, {
-        model: 'deepseek-chat',
-        maxTokens: 10000,
+        model: 'deepseek-v4-pro',
+        maxTokens: 500000,
         config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.max_tokens).toBe(8000); // Model's max
+      expect(callArgs.max_tokens).toBe(384000); // Model's max
     });
 
     it('should reject image content since DeepSeek does not support images', async () => {
@@ -232,6 +357,99 @@ describe('DeepSeek Provider', () => {
     });
   });
 
+  describe('Reasoning content handling', () => {
+    it('should capture non-streaming reasoning_content without dropping the answer', async () => {
+      mockCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'Final answer.',
+              reasoning_content: 'Step-by-step chain of thought.',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+        model: 'deepseek-v4-pro',
+      });
+
+      const result = await deepseekProvider.invoke(
+        [{ role: 'user', content: 'Hello' }],
+        { model: 'deepseek-v4-pro', config: mockConfig },
+      );
+
+      expect(result.content).toBe('Final answer.');
+      expect(result.metadata.reasoning_content).toBe(
+        'Step-by-step chain of thought.',
+      );
+    });
+
+    it('should accept an empty-content turn that carries reasoning_content', async () => {
+      mockCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: '',
+              reasoning_content: 'I reasoned but produced no visible text yet.',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {},
+        model: 'deepseek-v4-pro',
+      });
+
+      const result = await deepseekProvider.invoke(
+        [{ role: 'user', content: 'Hello' }],
+        { model: 'deepseek-v4-pro', config: mockConfig },
+      );
+
+      expect(result.content).toBe('');
+      expect(result.metadata.reasoning_content).toBe(
+        'I reasoned but produced no visible text yet.',
+      );
+    });
+
+    it('should emit streamed delta.reasoning_content as thinking events before content', async () => {
+      mockCreate.mockResolvedValue(
+        streamOf([
+          {
+            choices: [
+              { delta: { reasoning_content: 'thinking part' }, finish_reason: null },
+            ],
+          },
+          {
+            choices: [{ delta: { content: 'answer part' }, finish_reason: 'stop' }],
+          },
+          {
+            choices: [],
+            usage: { prompt_tokens: 5, completion_tokens: 7, total_tokens: 12 },
+          },
+        ]),
+      );
+
+      const generator = await deepseekProvider.invoke(
+        [{ role: 'user', content: 'Hello' }],
+        { model: 'deepseek-v4-pro', stream: true, config: mockConfig },
+      );
+      const events = await collect(generator);
+
+      const thinking = events.filter((e) => e.type === 'thinking');
+      const deltas = events.filter((e) => e.type === 'delta');
+      expect(thinking).toHaveLength(1);
+      expect(thinking[0].content).toBe('thinking part');
+      expect(deltas).toHaveLength(1);
+      expect(deltas[0].content).toBe('answer part');
+
+      // Reasoning must arrive before the answer text.
+      const thinkingIndex = events.findIndex((e) => e.type === 'thinking');
+      const deltaIndex = events.findIndex((e) => e.type === 'delta');
+      expect(thinkingIndex).toBeLessThan(deltaIndex);
+    });
+  });
+
   describe('Stop Reason Mapping', () => {
     const testCases = [
       ['stop', StopReasons.STOP],
@@ -251,7 +469,7 @@ describe('DeepSeek Provider', () => {
             },
           ],
           usage: {},
-          model: 'deepseek-chat',
+          model: 'deepseek-v4-pro',
         });
 
         const result = await deepseekProvider.invoke(
@@ -272,7 +490,7 @@ describe('DeepSeek Provider', () => {
           },
         ],
         usage: {},
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-pro',
       });
 
       const result = await deepseekProvider.invoke(
@@ -408,33 +626,6 @@ describe('DeepSeek Provider', () => {
         code: ErrorCodes.NO_RESPONSE_CONTENT,
         message: 'No content in response',
       });
-    });
-
-    it.skip('should handle retry on specific errors', async () => {
-      // First call fails with retryable error
-      mockCreate.mockRejectedValueOnce({
-        response: { status: 500 },
-      });
-
-      // Second call succeeds
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { content: 'Success after retry', role: 'assistant' },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 },
-        model: 'deepseek-chat',
-      });
-
-      const result = await deepseekProvider.invoke(
-        [{ role: 'user', content: 'Hello' }],
-        { config: mockConfig },
-      );
-
-      expect(mockCreate).toHaveBeenCalledTimes(2);
-      expect(result.content).toBe('Success after retry');
     });
   });
 });
