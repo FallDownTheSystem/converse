@@ -424,7 +424,7 @@ Models with adaptive thinking control depth via `reasoning_effort`, which maps t
 |-------|---------|---------|-------|
 | `mistral-medium-3-5` | `mistral`, `mistral-medium` | 256K | Frontier-class multimodal, adjustable reasoning |
 | `mistral-small-2603` | `mistral-small` | 256K | Hybrid multimodal (instruct + reasoning + coding) |
-| `mistral-large-2512` | `mistral-large` | 256K | Open-weight MoE flagship, text-only, no adjustable reasoning |
+| `mistral-large-2512` | `mistral-large` | 256K | Open-weight MoE flagship, image-capable, no adjustable reasoning |
 
 `reasoning_effort` maps to `high` (any enabled level) or `none` on Medium 3.5 and Small; Large has no adjustable reasoning.
 

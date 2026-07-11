@@ -15,7 +15,7 @@ const SUPPORTED_MODELS = {
   'mistral-medium-3-5': {
     modelName: 'mistral-medium-3-5',
     friendlyName: 'Mistral Medium 3.5',
-    contextWindow: 256000,
+    contextWindow: 262144,
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true,
@@ -34,7 +34,7 @@ const SUPPORTED_MODELS = {
   'mistral-small-2603': {
     modelName: 'mistral-small-2603',
     friendlyName: 'Mistral Small 4',
-    contextWindow: 256000,
+    contextWindow: 262144,
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true,
@@ -48,10 +48,10 @@ const SUPPORTED_MODELS = {
   'mistral-large-2512': {
     modelName: 'mistral-large-2512',
     friendlyName: 'Mistral Large 3',
-    contextWindow: 256000,
+    contextWindow: 262144,
     maxOutputTokens: 32768,
     supportsStreaming: true,
-    supportsImages: false,
+    supportsImages: true,
     supportsWebSearch: false,
     supportsReasoning: false,
     timeout: 300000,

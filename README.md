@@ -257,7 +257,7 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 - **mistral-medium-3-5** (default; aliases: `mistral`, `mistral-medium`): Frontier-class multimodal model with adjustable reasoning (256K context)
 - **mistral-small-2603** (alias: `mistral-small`): Hybrid multimodal model unifying instruct, reasoning, and coding (256K context)
-- **mistral-large-2512** (alias: `mistral-large`): Open-weight MoE flagship, text-only, no adjustable reasoning (256K context)
+- **mistral-large-2512** (alias: `mistral-large`): Open-weight MoE flagship, image-capable, no adjustable reasoning (256K context)
 
 Reasoning maps to `high` (enabled) or `none` (disabled) on Medium 3.5 and Small; Large has no adjustable reasoning.
 

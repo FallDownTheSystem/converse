@@ -59,7 +59,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Supported Models**:
   - `mistral-medium-3-5` (default; aliases: `mistral`, `mistral-medium`, `mistral-medium-latest`) - Frontier-class multimodal model with adjustable reasoning (256K context)
   - `mistral-small-2603` (aliases: `mistral-small`, `mistral-small-latest`) - Hybrid multimodal model unifying instruct, reasoning, and coding (256K context)
-  - `mistral-large-2512` (aliases: `mistral-large`, `mistral-large-latest`) - Open-weight MoE flagship, text-only (256K context)
+  - `mistral-large-2512` (aliases: `mistral-large`, `mistral-large-latest`) - Open-weight MoE flagship, image-capable (256K context)
 - **Reasoning**: Mistral exposes only `high` and `none`. On the reasoning-capable models (`mistral-medium-3-5`, `mistral-small-2603`), every enabled `reasoning_effort` level maps to `high` and only `none` disables thinking. `mistral-large-2512` has no adjustable reasoning, so `reasoning_effort` is never sent for it.
 - **Images**: `mistral-medium-3-5` and `mistral-small-2603` accept image input; `mistral-large-2512` is text-only.
 

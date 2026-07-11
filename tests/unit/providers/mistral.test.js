@@ -503,7 +503,7 @@ describe('Mistral Provider', () => {
       ]);
     });
 
-    it('should reject image content for mistral-large-2512', async () => {
+    it('should accept image content for mistral-large-2512', async () => {
       const messages = [
         {
           role: 'user',
@@ -517,15 +517,19 @@ describe('Mistral Provider', () => {
         },
       ];
 
-      await expect(
-        mistralProvider.invoke(messages, {
-          model: 'mistral-large-2512',
-          config: mockConfig,
-        }),
-      ).rejects.toMatchObject({
-        code: ErrorCodes.INVALID_REQUEST,
-        message: expect.stringContaining('does not support images'),
+      await mistralProvider.invoke(messages, {
+        model: 'mistral-large-2512',
+        config: mockConfig,
       });
+
+      const callArgs = mockChatComplete.mock.calls[0][0];
+      expect(callArgs.messages[0].content).toEqual([
+        { type: 'text', text: 'What is this?' },
+        {
+          type: 'image_url',
+          imageUrl: 'data:image/jpeg;base64,base64data',
+        },
+      ]);
     });
 
     it('should cap max tokens to model limit', async () => {
