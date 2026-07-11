@@ -99,7 +99,7 @@ describe('MCP Client Integration Test Suite', () => {
         // Verify expected tools are present
         const toolNames = tools.tools.map((t) => t.name);
         expect(toolNames).toContain('chat');
-        expect(toolNames).toContain('consensus');
+        expect(toolNames).toContain('check_status');
 
         // Verify tool schema compliance
         tools.tools.forEach((tool) => {
@@ -141,14 +141,10 @@ describe('MCP Client Integration Test Suite', () => {
             expect(schema.properties.prompt).toBeDefined();
             expect(schema.properties.prompt.type).toBe('string');
             expect(schema.required).toContain('prompt');
-          }
-
-          if (tool.name === 'consensus') {
-            expect(schema.properties.prompt).toBeDefined();
             expect(schema.properties.models).toBeDefined();
             expect(schema.properties.models.type).toBe('array');
-            expect(schema.required).toContain('prompt');
-            expect(schema.required).toContain('models');
+            expect(schema.properties.mode).toBeDefined();
+            expect(schema.properties.mode.enum).toContain('consensus');
           }
         }
 
@@ -170,9 +166,7 @@ describe('MCP Client Integration Test Suite', () => {
           const properties = tool.inputSchema.properties;
           Object.keys(properties).forEach((paramName) => {
             const param = properties[paramName];
-            if (
-              ['prompt', 'models', 'temperature', 'model'].includes(paramName)
-            ) {
+            if (['prompt', 'models', 'mode'].includes(paramName)) {
               expect(param.description).toBeDefined();
               expect(param.description.length).toBeGreaterThan(5);
             }
@@ -193,7 +187,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             prompt: 'Hello! Please respond with a greeting.',
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -233,11 +227,11 @@ describe('MCP Client Integration Test Suite', () => {
     it('should execute consensus tool with structured response', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: 'What is 2 + 2? Answer with just the number.',
+            mode: 'consensus',
             models: ['auto'],
-            enable_cross_feedback: false,
           },
         });
 
@@ -260,14 +254,14 @@ describe('MCP Client Integration Test Suite', () => {
 
         const consensusResult = parseJsonResponse(content.text);
         expect(consensusResult.status).toBe('consensus_complete');
-        expect(consensusResult.models_consulted).toBe(1);
-        // In test environments, API calls may fail, so we allow 0 or 1 successful responses
+        expect(consensusResult.models_consulted).toBe(2);
+        // In test environments, API calls may fail, so we allow 0..2 successful responses
         expect(
           consensusResult.successful_initial_responses,
         ).toBeGreaterThanOrEqual(0);
         expect(
           consensusResult.successful_initial_responses,
-        ).toBeLessThanOrEqual(1);
+        ).toBeLessThanOrEqual(2);
         expect(consensusResult.phases).toBeDefined();
         expect(consensusResult.phases.initial).toBeDefined();
         expect(Array.isArray(consensusResult.phases.initial)).toBe(true);
@@ -285,7 +279,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             prompt: 'Start a conversation about AI. Keep it brief.',
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -307,7 +301,7 @@ describe('MCP Client Integration Test Suite', () => {
           arguments: {
             prompt: 'What did we just discuss?',
             continuation_id: continuationId,
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -357,7 +351,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             // Missing required prompt
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -372,13 +366,14 @@ describe('MCP Client Integration Test Suite', () => {
       });
     }, 10000);
 
-    it('should handle consensus tool with missing models parameter', async () => {
+    it('should handle consensus mode with too few models', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
-            prompt: 'Test without models',
-            // Missing required models array
+            prompt: 'Test with a single model',
+            mode: 'consensus',
+            models: ['auto'], // Consensus mode requires at least 2 models
           },
         });
 
@@ -406,7 +401,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             prompt: 'Recovery test - are you working?',
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -430,7 +425,7 @@ describe('MCP Client Integration Test Suite', () => {
               name: 'chat',
               arguments: {
                 prompt: `Concurrent test call ${i + 1}`,
-                model: 'auto',
+                models: ['auto'],
               },
             }),
           );
@@ -482,7 +477,7 @@ describe('MCP Client Integration Test Suite', () => {
             name: 'chat',
             arguments: {
               prompt: `Sequential test ${i + 1}`,
-              model: 'auto',
+              models: ['auto'],
             },
           });
 
@@ -516,7 +511,7 @@ describe('MCP Client Integration Test Suite', () => {
             name: 'chat',
             arguments: {
               prompt: 'Load test call',
-              model: 'auto',
+              models: ['auto'],
             },
           });
         };
@@ -565,7 +560,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             prompt: 'Resource cleanup test',
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -597,8 +592,7 @@ describe('MCP Client Integration Test Suite', () => {
               arguments: {
                 prompt:
                   'Respond with exactly: "MCP client real API test successful"',
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             });
 
@@ -631,13 +625,12 @@ describe('MCP Client Integration Test Suite', () => {
         await withHTTPTestServer(
           async (client, manager) => {
             const result = await client.callTool({
-              name: 'consensus',
+              name: 'chat',
               arguments: {
                 prompt:
                   'What is the capital of France? Answer with just the city name.',
+                mode: 'consensus',
                 models: ['auto'],
-                enable_cross_feedback: false,
-                temperature: 0,
               },
             });
 
@@ -694,7 +687,7 @@ describe('MCP Client Integration Test Suite', () => {
           name: 'chat',
           arguments: {
             prompt: 'Quick response test',
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -720,7 +713,7 @@ describe('MCP Client Integration Test Suite', () => {
               name: 'chat',
               arguments: {
                 prompt: `Stability test operation ${i + 1}`,
-                model: 'auto',
+                models: ['auto'],
               },
             });
 

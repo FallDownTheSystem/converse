@@ -299,11 +299,9 @@ describe('Conversation Exporter', () => {
       await exportConversation(conversationState, {
         clientCwd: testDir,
         continuation_id: 'conv_metadata',
-        model: 'gemini-pro',
-        temperature: 0.7,
+        mode: 'roundtable',
+        models: ['gemini-pro', 'gpt-5'],
         reasoning_effort: 'high',
-        verbosity: 'low',
-        use_websearch: true,
         files: ['/path/to/file.txt'],
         images: ['/path/to/image.png', 'data:image/png;base64,xxx'],
       });
@@ -314,12 +312,12 @@ describe('Conversation Exporter', () => {
       );
 
       expect(metadata.continuation_id).toBe('conv_metadata');
-      expect(metadata.model).toBe('gemini-pro');
-      expect(metadata.provider).toBe('google');
-      expect(metadata.temperature).toBe(0.7);
+      expect(metadata.mode).toBe('roundtable');
+      expect(metadata.models).toEqual(['gemini-pro', 'gpt-5']);
       expect(metadata.reasoning_effort).toBe('high');
-      expect(metadata.verbosity).toBe('low');
-      expect(metadata.use_websearch).toBe(true);
+      expect(metadata.temperature).toBeUndefined();
+      expect(metadata.verbosity).toBeUndefined();
+      expect(metadata.use_websearch).toBeUndefined();
       expect(metadata.total_turns).toBe(2);
       expect(metadata.files).toEqual(['/path/to/file.txt']);
       expect(metadata.images).toEqual(['/path/to/image.png', '[base64 image]']);
@@ -349,13 +347,13 @@ describe('Conversation Exporter', () => {
       await exportConversation(conversationState1, {
         clientCwd: testDir,
         continuation_id: 'conv_atomic',
-        model: 'gpt-5',
-        temperature: 0.5,
+        mode: 'chat',
+        models: ['gpt-5'],
       });
 
       const metadata1 = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
       expect(metadata1.total_turns).toBe(1);
-      expect(metadata1.temperature).toBe(0.5);
+      expect(metadata1.mode).toBe('chat');
 
       // Second export with more turns
       const conversationState2 = {
@@ -372,13 +370,13 @@ describe('Conversation Exporter', () => {
       await exportConversation(conversationState2, {
         clientCwd: testDir,
         continuation_id: 'conv_atomic',
-        model: 'gpt-5',
-        temperature: 0.8,
+        mode: 'chat',
+        models: ['gpt-5'],
       });
 
       const metadata2 = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
       expect(metadata2.total_turns).toBe(2);
-      expect(metadata2.temperature).toBe(0.8);
+      expect(metadata2.models).toEqual(['gpt-5']);
 
       // Verify temp file doesn't exist
       await expect(fs.access(metadataPath + '.tmp')).rejects.toThrow();

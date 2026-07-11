@@ -332,19 +332,6 @@ describe('Google Provider', () => {
     });
   });
 
-  describe('temperature handling', () => {
-    it('should support temperature for all models', () => {
-      const models = googleProvider.getSupportedModels();
-
-      // All Gemini models support temperature
-      expect(models['gemini-2.5-flash'].supportsTemperature).toBe(true);
-      expect(models['gemini-2.5-flash-lite'].supportsTemperature).toBe(true);
-      expect(models['gemini-2.5-pro'].supportsTemperature).toBe(true);
-
-      expect(models['gemini-3.1-pro-preview'].supportsTemperature).toBe(true);
-    });
-  });
-
   describe('default model selection', () => {
     it('should default to gemini-2.5-flash', () => {
       // The implementation defaults to 'gemini-2.5-flash'

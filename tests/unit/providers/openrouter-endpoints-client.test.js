@@ -136,7 +136,6 @@ describe('OpenRouter Endpoints API Client', () => {
         maxOutputTokens: 64000,
         supportsStreaming: true,
         supportsImages: true,
-        supportsTemperature: true,
         supportsThinking: true,
         supportsTools: true,
         isDynamic: true,

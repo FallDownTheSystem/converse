@@ -119,7 +119,7 @@ export class MCPTestClient {
   /**
    * Call chat tool with simplified interface
    * @param {string} prompt - Chat prompt
-   * @param {object} options - Chat options (model, temperature, etc.)
+   * @param {object} options - Chat options (models, mode, etc.)
    * @returns {Promise<object>}
    */
   async chat(prompt, options = {}) {
@@ -130,16 +130,17 @@ export class MCPTestClient {
   }
 
   /**
-   * Call consensus tool with simplified interface
+   * Call the chat tool in consensus mode with simplified interface
    * @param {string} prompt - Consensus prompt
-   * @param {array} models - Array of model configurations
-   * @param {object} options - Consensus options
+   * @param {array} models - Array of model names
+   * @param {object} options - Additional chat options
    * @returns {Promise<object>}
    */
   async consensus(prompt, models, options = {}) {
-    return this.callTool('consensus', {
+    return this.callTool('chat', {
       prompt,
       models,
+      mode: 'consensus',
       ...options,
     });
   }
@@ -161,8 +162,7 @@ export class MCPTestClient {
       // Test a simple tool call
       const chatStartTime = Date.now();
       const chatResult = await this.chat('Health check test', {
-        model: 'auto',
-        temperature: 0,
+        models: ['auto'],
       });
       const chatTime = Date.now() - chatStartTime;
 

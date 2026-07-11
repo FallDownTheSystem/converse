@@ -59,10 +59,8 @@ describe('SummarizationService', () => {
         ]),
         expect.objectContaining({
           model: 'gpt-5-nano', // Updated to new default
-          temperature: 0.3,
           maxTokens: 200, // Increased tokens
           reasoning_effort: 'minimal', // Added for speed
-          verbosity: 'low', // Added for conciseness
           config: mockConfig,
         }),
       );

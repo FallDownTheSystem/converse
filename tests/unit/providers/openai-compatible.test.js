@@ -225,7 +225,6 @@ describe('OpenAI-Compatible Provider Base Module', () => {
 
       await provider.invoke(messages, {
         model: 'test-model-2',
-        temperature: 0.5,
         maxTokens: 2000,
         custom_param: 'value',
         config: { apiKeys: { testprovider: 'test-key' } },
@@ -233,7 +232,6 @@ describe('OpenAI-Compatible Provider Base Module', () => {
 
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.model).toBe('test-model-2');
-      expect(callArgs.temperature).toBeUndefined(); // Model doesn't support temperature
       expect(callArgs.max_tokens).toBe(2000);
       expect(callArgs.custom_param).toBe('value');
     });
@@ -346,19 +344,6 @@ describe('OpenAI-Compatible Provider Base Module', () => {
       expect(mockOpenAIInstances[0].config).toMatchObject({
         timeout: 60000,
       });
-    });
-
-    it('should handle models without temperature support', async () => {
-      const messages = [{ role: 'user', content: 'Hello' }];
-
-      await provider.invoke(messages, {
-        model: 'test-model-2',
-        temperature: 0.8,
-        config: { apiKeys: { testprovider: 'test-key' } },
-      });
-
-      const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.temperature).toBeUndefined();
     });
 
     it('should cap max tokens to model limit', async () => {

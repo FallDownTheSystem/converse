@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { chatTool } from '../../../src/tools/chat.js';
-import { consensusTool } from '../../../src/tools/consensus.js';
 import {
   HTTPMCPServerManager,
   withHTTPTestServer,
@@ -124,9 +123,10 @@ describe('File Validation Integration Tests', () => {
     it('should return error when files do not exist', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: 'Analyze these files',
+            mode: 'consensus',
             models: ['gpt-4o-mini'],
             files: ['nonexistent-1.txt', 'nonexistent-2.txt'],
           },
@@ -146,9 +146,10 @@ describe('File Validation Integration Tests', () => {
     it('should return error when images do not exist', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: 'Describe these images',
+            mode: 'consensus',
             models: ['gpt-4o-mini'],
             images: ['missing-consensus-1.png', 'missing-consensus-2.jpg'],
           },
@@ -168,9 +169,10 @@ describe('File Validation Integration Tests', () => {
     it('should work normally when all files exist', async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: 'What type of project is this based on package.json?',
+            mode: 'consensus',
             models: ['gpt-4o-mini'],
             files: ['package.json'],
           },

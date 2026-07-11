@@ -97,12 +97,10 @@ describe('Fixture Validation', () => {
           if (fixture.request) {
             expect(fixture.request).toHaveProperty('prompt');
 
-            if (tool === 'consensus') {
-              expect(fixture.request).toHaveProperty('models');
-              expect(Array.isArray(fixture.request.models)).toBe(true);
-            } else {
-              expect(fixture.request).toHaveProperty('model');
-            }
+            // The unified `chat` tool always takes a `models` array (across all
+            // modes); no fixture uses the removed singular `model` param.
+            expect(fixture.request).toHaveProperty('models');
+            expect(Array.isArray(fixture.request.models)).toBe(true);
           }
 
           if (fixture.response) {

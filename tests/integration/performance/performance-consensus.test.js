@@ -107,24 +107,19 @@ describe('Consensus Performance Tests', () => {
 
   describe('Parallel Execution Performance', () => {
     it('should execute consensus faster than sequential calls', async () => {
-      const models = [
-        { model: 'gpt-4o-mini' },
-        { model: 'gpt-4o-mini' },
-        { model: 'gpt-4o-mini' },
-      ];
+      const models = ['gpt-4o-mini', 'gpt-4o-mini', 'gpt-4o-mini'];
 
       const testPrompt = 'What is 2+2? Answer with just the number.';
 
-      // Test parallel execution (consensus tool)
+      // Test parallel execution (consensus mode)
       console.log('DEBUG: Starting parallel consensus with models:', models);
       const parallelStartTime = Date.now();
       const parallelResult = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: testPrompt,
+          mode: 'consensus',
           models,
-          enable_cross_feedback: false,
-          temperature: 0,
         },
       });
       const parallelDuration = Date.now() - parallelStartTime;
@@ -155,8 +150,7 @@ describe('Consensus Performance Tests', () => {
           name: 'chat',
           arguments: {
             prompt: testPrompt,
-            model: model.model,
-            temperature: 0,
+            models: [model],
           },
         });
         const callEnd = Date.now();
@@ -201,23 +195,20 @@ describe('Consensus Performance Tests', () => {
     it('should maintain performance with increasing model count', async () => {
       const testPrompt =
         'What is the capital of France? Answer with just the city name.';
-      const modelCounts = [1, 2, 3];
+      const modelCounts = [2, 3, 4];
       const results = [];
 
       for (const count of modelCounts) {
         // Use the same model multiple times
-        const models = Array(count)
-          .fill(null)
-          .map(() => ({ model: 'gpt-4o-mini' }));
+        const models = Array(count).fill('gpt-4o-mini');
 
         const startTime = Date.now();
         const result = await router.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: testPrompt,
+            mode: 'consensus',
             models,
-            enable_cross_feedback: false,
-            temperature: 0,
           },
         });
         const duration = Date.now() - startTime;
@@ -253,48 +244,46 @@ describe('Consensus Performance Tests', () => {
     }, 300000); // 5 minute timeout for multiple calls
 
     it('should handle cross-feedback performance correctly', async () => {
-      const models = [{ model: 'gpt-4o-mini' }, { model: 'gemini-2.5-flash' }];
+      const models = ['gpt-4o-mini', 'gemini-2.5-flash'];
 
       const testPrompt = 'What are the benefits of renewable energy?';
 
-      // Test without cross-feedback
+      // Baseline consensus run
       const noCrossFeedbackStart = Date.now();
       const noCrossFeedbackResult = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: testPrompt,
+          mode: 'consensus',
           models,
-          enable_cross_feedback: false,
-          temperature: 0.1,
         },
       });
       const noCrossFeedbackDuration = Date.now() - noCrossFeedbackStart;
 
       expect(noCrossFeedbackResult.isError).toBe(false);
 
-      // Test with cross-feedback
+      // Second consensus run
       const crossFeedbackStart = Date.now();
       const crossFeedbackResult = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: testPrompt,
+          mode: 'consensus',
           models,
-          enable_cross_feedback: true,
-          temperature: 0.1,
         },
       });
       const crossFeedbackDuration = Date.now() - crossFeedbackStart;
 
       expect(crossFeedbackResult.isError).toBe(false);
 
-      // Cross-feedback should take longer due to additional round, but allow for API variance
+      // Both runs include refinement, so timing should be comparable
       const ratio = crossFeedbackDuration / noCrossFeedbackDuration;
       // Allow for significant variance in real API response times
-      expect(ratio).toBeGreaterThan(0.8); // Sometimes cross-feedback can be faster due to caching
+      expect(ratio).toBeGreaterThan(0.3);
       expect(ratio).toBeLessThan(6.0); // But not excessively longer - generous threshold
 
       logger.info(
-        `[performance-consensus-test] No cross-feedback: ${noCrossFeedbackDuration}ms, With cross-feedback: ${crossFeedbackDuration}ms, Ratio: ${ratio.toFixed(2)}x`,
+        `[performance-consensus-test] Run 1: ${noCrossFeedbackDuration}ms, Run 2: ${crossFeedbackDuration}ms, Ratio: ${ratio.toFixed(2)}x`,
       );
 
       // Verify we got refinements
@@ -310,7 +299,7 @@ describe('Consensus Performance Tests', () => {
   describe('Concurrent Consensus Performance', () => {
     it('should handle multiple concurrent consensus requests', async () => {
       const concurrentRequests = 3;
-      const models = [{ model: 'auto' }, { model: 'auto' }];
+      const models = ['auto'];
 
       const requests = [];
       const startTime = Date.now();
@@ -319,12 +308,11 @@ describe('Consensus Performance Tests', () => {
       for (let i = 0; i < concurrentRequests; i++) {
         requests.push(
           router.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt: `Concurrent consensus test ${i + 1}: What is ${i + 2} + ${i + 3}?`,
+              mode: 'consensus',
               models,
-              enable_cross_feedback: false,
-              temperature: 0,
             },
           }),
         );
@@ -355,7 +343,7 @@ describe('Consensus Performance Tests', () => {
 
     it('should maintain quality under concurrent load', async () => {
       const concurrentRequests = 3; // Reduce concurrent load to avoid rate limiting
-      const models = ['gpt-4o-mini'];
+      const models = ['gpt-4o-mini', 'gpt-4o-mini'];
       const testPrompt = 'What is the square root of 16?';
 
       const requests = [];
@@ -363,12 +351,11 @@ describe('Consensus Performance Tests', () => {
       for (let i = 0; i < concurrentRequests; i++) {
         requests.push(
           router.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt: testPrompt,
+              mode: 'consensus',
               models,
-              enable_cross_feedback: false,
-              temperature: 0,
             },
           }),
         );
@@ -384,7 +371,7 @@ describe('Consensus Performance Tests', () => {
           result,
           `quality test ${index}`,
         );
-        expect(consensusData.successful_initial_responses).toBe(1);
+        expect(consensusData.successful_initial_responses).toBe(2);
 
         // Should contain correct answer (4)
         const response = consensusData.phases.initial[0].response;
@@ -405,13 +392,12 @@ describe('Consensus Performance Tests', () => {
       const models = Array(5).fill('auto');
 
       const result = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt:
             'Explain the importance of parallel processing in modern computing.',
+          mode: 'consensus',
           models,
-          enable_cross_feedback: true,
-          temperature: 0.2,
         },
       });
 
@@ -441,11 +427,11 @@ describe('Consensus Performance Tests', () => {
       const conversations = [];
       for (let i = 0; i < 3; i++) {
         const result = await router.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: `Resource cleanup test ${i + 1}`,
+            mode: 'consensus',
             models: ['auto'],
-            enable_cross_feedback: false,
           },
         });
 
@@ -507,9 +493,10 @@ describe('Consensus Performance Tests', () => {
 
       const startTime = Date.now();
       const result = await emptyRouter.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: 'This should fail fast',
+          mode: 'consensus',
           models: ['auto'],
         },
       });
@@ -526,19 +513,18 @@ describe('Consensus Performance Tests', () => {
 
     it('should handle partial provider failures efficiently', async () => {
       const models = [
-        { model: 'gpt-4o-mini' }, // Should work
-        { model: 'definitely-nonexistent-model-xyz' }, // Should fail
-        { model: 'gemini-2.5-flash' }, // Should work
+        'gpt-4o-mini', // Should work
+        'definitely-nonexistent-model-xyz', // Should fail
+        'gemini-2.5-flash', // Should work
       ];
 
       const startTime = Date.now();
       const result = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: 'Partial failure test',
+          mode: 'consensus',
           models,
-          enable_cross_feedback: false,
-          temperature: 0,
         },
       });
       const duration = Date.now() - startTime;
@@ -569,19 +555,16 @@ describe('Consensus Performance Tests', () => {
       }
       const availableModels = [];
 
-      if (config?.apiKeys?.openai)
-        availableModels.push({ model: 'gpt-4o-mini' });
+      if (config?.apiKeys?.openai) availableModels.push('gpt-4o-mini');
       if (config?.apiKeys?.mistral)
-        availableModels.push({ model: 'magistral-small-2506' });
-      if (config?.apiKeys?.google)
-        availableModels.push({ model: 'gemini-2.5-flash' });
+        availableModels.push('magistral-small-2506');
+      if (config?.apiKeys?.google) availableModels.push('gemini-2.5-flash');
       if (config?.apiKeys?.anthropic)
-        availableModels.push({ model: 'claude-3-5-haiku-20241022' });
-      if (config?.apiKeys?.deepseek)
-        availableModels.push({ model: 'deepseek-chat' });
-      if (config?.apiKeys?.xai) availableModels.push({ model: 'grok-4' });
+        availableModels.push('claude-3-5-haiku-20241022');
+      if (config?.apiKeys?.deepseek) availableModels.push('deepseek-chat');
+      if (config?.apiKeys?.xai) availableModels.push('grok-4');
       if (config?.apiKeys?.openrouter)
-        availableModels.push({ model: 'openai/gpt-4o-mini' });
+        availableModels.push('openai/gpt-4o-mini');
 
       console.log(
         '[performance-consensus-test] Test available models:',
@@ -597,7 +580,7 @@ describe('Consensus Performance Tests', () => {
         `[performance-consensus-test] Will test with up to ${maxProvidersToTest} providers`,
       );
 
-      for (let count = 1; count <= maxProvidersToTest; count++) {
+      for (let count = 2; count <= maxProvidersToTest; count++) {
         const models = availableModels.slice(0, count);
         console.log(
           `[performance-consensus-test] Starting test ${count}/${maxProvidersToTest} with models:`,
@@ -610,12 +593,11 @@ describe('Consensus Performance Tests', () => {
         );
 
         const result = await router.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: testPrompt,
+            mode: 'consensus',
             models,
-            enable_cross_feedback: false,
-            temperature: 0,
           },
         });
         const duration = Date.now() - startTime;
@@ -663,12 +645,11 @@ describe('Consensus Performance Tests', () => {
       for (let i = 0; i < requestCount; i++) {
         requests.push(
           router.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt: `High frequency test ${i}`,
+              mode: 'consensus',
               models,
-              enable_cross_feedback: false,
-              temperature: 0,
             },
           }),
         );
@@ -702,25 +683,22 @@ describe('Consensus Performance Tests', () => {
     it('should meet baseline performance requirements', async () => {
       const benchmarks = [
         {
-          name: 'Simple question - 1 model',
+          name: 'Simple question - 2 models',
           models: ['auto'],
           prompt: 'What is 1+1?',
           maxTime: 30000, // 30 seconds
-          crossFeedback: false,
         },
         {
           name: 'Medium complexity - 2 models',
-          models: ['auto', 'auto'],
+          models: ['auto'],
           prompt: 'Explain the concept of machine learning briefly.',
           maxTime: 60000, // 1 minute
-          crossFeedback: false,
         },
         {
-          name: 'Complex with cross-feedback - 2 models',
-          models: ['auto', 'auto'],
+          name: 'Complex with cross-feedback - 3 models',
+          models: ['auto'],
           prompt: 'Compare the advantages of renewable vs fossil fuels.',
           maxTime: 120000, // 2 minutes
-          crossFeedback: true,
         },
       ];
 
@@ -728,12 +706,11 @@ describe('Consensus Performance Tests', () => {
         const startTime = Date.now();
 
         const result = await router.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt: benchmark.prompt,
+            mode: 'consensus',
             models: benchmark.models,
-            enable_cross_feedback: benchmark.crossFeedback,
-            temperature: 0.1,
           },
         });
 

@@ -26,7 +26,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description:
@@ -42,7 +41,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'OpenAI GPT-4.1 via Copilot subscription',
@@ -55,7 +53,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -69,7 +66,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -83,7 +79,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -97,7 +92,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -111,7 +105,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -125,7 +118,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -139,7 +131,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -153,7 +144,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
     timeout: 600000,
@@ -169,7 +159,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Haiku 4.5 via Copilot subscription',
@@ -182,7 +171,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Sonnet 4 via Copilot subscription',
@@ -195,7 +183,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Sonnet 4.5 via Copilot subscription',
@@ -208,7 +195,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 16384,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Sonnet 4.6 via Copilot subscription',
@@ -221,7 +207,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.5 via Copilot subscription',
@@ -234,7 +219,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.6 via Copilot subscription',
@@ -247,7 +231,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.7 via Copilot subscription',
@@ -260,7 +243,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.8 via Copilot subscription',
@@ -275,7 +257,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Google Gemini 3 Pro Preview via Copilot subscription',
@@ -288,7 +269,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: false,
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Google Gemini 3.1 Pro Preview via Copilot subscription',
@@ -892,8 +872,6 @@ export const copilotProvider = {
       stream = false,
       signal,
       reasoning_effort,
-      temperature,
-      use_websearch,
     } = options;
 
     if (!config) {
@@ -903,16 +881,6 @@ export const copilotProvider = {
       );
     }
 
-    if (temperature !== undefined) {
-      debugLog(
-        '[Copilot SDK] Parameter "temperature" not supported by Copilot SDK (ignored)',
-      );
-    }
-    if (use_websearch) {
-      debugLog(
-        '[Copilot SDK] Parameter "use_websearch" not supported by Copilot SDK (ignored)',
-      );
-    }
     try {
       const cwd = config.server?.client_cwd || process.cwd();
       const client = await getCopilotClient(cwd, config);

@@ -18,7 +18,6 @@ const SUPPORTED_MODELS = {
     defaultMaxTokens: 4000, // Default 4K tokens
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsJsonOutput: true,
     supportsFunctionCalling: true,
@@ -44,7 +43,6 @@ const SUPPORTED_MODELS = {
     defaultMaxTokens: 32000, // Default 32K tokens
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsJsonOutput: true,
     supportsFunctionCalling: true,

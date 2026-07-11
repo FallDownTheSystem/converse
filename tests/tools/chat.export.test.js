@@ -107,7 +107,7 @@ describe('Chat Tool Export Feature', () => {
       {
         prompt: 'Hello, how are you?',
         export: true,
-        model: 'gpt-5',
+        models: ['gpt-5'],
       },
       {
         config: mockConfig,
@@ -156,8 +156,8 @@ describe('Chat Tool Export Feature', () => {
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata.continuation_id).toBe(continuationId);
-    expect(metadata.model).toBe('gpt-5');
-    expect(metadata.provider).toBe('openai');
+    expect(metadata.mode).toBe('chat');
+    expect(metadata.models).toEqual(['gpt-5']);
     expect(metadata.total_turns).toBe(1);
   });
 
@@ -433,8 +433,7 @@ describe('Chat Tool Export Feature', () => {
         prompt: 'First message',
         continuation_id: continuationId,
         export: true,
-        model: 'gpt-5',
-        temperature: 0.7,
+        models: ['gpt-5'],
       },
       {
         config: mockConfig,
@@ -451,7 +450,8 @@ describe('Chat Tool Export Feature', () => {
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata1.total_turns).toBe(1);
-    expect(metadata1.temperature).toBe(0.7);
+    expect(metadata1.mode).toBe('chat');
+    expect(metadata1.models).toEqual(['gpt-5']);
 
     // Mock continuation store for second turn (with first conversation content)
     mockContinuationStore.get = vi.fn(async () => ({
@@ -474,8 +474,7 @@ describe('Chat Tool Export Feature', () => {
         prompt: 'Second message',
         continuation_id: continuationId,
         export: true,
-        model: 'gpt-5',
-        temperature: 0.3,
+        models: ['gpt-5'],
         reasoning_effort: 'high',
       },
       {
@@ -491,7 +490,7 @@ describe('Chat Tool Export Feature', () => {
       await fs.readFile(path.join(exportDir, 'metadata.json'), 'utf8'),
     );
     expect(metadata2.total_turns).toBe(2);
-    expect(metadata2.temperature).toBe(0.3);
+    expect(metadata2.mode).toBe('chat');
     expect(metadata2.reasoning_effort).toBe('high');
   });
 });

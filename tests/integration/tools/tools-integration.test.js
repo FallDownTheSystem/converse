@@ -85,7 +85,7 @@ describe('Tools Integration Tests', () => {
       const result = await chatTool(
         {
           prompt: 'Test message',
-          model: 'invalid-model-123',
+          models: ['invalid-model-123'],
         },
         dependencies,
       );
@@ -111,15 +111,16 @@ describe('Tools Integration Tests', () => {
     }, 60000); // Increase timeout to 60 seconds
   });
 
-  describe('Consensus Tool Integration', () => {
+  describe('Consensus Mode Integration', () => {
     it('should handle basic consensus requests', async () => {
-      const consensusTool = tools.consensus;
-      expect(consensusTool).toBeDefined();
-      expect(typeof consensusTool).toBe('function');
+      const chatTool = tools.chat;
+      expect(chatTool).toBeDefined();
+      expect(typeof chatTool).toBe('function');
 
-      const result = await consensusTool(
+      const result = await chatTool(
         {
           prompt: 'What is 2+2?',
+          mode: 'consensus',
           models: ['auto'],
         },
         dependencies,
@@ -132,18 +133,18 @@ describe('Tools Integration Tests', () => {
 
       // Should be valid JSON
       const consensusResult = parseJsonResponse(result.content[0].text);
-      expect(consensusResult.status).toBeDefined();
-      expect(consensusResult.models_consulted).toBe(1);
+      expect(consensusResult.status).toBe('consensus_complete');
+      expect(consensusResult.models_consulted).toBe(2);
     });
 
     it('should handle multiple models', async () => {
-      const consensusTool = tools.consensus;
+      const chatTool = tools.chat;
 
-      const result = await consensusTool(
+      const result = await chatTool(
         {
           prompt: 'Simple test question',
-          models: ['auto', 'auto'],
-          enable_cross_feedback: false,
+          mode: 'consensus',
+          models: ['auto'],
         },
         dependencies,
       );
@@ -154,24 +155,24 @@ describe('Tools Integration Tests', () => {
       expect(consensusResult.phases.initial).toBeDefined();
     });
 
-    it('should handle cross-feedback when enabled', async () => {
-      const consensusTool = tools.consensus;
+    it('should refine responses via cross-feedback', async () => {
+      const chatTool = tools.chat;
 
-      const result = await consensusTool(
+      const result = await chatTool(
         {
           prompt: 'Test question for cross-feedback',
-          models: ['auto', 'auto'], // Need at least 2 models for cross-feedback
-          enable_cross_feedback: true,
+          mode: 'consensus',
+          models: ['auto'], // Need at least 2 models for refinement
         },
         dependencies,
       );
 
       const consensusResult = parseJsonResponse(result.content[0].text);
-      // Cross-feedback only happens with multiple successful responses
+      // Refinement only happens with multiple successful responses
       if (consensusResult.successful_initial_responses > 1) {
         expect(consensusResult.phases.refined).toBeDefined();
       } else {
-        // With single model or failed models, refined phase won't exist
+        // With failed models, refined phase won't exist
         expect(consensusResult.phases.refined).toBeUndefined();
       }
     });
@@ -319,14 +320,15 @@ describe('Tools Integration Tests', () => {
       }
     });
 
-    it('should handle consensus tool validation', async () => {
-      const consensusTool = tools.consensus;
+    it('should handle consensus mode validation', async () => {
+      const chatTool = tools.chat;
 
       try {
-        await consensusTool(
+        await chatTool(
           {
             prompt: 'Test',
-            // Missing required models array
+            mode: 'consensus',
+            // Consensus mode requires at least 2 available models
           },
           dependencies,
         );

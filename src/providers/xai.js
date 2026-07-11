@@ -17,7 +17,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 256000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: true,
     timeout: 300000, // 5 minutes
     description:
@@ -38,7 +37,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 2000000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: true,
     supportsReasoning: true,
     supportsFunctionCalling: true,
@@ -60,7 +58,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 2000000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: true,
     supportsReasoning: false,
     supportsFunctionCalling: true,
@@ -77,7 +74,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 256000,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000, // 5 minutes
     description:
@@ -221,11 +217,9 @@ export const xaiProvider = {
   async invoke(messages, options = {}) {
     const {
       model = 'grok-4-0709',
-      temperature = 0.7,
       maxTokens = null,
       stream = false,
-      reasoning_effort = 'medium',
-      use_websearch = false,
+      reasoning_effort = 'medium', // eslint-disable-line no-unused-vars
       signal,
       config,
       // Filter out options not meant for the API
@@ -277,11 +271,6 @@ export const xaiProvider = {
       ...supportedOptions,
     };
 
-    // Add temperature (all Grok models support temperature)
-    if (temperature !== undefined) {
-      requestPayload.temperature = Math.max(0, Math.min(2, temperature));
-    }
-
     // Add max tokens if specified
     if (maxTokens) {
       requestPayload.max_tokens = Math.min(
@@ -290,8 +279,9 @@ export const xaiProvider = {
       );
     }
 
-    // Add web search parameters if requested and model supports it
-    if (use_websearch && modelConfig.supportsWebSearch) {
+    // Attach live-search parameters where the model supports it; mode 'auto'
+    // lets the model decide per-request whether to actually search.
+    if (modelConfig.supportsWebSearch) {
       requestPayload.search_parameters = {
         mode: 'auto', // Let the model decide when to use web search
       };
@@ -317,7 +307,6 @@ export const xaiProvider = {
         requestPayload,
         resolvedModel,
         modelConfig,
-        use_websearch,
         signal,
       );
     }
@@ -327,7 +316,7 @@ export const xaiProvider = {
 
     try {
       debugLog(
-        `[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with live search)' : ''}`,
+        `[XAI] Calling ${resolvedModel} with ${xaiMessages.length} messages${modelConfig.supportsWebSearch ? ' (with live search)' : ''}`,
       );
 
       // Check if already aborted before making request
@@ -382,7 +371,7 @@ export const xaiProvider = {
           response_time_ms: responseTime,
           finish_reason: choice.finish_reason,
           provider: 'xai',
-          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+          web_search_used: !!modelConfig.supportsWebSearch,
         },
       };
     } catch (error) {
@@ -443,7 +432,6 @@ export const xaiProvider = {
    * @param {Object} requestPayload - Request payload
    * @param {string} resolvedModel - Resolved model name
    * @param {Object} modelConfig - Model configuration
-   * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
   async *_createStreamingGenerator(
@@ -451,13 +439,11 @@ export const xaiProvider = {
     requestPayload,
     resolvedModel,
     modelConfig,
-    use_websearch,
     signal,
   ) {
-    const searchInfo =
-      use_websearch && modelConfig.supportsWebSearch
-        ? ' (with live search)'
-        : '';
+    const searchInfo = modelConfig.supportsWebSearch
+      ? ' (with live search)'
+      : '';
 
     debugLog(
       `[XAI] Starting streaming for ${resolvedModel} with ${requestPayload.messages?.length} messages${searchInfo}`,
@@ -578,8 +564,8 @@ export const xaiProvider = {
         yield usageEvent;
       }
 
-      // Determine web search usage
-      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+      // Web search is available whenever the model supports it
+      const webSearchUsed = !!modelConfig.supportsWebSearch;
 
       // Build final metadata
       const metadata = {

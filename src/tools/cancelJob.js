@@ -126,7 +126,13 @@ export async function cancelJobTool(args, dependencies) {
         ? new Date(updatedJobState.createdAt).toLocaleString()
         : 'unknown';
 
-      let statusLine = `${statusEmoji} CANCELLED | ${updatedJobState?.tool?.toUpperCase() || jobState.tool?.toUpperCase() || 'UNKNOWN'} | ${continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
+      const modeLabel =
+        updatedJobState?.mode ||
+        updatedJobState?.tool ||
+        jobState.mode ||
+        jobState.tool ||
+        'UNKNOWN';
+      let statusLine = `${statusEmoji} CANCELLED | ${modeLabel.toUpperCase()} | ${continuation_id} | Started: ${startTime} | ${timeStr} elapsed`;
 
       // Add title if available
       if (updatedJobState?.title) {

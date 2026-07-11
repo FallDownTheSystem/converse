@@ -3,8 +3,7 @@
     "basic": {
       "request": {
         "prompt": "What is 2+2?",
-        "model": "gpt-4o-mini",
-        "temperature": 0.7
+        "models": ["gpt-4o-mini"]
       },
       "response": {
         "content": "2+2 equals 4.",
@@ -23,7 +22,7 @@
       "request": {
         "prompt": "Analyze the provided code file",
         "files": ["/test/files/sample.js"],
-        "model": "gpt-4"
+        "models": ["gpt-4"]
       },
       "response": {
         "content": "The code file contains a simple function that returns 'Hello, World!'",
@@ -38,7 +37,7 @@
       "request": {
         "prompt": "What's in this image?",
         "images": ["/test/images/sample.png"],
-        "model": "gpt-4o"
+        "models": ["gpt-4o"]
       },
       "response": {
         "content": "The image shows a red pixel.",
@@ -53,7 +52,7 @@
       "request": {
         "prompt": "Continue our conversation",
         "continuation_id": "chat_1234567890_abc123",
-        "model": "gpt-4"
+        "models": ["gpt-4"]
       },
       "response": {
         "content": "I see we were discussing recursion. Let me continue explaining...",
@@ -64,25 +63,10 @@
         }
       }
     },
-    "withWebSearch": {
-      "request": {
-        "prompt": "What's the latest news about AI?",
-        "model": "gpt-4",
-        "use_websearch": true
-      },
-      "response": {
-        "content": "Based on recent web search results, here are the latest AI developments...",
-        "metadata": {
-          "model": "gpt-4",
-          "provider": "openai",
-          "webSearchUsed": true
-        }
-      }
-    },
     "withReasoningEffort": {
       "request": {
         "prompt": "Solve this complex problem step by step",
-        "model": "o3",
+        "models": ["o3"],
         "reasoning_effort": "high"
       },
       "response": {
@@ -104,7 +88,7 @@
       "request": {
         "prompt": "Compare these files",
         "files": ["/test/files/sample1.js", "/test/files/sample2.py"],
-        "model": "gemini-2.5-pro"
+        "models": ["gemini-2.5-pro"]
       },
       "response": {
         "content": "Both files implement similar functionality but in different languages...",
@@ -119,8 +103,7 @@
       "request": {
         "prompt": "Analyze this large document and summarize key points",
         "files": ["/test/files/large-document.txt"],
-        "model": "gemini-2.5-pro",
-        "temperature": 0.3
+        "models": ["gemini-2.5-pro"]
       },
       "response": {
         "content": "Summary of the document: The document covers three main topics...",
@@ -136,6 +119,7 @@
     "basic": {
       "request": {
         "prompt": "Should we use TypeScript or JavaScript?",
+        "mode": "consensus",
         "models": ["gpt-4", "gemini-2.5-pro", "grok-4"]
       },
       "response": {
@@ -194,6 +178,7 @@
       "request": {
         "prompt": "Review this architecture proposal",
         "files": ["/test/files/architecture.md"],
+        "mode": "consensus",
         "models": ["o3", "claude-3-5-sonnet-20241022"]
       },
       "response": {
@@ -227,11 +212,11 @@
         ]
       }
     },
-    "withoutCrossFeedback": {
+    "twoModels": {
       "request": {
         "prompt": "Quick decision: REST or GraphQL?",
-        "models": ["gpt-3.5-turbo", "gemini-2.5-flash"],
-        "enable_cross_feedback": false
+        "mode": "consensus",
+        "models": ["gpt-3.5-turbo", "gemini-2.5-flash"]
       },
       "response": {
         "initial_responses": [
@@ -251,7 +236,6 @@
         "refined_responses": null,
         "metadata": {
           "total_models": 2,
-          "cross_feedback_enabled": false,
           "total_usage": {
             "initial_phase": 155,
             "refinement_phase": 0,
@@ -260,11 +244,11 @@
         }
       }
     },
-    "withCustomFeedbackPrompt": {
+    "securityReview": {
       "request": {
         "prompt": "Evaluate security implications",
-        "models": [{ "model": "gpt-4" }, { "model": "grok-4" }],
-        "cross_feedback_prompt": "Focus specifically on potential vulnerabilities"
+        "mode": "consensus",
+        "models": ["gpt-4", "grok-4"]
       },
       "response": {
         "initial_responses": [
@@ -301,7 +285,8 @@
       "request": {
         "prompt": "Continue our architecture discussion",
         "continuation_id": "consensus_1234567890_xyz789",
-        "models": [{ "model": "gpt-4" }, { "model": "gemini-2.5-pro" }]
+        "mode": "consensus",
+        "models": ["gpt-4", "gemini-2.5-pro"]
       },
       "response": {
         "initial_responses": [
@@ -323,11 +308,8 @@
     "partialFailure": {
       "request": {
         "prompt": "Analyze performance options",
-        "models": [
-          { "model": "gpt-4" },
-          { "model": "invalid-model" },
-          { "model": "gemini-2.5-pro" }
-        ]
+        "mode": "consensus",
+        "models": ["gpt-4", "invalid-model", "gemini-2.5-pro"]
       },
       "response": {
         "initial_responses": [
@@ -359,11 +341,8 @@
     "withReasoningModels": {
       "request": {
         "prompt": "Complex algorithm optimization problem",
-        "models": [
-          { "model": "o3" },
-          { "model": "o3-mini" },
-          { "model": "o1" }
-        ],
+        "mode": "consensus",
+        "models": ["o3", "o3-mini", "o1"],
         "reasoning_effort": "high"
       },
       "response": {

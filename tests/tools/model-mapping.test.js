@@ -4,26 +4,14 @@
  * Tests that model names are correctly mapped to providers
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// We need to test the actual mapModelToProvider logic
-// Since it's not exported, we'll test it through the tools
+import { describe, expect, it } from 'vitest';
+import { mapModelToProvider } from '../../src/utils/modelRouting.js';
 
 describe('Model Mapping', () => {
   describe('mapModelToProvider logic', () => {
-    // Helper to extract the mapModelToProvider function from chat.js
-    let mapModelToProvider;
-
-    beforeEach(async () => {
-      // Read the chat.js file and extract the function
-      const chatModule = await import('../../src/tools/chat.js');
-
-      // Since mapModelToProvider is not exported, we need to test it via the behavior
-      // of the chat tool. Let's create a minimal test that verifies the routing logic
-    });
-
     it('should route simple model names by keyword', () => {
-      // Test cases for keyword-based routing
+      // With no concrete provider instances, keyword routing decides the target.
+      const providers = {};
       const testCases = [
         // OpenAI models
         ['gpt-4', 'openai'],
@@ -65,15 +53,12 @@ describe('Model Mapping', () => {
         ['moonshot-kimi', 'openrouter'],
         ['k2', 'openrouter'],
 
-        // Auto model
+        // Auto model (no CLI/SDK providers present → falls through to openai)
         ['auto', 'openai'],
       ];
 
-      // Since we can't directly test mapModelToProvider, we verify the expected behavior
       testCases.forEach(([model, expectedProvider]) => {
-        // Just verify our test data is structured correctly
-        expect(typeof model).toBe('string');
-        expect(typeof expectedProvider).toBe('string');
+        expect(mapModelToProvider(model, providers)).toBe(expectedProvider);
       });
     });
 

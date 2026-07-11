@@ -20,7 +20,6 @@ import { getJobRunner, setJobRunner } from '../../../src/async/jobRunner.js';
 import { getEventBus } from '../../../src/async/eventBus.js';
 import { checkStatusTool } from '../../../src/tools/checkStatus.js';
 import { chatTool } from '../../../src/tools/chat.js';
-import { consensusTool } from '../../../src/tools/consensus.js';
 import { loadConfig } from '../../../src/config.js';
 import { getProviders } from '../../../src/providers/index.js';
 import { getContinuationStore } from '../../../src/continuationStore.js';
@@ -353,7 +352,7 @@ describe('FileCache Integration Tests', () => {
         const chatArgs = {
           prompt: 'What is 2+2?',
           async: true,
-          model: 'gpt-5-nano',
+          models: ['gpt-5-nano'],
         };
 
         const response = await chatTool(chatArgs, dependencies);
@@ -442,7 +441,7 @@ describe('FileCache Integration Tests', () => {
         const chatArgs = {
           prompt: 'What is the weather today?',
           async: true,
-          model: 'gpt-5-nano',
+          models: ['gpt-5-nano'],
         };
 
         const response = await chatTool(chatArgs, dependencies);

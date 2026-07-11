@@ -17,17 +17,12 @@ const SAMPLE_VALUES = {
   prompt: 'Explain the authentication flow in this codebase',
   files: ['src/auth.js'],
   images: ['./diagram.png'],
-  model: 'auto',
   models: ['codex', 'gemini', 'claude'],
+  mode: 'consensus',
   continuation_id: 'conv_abc123',
-  temperature: 0.5,
   reasoning_effort: 'medium',
-  verbosity: 'medium',
-  use_websearch: false,
   async: false,
   export: false,
-  enable_cross_feedback: true,
-  cross_feedback_prompt: null,
   full_history: false,
 };
 
@@ -122,24 +117,37 @@ function generateToolExamplesFromSchema(toolName, inputSchema) {
     }
   }
 
-  // For chat and consensus, add some optional parameters for richer examples
+  // For the chat tool, show one example per mode for richer documentation.
   if (toolName === 'chat') {
-    // Add commonly used optional parameters
-    if (properties.model) example.model = SAMPLE_VALUES.model;
-    if (properties.files) example.files = SAMPLE_VALUES.files;
-    if (properties.temperature) example.temperature = SAMPLE_VALUES.temperature;
-  } else if (toolName === 'consensus') {
-    // Add commonly used optional parameters
-    if (properties.files) example.files = SAMPLE_VALUES.files;
-    if (properties.enable_cross_feedback)
-      example.enable_cross_feedback = SAMPLE_VALUES.enable_cross_feedback;
-    if (properties.temperature) example.temperature = 0.2; // Lower for consensus
-  } else if (toolName === 'check_status') {
-    // For check_status, just show the continuation_id
-    if (properties.continuation_id)
-      example.continuation_id = SAMPLE_VALUES.continuation_id;
-  } else if (toolName === 'cancel_job') {
-    // For cancel_job, just show the continuation_id
+    const chatExample = { prompt: SAMPLE_VALUES.prompt, models: ['auto'] };
+    if (properties.files) chatExample.files = SAMPLE_VALUES.files;
+    const consensusExample = {
+      prompt: SAMPLE_VALUES.prompt,
+      models: SAMPLE_VALUES.models,
+      mode: 'consensus',
+    };
+    const roundtableExample = {
+      prompt: SAMPLE_VALUES.prompt,
+      models: SAMPLE_VALUES.models,
+      mode: 'roundtable',
+    };
+    return [
+      '```json',
+      '// mode "chat" (default) — independent parallel answers',
+      JSON.stringify(chatExample, null, 2),
+      '```',
+      '```json',
+      '// mode "consensus" — ≥2 models answer, then refine',
+      JSON.stringify(consensusExample, null, 2),
+      '```',
+      '```json',
+      '// mode "roundtable" — sequential turn-based dialogue',
+      JSON.stringify(roundtableExample, null, 2),
+      '```',
+    ].join('\n');
+  }
+
+  if (toolName === 'check_status' || toolName === 'cancel_job') {
     if (properties.continuation_id)
       example.continuation_id = SAMPLE_VALUES.continuation_id;
   }
@@ -271,19 +279,12 @@ function generateConfigurationTips(tools) {
   // Get chat tool schema for parameter info
   const chatSchema = tools.chat?.inputSchema?.properties || {};
 
-  // Temperature Settings
-  if (chatSchema.temperature) {
-    const tempSchema = chatSchema.temperature;
-    output += '### Temperature Settings\n';
-    if (tempSchema.minimum !== undefined && tempSchema.maximum !== undefined) {
-      output += `Range: ${tempSchema.minimum} to ${tempSchema.maximum}\n`;
-    }
-    output += '- **0.0-0.3**: Factual, deterministic responses\n';
-    output += '- **0.4-0.7**: Balanced creativity and accuracy (recommended)\n';
-    output += '- **0.8-1.2**: Creative writing, brainstorming\n';
-    if (tempSchema.maximum && tempSchema.maximum > 1.2) {
-      output += `- **1.3-${tempSchema.maximum}**: Highly experimental, unpredictable\n`;
-    }
+  // Modes
+  if (chatSchema.mode) {
+    output += '### Modes\n';
+    output += '- **chat** (default): 1..N models answer independently in parallel\n';
+    output += '- **consensus**: ≥2 models answer, then refine after seeing each other\n';
+    output += '- **roundtable**: models answer sequentially in the given order, each building on the transcript\n';
     output += '\n';
   }
 
@@ -301,23 +302,6 @@ function generateConfigurationTips(tools) {
           high: 'Deep analysis, complex problems',
           max: 'Maximum reasoning capability',
         };
-        output += `- **${value}**: ${descriptions[value] || value}\n`;
-      }
-    }
-    output += '\n';
-  }
-
-  // Verbosity
-  if (chatSchema.verbosity) {
-    const verbSchema = chatSchema.verbosity;
-    output += '### Verbosity (for GPT-5 models)\n';
-    if (verbSchema.enum) {
-      const descriptions = {
-        low: 'Concise answers',
-        medium: 'Balanced detail (default)',
-        high: 'Thorough explanations',
-      };
-      for (const value of verbSchema.enum) {
         output += `- **${value}**: ${descriptions[value] || value}\n`;
       }
     }
@@ -391,7 +375,6 @@ export function generateHelpContent(config = null) {
       const features = [];
       if (config.supportsStreaming) features.push('Streaming');
       if (config.supportsImages) features.push('Images');
-      if (config.supportsTemperature) features.push('Temperature');
       if (config.supportsWebSearch) features.push('Web Search');
       if (config.supportsThinking) features.push('Thinking Mode');
       if (config.supportsResponsesAPI) features.push('Responses API');
@@ -475,15 +458,15 @@ ${generateConfigurationTips(tools)}
    - Specify models when you need specific capabilities
    - Consider cost vs performance tradeoffs
 
-2. **Consensus Tool**
-   - Mix different model types for diverse perspectives
-   - Enable cross-feedback for refined responses
-   - Use lower temperature for more consistent consensus
+2. **Choosing a Mode**
+   - Use **chat** for a single answer or independent parallel answers
+   - Use **consensus** to have ≥2 models cross-check and refine each other
+   - Use **roundtable** for a sequential discussion where each model builds on the last
 
 3. **Context Management**
    - Include only relevant files to avoid token limits
    - Use descriptive prompts to guide model focus
-   - Leverage continuation IDs for multi-turn conversations
+   - Leverage continuation IDs for multi-turn conversations (you may switch modes on resume)
 
 4. **Error Handling**
    - Check for API key configuration if providers fail
@@ -505,8 +488,7 @@ These providers use local CLI tools and don't require API keys:
 ## Need More Help?
 
 - Check the documentation at: https://github.com/FallDownTheSystem/converse
-- Report issues at: https://github.com/FallDownTheSystem/converse/issues
-- View examples in the \`/examples\` directory`;
+- Report issues at: https://github.com/FallDownTheSystem/converse/issues`;
 
   return helpContent;
 }

@@ -119,7 +119,6 @@ describe('OpenAI Provider', () => {
       expect(gpt5ProModel.supportsImages).toBe(true);
       expect(gpt5ProModel.supportsWebSearch).toBe(true);
       expect(gpt5ProModel.supportsResponsesAPI).toBe(true);
-      expect(gpt5ProModel.supportsTemperature).toBe(false);
     });
   });
 
@@ -258,21 +257,6 @@ describe('OpenAI Provider', () => {
     });
   });
 
-  describe('temperature handling', () => {
-    it('should clamp temperature to valid range', () => {
-      // This would be tested with a mocked OpenAI client
-      // For now, we verify the model configurations
-      const models = openaiProvider.getSupportedModels();
-
-      // O3/O4 models don't support temperature
-      expect(models['o3'].supportsTemperature).toBe(false);
-      expect(models['o4-mini'].supportsTemperature).toBe(false);
-
-      // GPT-4.1 models do support temperature
-      expect(models['gpt-4.1-2025-04-14'].supportsTemperature).toBe(true);
-    });
-  });
-
   describe('model resolution', () => {
     it('should handle model aliases correctly', () => {
       const models = openaiProvider.getSupportedModels();
@@ -342,8 +326,8 @@ describe('OpenAI Provider', () => {
           finish_reason: 'completed',
           provider: 'openai',
           api_type: 'Responses API',
-          web_search_used: false,
-          web_search_type: null,
+          web_search_used: true,
+          web_search_type: 'web_search_preview',
         },
       });
 
@@ -388,7 +372,7 @@ describe('OpenAI Provider', () => {
       );
     });
 
-    it('should handle temperature based on model support', async () => {
+    it('should attach web search whenever the model supports it (no flag)', async () => {
       const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({
         output_text: 'response',
@@ -405,30 +389,28 @@ describe('OpenAI Provider', () => {
 
       const messages = [{ role: 'user', content: 'test' }];
 
-      // O3 models don't support temperature
+      // gpt-5-mini supports web search — the tool attaches with no flag
       await openaiProvider.invoke(messages, {
         config: validConfig,
-        model: 'o3',
-        temperature: 0.8,
-      });
-
-      expect(mockCreate).toHaveBeenCalledWith(
-        expect.not.objectContaining({
-          temperature: expect.any(Number),
-        }),
-        expect.any(Object),
-      );
-
-      // GPT-4.1 models do support temperature
-      await openaiProvider.invoke(messages, {
-        config: validConfig,
-        model: 'gpt-4.1-2025-04-14',
-        temperature: 0.8,
+        model: 'gpt-5-mini',
       });
 
       expect(mockCreate).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          temperature: 0.8,
+          tools: [{ type: 'web_search_preview' }],
+        }),
+        expect.any(Object),
+      );
+
+      // gpt-5-nano does not support web search — the tool is not attached
+      await openaiProvider.invoke(messages, {
+        config: validConfig,
+        model: 'gpt-5-nano',
+      });
+
+      expect(mockCreate).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({
+          tools: expect.anything(),
         }),
         expect.any(Object),
       );

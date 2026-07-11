@@ -13,10 +13,11 @@ This repository contains the **Converse MCP Server** - a functional Node.js impl
 
 ## Converse MCP Server (Node.js)
 
-The **Converse MCP Server** follows a functional architecture with two main tools:
+The **Converse MCP Server** follows a functional architecture with a single unified `chat` tool that takes a `mode` parameter:
 
-1. **Chat Tool** - Single-provider conversational AI with context support
-2. **Consensus Tool** - Multi-provider parallel execution with response aggregation
+1. **`chat` mode** - 1..N models answer independently in parallel
+2. **`consensus` mode** - ≥2 models answer in parallel, then refine via cross-feedback
+3. **`roundtable` mode** - models answer sequentially, each building on the running transcript
 
 ### Development Setup
 
@@ -261,90 +262,40 @@ pnpm run test:prompts
 
 ### Available Tools
 
-The Converse MCP Server includes five main tools:
+The Converse MCP Server exposes three tools:
 
-1. **Chat Tool** (`chat`)
-   - General conversational AI with async support
-   - File and image support
-   - Continuation support for persistent conversations
-   - Background execution with `async: true` parameter
-   - Uses functional architecture with streaming
-   - AI-powered title generation and content summarization
-
-2. **Consensus Tool** (`consensus`)
-   - Parallel multi-model consensus gathering with async support
-   - Background processing with per-provider progress tracking
-   - Robust error handling - partial failures don't stop other models
-   - Combined summaries from all providers
-
-3. **Conversation Tool** (`conversation`)
-   - Turn-based multi-model round-table: models respond SEQUENTIALLY in the order given
-   - Each model sees the full running transcript and builds on prior turns
-   - One call = one lap (one turn per model); pass `continuation_id` for more laps
-   - Contrast with consensus (parallel, same prompt). `turn_prompt` injects a custom per-turn instruction
-   - Per-turn skip-with-note failure handling, async support, file/image context
+1. **Chat Tool** (`chat`) — one tool, three modes selected by the `mode` parameter:
+   - **`chat`** (default): 1..N models invoked in parallel; each responds independently and never sees the others. N=1 preserves auto-mode provider failover and Codex thread reuse; N>1 returns per-model labeled sections.
+   - **`consensus`**: ≥2 models answer in parallel, then a cross-feedback refinement phase runs where each model sees the others' answers and refines its own. `["auto"]` expands to the first 3 available providers.
+   - **`roundtable`**: models respond SEQUENTIALLY in the order given; each sees the full running transcript and builds on prior turns. One call = one lap; pass `continuation_id` for more laps. A single model talks to itself across laps; duplicate model entries are allowed only in this mode.
+   - Shared across modes: `files`/`images` context, `reasoning_effort`, `async: true` background execution, `export: true` disk export, and `continuation_id` for persistent multi-turn threads. You MAY switch modes on a resuming turn — the shared transcript is the context.
 
    ```javascript
-   // Example request structure:
-   {
-     "prompt": "Should we adopt event sourcing for the order service?",
-     "models": ["codex", "gemini", "claude"],  // ORDER MATTERS - they speak in this order
-     "files": ["/c/Users/username/project/src/orders/design.md"],  // Optional
-     "turn_prompt": null,         // Optional custom per-turn instruction
-     "continuation_id": null      // Pass back to run another lap
-   }
+   // mode "chat" (default) — single answer or independent parallel answers
+   { "prompt": "How should I structure auth for this API?", "models": ["auto"] }
+
+   // mode "consensus" — parallel answers + cross-feedback refinement
+   { "prompt": "Microservices or monolith for 100k users?", "models": ["gpt-5.6", "grok-4", "gemini-2.5-pro"], "mode": "consensus" }
+
+   // mode "roundtable" — sequential dialogue in the given ORDER
+   { "prompt": "Critique this caching strategy.", "models": ["codex", "gemini", "claude"], "mode": "roundtable" }
    ```
 
-4. **Check Status Tool** (`check_status`)
+2. **Check Status Tool** (`check_status`)
    - Monitor progress of asynchronous operations
    - Retrieve results from completed background jobs
    - List recent jobs with status information
    - Smart display with AI-generated titles and summaries
 
-4. **Cancel Job Tool** (`cancel_job`)
+3. **Cancel Job Tool** (`cancel_job`)
    - Cancel running asynchronous operations
    - Graceful termination with resource cleanup
 
-### Using the Consensus Tool
+### Mode semantics
 
-The consensus tool operates with parallel processing across multiple AI providers:
-
-```javascript
-// Example request structure:
-{
-  "prompt": "Should we implement real-time collaboration features?",
-  "models": ["gpt-5", "grok-4", "gemini-2.5-pro"],
-  "files": ["/c/Users/username/Documents/project/spec.md"],  // Optional - use git-bash paths
-  "enable_cross_feedback": true,           // Optional, defaults to true
-  "cross_feedback_prompt": null            // Optional custom refinement prompt
-}
-```
-
-```javascript
-// Alternative with fast models for quick consensus:
-{
-  "prompt": "Should we use TypeScript for this component?",
-  "models": ["gemini-2.5-flash", "o4-mini", "gpt-4.1"],
-  "files": ["/c/Users/username/project/src/components/Header.tsx"]
-}
-
-// Asynchronous consensus (for complex analysis):
-{
-  "prompt": "Design a scalable architecture for our system",
-  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4-6"],
-  "files": ["/c/Users/username/project/docs/architecture.md"],
-  "async": true,          // Run in background
-  "enable_cross_feedback": true
-}
-```
-
-The tool will:
-
-1. Send your question to all models simultaneously (parallel execution)
-2. Collect initial responses from each model
-3. Share each model's response with the others for refinement
-4. Allow models to refine their answers based on collective insights
-5. Return both initial and refined responses in a single result
+- **chat**: parallel, independent answers. Auto-failover and Codex thread reuse apply in this mode.
+- **consensus**: parallel phase 1, then a refinement phase that always runs when ≥2 phase-1 responses succeed. Requires ≥2 resolved models (an explicit single model is rejected — use mode `chat`).
+- **roundtable**: sequential turns; each turn's full context is packed into one self-contained message so SDK providers that only read the last user message still see the transcript.
 
 ### Common Troubleshooting
 
@@ -388,7 +339,7 @@ LOG_LEVEL=debug npm start
 
 - `src/index.js` - Main entry point and MCP server setup
 - `src/config.js` - Configuration and environment management
-- `src/tools/` - MCP tool implementations (chat.js and consensus.js)
+- `src/tools/` - MCP tool implementations (chat.js unified tool + modes/parallel.js, modes/roundtable.js engines)
 - `src/providers/` - AI provider implementations (OpenAI, Google, XAI)
 - `src/utils/` - Utility functions (logging, context processing, etc.)
 - `src/transport/` - HTTP transport layer for MCP communication

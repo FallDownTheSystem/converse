@@ -119,8 +119,7 @@ module.exports = { fibonacci };`,
                 prompt:
                   'Remember this number: 42. Just acknowledge you got it.',
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             });
 
@@ -282,8 +281,7 @@ module.exports = { fibonacci };`,
                 prompt: 'What number did I ask you to remember?',
                 continuation_id: continuationId1,
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             });
 
@@ -484,8 +482,7 @@ module.exports = { fibonacci };`,
                 'Analyze this JavaScript code and tell me what the function does',
               files: [codeFile],
               async: true,
-              model: 'auto',
-              temperature: 0,
+              models: ['auto'],
             },
           });
 
@@ -556,8 +553,7 @@ module.exports = { fibonacci };`,
             name: 'chat',
             arguments: {
               prompt: 'What is 5+5? Just the number.',
-              model: 'auto',
-              temperature: 0,
+              models: ['auto'],
               // No async: true
             },
           });
@@ -585,8 +581,7 @@ module.exports = { fibonacci };`,
           const asyncArgs = {
             prompt: continuationId ? 'Now what is 10*10?' : 'What is 10*10?',
             async: true,
-            model: 'auto',
-            temperature: 0,
+            models: ['auto'],
           };
 
           if (continuationId) {
@@ -644,8 +639,7 @@ module.exports = { fibonacci };`,
               arguments: {
                 prompt: 'What is 100/10?',
                 continuation_id: continuationId,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
                 // No async: true
               },
             });
@@ -681,7 +675,7 @@ module.exports = { fibonacci };`,
           arguments: {
             prompt: 'This should fail',
             async: true,
-            model: 'invalid-model-xyz',
+            models: ['invalid-model-xyz'],
           },
         });
 
@@ -737,13 +731,13 @@ module.exports = { fibonacci };`,
         await withHTTPTestServer(async (client, manager) => {
           // Submit a complex request that might take longer
           const asyncResult = await client.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt:
                 'Analyze the pros and cons of async programming in detail',
+              mode: 'consensus',
               models: ['auto'],
               async: true,
-              enable_cross_feedback: true,
             },
           });
 
@@ -823,8 +817,7 @@ module.exports = { fibonacci };`,
                 arguments: {
                   prompt: `Quick math: ${i} * 2 = ?`,
                   async: true,
-                  model: 'auto',
-                  temperature: 0,
+                  models: ['auto'],
                 },
               }),
             );
@@ -933,16 +926,13 @@ module.exports = { fibonacci };`,
         await withHTTPTestServer(async (client, manager) => {
           // Submit complex consensus request
           const consensusResult = await client.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt:
                 'What is the best programming language for beginners: Python, JavaScript, or Java? Provide a brief reason.',
+              mode: 'consensus',
               models: ['auto'], // Will use available models
               async: true,
-              temperature: 0.3,
-              enable_cross_feedback: true,
-              cross_feedback_prompt:
-                'Consider the other perspectives and refine your answer if needed.',
             },
           });
 

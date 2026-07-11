@@ -16,17 +16,8 @@ describe('Help Prompt', () => {
     expect(typeof helpPromptHandler).toBe('function');
   });
 
-  it('should have topic argument', () => {
-    const topicArg = helpPromptMetadata.arguments.find(
-      (arg) => arg.name === 'topic',
-    );
-    expect(topicArg).toBeTruthy();
-    expect(topicArg.required).toBe(false);
-    expect(topicArg.description).toContain('topic');
-  });
-
   describe('helpPromptHandler', () => {
-    it('should generate full help when no topic specified', async () => {
+    it('should generate full help content', async () => {
       const result = await helpPromptHandler({});
       const messages = result.messages;
 
@@ -37,65 +28,17 @@ describe('Help Prompt', () => {
       expect(messages[0].content.text).toContain('Converse MCP Server');
       expect(messages[0].content.text).toContain('Available Tools');
       expect(messages[0].content.text).toContain('Provider Models');
-    });
-
-    it('should generate tools help when topic is tools', async () => {
-      const result = await helpPromptHandler({ topic: 'tools' });
-      const messages = result.messages;
-
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].role).toBe('user');
-      expect(messages[0].content.type).toBe('text');
-      expect(messages[0].content.text).toContain('tools');
-      expect(messages[0].content.text).toContain('Available Tools');
-    });
-
-    it('should generate models help when topic is models', async () => {
-      const result = await helpPromptHandler({ topic: 'models' });
-      const messages = result.messages;
-
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].role).toBe('user');
-      expect(messages[0].content.type).toBe('text');
-      expect(messages[0].content.text).toContain('models');
-      expect(messages[0].content.text).toContain('Provider Models');
-    });
-
-    it('should generate parameters help when topic is parameters', async () => {
-      const result = await helpPromptHandler({ topic: 'parameters' });
-      const messages = result.messages;
-
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].role).toBe('user');
-      expect(messages[0].content.type).toBe('text');
-      expect(messages[0].content.text).toContain('parameters');
-      expect(messages[0].content.text).toContain('Configuration Tips');
-    });
-
-    it('should generate examples help when topic is examples', async () => {
-      const result = await helpPromptHandler({ topic: 'examples' });
-      const messages = result.messages;
-
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].role).toBe('user');
-      expect(messages[0].content.type).toBe('text');
-      expect(messages[0].content.text).toContain('examples');
       expect(messages[0].content.text).toContain('Example Usage');
     });
 
-    it('should handle unknown topic gracefully', async () => {
-      const result = await helpPromptHandler({ topic: 'unknown' });
-      const messages = result.messages;
+    it('documents modes and omits removed Temperature/Verbosity sections', async () => {
+      const result = await helpPromptHandler({});
+      const text = result.messages[0].content.text;
 
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].content.type).toBe('text');
-      expect(messages[0].content.text).toContain('Topic "unknown" not found');
-      expect(messages[0].content.text).toContain('Available topics');
+      expect(text).toContain('### Modes');
+      expect(text).toContain('mode "consensus"');
+      expect(text).not.toContain('### Temperature Settings');
+      expect(text).not.toContain('### Verbosity');
     });
   });
 

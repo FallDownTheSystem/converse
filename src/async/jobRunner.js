@@ -81,7 +81,8 @@ export class JobRunner extends EventEmitter {
    * Submit a job for background execution
    * @param {object} jobSpec - Job specification
    * @param {string} jobSpec.sessionId - Session identifier
-   * @param {string} jobSpec.tool - Tool name ('chat' | 'consensus')
+   * @param {string} jobSpec.tool - Tool name (always 'chat')
+   * @param {string} jobSpec.mode - Chat mode ('chat' | 'consensus' | 'roundtable')
    * @param {Function} runFunction - Function to execute (async)
    * @param {object} options - Execution options
    * @param {number} options.timeout - Job timeout in ms
@@ -112,6 +113,7 @@ export class JobRunner extends EventEmitter {
       // Create job in store
       const jobId = await this.asyncJobStore.create(jobSpec.tool, {
         sessionId: jobSpec.sessionId,
+        mode: jobSpec.mode,
         timeout: options.timeout || this.defaultTimeout,
         priority: options.priority || false,
         ...jobSpec.options,
@@ -336,6 +338,7 @@ export class JobRunner extends EventEmitter {
               jobId,
               status: JOB_STATUS.COMPLETED,
               tool: finalJobState.tool,
+              mode: finalJobState.mode,
               result,
               completedAt: Date.now(),
               createdAt: finalJobState.createdAt,
@@ -396,6 +399,7 @@ export class JobRunner extends EventEmitter {
                 jobId,
                 status: JOB_STATUS.CANCELLED,
                 tool: cancelledJobState.tool,
+                mode: cancelledJobState.mode,
                 result: partialResult,
                 cancelledAt: Date.now(),
                 createdAt: cancelledJobState.createdAt,
@@ -446,6 +450,7 @@ export class JobRunner extends EventEmitter {
               jobId,
               status: JOB_STATUS.FAILED,
               tool: failedJobState.tool,
+              mode: failedJobState.mode,
               error: executionError.message || executionError,
               failedAt: Date.now(),
               createdAt: failedJobState.createdAt,

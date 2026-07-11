@@ -17,7 +17,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
@@ -43,7 +42,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
@@ -59,7 +57,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
@@ -75,7 +72,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
@@ -94,7 +90,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false, // GPT-5 models don't support temperature
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 1800000, // 30 minutes
@@ -109,7 +104,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false, // GPT-5 models don't support temperature
     supportsWebSearch: false, // GPT-5-nano doesn't support web search
     supportsResponsesAPI: true,
     timeout: 600000, // 10 minutes
@@ -124,7 +118,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 1800000, // 30 minutes
@@ -144,7 +137,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: false,
     supportsResponsesAPI: true,
     timeout: 600000, // 10 minutes
@@ -164,7 +156,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 272000,
     supportsStreaming: false, // GPT-5 Pro doesn't support streaming
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: false,
@@ -186,7 +177,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 600000, // 10 minutes
@@ -201,7 +191,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 3600000, // 60 minutes
@@ -216,7 +205,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 180000, // 3 minutes
@@ -231,7 +219,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     timeout: 300000,
@@ -246,7 +233,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
@@ -267,7 +253,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 100000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
@@ -465,12 +450,9 @@ export const openaiProvider = {
   async invoke(messages, options = {}) {
     const {
       model = 'gpt-5.6',
-      temperature = 0.7,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',
-      verbosity = 'medium',
-      use_websearch = false,
       signal,
       config,
       // Filter out options not meant for the API
@@ -522,18 +504,11 @@ export const openaiProvider = {
         ...otherOptions,
       };
 
-      // Add web search tools only if requested and model supports it
-      if (use_websearch && modelConfig.supportsWebSearch) {
+      // Attach web search where the model supports it; the model decides
+      // per-request whether to actually search.
+      if (modelConfig.supportsWebSearch) {
         // Use web_search_preview tool for all models in Responses API
         requestPayload.tools = [{ type: 'web_search_preview' }];
-      }
-
-      // Add temperature if model supports it
-      if (
-        modelConfig.supportsTemperature !== false &&
-        temperature !== undefined
-      ) {
-        requestPayload.temperature = Math.max(0, Math.min(2, temperature));
       }
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
@@ -546,32 +521,15 @@ export const openaiProvider = {
           summary: 'auto', // Enable reasoning summaries
         };
       }
-
-      // Add verbosity for GPT-5 models
-      if (resolvedModel.startsWith('gpt-5') && verbosity) {
-        requestPayload.text = { verbosity };
-      }
     } else {
       // Build Chat Completions API payload
-      const {
-        reasoning_effort: _unused,
-        verbosity: _unused2,
-        ...cleanOptions
-      } = otherOptions;
+      const { reasoning_effort: _unused, ...cleanOptions } = otherOptions;
       requestPayload = {
         model: resolvedModel,
         messages: openaiMessages,
         stream,
         ...cleanOptions,
       };
-
-      // Add temperature if model supports it
-      if (
-        modelConfig.supportsTemperature !== false &&
-        temperature !== undefined
-      ) {
-        requestPayload.temperature = Math.max(0, Math.min(2, temperature));
-      }
 
       // Add reasoning effort for thinking models (o3 series and GPT-5 family)
       if (
@@ -582,11 +540,6 @@ export const openaiProvider = {
           resolvedModel,
           reasoning_effort,
         );
-      }
-
-      // Add verbosity for GPT-5 models
-      if (resolvedModel.startsWith('gpt-5') && verbosity) {
-        requestPayload.verbosity = verbosity;
       }
     }
 
@@ -626,7 +579,6 @@ export const openaiProvider = {
         shouldUseResponsesAPI,
         resolvedModel,
         modelConfig,
-        use_websearch,
         signal,
       );
     }
@@ -635,10 +587,9 @@ export const openaiProvider = {
       const apiType = shouldUseResponsesAPI
         ? 'Responses API'
         : 'Chat Completions API';
-      const searchInfo =
-        use_websearch && modelConfig.supportsWebSearch
-          ? ' (with web search)'
-          : '';
+      const searchInfo = modelConfig.supportsWebSearch
+        ? ' (with web search)'
+        : '';
       debugLog(
         `[OpenAI] Calling ${resolvedModel} via ${apiType} with ${openaiMessages.length} messages${searchInfo}`,
       );
@@ -753,8 +704,8 @@ export const openaiProvider = {
         usage = response.usage || {};
       }
 
-      // Determine web search usage
-      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+      // Web search is available whenever the model supports it
+      const webSearchUsed = !!modelConfig.supportsWebSearch;
       const webSearchType = webSearchUsed ? 'web_search_preview' : null;
 
       // Return unified response format
@@ -836,7 +787,6 @@ export const openaiProvider = {
    * @param {boolean} shouldUseResponsesAPI - Whether to use Responses API
    * @param {string} resolvedModel - Resolved model name
    * @param {Object} modelConfig - Model configuration
-   * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding events
    */
   async *_createStreamingGenerator(
@@ -845,16 +795,14 @@ export const openaiProvider = {
     shouldUseResponsesAPI,
     resolvedModel,
     modelConfig,
-    use_websearch,
     signal,
   ) {
     const apiType = shouldUseResponsesAPI
       ? 'Responses API'
       : 'Chat Completions API';
-    const searchInfo =
-      use_websearch && modelConfig.supportsWebSearch
-        ? ' (with web search)'
-        : '';
+    const searchInfo = modelConfig.supportsWebSearch
+      ? ' (with web search)'
+      : '';
 
     debugLog(
       `[OpenAI] Starting streaming for ${resolvedModel} via ${apiType} with ${requestPayload.input?.length || requestPayload.messages?.length} messages${searchInfo}`,
@@ -1029,8 +977,8 @@ export const openaiProvider = {
         };
       }
 
-      // Determine web search usage
-      const webSearchUsed = use_websearch && modelConfig.supportsWebSearch;
+      // Web search is available whenever the model supports it
+      const webSearchUsed = !!modelConfig.supportsWebSearch;
       const webSearchType = webSearchUsed ? 'web_search_preview' : null;
 
       // Yield end event with final metadata

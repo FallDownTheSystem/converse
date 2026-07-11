@@ -20,7 +20,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: false, // Fable 5 rejects temperature/top_p/top_k (400)
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true, // Adaptive thinking is the only thinking mode
@@ -46,7 +45,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true,
@@ -79,7 +77,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true,
@@ -110,7 +107,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true,
@@ -141,7 +137,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     minThinkingTokens: 1024,
@@ -168,7 +163,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     minThinkingTokens: 1024,
@@ -197,7 +191,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true, // Sonnet 4.6: thinking: {type: "adaptive"} recommended
@@ -230,7 +223,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     minThinkingTokens: 1024,
@@ -255,7 +247,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     minThinkingTokens: 1024,
@@ -550,14 +541,9 @@ export const anthropicProvider = {
   async invoke(messages, options = {}) {
     const {
       model = 'claude-3-5-sonnet-20241022',
-      temperature = 0.7,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',
-      // eslint-disable-next-line no-unused-vars
-      use_websearch = false, // Not supported by Anthropic, ignored
-      // eslint-disable-next-line no-unused-vars
-      verbosity = 'medium', // OpenAI-specific parameter, ignored by Anthropic
       config,
       // Note: We don't use ...otherOptions because it can include non-API parameters
       // like continuationStore that cause "Extra inputs are not permitted" errors
@@ -704,22 +690,6 @@ export const anthropicProvider = {
       }
     }
 
-    // Add temperature if specified and the model accepts it
-    // (Fable 5 removed sampling parameters entirely - sending them returns 400)
-    // When legacy thinking (type: "enabled") is active, temperature must be 1
-    // Adaptive thinking (type: "adaptive") does not have this constraint
-    if (temperature !== undefined && modelConfig.supportsTemperature !== false) {
-      if (
-        requestPayload.thinking &&
-        requestPayload.thinking.type === 'enabled'
-      ) {
-        requestPayload.temperature = 1;
-        debugLog('[Anthropic] Temperature forced to 1 for legacy thinking mode');
-      } else {
-        requestPayload.temperature = Math.max(0, Math.min(1, temperature));
-      }
-    }
-
     // Add effort parameter for models that support it (uses output_config)
     if (modelConfig.supportsEffort && reasoning_effort) {
       const effortValue = EFFORT_MAP[reasoning_effort];
@@ -764,7 +734,6 @@ export const anthropicProvider = {
             model: requestPayload.model,
             max_tokens: requestPayload.max_tokens,
             thinking: requestPayload.thinking,
-            temperature: requestPayload.temperature,
             output_config: requestPayload.output_config,
             betas: requestPayload.betas,
             message_count: requestPayload.messages?.length,

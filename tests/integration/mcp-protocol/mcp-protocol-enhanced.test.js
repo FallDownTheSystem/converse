@@ -250,21 +250,22 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       expect(callResponse.continuation.id.startsWith('conv_')).toBe(true);
     });
 
-    it('should handle complete request/response cycle for consensus tool', async () => {
+    it('should handle complete request/response cycle for consensus mode', async () => {
       // 1. List tools to get schema
       const toolsList = await router.listTools();
-      const consensusTool = toolsList.tools.find((t) => t.name === 'consensus');
-      expect(consensusTool).toBeDefined();
+      const chatTool = toolsList.tools.find((t) => t.name === 'chat');
+      expect(chatTool).toBeDefined();
 
       // 2. Validate required parameters from schema
-      expect(consensusTool.inputSchema.required).toContain('prompt');
-      expect(consensusTool.inputSchema.required).toContain('models');
+      expect(chatTool.inputSchema.required).toContain('prompt');
+      expect(chatTool.inputSchema.properties.mode.enum).toContain('consensus');
 
       // 3. Make valid call following schema
       const callRequest = {
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: 'MCP consensus compliance test',
+          mode: 'consensus',
           models: ['auto'],
         },
       };
@@ -296,17 +297,19 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           shouldFail: false,
         },
         {
-          tool: 'consensus',
+          tool: 'chat',
           args: {
             prompt: 'test',
+            mode: 'consensus',
             models: 'not-an-array', // Wrong type (should be array)
           },
           shouldFail: true,
         },
         {
-          tool: 'consensus',
+          tool: 'chat',
           args: {
             prompt: 'test',
+            mode: 'consensus',
             models: ['auto'],
           },
           shouldFail: false,
@@ -348,11 +351,6 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
           arguments: {}, // Missing required prompt
           expectedErrorType: 'ValidationError',
         },
-        {
-          name: 'consensus',
-          arguments: { prompt: 'test' }, // Missing required models
-          expectedErrorType: 'ValidationError',
-        },
       ];
 
       for (const scenario of errorScenarios) {
@@ -380,7 +378,6 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'chat',
         arguments: {
           prompt: '', // Empty prompt (should fail validation)
-          temperature: 'invalid', // Invalid type
         },
       });
 
@@ -463,8 +460,7 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test with optional parameters',
-          model: 'auto',
-          temperature: 0.5,
+          models: ['auto'],
           maxTokens: 100,
         },
       });

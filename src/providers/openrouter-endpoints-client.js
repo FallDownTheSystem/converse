@@ -62,7 +62,6 @@ function convertEndpointToModelConfig(endpointData) {
     supportsStreaming: true, // Most models support streaming
     supportsImages:
       data.architecture?.input_modalities?.includes('image') || false,
-    supportsTemperature: supportedParams.includes('temperature'),
     supportsWebSearch: false, // Not in API response, conservative default
     supportsThinking: supportedParams.includes('reasoning'),
     supportsTools: supportedParams.includes('tools'),

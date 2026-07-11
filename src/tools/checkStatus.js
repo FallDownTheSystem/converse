@@ -245,6 +245,7 @@ async function listAllJobs(asyncJobStore, fileCache, options = {}) {
                 jobId: cachedJob.jobId,
                 status: cachedJob.status || 'completed',
                 tool: cachedJob.tool || 'unknown',
+                mode: cachedJob.mode || cachedJob.tool,
                 createdAt: cachedJob.createdAt || cachedJob.startedAt,
                 updatedAt:
                   cachedJob.completedAt || cachedJob.updatedAt || Date.now(),

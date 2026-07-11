@@ -13,7 +13,7 @@ import {
   resolveModelAlias,
   resolveSessionModel,
 } from '../../../src/providers/copilot.js';
-import { mapModelToProvider } from '../../../src/tools/chat.js';
+import { mapModelToProvider } from '../../../src/utils/modelRouting.js';
 
 describe('Copilot Provider - Model Selection', () => {
   describe('resolveModelAlias', () => {

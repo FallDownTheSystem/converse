@@ -7,8 +7,6 @@
 
 // Import individual tools
 import { chatTool } from './chat.js';
-import { consensusTool } from './consensus.js';
-import { conversationTool } from './conversation.js';
 import { checkStatusTool } from './checkStatus.js';
 import { cancelJobTool } from './cancelJob.js';
 
@@ -19,8 +17,6 @@ import { cancelJobTool } from './cancelJob.js';
  */
 const tools = {
   chat: chatTool,
-  consensus: consensusTool,
-  conversation: conversationTool,
   check_status: checkStatusTool,
   cancel_job: cancelJobTool,
 };
@@ -47,8 +43,8 @@ export function getTools(config = null) {
     // Clone the tool to avoid mutating the original
     const clonedTool = tool;
 
-    // For chat, consensus, and conversation tools, remove the 'async' parameter from their schemas
-    if (name === 'chat' || name === 'consensus' || name === 'conversation') {
+    // For the chat tool, remove the 'async' parameter from its schema
+    if (name === 'chat') {
       // Create a modified inputSchema without the async parameter
       const modifiedSchema = {
         ...tool.inputSchema,

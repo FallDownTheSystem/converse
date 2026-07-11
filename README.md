@@ -94,7 +94,7 @@ Add this configuration to your Claude Desktop settings:
 Once installed, you can:
 
 - **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
-- **Get consensus**: Ask Claude to use the consensus tool when you need multiple perspectives
+- **Get consensus**: Ask Claude to use the chat tool with `mode: "consensus"` when you need multiple perspectives
 - **Run tasks in background**: Use `async: true` for long-running operations that you can check later
 - **Monitor progress**: Use the check_status tool to monitor async operations with AI-generated summaries
 - **Cancel jobs**: Use the cancel_job tool to stop running operations
@@ -105,70 +105,52 @@ Once installed, you can:
 
 ### 1. Chat Tool
 
-Talk to any AI model with support for files, images, and conversation history. The tool automatically routes your request to the right provider based on the model name. When AI summarization is enabled, generates smart titles and summaries for better context understanding.
+One tool, three modes. Pass a `models` array and choose a `mode`. Supports files, images, conversation history, and background execution. The tool routes each model to the right provider by name; `"auto"` picks the first available provider. When AI summarization is enabled, it generates smart titles and summaries.
 
 ```javascript
-// Synchronous execution (default)
+// mode "chat" (default) — 1..N models answer independently, in parallel
 {
   "prompt": "How should I structure the authentication module for this Express.js API?",
-  "model": "gemini-2.5-flash",         // Routes to Google
+  "models": ["gemini-2.5-flash"],      // Routes to Google
   "files": ["/path/to/src/auth.js", "/path/to/config.json"],
   "images": ["/path/to/architecture.png"],
-  "temperature": 0.5,
-  "reasoning_effort": "medium",
-  "use_websearch": false
+  "reasoning_effort": "medium"
 }
 
-// Asynchronous execution (for long-running tasks)
+// mode "consensus" — ≥2 models answer, then refine after seeing each other
+{
+  "prompt": "Should we use microservices or a monolith for our e-commerce platform?",
+  "models": ["gpt-5.6", "gemini-2.5-flash", "grok-4"],
+  "mode": "consensus",
+  "files": ["/path/to/requirements.md"]
+}
+
+// mode "roundtable" — models speak SEQUENTIALLY in the given order, each seeing
+// the running transcript. One call = one lap; pass continuation_id for more laps.
+{
+  "prompt": "Critique this caching strategy and propose improvements.",
+  "models": ["codex", "gemini", "claude"],  // ORDER MATTERS
+  "mode": "roundtable"
+}
+
+// Asynchronous execution (for long-running tasks) — any mode
 {
   "prompt": "Analyze this large codebase and provide optimization recommendations",
-  "model": "gpt-5",
+  "models": ["gpt-5.6"],
   "files": ["/path/to/large-project"],
-  "async": true,           // Enables background processing
+  "async": true,                         // Enables background processing
   "continuation_id": "my-analysis-task"  // Optional: custom ID for tracking
-}
-
-// Codex - Agentic coding assistant with local file access
-{
-  "prompt": "Analyze this codebase and suggest improvements",
-  "model": "codex",
-  "files": ["/path/to/your/project"],
-  "async": true  // Recommended for Codex (responses take 6-20+ seconds)
 }
 ```
 
 **Codex Notes:**
 
-- Uses thread-based sessions (context persists with `continuation_id`)
+- Uses thread-based sessions in `chat` mode (context persists with `continuation_id`)
 - Responses typically take 6-20 seconds (complex tasks may take minutes)
 - Accesses files directly from your working directory
 - Configure sandbox mode via `CODEX_SANDBOX_MODE` environment variable
 
-### 2. Consensus Tool
-
-Get multiple AI models to analyze the same question simultaneously. Each model can see and respond to the others' answers, creating a rich discussion.
-
-```javascript
-// Synchronous consensus (default)
-{
-  "prompt": "Should we use microservices or monolith architecture for our e-commerce platform?",
-  "models": ["gpt-5", "gemini-2.5-flash", "grok-4"],
-  "files": ["/path/to/requirements.md"],
-  "enable_cross_feedback": true,
-  "temperature": 0.2
-}
-
-// Asynchronous consensus (for complex analysis)
-{
-  "prompt": "Review our system architecture and provide comprehensive recommendations",
-  "models": ["gpt-5", "gemini-2.5-pro", "claude-sonnet-4-6"],
-  "files": ["/path/to/architecture-docs"],
-  "async": true,          // Run in background
-  "enable_cross_feedback": true
-}
-```
-
-### 3. Check Status Tool
+### 2. Check Status Tool
 
 Monitor the progress and retrieve results from asynchronous operations. When AI summarization is enabled, provides intelligent summaries of ongoing and completed tasks.
 
@@ -189,7 +171,7 @@ Monitor the progress and retrieve results from asynchronous operations. When AI 
 }
 ```
 
-### 4. Cancel Job Tool
+### 3. Cancel Job Tool
 
 Cancel running asynchronous operations when needed.
 
@@ -418,8 +400,8 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 **Auto Model Behavior:**
 
-- **Chat Tool**: Selects the first available provider and uses its default model
-- **Consensus Tool**: When using `["auto"]`, automatically expands to the first 3 available providers
+- **chat mode**: `["auto"]` selects the first available provider and uses its default model
+- **consensus mode**: `["auto"]` automatically expands to the first 3 available providers
 
 Provider priority order (subscription-based SDK providers first, then API-key providers):
 
@@ -671,8 +653,8 @@ converse/
 │   │   └── openai-compatible.js # Base for OpenAI-compatible APIs
 │   ├── tools/                # MCP tool implementations
 │   │   ├── index.js          # Tool registry
-│   │   ├── chat.js           # Chat tool
-│   │   └── consensus.js      # Consensus tool
+│   │   ├── chat.js           # Unified chat tool (chat/consensus/roundtable modes)
+│   │   └── modes/            # parallel.js + roundtable.js execution engines
 │   └── utils/                # Utility modules
 │       ├── contextProcessor.js # File/image processing
 │       ├── errorHandler.js   # Error handling

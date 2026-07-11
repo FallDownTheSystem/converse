@@ -53,7 +53,7 @@ async function runTest() {
       const chatResult = await chatTool(
         {
           prompt: 'Say exactly: "Integration test successful"',
-          model: 'openai:gpt-4o-mini',
+          models: ['openai:gpt-4o-mini'],
         },
         dependencies,
       );
@@ -85,7 +85,7 @@ async function runTest() {
       const first = await chatTool(
         {
           prompt: 'Remember this number: 999. Just say "I remember 999"',
-          model: 'openai:gpt-4o-mini',
+          models: ['openai:gpt-4o-mini'],
         },
         dependencies,
       );
@@ -100,8 +100,8 @@ async function runTest() {
       const second = await chatTool(
         {
           prompt: 'What number did I ask you to remember?',
-          continuation: first.continuation.id,
-          model: 'openai:gpt-4o-mini',
+          continuation_id: first.continuation.id,
+          models: ['openai:gpt-4o-mini'],
         },
         dependencies,
       );
@@ -125,19 +125,20 @@ async function runTest() {
     // Test 3: Consensus tool
     console.log('\n=== Test 3: Consensus Tool ===');
     try {
-      const consensusTool = tools.consensus;
-      const consensusResult = await consensusTool(
+      const chatTool = tools.chat;
+      const consensusResult = await chatTool(
         {
           prompt: 'What is 7 + 8? Answer with just the number.',
-          models: [{ model: 'openai:gpt-4o-mini' }, { model: 'google:flash' }],
+          mode: 'consensus',
+          models: ['openai:gpt-4o-mini', 'google:flash'],
         },
         dependencies,
       );
 
       if (consensusResult.content?.[0]?.text) {
         const text = consensusResult.content[0].text;
-        const hasInitial = text.includes('Initial Responses');
-        const hasRefined = text.includes('Refined Responses');
+        const hasInitial = text.includes('successful_initial_responses');
+        const hasRefined = text.includes('phases');
 
         console.log('✓ Consensus tool working');
         console.log(`Has initial responses: ${hasInitial}`);
@@ -165,7 +166,7 @@ async function runTest() {
         await chatTool(
           {
             // Missing required prompt
-            model: 'openai:gpt-4o-mini',
+            models: ['openai:gpt-4o-mini'],
           },
           dependencies,
         );

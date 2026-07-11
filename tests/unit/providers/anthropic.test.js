@@ -109,7 +109,6 @@ describe('Anthropic Provider', () => {
       expect(config.contextWindow).toBe(1000000);
       expect(config.maxOutputTokens).toBe(128000);
       expect(config.supportsAdaptiveThinking).toBe(true);
-      expect(config.supportsTemperature).toBe(false);
       expect(config.supportsEffort).toBe(true);
       expect(config.effortGA).toBe(true);
     });
@@ -327,14 +326,13 @@ describe('Anthropic Provider', () => {
 
       await anthropicProvider.invoke(messages, {
         model: 'claude-haiku-4-5-20251001',
-        temperature: 0.5,
         maxTokens: 2000,
         config: mockConfig,
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.model).toBe('claude-haiku-4-5-20251001');
-      expect(callArgs.temperature).toBe(0.5); // Temperature is only forced to 1 when thinking is enabled
+      expect(callArgs.temperature).toBeUndefined();
       expect(callArgs.max_tokens).toBe(2000);
     });
 

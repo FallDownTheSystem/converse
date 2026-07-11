@@ -11,6 +11,16 @@ import { debugLog, debugError } from './console.js';
 import { JOB_STATUS } from '../async/asyncJobStore.js';
 
 /**
+ * Normalize a job's mode, mapping the pre-v3 `conversation` tool name to the
+ * `roundtable` mode so durable pre-v3 snapshots render with the right branch.
+ * @param {string} mode
+ * @returns {string}
+ */
+function normalizeMode(mode) {
+  return mode === 'conversation' ? 'roundtable' : mode;
+}
+
+/**
  * Format job list as human-readable text with titles and summaries
  * @param {object} jobsList - Jobs list object with summary
  * @param {object} dependencies - Dependencies object with config and providers
@@ -57,23 +67,26 @@ export async function formatJobListHumanReadable(jobsList, dependencies = {}) {
         completed_with_errors: '⚠️',
       }[job.status] || '❓';
 
+    const mode = normalizeMode(job.mode || job.tool);
     const provider =
-      job.provider || (job.tool === 'consensus' ? 'multiple' : 'unknown');
+      job.provider || (mode === 'chat' ? 'unknown' : 'multiple');
 
     // Format start time as readable date/time
     const startTime = job.created_at
       ? new Date(job.created_at).toLocaleString()
       : 'unknown';
 
-    // Format: emoji STATUS | TOOL | id | sequence | started | time | [progress for consensus only] | provider
+    // Format: emoji STATUS | MODE | id | sequence | started | time | [progress] | provider
     const sequenceStr = '1/1';
 
     // Build base status line
-    let statusLine = `${statusEmoji} ${job.status.toUpperCase()} | ${job.tool.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr}`;
+    let statusLine = `${statusEmoji} ${job.status.toUpperCase()} | ${mode.toUpperCase()} | ${job.continuation_id} | ${sequenceStr} | ${startTime} | ${timeStr}`;
 
-    // Add consensus progress if applicable
-    if (job.tool === 'consensus' && job.consensus_progress) {
-      statusLine += ` | ${job.consensus_progress}`;
+    // Add per-mode progress if applicable
+    const progressText =
+      job.consensus_progress || job.roundtable_progress || job.chat_progress;
+    if (progressText) {
+      statusLine += ` | ${progressText}`;
     }
 
     statusLine += ` | ${provider}`;
@@ -144,16 +157,18 @@ export async function formatHumanReadableStatus(
   // Add sequence info if provided
   const sequenceStr = options.sequence ? ` | ${options.sequence}` : '';
 
+  const mode = normalizeMode(jobStatus.mode || jobStatus.tool);
+
   // Build complete status line with all info
-  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${jobStatus.tool.toUpperCase()} | ${jobStatus.continuation_id}${sequenceStr} | Started: ${startTime} | ${timeStr} elapsed`;
+  let statusLine = `${statusEmoji} ${jobStatus.status.toUpperCase()} | ${mode.toUpperCase()} | ${jobStatus.continuation_id}${sequenceStr} | Started: ${startTime} | ${timeStr} elapsed`;
 
   // Add title if available
   if (jobStatus.title) {
     statusLine += ` | "${jobStatus.title}"`;
   }
 
-  // Add progress for consensus tool only (show x/y format)
-  if (jobStatus.tool === 'consensus') {
+  // Add per-mode progress + models list
+  if (mode === 'consensus') {
     if (jobStatus.consensus_progress) {
       statusLine += ` | ${jobStatus.consensus_progress}`;
     } else if (jobStatus.providers) {
@@ -166,24 +181,28 @@ export async function formatHumanReadableStatus(
       const total = providerEntries.length;
       statusLine += ` | ${completed}/${total} responded`;
     }
-    // Add models list for consensus
     if (jobStatus.models_list) {
       statusLine += ` | ${jobStatus.models_list}`;
     }
-  } else if (jobStatus.tool === 'conversation') {
-    // Add turn progress and models list for conversation (x/y turns)
-    if (jobStatus.conversation_progress) {
-      statusLine += ` | ${jobStatus.conversation_progress} turns`;
+  } else if (mode === 'roundtable') {
+    // Add turn progress and models list (x/y turns)
+    if (jobStatus.roundtable_progress) {
+      statusLine += ` | ${jobStatus.roundtable_progress} turns`;
     }
     if (jobStatus.models_list) {
       statusLine += ` | ${jobStatus.models_list}`;
     }
-  } else if (jobStatus.tool === 'chat') {
-    // Add provider/model for chat
+  } else {
+    // chat mode
+    if (jobStatus.chat_progress) {
+      statusLine += ` | ${jobStatus.chat_progress}`;
+    }
     if (jobStatus.provider && jobStatus.model) {
       statusLine += ` | ${jobStatus.provider}/${jobStatus.model}`;
     } else if (jobStatus.provider) {
       statusLine += ` | ${jobStatus.provider}`;
+    } else if (jobStatus.models_list) {
+      statusLine += ` | ${jobStatus.models_list}`;
     }
   }
 
@@ -332,10 +351,16 @@ export function formatJobStatus(job, options = {}) {
   const elapsedMs = now - startTime;
   const elapsedSeconds = elapsedMs / 1000;
 
+  // `mode` is the unified chat tool's execution mode; `tool` is kept as a
+  // fallback so any durable pre-v3 job snapshot on disk still renders. The old
+  // `conversation` tool maps to `roundtable`.
+  const mode = normalizeMode(job.mode || job.tool);
+
   const formatted = {
     continuation_id: job.jobId,
     status: job.status,
     tool: job.tool,
+    mode,
     created_at: job.createdAt,
     updated_at: job.updatedAt,
     progress: job.overall?.progress || 0,
@@ -346,7 +371,9 @@ export function formatJobStatus(job, options = {}) {
     model: job.model || null,
     models_list: job.models_list || null,
     consensus_progress: job.consensus_progress || null,
-    conversation_progress: job.conversation_progress || null,
+    // `conversation_progress` is the pre-v3 key for what is now roundtable.
+    roundtable_progress: job.roundtable_progress || job.conversation_progress || null,
+    chat_progress: job.chat_progress || null,
     // Include new metadata fields if present
     accumulated_content: job.accumulated_content || null,
     title: job.title || null,
@@ -354,8 +381,8 @@ export function formatJobStatus(job, options = {}) {
     reasoning_summary: job.reasoning_summary || null,
   };
 
-  // For consensus, gather provider previews
-  if (job.tool === 'consensus') {
+  // For the parallel modes (chat, consensus), gather per-provider previews.
+  if (mode === 'consensus' || mode === 'chat') {
     const providerPreviews = {};
     for (let i = 0; i < 10; i++) {
       // Check up to 10 providers

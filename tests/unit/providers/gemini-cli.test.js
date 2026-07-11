@@ -15,7 +15,7 @@ import {
   runAgy,
   geminiCliProvider,
 } from '../../../src/providers/gemini-cli.js';
-import { mapModelToProvider } from '../../../src/tools/chat.js';
+import { mapModelToProvider } from '../../../src/utils/modelRouting.js';
 
 const E = '\x1b';
 const BEL = '\x07';

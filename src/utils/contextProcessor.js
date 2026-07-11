@@ -265,35 +265,10 @@ export async function processMultipleFiles(filePaths, options = {}) {
 }
 
 /**
- * Web search context integration (placeholder)
- * @param {string} query - Search query
- * @param {object} options - Search options
- * @returns {Promise<object>} Web search results for context
- */
-export async function processWebSearchContext(query, options = {}) {
-  // Placeholder implementation - can be enhanced with actual web search API
-  return {
-    type: 'web_search',
-    query,
-    results: [],
-    error: null,
-    timestamp: new Date().toISOString(),
-    // Placeholder: Future implementation could integrate with:
-    // - Google Search API
-    // - Bing Search API
-    // - DuckDuckGo API
-    // - Custom search engines
-    placeholder: true,
-    message: 'Web search integration placeholder - not yet implemented',
-  };
-}
-
-/**
- * Unified context processor - handles all context types
+ * Unified context processor - handles files and images
  * @param {object} contextRequest - Context processing request
  * @param {string[]} contextRequest.files - Array of file paths
  * @param {string[]} contextRequest.images - Array of image paths (for explicit image processing)
- * @param {string} contextRequest.webSearch - Web search query
  * @param {object} options - Processing options
  * @returns {Promise<object>} Unified context result
  */
@@ -301,7 +276,6 @@ export async function processUnifiedContext(contextRequest, options = {}) {
   const result = {
     files: [],
     images: [],
-    webSearch: null,
     errors: [],
     timestamp: new Date().toISOString(),
   };
@@ -318,17 +292,6 @@ export async function processUnifiedContext(contextRequest, options = {}) {
         ...options,
         imageProcessingMode: true, // Placeholder for future image-specific processing
       });
-    }
-
-    // Process web search if provided
-    if (
-      contextRequest.webSearch &&
-      typeof contextRequest.webSearch === 'string'
-    ) {
-      result.webSearch = await processWebSearchContext(
-        contextRequest.webSearch,
-        options,
-      );
     }
   } catch (error) {
     result.errors.push({

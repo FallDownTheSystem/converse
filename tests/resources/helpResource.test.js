@@ -52,7 +52,7 @@ describe('Help Resource', () => {
       expect(content).toContain('# Converse MCP Server - Comprehensive Guide');
       expect(content).toContain('## Available Tools');
       expect(content).toContain('### 1. Chat Tool');
-      expect(content).toContain('### 2. Consensus Tool');
+      expect(content).toContain('### 2. Check_status Tool');
       expect(content).toContain('## Provider Models');
       expect(content).toContain('### OPENAI Models');
       expect(content).toContain('### GOOGLE GEMINI Models');
@@ -90,7 +90,7 @@ describe('Help Resource', () => {
 
       // Check for configuration sections
       expect(content).toContain('## Configuration Tips');
-      expect(content).toContain('### Temperature Settings');
+      expect(content).toContain('### Modes');
       expect(content).toContain('### Reasoning Effort');
       expect(content).toContain('## Best Practices');
       expect(content).toContain('## Environment Variables');

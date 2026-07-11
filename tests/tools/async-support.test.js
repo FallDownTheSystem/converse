@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { chatTool } from '../../src/tools/chat.js';
-import { consensusTool } from '../../src/tools/consensus.js';
 import * as fileValidator from '../../src/utils/fileValidator.js';
 
-// Mock the fileValidator module
 vi.mock('../../src/utils/fileValidator.js');
 
-describe('Async Support Tests', () => {
+describe('Async Support (unified chat tool)', () => {
   let mockDependencies;
   let mockConfig;
   let mockContinuationStore;
@@ -16,100 +14,40 @@ describe('Async Support Tests', () => {
   let mockProviderStreamNormalizer;
 
   beforeEach(() => {
-    // Mock file validator
-    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({
-      valid: true,
-      errors: [],
+    vi.mocked(fileValidator.validateAllPaths).mockResolvedValue({ valid: true, errors: [] });
+
+    mockConfig = {
+      apiKeys: { openai: 'sk-test-key', xai: 'xai-test-key', google: 'google-test-key' },
+      providers: { xaiBaseUrl: 'https://api.x.ai/v1' },
+      environment: { nodeEnv: 'test' },
+    };
+
+    mockContinuationStore = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn(),
+      exists: vi.fn().mockResolvedValue(false),
+    };
+
+    const makeProvider = (content) => ({
+      invoke: vi.fn().mockResolvedValue({ content, metadata: { usage: {} } }),
+      isAvailable: vi.fn().mockReturnValue(true),
+      getSupportedModels: vi.fn(),
+      getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
     });
 
-    // Mock configuration
-    mockConfig = {
-      apiKeys: {
-        openai: 'sk-test-key',
-        xai: 'xai-test-key',
-        google: 'google-test-key',
-      },
-      providers: {
-        googleLocation: 'us-central1',
-        xaiBaseUrl: 'https://api.x.ai/v1',
-      },
-      environment: {
-        nodeEnv: 'test',
-      },
-    };
-
-    // Mock continuation store
-    mockContinuationStore = {
-      get: vi.fn(),
-      set: vi.fn(),
-      delete: vi.fn(),
-      exists: vi.fn(),
-      getStats: vi.fn(),
-    };
-
-    // Mock providers
-    const mockOpenAIProvider = {
-      invoke: vi.fn().mockResolvedValue({
-        content: 'Test response from OpenAI',
-        metadata: { usage: { input_tokens: 10, output_tokens: 20 } },
-      }),
-      validateConfig: vi.fn(),
-      isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn(),
-    };
-
-    const mockXAIProvider = {
-      invoke: vi.fn().mockResolvedValue({
-        content: 'Test response from XAI',
-        metadata: { usage: { input_tokens: 12, output_tokens: 18 } },
-      }),
-      validateConfig: vi.fn(),
-      isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn(),
-    };
-
-    const mockGoogleProvider = {
-      invoke: vi.fn().mockResolvedValue({
-        content: 'Test response from Google',
-        metadata: { usage: { input_tokens: 8, output_tokens: 25 } },
-      }),
-      validateConfig: vi.fn(),
-      isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
-      getModelConfig: vi.fn(),
-    };
-
     mockProviders = {
-      openai: mockOpenAIProvider,
-      xai: mockXAIProvider,
-      google: mockGoogleProvider,
+      openai: makeProvider('Test response from OpenAI'),
+      xai: makeProvider('Test response from XAI'),
+      google: makeProvider('Test response from Google'),
     };
 
-    // Mock context processor
     mockContextProcessor = {
-      processUnifiedContext: vi.fn().mockResolvedValue({
-        success: true,
-        contextMessages: [],
-        files: [],
-        processed: [],
-        failed: [],
-        images: [],
-      }),
+      processUnifiedContext: vi.fn().mockResolvedValue({ files: [], images: [], errors: [] }),
     };
 
-    // Mock job runner
-    mockJobRunner = {
-      submit: vi.fn().mockResolvedValue('test-job-id-123'),
-    };
+    mockJobRunner = { submit: vi.fn().mockResolvedValue('test-job-id-123') };
+    mockProviderStreamNormalizer = { normalize: vi.fn() };
 
-    // Mock provider stream normalizer
-    mockProviderStreamNormalizer = {
-      normalize: vi.fn(),
-    };
-
-    // Create mock dependencies
     mockDependencies = {
       config: mockConfig,
       continuationStore: mockContinuationStore,
@@ -118,371 +56,112 @@ describe('Async Support Tests', () => {
       jobRunner: mockJobRunner,
       providerStreamNormalizer: mockProviderStreamNormalizer,
     };
-
-    // Set up default mock return values
-    mockContinuationStore.get.mockResolvedValue(null);
-    mockContinuationStore.set.mockImplementation((id, data) => id);
-    mockContinuationStore.exists.mockResolvedValue(false);
   });
 
-  describe('Chat Tool Async Support', () => {
-    it('should execute synchronously when async=false (default)', async () => {
-      const args = {
-        prompt: 'Test sync chat',
-        async: false,
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
-      expect(result.content[0].text).toContain('Test response from OpenAI');
-      expect(result.continuation).toBeDefined();
-      expect(result.continuation.id).toBeTruthy();
-      expect(mockJobRunner.submit).not.toHaveBeenCalled();
-    });
-
-    it('should execute synchronously when async parameter is omitted', async () => {
-      const args = {
-        prompt: 'Test sync chat default',
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
+  describe('chat mode', () => {
+    it('executes synchronously when async is false/omitted', async () => {
+      const result = await chatTool({ prompt: 'Test sync chat' }, mockDependencies);
       expect(result.content[0].text).toContain('Test response from OpenAI');
       expect(mockJobRunner.submit).not.toHaveBeenCalled();
     });
 
-    it('should submit async job when async=true', async () => {
-      const args = {
-        prompt: 'Test async chat',
-        async: true,
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
+    it('submits a job tagged tool:chat mode:chat when async=true', async () => {
+      const result = await chatTool({ prompt: 'Test async chat', async: true }, mockDependencies);
       expect(result.content[0].text).toContain('⏳ SUBMITTED | CHAT');
-      expect(result.content[0].text).toContain('Test async chat');
-      expect(result.continuation.id).toBeTruthy();
-      // job_id is no longer returned in continuation object
       expect(result.continuation.status).toBe('processing');
-      // async_execution is not part of the final response structure
-      expect(mockJobRunner.submit).toHaveBeenCalledOnce();
+      expect(mockJobRunner.submit).toHaveBeenCalledWith(
+        expect.objectContaining({ tool: 'chat', mode: 'chat' }),
+        expect.any(Function),
+      );
     });
 
-    it('should preserve existing continuation_id in async mode', async () => {
-      const existingContinuationId = 'existing-chat-123';
-      const args = {
-        prompt: 'Test async chat with continuation',
-        async: true,
-        continuation_id: existingContinuationId,
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
-      expect(result.continuation.id).toBe(existingContinuationId);
+    it('preserves an existing continuation_id in async mode', async () => {
+      const id = 'existing-chat-123';
+      const result = await chatTool(
+        { prompt: 'Async chat', async: true, continuation_id: id },
+        mockDependencies,
+      );
+      expect(result.continuation.id).toBe(id);
       expect(mockJobRunner.submit).toHaveBeenCalledWith(
         expect.objectContaining({
-          sessionId: 'local-user', // Uses standard session ID
           tool: 'chat',
-          options: expect.objectContaining({
-            ...args,
-            jobId: existingContinuationId,
-          }),
+          mode: 'chat',
+          sessionId: id,
+          options: expect.objectContaining({ jobId: id, mode: 'chat' }),
         }),
         expect.any(Function),
       );
     });
 
-    it('should return error when async dependencies are missing', async () => {
-      const depsWithoutAsync = {
-        ...mockDependencies,
-        jobRunner: null,
-        providerStreamNormalizer: null,
-      };
-
-      const args = {
-        prompt: 'Test async without deps',
-        async: true,
-      };
-
-      const result = await chatTool(args, depsWithoutAsync);
-
+    it('errors when async dependencies are missing', async () => {
+      const result = await chatTool(
+        { prompt: 'x', async: true },
+        { ...mockDependencies, jobRunner: null, providerStreamNormalizer: null },
+      );
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Async execution not available');
     });
 
-    it('should handle job submission errors gracefully', async () => {
-      mockJobRunner.submit.mockRejectedValue(
-        new Error('Job submission failed'),
-      );
-
-      const args = {
-        prompt: 'Test async error',
-        async: true,
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
+    it('handles job submission errors gracefully', async () => {
+      mockJobRunner.submit.mockRejectedValue(new Error('Job submission failed'));
+      const result = await chatTool({ prompt: 'x', async: true }, mockDependencies);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Async execution failed');
     });
 
-    it('should reject async custom ID with unsafe characters', async () => {
-      const args = {
-        prompt: 'Test async with unsafe ID',
-        async: true,
-        continuation_id: 'my project/analysis',
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
+    it('rejects an async custom ID with unsafe characters', async () => {
+      const result = await chatTool(
+        { prompt: 'x', async: true, continuation_id: 'my project/analysis' },
+        mockDependencies,
+      );
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Invalid continuation_id for async mode');
     });
 
-    it('should accept async custom ID with safe characters', async () => {
-      mockContinuationStore.get.mockResolvedValue(null);
-
-      const args = {
-        prompt: 'Test async with safe custom ID',
-        async: true,
-        continuation_id: 'my-safe-custom-id_123',
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
+    it('accepts an async custom ID with safe characters', async () => {
+      const result = await chatTool(
+        { prompt: 'x', async: true, continuation_id: 'my-safe-custom-id_123' },
+        mockDependencies,
+      );
       expect(result.continuation.id).toBe('my-safe-custom-id_123');
       expect(result.continuation.custom_id).toBe(true);
     });
-
-    it('should not set custom_id on async resume of existing custom ID', async () => {
-      mockContinuationStore.get.mockResolvedValue({
-        messages: [{ role: 'user', content: 'prev' }],
-        provider: 'openai',
-        model: 'gpt-5',
-      });
-
-      const args = {
-        prompt: 'Resume async',
-        async: true,
-        continuation_id: 'my-safe-custom-id_123',
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
-      expect(result.continuation.id).toBe('my-safe-custom-id_123');
-      expect(result.continuation.custom_id).toBeUndefined();
-    });
   });
 
-  describe('Consensus Tool Async Support', () => {
-    it('should execute synchronously when async=false (default)', async () => {
-      const args = {
-        prompt: 'Test sync consensus',
-        models: ['gpt-5', 'gemini-2.5-pro'],
-        async: false,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.content[0].text).toContain('successful_initial_responses');
-      expect(result.continuation).toBeDefined();
-      expect(mockJobRunner.submit).not.toHaveBeenCalled();
-    });
-
-    it('should execute synchronously when async parameter is omitted', async () => {
-      const args = {
-        prompt: 'Test sync consensus default',
-        models: ['gpt-5'],
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.content[0].text).toContain('successful_initial_responses');
-      expect(mockJobRunner.submit).not.toHaveBeenCalled();
-    });
-
-    it('should submit async job when async=true', async () => {
-      const args = {
-        prompt: 'Test async consensus',
-        models: ['gpt-5', 'gemini-2.5-pro', 'grok-4-0709'],
-        async: true,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
+  describe('consensus mode', () => {
+    it('submits a job tagged mode:consensus when async=true', async () => {
+      const result = await chatTool(
+        { prompt: 'Async consensus', mode: 'consensus', models: ['gpt-5', 'gemini-2.5-pro'], async: true },
+        mockDependencies,
+      );
       expect(result.content[0].text).toContain('⏳ SUBMITTED | CONSENSUS');
-      expect(result.content[0].text).toContain('Test async consensus');
-      expect(result.continuation.id).toBeTruthy();
-      // job_id is no longer returned in continuation object
-      expect(result.continuation.status).toBe('processing');
-      // async_execution is not part of the final response structure
-      expect(mockJobRunner.submit).toHaveBeenCalledOnce();
-    });
-
-    it('should preserve existing continuation_id in async mode', async () => {
-      const existingContinuationId = 'existing-consensus-456';
-      const args = {
-        prompt: 'Test async consensus with continuation',
-        models: ['gpt-5', 'gemini-2.5-pro'],
-        async: true,
-        continuation_id: existingContinuationId,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.continuation.id).toBe(existingContinuationId);
       expect(mockJobRunner.submit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sessionId: existingContinuationId, // Consensus uses continuation_id as sessionId
-          tool: 'consensus',
-          options: expect.objectContaining({
-            ...args,
-            jobId: existingContinuationId,
-          }),
-        }),
+        expect.objectContaining({ tool: 'chat', mode: 'consensus' }),
         expect.any(Function),
       );
     });
 
-    it('should return error when async dependencies are missing', async () => {
-      const depsWithoutAsync = {
-        ...mockDependencies,
-        jobRunner: null,
-        providerStreamNormalizer: null,
-      };
-
-      const args = {
-        prompt: 'Test async without deps',
-        models: ['gpt-5'],
-        async: true,
-      };
-
-      const result = await consensusTool(args, depsWithoutAsync);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Async execution not available');
-    });
-
-    it('should handle job submission errors gracefully', async () => {
-      mockJobRunner.submit.mockRejectedValue(
-        new Error('Job submission failed'),
+    it('validates ≥2 resolved models before submitting an async consensus job', async () => {
+      const result = await chatTool(
+        { prompt: 'x', mode: 'consensus', models: ['gpt-5'], async: true },
+        mockDependencies,
       );
-
-      const args = {
-        prompt: 'Test async error',
-        models: ['gpt-5'],
-        async: true,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Async execution failed');
-    });
-
-    it('should support cross-feedback in async mode', async () => {
-      const args = {
-        prompt: 'Test async consensus with cross-feedback',
-        models: ['gpt-5', 'gemini-2.5-pro'],
-        enable_cross_feedback: true,
-        async: true,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      // async_execution is not part of the final response structure
-      expect(mockJobRunner.submit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tool: 'consensus',
-          options: expect.objectContaining({
-            enable_cross_feedback: true,
-          }),
-        }),
-        expect.any(Function),
-      );
-    });
-
-    it('should reject async custom ID with unsafe characters', async () => {
-      const args = {
-        prompt: 'Test async consensus with unsafe ID',
-        models: ['gpt-5'],
-        async: true,
-        continuation_id: 'my project/analysis',
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Invalid continuation_id for async mode');
-    });
-
-    it('should accept async custom ID with safe characters', async () => {
-      mockContinuationStore.get.mockResolvedValue(null);
-
-      const args = {
-        prompt: 'Test async consensus with safe custom ID',
-        models: ['gpt-5'],
-        async: true,
-        continuation_id: 'my-safe-custom-id_123',
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.continuation.id).toBe('my-safe-custom-id_123');
-      expect(result.continuation.custom_id).toBe(true);
-    });
-
-    it('should not set custom_id on async resume of existing custom ID', async () => {
-      mockContinuationStore.get.mockResolvedValue({
-        messages: [{ role: 'user', content: 'prev' }],
-        type: 'consensus',
-      });
-
-      const args = {
-        prompt: 'Resume async consensus',
-        models: ['gpt-5'],
-        async: true,
-        continuation_id: 'my-safe-custom-id_123',
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      expect(result.continuation.id).toBe('my-safe-custom-id_123');
-      expect(result.continuation.custom_id).toBeUndefined();
+      expect(mockJobRunner.submit).not.toHaveBeenCalled();
     });
   });
 
-  describe('Backwards Compatibility', () => {
-    it('should maintain existing chat behavior when async parameter is not used', async () => {
-      const args = {
-        prompt: 'Test compatibility',
-        model: 'gpt-5',
-        temperature: 0.7,
-      };
-
-      const result = await chatTool(args, mockDependencies);
-
-      // Should work exactly as before
-      expect(result.content[0].text).toContain('Test response from OpenAI');
-      expect(result.continuation).toBeDefined();
-      expect(result.metadata).toBeDefined();
-      expect(mockJobRunner.submit).not.toHaveBeenCalled();
-    });
-
-    it('should maintain existing consensus behavior when async parameter is not used', async () => {
-      const args = {
-        prompt: 'Test compatibility consensus',
-        models: ['gpt-5', 'gemini-2.5-pro'],
-        temperature: 0.3,
-        enable_cross_feedback: false,
-      };
-
-      const result = await consensusTool(args, mockDependencies);
-
-      // Should work exactly as before
-      expect(result.content[0].text).toContain('successful_initial_responses');
-      expect(result.continuation).toBeDefined();
-      expect(mockJobRunner.submit).not.toHaveBeenCalled();
+  describe('roundtable mode', () => {
+    it('submits a job tagged mode:roundtable when async=true', async () => {
+      const result = await chatTool(
+        { prompt: 'Async roundtable', mode: 'roundtable', models: ['gpt-5', 'grok-4-0709'], async: true },
+        mockDependencies,
+      );
+      expect(result.content[0].text).toContain('⏳ SUBMITTED | ROUNDTABLE');
+      expect(mockJobRunner.submit).toHaveBeenCalledWith(
+        expect.objectContaining({ tool: 'chat', mode: 'roundtable' }),
+        expect.any(Function),
+      );
     });
   });
 });

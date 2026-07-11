@@ -160,13 +160,14 @@ agy
 }
 ```
 
-*Consensus Tool:*
+*Consensus mode:*
 ```json
 {
-  "name": "consensus",
+  "name": "chat",
   "arguments": {
     "prompt": "Should we use TypeScript for this component?",
-    "models": ["gemini", "gpt-5", "claude-sonnet-4-6"]
+    "models": ["gemini", "gpt-5", "claude-sonnet-4-6"],
+    "mode": "consensus"
   }
 }
 ```
@@ -197,7 +198,7 @@ agy
 - **Subscription Access**: Uses your Claude subscription instead of API credits
 - **Local File Access**: Reads files directly from the working directory
 - **Image Support**: Via the SDK's streaming input mode
-- **SDK-Managed Parameters**: `temperature`, `use_websearch`, and `reasoning_effort` are managed internally (ignored if specified)
+- **SDK-Managed Parameters**: `reasoning_effort` and other sampling parameters are managed internally by the SDK
 
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
@@ -280,7 +281,7 @@ All providers support streaming responses for real-time output.
 
 ## Model Selection in Tools
 
-When using the chat or consensus tools, specify models using their identifiers:
+When using the chat tool in any mode, specify models using their identifiers:
 
 ### Model Routing Logic
 

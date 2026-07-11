@@ -143,9 +143,7 @@ function extractMessageContent(message) {
 function generateMetadata(conversationState, totalTurns, params) {
   const metadata = {
     continuation_id: params.continuation_id,
-    model: params.model || 'auto',
-    provider: conversationState.provider,
-    temperature: params.temperature || 0.5,
+    mode: params.mode || conversationState.mode || 'chat',
     total_turns: totalTurns,
     created_at: conversationState.createdAt
       ? new Date(conversationState.createdAt).toISOString()
@@ -156,14 +154,11 @@ function generateMetadata(conversationState, totalTurns, params) {
   };
 
   // Add optional parameters if present
+  if (params.models && params.models.length > 0) {
+    metadata.models = params.models;
+  }
   if (params.reasoning_effort) {
     metadata.reasoning_effort = params.reasoning_effort;
-  }
-  if (params.verbosity) {
-    metadata.verbosity = params.verbosity;
-  }
-  if (params.use_websearch !== undefined) {
-    metadata.use_websearch = params.use_websearch;
   }
   if (params.files && params.files.length > 0) {
     metadata.files = params.files;
@@ -173,13 +168,6 @@ function generateMetadata(conversationState, totalTurns, params) {
     metadata.images = params.images.map((img) =>
       img.startsWith('data:') ? '[base64 image]' : img,
     );
-  }
-  // Consensus-specific metadata
-  if (params.models) {
-    metadata.models = params.models;
-  }
-  if (params.enable_cross_feedback !== undefined) {
-    metadata.enable_cross_feedback = params.enable_cross_feedback;
   }
 
   return metadata;
@@ -195,15 +183,11 @@ export async function exportConversation(conversationState, options = {}) {
   const {
     clientCwd,
     continuation_id,
-    model,
-    temperature,
+    mode,
     reasoning_effort,
-    verbosity,
-    use_websearch,
     files,
     images,
     models,
-    enable_cross_feedback,
   } = options;
 
   if (!continuation_id) {
@@ -253,15 +237,11 @@ export async function exportConversation(conversationState, options = {}) {
     // 5. Always update metadata atomically
     const metadata = generateMetadata(conversationState, turns.length, {
       continuation_id,
-      model,
-      temperature,
+      mode,
       reasoning_effort,
-      verbosity,
-      use_websearch,
       files,
       images,
       models,
-      enable_cross_feedback,
     });
 
     const metadataPath = path.join(exportDir, 'metadata.json');

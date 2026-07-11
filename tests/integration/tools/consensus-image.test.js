@@ -30,18 +30,17 @@ describe('Consensus Tool Image Processing', () => {
     async () => {
       await withHTTPTestServer(async (client, manager) => {
         const result = await client.callTool({
-          name: 'consensus',
+          name: 'chat',
           arguments: {
             prompt:
               'What is shown in this image? Please describe what you see in one sentence.',
+            mode: 'consensus',
             models: [
-              { model: 'gpt-4o-mini' }, // OpenAI
-              { model: 'grok-4' }, // XAI
-              { model: 'gemini-2.5-flash' }, // Google
+              'gpt-4o-mini', // OpenAI
+              'grok-4', // XAI
+              'gemini-2.5-flash', // Google
             ],
             images: ['test_image.png'],
-            enable_cross_feedback: false, // Disable for faster test
-            temperature: 0,
           },
         });
 
@@ -121,8 +120,7 @@ describe('Consensus Tool Image Processing', () => {
             prompt:
               'What is shown in this image? Please describe what you see in one sentence.',
             images: ['test_image.png'],
-            model,
-            temperature: 0,
+            models: [model],
           },
         });
 
@@ -150,8 +148,7 @@ describe('Consensus Tool Image Processing', () => {
           arguments: {
             prompt: 'Describe this cat image briefly.',
             images: ['test_image.png'],
-            model: 'gpt-4o-mini',
-            temperature: 0,
+            models: ['gpt-4o-mini'],
           },
         });
 

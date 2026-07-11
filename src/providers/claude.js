@@ -28,7 +28,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
-    supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 600000, // 10 minutes
     description:
@@ -50,7 +49,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
-    supportsTemperature: false, // SDK manages temperature internally
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 600000, // 10 minutes
     description:
@@ -451,8 +449,6 @@ export const claudeProvider = {
       stream = false,
       signal,
       reasoning_effort,
-      temperature,
-      use_websearch,
     } = options;
 
     // Validate configuration
@@ -464,16 +460,6 @@ export const claudeProvider = {
     }
 
     // Log unsupported parameters at debug level
-    if (temperature !== undefined) {
-      debugLog(
-        '[Claude SDK] Parameter "temperature" not supported by Claude SDK (ignored)',
-      );
-    }
-    if (use_websearch) {
-      debugLog(
-        '[Claude SDK] Parameter "use_websearch" not supported by Claude SDK (ignored)',
-      );
-    }
     if (reasoning_effort !== undefined) {
       debugLog(
         '[Claude SDK] Parameter "reasoning_effort" not supported by Claude SDK (ignored)',

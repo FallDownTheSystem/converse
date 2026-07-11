@@ -17,7 +17,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true, // Version 1.2 adds vision support
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 300000,
@@ -38,7 +37,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true, // Version 1.2 adds vision support
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsReasoning: true,
     timeout: 180000,
@@ -58,7 +56,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 32768,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description:
@@ -257,13 +254,10 @@ export const mistralProvider = {
   async invoke(messages, options = {}) {
     const {
       model = 'magistral-medium-2509',
-      temperature = 0.7,
       maxTokens = null,
       stream = false,
       // eslint-disable-next-line no-unused-vars
       reasoning_effort = 'medium', // Not supported by Mistral, ignored
-      // eslint-disable-next-line no-unused-vars
-      use_websearch = false, // Not supported by Mistral, ignored
       config,
       // Filter out options not meant for the API
       continuation_id, // eslint-disable-line no-unused-vars
@@ -322,11 +316,6 @@ export const mistralProvider = {
       stream,
       ...otherOptions,
     };
-
-    // Add temperature if specified
-    if (temperature !== undefined) {
-      requestPayload.temperature = Math.max(0, Math.min(1, temperature));
-    }
 
     // Add max tokens if specified
     if (maxTokens) {

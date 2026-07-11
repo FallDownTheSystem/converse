@@ -8,6 +8,26 @@
  */
 
 /**
+ * Provider auto-selection priority order. Subscription-based CLI/SDK providers
+ * (codex, gemini-cli, claude, copilot) come before API-key providers so "auto"
+ * routing prefers them. Shared by every mode's model-resolution path.
+ * @type {string[]}
+ */
+export const PROVIDER_PRIORITY = [
+  'codex',
+  'gemini-cli',
+  'claude',
+  'copilot',
+  'openai',
+  'google',
+  'xai',
+  'anthropic',
+  'mistral',
+  'deepseek',
+  'openrouter',
+];
+
+/**
  * Get default model for a provider
  * @param {string} providerName - Provider name
  * @returns {string} Default model name for the provider
@@ -85,6 +105,47 @@ export function providerSupportsImages(providerInstance, providerName) {
   } catch {
     return true;
   }
+}
+
+/**
+ * Return the available provider names in PROVIDER_PRIORITY order, optionally
+ * skipping text-only providers when the request has images and capping the
+ * count. Shared by every mode's "auto" expansion path.
+ * @param {object} providers - Provider instances
+ * @param {object} config - Configuration
+ * @param {object} [options]
+ * @param {boolean} [options.hasImages=false] - Skip text-only providers when true
+ * @param {number} [options.limit=Infinity] - Max number of providers to return
+ * @returns {string[]} Ordered available provider names
+ */
+export function getAvailableProviders(providers, config, { hasImages = false, limit = Infinity } = {}) {
+  const names = [];
+  for (const name of PROVIDER_PRIORITY) {
+    if (names.length >= limit) break;
+    const provider = providers[name];
+    if (!provider || !provider.isAvailable(config)) continue;
+    if (hasImages && !providerSupportsImages(provider, name)) continue;
+    names.push(name);
+  }
+  return names;
+}
+
+/**
+ * Resolve a single model spec into routing facts: its provider name, the
+ * provider instance, the concrete model, and an availability status. Callers
+ * own their error wording and structural handling by switching on `status`
+ * ('ok' | 'not_found' | 'unavailable').
+ * @param {string} spec - Model specification
+ * @param {object} providers - Provider instances
+ * @param {object} config - Configuration
+ * @returns {{ providerName: string, provider: object, resolvedModel: string, status: string }}
+ */
+export function resolveModelSpec(spec, providers, config) {
+  const providerName = mapModelToProvider(spec, providers);
+  const provider = providers[providerName];
+  const resolvedModel = resolveAutoModel(spec, providerName);
+  const status = !provider ? 'not_found' : !provider.isAvailable(config) ? 'unavailable' : 'ok';
+  return { providerName, provider, resolvedModel, status };
 }
 
 /**

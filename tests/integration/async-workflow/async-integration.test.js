@@ -58,8 +58,7 @@ describe('Async Workflow Integration Tests', () => {
           arguments: {
             prompt: 'Say "test" in one word',
             async: true,
-            model: 'auto',
-            temperature: 0.1,
+            models: ['auto'],
           },
         });
 
@@ -90,8 +89,7 @@ describe('Async Workflow Integration Tests', () => {
           arguments: {
             prompt: 'What is 2+2? Answer with just the number.',
             async: true,
-            model: 'auto',
-            temperature: 0,
+            models: ['auto'],
           },
         });
 
@@ -230,13 +228,12 @@ describe('Async Workflow Integration Tests', () => {
         await withHTTPTestServer(async (client, manager) => {
           // Submit async consensus request
           const consensusResult = await client.callTool({
-            name: 'consensus',
+            name: 'chat',
             arguments: {
               prompt: 'Is 10 > 5? Answer yes or no only.',
+              mode: 'consensus',
               models: ['auto'],
               async: true,
-              temperature: 0,
-              enable_cross_feedback: false, // Disable for faster test
             },
           });
 
@@ -318,7 +315,7 @@ describe('Async Workflow Integration Tests', () => {
           arguments: {
             prompt: 'Count from 1 to 1000000 slowly',
             async: true,
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -380,7 +377,7 @@ describe('Async Workflow Integration Tests', () => {
             arguments: {
               prompt: 'Generate a 3-step plan for learning JavaScript',
               async: true,
-              model: 'auto',
+              models: ['auto'],
             },
           });
 
@@ -455,8 +452,7 @@ describe('Async Workflow Integration Tests', () => {
               arguments: {
                 prompt: 'What is 2+2?',
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             }),
 
@@ -465,8 +461,7 @@ describe('Async Workflow Integration Tests', () => {
               arguments: {
                 prompt: 'What is 3+3?',
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             }),
 
@@ -475,8 +470,7 @@ describe('Async Workflow Integration Tests', () => {
               arguments: {
                 prompt: 'What is 4+4?',
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             }),
           ]);

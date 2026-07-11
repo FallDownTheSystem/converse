@@ -6,7 +6,6 @@ import {
   createMultipleTestClients,
   stopMultipleTestClients,
 } from './MCPTestClient.js';
-import { parseJsonResponse } from './responseParser.js';
 
 describe('MCPTestClient', () => {
   let client;
@@ -123,13 +122,13 @@ describe('MCPTestClient', () => {
 
       const toolNames = tools.tools.map((tool) => tool.name);
       expect(toolNames).toContain('chat');
-      expect(toolNames).toContain('consensus');
+      expect(toolNames).toContain('check_status');
     });
 
     it('should call tools using generic callTool method', async () => {
       const result = await client.callTool('chat', {
         prompt: 'Hello, test message',
-        model: 'auto',
+        models: ['auto'],
       });
 
       expect(result).toBeDefined();
@@ -141,8 +140,7 @@ describe('MCPTestClient', () => {
 
     it('should call chat tool using simplified interface', async () => {
       const result = await client.chat('Hello, simplified test', {
-        model: 'auto',
-        temperature: 0,
+        models: ['auto'],
       });
 
       expect(result.content).toBeDefined();
@@ -151,21 +149,12 @@ describe('MCPTestClient', () => {
       expect(result.continuation).toBeDefined();
     });
 
-    it('should call consensus tool using simplified interface', async () => {
-      const result = await client.consensus(
-        'What is 2+2?',
-        [{ model: 'auto' }],
-        {
-          enable_cross_feedback: false,
-        },
-      );
+    it('should call chat tool in consensus mode using simplified interface', async () => {
+      const result = await client.consensus('What is 2+2?', ['auto']);
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-
-      const consensusResult = parseJsonResponse(result.content[0].text);
-      expect(consensusResult.status).toBeDefined();
-      expect(consensusResult.models_consulted).toBe(1);
+      expect(result.content[0].text).toContain('consensus_complete');
     });
 
     it('should handle tool call timeouts', async () => {

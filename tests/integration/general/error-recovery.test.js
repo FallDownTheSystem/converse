@@ -175,7 +175,7 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test timeout scenario',
-          model: 'auto',
+          models: ['auto'],
         },
       });
 
@@ -320,7 +320,7 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test DNS failure',
-          model: 'auto',
+          models: ['auto'],
         },
       });
 
@@ -340,15 +340,11 @@ describe('Error Scenario and Recovery Tests', () => {
     it('should handle partial network connectivity', async () => {
       // Test with limited network conditions
       const result = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: 'Test partial connectivity',
-          models: [
-            { model: 'gpt-4o-mini' },
-            { model: 'gemini-2.5-flash' },
-            { model: 'grok-4-0709' },
-          ],
-          enable_cross_feedback: false,
+          mode: 'consensus',
+          models: ['gpt-4o-mini', 'gemini-2.5-flash', 'grok-4-0709'],
         },
       });
 
@@ -403,7 +399,7 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: largePrompt,
-          model: 'auto',
+          models: ['auto'],
         },
       });
 
@@ -433,7 +429,7 @@ describe('Error Scenario and Recovery Tests', () => {
           name: 'chat',
           arguments: {
             prompt,
-            model: 'auto',
+            models: ['auto'],
           },
         });
 
@@ -500,7 +496,7 @@ describe('Error Scenario and Recovery Tests', () => {
             name: 'chat',
             arguments: {
               prompt: `Burst test ${i}`,
-              model: 'auto',
+              models: ['auto'],
             },
           }),
         );
@@ -602,7 +598,7 @@ describe('Error Scenario and Recovery Tests', () => {
           name: 'chat',
           arguments: {
             prompt: `Circuit breaker test ${i}`,
-            model: 'nonexistent-provider',
+            models: ['nonexistent-provider'],
           },
         });
 
@@ -632,7 +628,7 @@ describe('Error Scenario and Recovery Tests', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test retry logic for transient failures',
-          model: 'auto',
+          models: ['auto'],
         },
       });
 
@@ -653,15 +649,11 @@ describe('Error Scenario and Recovery Tests', () => {
     it('should implement graceful degradation', async () => {
       // Test consensus with mixed provider availability
       const result = await router.callTool({
-        name: 'consensus',
+        name: 'chat',
         arguments: {
           prompt: 'Test graceful degradation',
-          models: [
-            { model: 'auto' },
-            { model: 'nonexistent-model' },
-            { model: 'auto' },
-          ],
-          enable_cross_feedback: false,
+          mode: 'consensus',
+          models: ['auto', 'nonexistent-model', 'auto'],
         },
       });
 

@@ -254,11 +254,11 @@ describe('Continuation Flow Integration Tests', () => {
   describe('Consensus Tool Continuation', () => {
     it('should maintain consensus conversation history', async () => {
       // Start consensus conversation
-      const firstResponse = await tools.consensus(
+      const firstResponse = await tools.chat(
         {
           prompt: 'What is the capital of France? Keep it brief.',
+          mode: 'consensus',
           models: ['auto'],
-          enable_cross_feedback: false,
         },
         dependencies,
       );
@@ -267,12 +267,12 @@ describe('Continuation Flow Integration Tests', () => {
       const conversationId = firstResponse.continuation.id;
 
       // Continue consensus conversation
-      const secondResponse = await tools.consensus(
+      const secondResponse = await tools.chat(
         {
           prompt: 'What is the population of that city approximately?',
+          mode: 'consensus',
           models: ['auto'],
           continuation_id: conversationId,
-          enable_cross_feedback: false,
         },
         dependencies,
       );
@@ -300,12 +300,12 @@ describe('Continuation Flow Integration Tests', () => {
       const conversationId = chatResponse.continuation.id;
 
       // Continue with consensus
-      const consensusResponse = await tools.consensus(
+      const consensusResponse = await tools.chat(
         {
-          prompt: 'Continue with consensus tool',
+          prompt: 'Continue with consensus mode',
+          mode: 'consensus',
           models: ['auto'],
           continuation_id: conversationId,
-          enable_cross_feedback: false,
         },
         dependencies,
       );
@@ -398,7 +398,7 @@ describe('Continuation Flow Integration Tests', () => {
         {
           prompt: 'Continue with error',
           continuation_id: conversationId,
-          model: 'nonexistent-model',
+          models: ['nonexistent-model'],
         },
         dependencies,
       );
@@ -636,12 +636,12 @@ describe('Continuation Flow Integration Tests', () => {
       );
 
       // Branch to consensus tool from same base
-      const branchConsensus = await tools.consensus(
+      const branchConsensus = await tools.chat(
         {
-          prompt: 'Branch to consensus tool',
+          prompt: 'Branch to consensus mode',
+          mode: 'consensus',
           models: ['auto'],
           continuation_id: baseId,
-          enable_cross_feedback: false,
         },
         dependencies,
       );

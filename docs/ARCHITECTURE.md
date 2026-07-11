@@ -17,8 +17,8 @@ src/
 │   ├── google.js         # Google/Gemini provider implementation
 │   └── xai.js            # X.AI/Grok provider implementation
 ├── tools/                # MCP tool implementations
-│   ├── chat.js           # Single-provider chat tool
-│   └── consensus.js      # Multi-provider consensus tool
+│   ├── chat.js           # Unified chat tool (chat/consensus/roundtable modes)
+│   └── modes/            # parallel.js + roundtable.js execution engines
 ├── utils/                # Utility functions
 │   ├── logger.js         # Structured logging
 │   ├── context.js        # File and image processing
@@ -93,9 +93,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   
   switch (name) {
     case 'chat':
-      return await chatTool(args);
-    case 'consensus':
-      return await consensusTool(args);
+      return await chatTool(args); // mode: chat | consensus | roundtable
+    case 'check_status':
+      return await checkStatusTool(args);
+    case 'cancel_job':
+      return await cancelJobTool(args);
     default:
       throw new McpError(ErrorCode.MethodNotFound, `Tool not found: ${name}`);
   }

@@ -90,13 +90,13 @@ Remember: The best solution often has one breakthrough insight that makes the co
 `.trim();
 
 /**
- * Conversation tool system prompt - sequential round-table dialogue.
+ * Roundtable mode system prompt - sequential round-table dialogue.
  *
  * Unlike CONSENSUS_PROMPT (parallel, rigidly-structured answers), this frames a
  * turn-based round-table where each participant speaks after seeing the full
  * running transcript and is expected to build the discussion forward as dialogue.
  */
-export const CONVERSATION_PROMPT = `
+export const ROUNDTABLE_PROMPT = `
 You are taking part in a multi-model round-table conversation. Several AI models speak one after another, each seeing the full running transcript of everything said before it. When it is your turn, you respond to the whole conversation so far and your response is passed on to the next participant.
 
 Your goal: advance the discussion. Build on, challenge, or refine what earlier participants have said — don't merely repeat them. Add genuine value with each turn, whether that's a new insight, a correction, a synthesis, or a sharper framing. Treat this as a collaborative dialogue, not a set of isolated answers.
@@ -121,3 +121,20 @@ RESPONSE STYLE
 - Be direct and technical; surface trade-offs and challenge weak assumptions constructively.
 - Keep momentum: leave the conversation in a better place than you found it for the next participant.
 `.trim();
+
+/**
+ * Select the system prompt for a chat-tool mode.
+ * @param {string} mode - One of 'chat' | 'consensus' | 'roundtable'
+ * @returns {string} The system prompt for that mode (defaults to CHAT_PROMPT)
+ */
+export function getSystemPromptForMode(mode) {
+  switch (mode) {
+  case 'consensus':
+    return CONSENSUS_PROMPT;
+  case 'roundtable':
+    return ROUNDTABLE_PROMPT;
+  case 'chat':
+  default:
+    return CHAT_PROMPT;
+  }
+}

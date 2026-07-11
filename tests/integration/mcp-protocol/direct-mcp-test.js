@@ -91,7 +91,7 @@ class DirectMCPTest {
     const result = await chatTool(
       {
         prompt: 'Say exactly: "Direct chat test successful"',
-        model: 'openai:gpt-4o-mini',
+        models: ['openai:gpt-4o-mini'],
       },
       this.dependencies,
     );
@@ -115,7 +115,7 @@ class DirectMCPTest {
     const first = await chatTool(
       {
         prompt: 'Remember this code: ABC123. Just say "I remember ABC123"',
-        model: 'openai:gpt-4o-mini',
+        models: ['openai:gpt-4o-mini'],
       },
       this.dependencies,
     );
@@ -128,8 +128,8 @@ class DirectMCPTest {
     const second = await chatTool(
       {
         prompt: 'What code did I ask you to remember?',
-        continuation: first.continuation.id,
-        model: 'openai:gpt-4o-mini',
+        continuation_id: first.continuation.id,
+        models: ['openai:gpt-4o-mini'],
       },
       this.dependencies,
     );
@@ -141,17 +141,18 @@ class DirectMCPTest {
     };
   }
 
-  // Test consensus tool directly
+  // Test chat tool in consensus mode directly
   async testConsensusDirect() {
-    const consensusTool = this.tools.consensus;
-    if (!consensusTool) {
-      throw new Error('Consensus tool not available');
+    const chatTool = this.tools.chat;
+    if (!chatTool) {
+      throw new Error('Chat tool not available');
     }
 
-    const result = await consensusTool(
+    const result = await chatTool(
       {
         prompt: 'What is 3 + 3? Answer with just the number.',
-        models: [{ model: 'openai:gpt-4o-mini' }, { model: 'google:flash' }],
+        mode: 'consensus',
+        models: ['openai:gpt-4o-mini', 'google:flash'],
       },
       this.dependencies,
     );
@@ -162,8 +163,8 @@ class DirectMCPTest {
 
     const text = result.content[0].text;
     return {
-      hasInitialResponses: text.includes('Initial Responses'),
-      hasRefinedResponses: text.includes('Refined Responses'),
+      hasInitialResponses: text.includes('successful_initial_responses'),
+      hasRefinedResponses: text.includes('phases'),
       responseLength: text.length,
     };
   }
@@ -183,7 +184,7 @@ class DirectMCPTest {
       const result = await chatTool(
         {
           prompt: 'What is in the provided file? Summarize briefly.',
-          model: 'openai:gpt-4o-mini',
+          models: ['openai:gpt-4o-mini'],
           files: [testFile],
         },
         this.dependencies,
@@ -218,7 +219,7 @@ class DirectMCPTest {
       await chatTool(
         {
           // Missing required prompt
-          model: 'openai:gpt-4o-mini',
+          models: ['openai:gpt-4o-mini'],
         },
         this.dependencies,
       );

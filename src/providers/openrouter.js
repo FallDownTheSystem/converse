@@ -23,7 +23,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     supportsThinking: true,
     timeout: 300000,
@@ -44,7 +43,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Qwen3 Coder specialized for programming tasks',
@@ -63,7 +61,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description: 'Moonshot AI Kimi K2 with extended context window',
@@ -84,7 +81,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192, // Safe default
     supportsStreaming: true,
     supportsImages: false, // Conservative default
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description:
@@ -103,7 +99,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsImages: false,
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description:
@@ -255,7 +250,6 @@ function createDynamicModelConfig(modelName) {
     maxOutputTokens: 4096, // Safe default
     supportsStreaming: true,
     supportsImages: false, // Conservative default
-    supportsTemperature: true,
     supportsWebSearch: false,
     timeout: 300000,
     description: `Dynamic model: ${modelName}`,

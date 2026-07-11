@@ -288,13 +288,10 @@ export function createOpenAICompatibleProvider(providerConfig) {
     async invoke(messages, options = {}) {
       const {
         model = Object.keys(supportedModels)[0], // Default to first model
-        temperature = 0.7,
         maxTokens = null,
         stream = false,
         // eslint-disable-next-line no-unused-vars
         reasoning_effort = 'medium',
-        // eslint-disable-next-line no-unused-vars
-        use_websearch = false,
         signal,
         config,
         // Filter out options not meant for the API
@@ -368,15 +365,6 @@ export function createOpenAICompatibleProvider(providerConfig) {
         ...otherOptions,
       };
 
-      // Add temperature if model supports it and not already set by defaultParams
-      if (
-        modelConfig.supportsTemperature !== false &&
-        temperature !== undefined &&
-        !defaultParams.temperature
-      ) {
-        requestPayload.temperature = Math.max(0, Math.min(2, temperature));
-      }
-
       // Add max tokens if specified
       if (maxTokens) {
         requestPayload.max_tokens = Math.min(
@@ -390,8 +378,8 @@ export function createOpenAICompatibleProvider(providerConfig) {
         requestPayload.stream_options = { include_usage: true };
       }
 
-      // Note: Most OpenAI-compatible APIs don't support reasoning_effort or use_websearch
-      // These are silently ignored unless the provider has custom handling
+      // Note: Most OpenAI-compatible APIs don't support reasoning_effort;
+      // it is silently ignored unless the provider has custom handling
 
       // Apply custom request transformation if provided
       if (transformRequest) {

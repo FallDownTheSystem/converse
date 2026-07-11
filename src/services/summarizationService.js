@@ -9,8 +9,7 @@
 import { createLogger } from '../utils/logger.js';
 import { debugLog, debugError } from '../utils/console.js';
 
-// Import mapModelToProvider from chat tool
-import { mapModelToProvider } from '../tools/chat.js';
+import { mapModelToProvider } from '../utils/modelRouting.js';
 
 const logger = createLogger('summarization');
 
@@ -24,9 +23,6 @@ const FAST_MODELS = {
   deepseek: 'deepseek-chat',
   openrouter: 'qwen/qwen-2.5-32b-instruct',
 };
-
-// Temperature for consistent summarization
-const SUMMARIZATION_TEMPERATURE = 0.3;
 
 export class SummarizationService {
   constructor(providers, config) {
@@ -82,10 +78,8 @@ export class SummarizationService {
       // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
-        temperature: SUMMARIZATION_TEMPERATURE,
         maxTokens: 200, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
-        verbosity: 'low', // Keep outputs concise
         config: this.config,
       });
 
@@ -145,10 +139,8 @@ export class SummarizationService {
       // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
-        temperature: SUMMARIZATION_TEMPERATURE,
         maxTokens: 300, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
-        verbosity: 'low', // Keep outputs concise
         config: this.config,
       });
 
@@ -210,10 +202,8 @@ export class SummarizationService {
       // Invoke provider with minimal reasoning for speed
       const response = await provider.invoke(messages, {
         model: selectedModel,
-        temperature: SUMMARIZATION_TEMPERATURE,
         maxTokens: 250, // Increased to prevent incomplete responses
         reasoning_effort: 'minimal', // Use minimal reasoning for fast summaries
-        verbosity: 'low', // Keep outputs concise
         config: this.config,
       });
 

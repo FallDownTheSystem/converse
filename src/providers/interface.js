@@ -32,11 +32,9 @@
  * Options for provider invocation
  * @typedef {Object} InvokeOptions
  * @property {string} [model] - Model identifier (provider-specific)
- * @property {number} [temperature] - Sampling temperature (0.0-2.0)
  * @property {number} [maxTokens] - Maximum tokens to generate
  * @property {boolean} [stream] - Whether to stream the response
  * @property {string} [reasoning_effort] - Reasoning depth for thinking models
- * @property {boolean} [use_websearch] - Enable web search if supported
  * @property {AbortSignal} [signal] - AbortSignal for cancelling requests
  * @property {Object} config - Provider configuration
  * @property {Object} config.apiKeys - API keys for providers
@@ -69,7 +67,6 @@
  * @property {number} maxOutputTokens - Maximum output tokens
  * @property {boolean} supportsStreaming - Whether streaming is supported
  * @property {boolean} supportsImages - Whether images are supported
- * @property {boolean} supportsTemperature - Whether temperature is supported
  * @property {boolean} [supportsWebSearch] - Whether web search is supported
  * @property {boolean} [supportsThinking] - Whether thinking/reasoning is supported
  * @property {number} [maxThinkingTokens] - Maximum thinking tokens

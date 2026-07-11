@@ -41,7 +41,7 @@ describe('Async Chat with Summarization Enabled', () => {
           arguments: {
             prompt:
               'What is recursion in programming? Give a simple Python example.',
-            model: 'gpt-5-nano',
+            models: ['gpt-5-nano'],
             async: true,
           },
         });
@@ -134,7 +134,7 @@ describe('Async Chat with Summarization Enabled', () => {
           name: 'chat',
           arguments: {
             prompt: 'What is 2+2?',
-            model: 'gpt-5-nano',
+            models: ['gpt-5-nano'],
             async: true,
           },
         });
@@ -191,7 +191,7 @@ describe('Async Chat with Summarization Enabled', () => {
           name: 'chat',
           arguments: {
             prompt: 'Describe a sunset in one sentence.',
-            model: 'gemini-2.5-flash',
+            models: ['gemini-2.5-flash'],
             async: true,
           },
         });

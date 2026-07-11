@@ -80,7 +80,7 @@ async function runFinalTest() {
       const result = await chatTool(
         {
           prompt: 'Respond with exactly: "OpenAI chat test successful"',
-          model: 'gpt-4o-mini', // Correct format without prefix
+          models: ['gpt-4o-mini'], // Correct format without prefix
         },
         dependencies,
       );
@@ -106,7 +106,7 @@ async function runFinalTest() {
       const result = await chatTool(
         {
           prompt: 'Respond with exactly: "Google Gemini test successful"',
-          model: 'flash', // Google model
+          models: ['flash'], // Google model
         },
         dependencies,
       );
@@ -131,7 +131,7 @@ async function runFinalTest() {
       const result = await chatTool(
         {
           prompt: 'Respond with exactly: "XAI Grok test successful"',
-          model: 'grok-beta', // XAI model
+          models: ['grok-beta'], // XAI model
         },
         dependencies,
       );
@@ -159,7 +159,7 @@ async function runFinalTest() {
         {
           prompt:
             'Remember this secret code: ALPHA-7749. Just confirm you remember it.',
-          model: 'gpt-4o-mini',
+          models: ['gpt-4o-mini'],
         },
         dependencies,
       );
@@ -175,8 +175,8 @@ async function runFinalTest() {
       const second = await chatTool(
         {
           prompt: 'What secret code did I ask you to remember?',
-          continuation: first.continuation.id,
-          model: 'gpt-4o-mini',
+          continuation_id: first.continuation.id,
+          models: ['gpt-4o-mini'],
         },
         dependencies,
       );
@@ -201,10 +201,11 @@ async function runFinalTest() {
 
     // Test 5: Consensus Tool with Multiple Providers
     await runTest('Consensus Tool - Multi-Provider', async () => {
-      const consensusTool = tools.consensus;
-      const result = await consensusTool(
+      const chatTool = tools.chat;
+      const result = await chatTool(
         {
           prompt: 'What is 15 + 27? Respond only with the number.',
+          mode: 'consensus',
           models: ['gpt-4o-mini', 'flash', 'grok-beta'],
         },
         dependencies,
@@ -217,8 +218,8 @@ async function runFinalTest() {
       const text = result.content[0].text;
       console.log(`   📊 Consensus response length: ${text.length} chars`);
 
-      const hasInitial = text.includes('Initial Responses');
-      const hasRefined = text.includes('Refined Responses');
+      const hasInitial = text.includes('successful_initial_responses');
+      const hasRefined = text.includes('phases');
       const mentions42 = text.includes('42'); // The correct answer
 
       console.log(
@@ -250,7 +251,7 @@ async function runFinalTest() {
           {
             prompt:
               'What is in the provided file? Look for the special marker.',
-            model: 'gpt-4o-mini',
+            models: ['gpt-4o-mini'],
             files: [testFile],
           },
           dependencies,
@@ -288,7 +289,7 @@ async function runFinalTest() {
       try {
         await chatTool(
           {
-            model: 'gpt-4o-mini',
+            models: ['gpt-4o-mini'],
             // Missing prompt
           },
           dependencies,
@@ -308,7 +309,7 @@ async function runFinalTest() {
         const result = await chatTool(
           {
             prompt: 'Test prompt',
-            model: 'nonexistent-model-12345',
+            models: ['nonexistent-model-12345'],
           },
           dependencies,
         );
@@ -345,7 +346,7 @@ async function runFinalTest() {
       const result = await chatTool(
         {
           prompt: 'This should use the first available provider automatically.',
-          model: 'auto', // Let system choose
+          models: ['auto'], // Let system choose
         },
         dependencies,
       );

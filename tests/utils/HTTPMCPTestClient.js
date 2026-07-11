@@ -190,10 +190,7 @@ export class HTTPMCPTestClient {
 
       // Test a simple tool call
       const chatStartTime = Date.now();
-      const chatResult = await this.chat('Health check test', {
-        model: 'auto',
-        temperature: 0,
-      });
+      const chatResult = await this.chat('Health check test', { models: ['auto'] });
       const chatTime = Date.now() - chatStartTime;
 
       const totalTime = Date.now() - startTime;
@@ -274,7 +271,7 @@ export class HTTPMCPTestClient {
             name: 'chat',
             arguments: {
               prompt: `Session test ${index + 1}`,
-              model: 'auto',
+              models: ['auto'],
             },
           });
           return { sessionIndex: index, result: sessionResult };
@@ -547,7 +544,7 @@ export async function testHTTPConcurrency(
       for (let opIndex = 0; opIndex < operationsPerClient; opIndex++) {
         allOperations.push(async () => {
           return client.chat(`Client ${clientIndex} operation ${opIndex}`, {
-            model: 'auto',
+            models: ['auto'],
           });
         });
       }

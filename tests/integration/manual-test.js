@@ -4,7 +4,6 @@
  */
 
 import { chatTool } from '../../src/tools/chat.js';
-import { consensusTool } from '../../src/tools/consensus.js';
 import { loadConfig } from '../../src/config.js';
 import { getProvider, getProviders } from '../../src/providers/index.js';
 import { getContinuationStore } from '../../src/continuationStore.js';
@@ -35,8 +34,7 @@ async function runTests() {
     try {
       const chatArgs = {
         prompt: 'What is 2+2? Please respond briefly.',
-        model: 'gpt-4o-mini', // Use a specific model that works
-        temperature: 0.2,
+        models: ['gpt-4o-mini'],
         // Don't include reasoning_effort for non-O3 models
       };
 
@@ -92,26 +90,19 @@ async function runTests() {
     // Test 3: Parameters Validation
     console.log('🔧 Test 3: Parameter Schema Validation');
     try {
-      // Test chat tool schema
+      // Test unified chat tool schema
       const chatSchema = chatTool.inputSchema;
       const hasReasoningEffort = chatSchema.properties.reasoning_effort;
       const hasImages = chatSchema.properties.images;
-      const hasWebSearch = chatSchema.properties.use_websearch;
+      const hasModels = chatSchema.properties.models;
+      const hasMode = chatSchema.properties.mode;
 
       console.log(`✅ Chat tool has reasoning_effort: ${!!hasReasoningEffort}`);
       console.log(`✅ Chat tool has images support: ${!!hasImages}`);
-      console.log(`✅ Chat tool has web search: ${!!hasWebSearch}`);
-
-      // Test consensus tool schema
-      const consensusSchema = consensusTool.inputSchema;
-      const consensusHasImages = consensusSchema.properties.images;
-      const consensusHasReasoning = consensusSchema.properties.reasoning_effort;
-
+      console.log(`✅ Chat tool has models: ${!!hasModels}`);
+      console.log(`✅ Chat tool has mode: ${!!hasMode}`);
       console.log(
-        `✅ Consensus tool has images support: ${!!consensusHasImages}`,
-      );
-      console.log(
-        `✅ Consensus tool has reasoning_effort: ${!!consensusHasReasoning}`,
+        `✅ Chat tool mode enum: ${hasMode?.enum?.join(', ') || 'none'}`,
       );
       console.log('');
     } catch (error) {
@@ -187,15 +178,11 @@ async function runTests() {
         const consensusArgs = {
           prompt:
             'What is the best programming language for web development? Give a brief answer.',
-          models: ['auto', 'auto'],
-          enable_cross_feedback: false, // Disable for faster testing
-          temperature: 0.1,
+          mode: 'consensus',
+          models: ['auto'],
         };
 
-        const consensusResult = await consensusTool(
-          consensusArgs,
-          dependencies,
-        );
+        const consensusResult = await chatTool(consensusArgs, dependencies);
         console.log('✅ Consensus tool executed successfully');
         console.log(`📊 Response type: ${consensusResult.type}`);
         if (consensusResult.content) {

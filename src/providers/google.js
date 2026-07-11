@@ -17,7 +17,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsThinking: true,
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
@@ -43,7 +42,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsThinking: true,
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
@@ -68,7 +66,6 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsWebSearch: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsThinking: true,
     maxThinkingTokens: 32768,
     timeout: 300000,
@@ -83,7 +80,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 64000,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsThinking: true,
     supportsWebSearch: true,
     thinkingMode: 'level',
@@ -113,7 +109,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: true,
-    supportsTemperature: true,
     supportsThinking: true,
     supportsWebSearch: true,
     thinkingMode: 'level',
@@ -417,11 +412,9 @@ export const googleProvider = {
   async invoke(messages, options = {}) {
     const {
       model = 'gemini-2.5-flash',
-      temperature = 0.7,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',
-      use_websearch = false,
       media_resolution = null,
       signal,
       config,
@@ -497,14 +490,6 @@ export const googleProvider = {
     // Build generation config
     const generationConfig = {};
 
-    // Add temperature if model supports it
-    if (
-      modelConfig.supportsTemperature !== false &&
-      temperature !== undefined
-    ) {
-      generationConfig.temperature = Math.max(0, Math.min(2, temperature));
-    }
-
     // Add max tokens if specified
     if (maxTokens) {
       generationConfig.maxOutputTokens = Math.min(
@@ -579,8 +564,9 @@ export const googleProvider = {
       }
     }
 
-    // Add web search grounding if requested and model supports it
-    if (use_websearch && modelConfig.supportsWebSearch) {
+    // Attach web search grounding where the model supports it; the model
+    // decides per-request whether to actually search.
+    if (modelConfig.supportsWebSearch) {
       generationConfig.tools = [{ googleSearch: {} }];
     }
 
@@ -599,7 +585,6 @@ export const googleProvider = {
           generationConfig,
           modelConfig,
           reasoning_effort,
-          use_websearch,
           signal,
         );
       }
@@ -607,7 +592,7 @@ export const googleProvider = {
 
     try {
       debugLog(
-        `[Google] Calling ${resolvedModel} with ${messages.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
+        `[Google] Calling ${resolvedModel} with ${messages.length} messages${modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
       );
 
       // Check if already aborted before making request
@@ -666,7 +651,7 @@ export const googleProvider = {
             ? reasoning_effort
             : null,
           provider: 'google',
-          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+          web_search_used: !!modelConfig.supportsWebSearch,
           grounding_metadata: response.groundingMetadata || null,
         },
       };
@@ -735,7 +720,6 @@ export const googleProvider = {
    * @param {Object} generationConfig - Generation configuration
    * @param {Object} modelConfig - Model configuration
    * @param {string} reasoning_effort - Reasoning effort level
-   * @param {boolean} use_websearch - Whether web search is enabled
    * @returns {AsyncGenerator} - Streaming generator yielding chunks
    */
   async *_createStreamingGenerator(
@@ -745,11 +729,10 @@ export const googleProvider = {
     generationConfig,
     modelConfig,
     reasoning_effort,
-    use_websearch,
     signal,
   ) {
     debugLog(
-      `[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${use_websearch && modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
+      `[Google] Starting streaming for ${resolvedModel} with ${geminiContents.length} messages${modelConfig.supportsWebSearch ? ' (with grounding)' : ''}`,
     );
 
     const startTime = Date.now();
@@ -771,7 +754,7 @@ export const googleProvider = {
         model: resolvedModel,
         provider: 'google',
         thinking_mode: modelConfig.supportsThinking && reasoning_effort,
-        web_search: use_websearch && modelConfig.supportsWebSearch,
+        web_search: !!modelConfig.supportsWebSearch,
       };
 
       // Create streaming request with retry logic and abort signal support
@@ -838,8 +821,8 @@ export const googleProvider = {
           total_tokens: finalResponse.usageMetadata?.totalTokenCount || 0,
         };
 
-        // Extract grounding metadata if web search was used
-        if (use_websearch && modelConfig.supportsWebSearch) {
+        // Extract grounding metadata if the model supports web search
+        if (modelConfig.supportsWebSearch) {
           groundingMetadata = finalResponse.groundingMetadata || null;
         }
 
@@ -875,7 +858,7 @@ export const googleProvider = {
             ? reasoning_effort
             : null,
           provider: 'google',
-          web_search_used: use_websearch && modelConfig.supportsWebSearch,
+          web_search_used: !!modelConfig.supportsWebSearch,
           grounding_metadata: groundingMetadata,
           thinking_mode_enabled: !!(
             modelConfig.supportsThinking && reasoning_effort

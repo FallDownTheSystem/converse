@@ -107,7 +107,7 @@ describe('HTTPMCPServerManager', () => {
         name: 'chat',
         arguments: {
           prompt: 'Test message',
-          model: 'auto',
+          models: ['auto'],
         },
       });
 
@@ -124,7 +124,7 @@ describe('HTTPMCPServerManager', () => {
             name: 'chat',
             arguments: {
               prompt: 'Test message',
-              model: 'auto',
+              models: ['auto'],
             },
           },
           1,
@@ -192,17 +192,17 @@ describe('HTTPMCPServerManager', () => {
         async (client) =>
           client.callTool({
             name: 'chat',
-            arguments: { prompt: 'Test 1', model: 'auto' },
+            arguments: { prompt: 'Test 1', models: ['auto'] },
           }),
         async (client) =>
           client.callTool({
             name: 'chat',
-            arguments: { prompt: 'Test 2', model: 'auto' },
+            arguments: { prompt: 'Test 2', models: ['auto'] },
           }),
         async (client) =>
           client.callTool({
             name: 'chat',
-            arguments: { prompt: 'Test 3', model: 'auto' },
+            arguments: { prompt: 'Test 3', models: ['auto'] },
           }),
       ];
 

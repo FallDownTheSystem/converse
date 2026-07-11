@@ -38,8 +38,12 @@ export function createMockChatTool(overrides = {}) {
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'Chat prompt' },
-        model: { type: 'string', description: 'Model to use' },
-        temperature: { type: 'number', description: 'Temperature setting' },
+        models: { type: 'array', items: { type: 'string' } },
+        mode: {
+          type: 'string',
+          enum: ['chat', 'consensus', 'roundtable'],
+          description: 'Execution mode',
+        },
         files: { type: 'array', items: { type: 'string' } },
         images: { type: 'array', items: { type: 'string' } },
         continuation_id: { type: 'string', description: 'Continuation ID' },
@@ -57,11 +61,11 @@ export function createMockChatTool(overrides = {}) {
 }
 
 /**
- * Create a mock consensus tool
+ * Create a mock consensus tool (unified chat tool in consensus mode)
  */
 export function createMockConsensusTool(overrides = {}) {
   return createMockTool({
-    name: 'consensus',
+    name: 'chat',
     description: 'Mock consensus tool for testing',
     parameters: {
       type: 'object',
@@ -69,18 +73,15 @@ export function createMockConsensusTool(overrides = {}) {
         prompt: { type: 'string', description: 'Consensus prompt' },
         models: {
           type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              model: { type: 'string' },
-            },
-            required: ['model'],
-          },
+          items: { type: 'string' },
         },
-        enable_cross_feedback: { type: 'boolean' },
-        cross_feedback_prompt: { type: 'string' },
+        mode: {
+          type: 'string',
+          enum: ['chat', 'consensus', 'roundtable'],
+          description: 'Execution mode',
+        },
       },
-      required: ['prompt', 'models'],
+      required: ['prompt'],
     },
     handler: vi.fn().mockResolvedValue({
       initial_responses: [
@@ -119,7 +120,6 @@ export function createMockToolWithError(error) {
 export function createMockToolRegistry(tools = {}) {
   const defaultTools = {
     chat: createMockChatTool(),
-    consensus: createMockConsensusTool(),
     ...tools,
   };
 

@@ -76,7 +76,7 @@ describe('HTTPMCPTestClient', () => {
     test('should call tools with simplified interface', async () => {
       const result = await client.callTool('chat', {
         prompt: 'Test message',
-        model: 'auto',
+        models: ['auto'],
       });
 
       expect(result).toBeDefined();
@@ -84,7 +84,7 @@ describe('HTTPMCPTestClient', () => {
     }, 60000);
 
     test('should use chat helper method', async () => {
-      const result = await client.chat('Hello test', { model: 'auto' });
+      const result = await client.chat('Hello test', { models: ['auto'] });
 
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
@@ -95,7 +95,7 @@ describe('HTTPMCPTestClient', () => {
 
     test('should use consensus helper method', async () => {
       const models = [
-        { model: 'auto' }, // Use single auto model to avoid timeout issues
+        { models: ['auto'] }, // Use single auto model to avoid timeout issues
       ];
 
       try {
@@ -184,9 +184,9 @@ describe('HTTPMCPTestClient', () => {
 
     test('should execute operations concurrently', async () => {
       const operations = [
-        async () => client.chat('Test 1', { model: 'auto' }),
-        async () => client.chat('Test 2', { model: 'auto' }),
-        async () => client.chat('Test 3', { model: 'auto' }),
+        async () => client.chat('Test 1', { models: ['auto'] }),
+        async () => client.chat('Test 2', { models: ['auto'] }),
+        async () => client.chat('Test 3', { models: ['auto'] }),
       ];
 
       const results = await client.executeConcurrent(operations);
@@ -213,7 +213,7 @@ describe('HTTPMCPTestClient', () => {
     test('should provide debug information', async () => {
       // Perform some operations to populate debug info
       await client.listTools();
-      await client.chat('Debug test', { model: 'auto' });
+      await client.chat('Debug test', { models: ['auto'] });
 
       const debugInfo = client.getDebugInfo();
 
@@ -229,7 +229,7 @@ describe('HTTPMCPTestClient', () => {
       const initialCount = initialDebug.operationCount;
 
       await client.listTools();
-      await client.chat('Count test', { model: 'auto' });
+      await client.chat('Count test', { models: ['auto'] });
 
       const finalDebug = client.getDebugInfo();
       expect(finalDebug.operationCount).toBeGreaterThan(initialCount);

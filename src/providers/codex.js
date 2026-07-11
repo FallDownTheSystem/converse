@@ -26,7 +26,6 @@ const SUPPORTED_MODELS = {
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Codex SDK 0.118+ supports images via --image (local_image input)
-    supportsTemperature: false, // Codex manages temperature internally
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 600000, // 10 minutes
     description:
@@ -104,7 +103,7 @@ async function getCodexSDK() {
  * passes local_image paths to the CLI via --image.
  *
  * Images must be on-disk files — Converse stores the original path in
- * metadata.path (chat.js / consensus.js set includeMetadata: true). Images
+ * metadata.path (chat.js sets includeMetadata: true). Images
  * without a path (e.g. pasted base64 with no metadata) are skipped.
  */
 function convertMessagesToCodexInput(messages) {
@@ -192,13 +191,20 @@ function extractPromptText(input) {
 }
 
 /**
- * Get thread ID from continuation metadata
- * Codex thread IDs are stored in continuation store for resumption
+ * Get thread ID from continuation metadata.
+ * Codex thread IDs are stored per call-plan in `providerThreads`, keyed by a
+ * stable `threadKey` (the requested model spec, e.g. "auto" or "codex") passed
+ * through provider options — NOT the resolved provider/model, so an "auto" spec
+ * that resolves to Codex still finds its thread on the next turn.
  */
-async function getThreadIdFromContinuation(continuationId, continuationStore) {
+async function getThreadIdFromContinuation(
+  continuationId,
+  continuationStore,
+  threadKey,
+) {
   try {
     const state = await continuationStore.get(continuationId);
-    return state?.codexThreadId || null;
+    return state?.providerThreads?.[threadKey] || null;
   } catch (error) {
     debugError('[Codex] Failed to retrieve continuation state', error);
     return null;
@@ -267,9 +273,8 @@ export const codexProvider = {
       signal,
       continuation_id,
       continuationStore,
+      threadKey,
       reasoning_effort,
-      temperature,
-      use_websearch,
     } = options;
 
     // Validate configuration
@@ -277,18 +282,6 @@ export const codexProvider = {
       throw new CodexProviderError(
         'Configuration is required',
         ErrorCodes.MISSING_API_KEY,
-      );
-    }
-
-    // Log unsupported parameters at debug level
-    if (temperature !== undefined) {
-      debugLog(
-        '[Codex] Parameter "temperature" not supported by Codex (ignored)',
-      );
-    }
-    if (use_websearch) {
-      debugLog(
-        '[Codex] Parameter "use_websearch" not supported by Codex (ignored)',
       );
     }
 
@@ -302,10 +295,11 @@ export const codexProvider = {
 
       // Get thread ID if resuming conversation
       const threadId =
-        continuation_id && continuationStore
+        continuation_id && continuationStore && threadKey
           ? await getThreadIdFromContinuation(
             continuation_id,
             continuationStore,
+            threadKey,
           )
           : null;
 

@@ -105,7 +105,6 @@ describe('XAI Provider', () => {
       expect(grok4Model.friendlyName).toBe('X.AI (Grok 4)');
       expect(grok4Model.contextWindow).toBe(256000);
       expect(grok4Model.supportsImages).toBe(true);
-      expect(grok4Model.supportsTemperature).toBe(true);
     });
 
     it('should have correct image support configuration', () => {
@@ -266,16 +265,6 @@ describe('XAI Provider', () => {
     });
   });
 
-  describe('temperature handling', () => {
-    it('should support temperature for all models', () => {
-      const models = xaiProvider.getSupportedModels();
-
-      // All Grok models support temperature
-      expect(models['grok-4-0709'].supportsTemperature).toBe(true);
-      expect(models['grok-code-fast-1'].supportsTemperature).toBe(true);
-    });
-  });
-
   describe('base URL configuration', () => {
     it('should use default XAI base URL when not configured', () => {
       // This would be tested with a mocked OpenAI client
@@ -408,7 +397,6 @@ describe('XAI Provider', () => {
         config: validConfig,
         model: 'grok-4-0709',
         stream: true,
-        use_websearch: true,
       });
 
       // Collect all events
@@ -425,6 +413,27 @@ describe('XAI Provider', () => {
       const endEvent = events.find((e) => e.type === 'end');
       expect(endEvent.metadata.search_sources_used).toBe(5);
       expect(endEvent.metadata.citations).toBeDefined();
+    });
+
+    it('attaches live-search parameters whenever the model supports it (no flag)', async () => {
+      const OpenAI = (await import('openai')).default;
+      const mockCreate = vi.fn().mockResolvedValue({
+        choices: [{ message: { content: 'answer' }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
+        model: 'grok-4-0709',
+      });
+      OpenAI.mockImplementation(function () {
+        return { chat: { completions: { create: mockCreate } } };
+      });
+
+      // grok-4-0709 supports web search — search_parameters attach with no flag.
+      await xaiProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        config: validConfig,
+        model: 'grok-4-0709',
+      });
+
+      const payload = mockCreate.mock.calls[0][0];
+      expect(payload.search_parameters).toEqual({ mode: 'auto' });
     });
 
     it('should handle streaming errors gracefully', async () => {

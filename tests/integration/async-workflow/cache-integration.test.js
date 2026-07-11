@@ -97,8 +97,7 @@ describe('Cache System Integration Tests', () => {
               arguments: {
                 prompt: 'What is the capital of France? One word answer.',
                 async: true,
-                model: 'auto',
-                temperature: 0,
+                models: ['auto'],
               },
             });
 
@@ -200,8 +199,7 @@ describe('Cache System Integration Tests', () => {
           arguments: {
             prompt: 'Say "cached" in one word',
             async: true,
-            model: 'auto',
-            temperature: 0,
+            models: ['auto'],
           },
         });
 
@@ -316,8 +314,7 @@ describe('Cache System Integration Tests', () => {
             arguments: {
               prompt: 'Generate a list of 50 random words, each on a new line',
               async: true,
-              model: 'auto',
-              temperature: 0.8,
+              models: ['auto'],
             },
           });
 
@@ -409,7 +406,7 @@ describe('Cache System Integration Tests', () => {
             arguments: {
               prompt: 'Say "temporary"',
               async: true,
-              model: 'auto',
+              models: ['auto'],
             },
           });
 
@@ -544,8 +541,7 @@ describe('Cache System Integration Tests', () => {
                   arguments: {
                     prompt: `Count to ${i + 1}`,
                     async: true,
-                    model: 'auto',
-                    temperature: 0,
+                    models: ['auto'],
                   },
                 }),
               );
@@ -636,8 +632,7 @@ describe('Cache System Integration Tests', () => {
                 arguments: {
                   prompt: `What is ${i} + ${i}?`,
                   async: true,
-                  model: 'auto',
-                  temperature: 0,
+                  models: ['auto'],
                 },
               }),
             );
