@@ -5,6 +5,28 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0](https://github.com/FallDownTheSystem/converse/compare/v2.29.2...v3.0.0) (2026-07-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* The consensus and conversation MCP tools are removed; their functionality is available as chat modes. The temperature, verbosity, use_websearch, enable_cross_feedback, cross_feedback_prompt, turn_prompt, and singular model parameters are removed from the tool schema.
+
+### Features
+
+* merge chat, consensus, and conversation into a unified chat tool with modes ([733ce0f](https://github.com/FallDownTheSystem/converse/commit/733ce0fc3927f7968038d5c823e01ad8436075bd))
+* modernize provider model catalogs and capabilities ([23f0e15](https://github.com/FallDownTheSystem/converse/commit/23f0e15b1a883eb51b369653f3f59de6ec29be91))
+
+
+### Bug Fixes
+
+* correct Mistral catalog to match live API (Large is image-capable, 262144 context) ([0931754](https://github.com/FallDownTheSystem/converse/commit/0931754789f0bf3b72641680df136c4133401bc7))
+
+
+### Documentation
+
+* describe the unified chat tool and current provider catalogs ([7670d28](https://github.com/FallDownTheSystem/converse/commit/7670d2846f3aa4d32f113729205dda3d808327ef))
+
 ## [2.29.2](https://github.com/FallDownTheSystem/converse/compare/v2.29.1...v2.29.2) (2026-07-10)
 
 
