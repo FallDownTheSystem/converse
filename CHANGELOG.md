@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2](https://github.com/FallDownTheSystem/converse/compare/v3.0.1...v3.0.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* restore copilot:codex alias and floor Codex reasoning effort at low ([87c04ad](https://github.com/FallDownTheSystem/converse/commit/87c04ad20bad60366e82c1878c60979683508887))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 11 updates ([#46](https://github.com/FallDownTheSystem/converse/issues/46)) ([54121bb](https://github.com/FallDownTheSystem/converse/commit/54121bb92f081d89163a76766285c418e6c5d50c))
+
 ## [3.0.1](https://github.com/FallDownTheSystem/converse/compare/v3.0.0...v3.0.1) (2026-07-11)
 
 
