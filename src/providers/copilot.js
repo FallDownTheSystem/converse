@@ -36,6 +36,9 @@ const SUPPORTED_MODELS = {
   // OpenAI models
   // Bare `gpt-5.6` (and the legacy `gpt-5` shortcut) route to Sol, matching
   // Copilot's own bare-alias behavior. Terra is the recommended balanced tier.
+  // `codex` and `gpt` point at the latest GPT tier (reachable only via the
+  // `copilot:` namespace — bare `codex` routes to the Codex provider and bare
+  // `gpt*` keyword-routes to OpenAI before Copilot's catalog is consulted).
   'gpt-5.6-sol': {
     modelName: 'gpt-5.6-sol',
     friendlyName: 'GPT-5.6 Sol (via Copilot)',
@@ -47,7 +50,7 @@ const SUPPORTED_MODELS = {
     supportsReasoningEffort: true,
     timeout: 600000,
     description: 'OpenAI GPT-5.6 Sol via Copilot subscription',
-    aliases: ['gpt-5.6', 'gpt-5'],
+    aliases: ['gpt-5.6', 'gpt-5', 'gpt', 'codex'],
   },
   'gpt-5.6-terra': {
     modelName: 'gpt-5.6-terra',

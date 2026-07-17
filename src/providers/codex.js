@@ -215,11 +215,14 @@ async function getThreadIdFromContinuation(
  * Map tool-level reasoning_effort values to Codex SDK's ModelReasoningEffort.
  * Tool enum:  'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
  * SDK enum:   'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+ *
+ * The SDK type still lists 'minimal', but the current GPT-5.6-based Codex
+ * backend rejects it (5.6 dropped the minimal tier), so 'low' is the floor.
  */
 function mapReasoningEffort(effort) {
   const mapping = {
-    none: 'minimal',
-    minimal: 'minimal',
+    none: 'low',
+    minimal: 'low',
     low: 'low',
     medium: 'medium',
     high: 'high',

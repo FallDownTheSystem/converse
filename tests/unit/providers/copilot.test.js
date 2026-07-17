@@ -20,6 +20,8 @@ describe('Copilot Provider - Model Selection', () => {
     it('resolves version shortcut aliases', () => {
       expect(resolveModelAlias('gpt-5.6')).toBe('gpt-5.6-sol');
       expect(resolveModelAlias('gpt-5')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('gpt')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('codex')).toBe('gpt-5.6-sol');
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-5');
       expect(resolveModelAlias('fable')).toBe('claude-fable-5');
       expect(resolveModelAlias('opus')).toBe('claude-opus-4.8');
@@ -71,6 +73,8 @@ describe('Copilot Provider - Model Selection', () => {
   describe('resolveSessionModel', () => {
     it('strips copilot: prefix and resolves alias', () => {
       expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('copilot:gpt', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.6-sol');
       expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-5');
       expect(resolveSessionModel('copilot:fable', {})).toBe('claude-fable-5');
     });
