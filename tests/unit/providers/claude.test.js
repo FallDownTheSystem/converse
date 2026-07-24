@@ -56,7 +56,7 @@ describe('Claude SDK Provider', () => {
       expect(models.fable).toBeDefined();
       expect(models.fable.modelName).toBe('claude-fable-5');
       expect(models.opus).toBeDefined();
-      expect(models.opus.modelName).toBe('claude-opus-4-8');
+      expect(models.opus.modelName).toBe('claude-opus-5');
     });
 
     it('should default bare "claude" (and legacy aliases) to Claude Fable 5', () => {
@@ -72,11 +72,11 @@ describe('Claude SDK Provider', () => {
         'claude-fable-5',
       );
       expect(claudeProvider.getModelConfig('claude:opus').modelName).toBe(
-        'claude-opus-4-8',
+        'claude-opus-5',
       );
       // Case-insensitive
       expect(claudeProvider.getModelConfig('CLAUDE:OPUS').modelName).toBe(
-        'claude-opus-4-8',
+        'claude-opus-5',
       );
     });
 
@@ -85,7 +85,7 @@ describe('Claude SDK Provider', () => {
         'claude-fable-5',
       );
       expect(claudeProvider.getModelConfig('opus').modelName).toBe(
-        'claude-opus-4-8',
+        'claude-opus-5',
       );
     });
 
@@ -98,7 +98,7 @@ describe('Claude SDK Provider', () => {
     const cases = [
       ['claude', 'claude-fable-5'],
       ['claude:fable', 'claude-fable-5'],
-      ['claude:opus', 'claude-opus-4-8'],
+      ['claude:opus', 'claude-opus-5'],
     ];
 
     cases.forEach(([requested, expected]) => {

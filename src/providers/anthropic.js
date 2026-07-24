@@ -38,6 +38,32 @@ const SUPPORTED_MODELS = {
       'fable',
     ],
   },
+  'claude-opus-5': {
+    modelName: 'claude-opus-5',
+    friendlyName: 'Claude Opus 5',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Thinking is on by default; adaptive is the only on-mode
+    timeout: 600000,
+    supportsEffort: true,
+    effortGA: true,
+    supportsCompaction: true,
+    description:
+      'Claude Opus 5 - Most capable Opus for complex agentic coding and deep reasoning',
+    aliases: [
+      'claude-opus-5',
+      'claude-5-opus',
+      'opus-5',
+      'opus5',
+      'claude-opus-5.0',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-opus-4-8': {
     modelName: 'claude-opus-4-8',
     friendlyName: 'Claude Opus 4.8',
@@ -56,7 +82,7 @@ const SUPPORTED_MODELS = {
     supports1MContext: true,
     supportsCompaction: true,
     description:
-      'Claude Opus 4.8 - Most capable model for complex reasoning and agentic coding',
+      'Claude Opus 4.8 - Previous Opus generation for complex reasoning and agentic coding',
     aliases: [
       'claude-opus-4-8',
       'claude-4.8-opus',
@@ -66,8 +92,6 @@ const SUPPORTED_MODELS = {
       'opus4.8',
       'opus4-8',
       'claude-opus-4.8',
-      'opus',
-      'claude-opus',
     ],
   },
   'claude-opus-4-7': {
@@ -291,7 +315,7 @@ const THINKING_BUDGETS = {
 };
 
 /**
- * Effort parameter mapping for Opus 4.8, Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
+ * Effort parameter mapping for Opus 5, Opus 4.8, Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
  * Maps reasoning_effort values to Anthropic's effort parameter values
  */
 const EFFORT_MAP = {

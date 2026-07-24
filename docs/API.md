@@ -410,8 +410,8 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 | Model | Aliases | Context | Output | Notes |
 |-------|---------|---------|--------|-------|
 | `claude-fable-5` | `fable`, `fable-5` | 1M | 128K | Most capable, adaptive thinking + effort, images, caching, compaction |
-| `claude-opus-4-8` | `opus`, `opus-4.8` | 200K (1M beta) | 128K | Complex reasoning and agentic coding |
-| `claude-opus-4-7`, `claude-opus-4-6` | `opus-4.7`, `opus-4.6` | 200K (1M beta) | 128K | Previous Opus generations |
+| `claude-opus-5` | `opus`, `opus-5` | 1M | 128K | Most capable Opus, adaptive thinking + effort, compaction |
+| `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` | `opus-4.8`, `opus-4.7`, `opus-4.6` | 200K (1M beta) | 128K | Previous Opus generations |
 | `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` | `opus-4.5`, `opus-4.1` | 200K | 64K / 32K | Earlier Opus tiers |
 | `claude-sonnet-4-6` | `sonnet`, `sonnet-4.6` | 200K (1M beta) | 64K | Best speed/intelligence balance, adaptive thinking |
 | `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Fast and intelligent |
@@ -467,7 +467,7 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
 - **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) — defaults to Claude Fable 5
-- **Model selection**: `claude:fable` (Claude Fable 5) or `claude:opus` (Claude Opus 4.8); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+- **Model selection**: `claude:fable` (Claude Fable 5) or `claude:opus` (Claude Opus 5); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Direct file access**: reads files from the working directory
 - `reasoning_effort` and sampling parameters are managed by the SDK
@@ -501,7 +501,7 @@ agy
 Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
 
 - **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
-- **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-4.8` (aliases: `opus`, `claude`)
+- **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5` (aliases: `opus`, `claude`), `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
@@ -519,9 +519,9 @@ Use `"auto"` for automatic selection, or specify exact models:
 "z-ai/glm-5.2"             // OpenRouter (full slug)
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "fable"                    // Anthropic API (-> claude-fable-5)
-"opus"                     // Anthropic API (-> claude-opus-4-8)
+"opus"                     // Anthropic API (-> claude-opus-5)
 "claude"                   // Claude Agent SDK (-> Claude Fable 5)
-"claude:opus"              // Claude Agent SDK (Claude Opus 4.8)
+"claude:opus"              // Claude Agent SDK (Claude Opus 5)
 "gemini"                   // Antigravity CLI (Gemini 3.1 Pro)
 "copilot:gpt-5.6-terra"    // GitHub Copilot SDK
 ```

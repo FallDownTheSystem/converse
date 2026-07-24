@@ -43,17 +43,17 @@ const SUPPORTED_MODELS = {
     ],
   },
   opus: {
-    modelName: 'claude-opus-4-8',
-    friendlyName: 'Claude Opus 4.8 (via Agent SDK)',
-    contextWindow: 200000,
+    modelName: 'claude-opus-5',
+    friendlyName: 'Claude Opus 5 (via Agent SDK)',
+    contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 600000, // 10 minutes
     description:
-      'Claude Opus 4.8 via Agent SDK - requires claude login authentication',
-    aliases: ['claude:opus', 'claude-opus-4-8'],
+      'Claude Opus 5 via Agent SDK - requires claude login authentication',
+    aliases: ['claude:opus', 'claude-opus-5'],
   },
 };
 
@@ -481,7 +481,7 @@ export const claudeProvider = {
         debugLog('[Claude SDK] Using streaming input mode for image support');
       }
 
-      // Resolve requested model (claude/claude:fable -> claude-fable-5, claude:opus -> claude-opus-4-8)
+      // Resolve requested model (claude/claude:fable -> claude-fable-5, claude:opus -> claude-opus-5)
       const sdkModel = resolveSdkModel(model);
       debugLog(`[Claude SDK] Resolved model "${model}" -> "${sdkModel}"`);
 

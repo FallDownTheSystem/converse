@@ -94,6 +94,7 @@ describe('Anthropic Provider', () => {
 
       // Check for some expected models
       expect(models['claude-fable-5']).toBeDefined();
+      expect(models['claude-opus-5']).toBeDefined();
       expect(models['claude-sonnet-4-6']).toBeDefined();
       expect(models['claude-sonnet-4-5-20250929']).toBeDefined();
       expect(models['claude-haiku-4-5-20251001']).toBeDefined();
@@ -120,6 +121,16 @@ describe('Anthropic Provider', () => {
         const config = anthropicProvider.getModelConfig(alias);
         expect(config).toBeDefined();
         expect(config.modelName).toBe('claude-fable-5');
+      });
+    });
+
+    it('should resolve Claude Opus 5 by various aliases', () => {
+      const aliases = ['opus', 'opus-5', 'opus5', 'claude-opus', 'claude-opus-5'];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-opus-5');
       });
     });
 

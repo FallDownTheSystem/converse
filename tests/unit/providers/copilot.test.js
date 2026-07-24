@@ -24,8 +24,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveModelAlias('codex')).toBe('gpt-5.6-sol');
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-5');
       expect(resolveModelAlias('fable')).toBe('claude-fable-5');
-      expect(resolveModelAlias('opus')).toBe('claude-opus-4.8');
-      expect(resolveModelAlias('claude')).toBe('claude-opus-4.8');
+      expect(resolveModelAlias('opus')).toBe('claude-opus-5');
+      expect(resolveModelAlias('claude')).toBe('claude-opus-5');
       expect(resolveModelAlias('gemini')).toBe('gemini-3.1-pro-preview');
       expect(resolveModelAlias('gemini-flash')).toBe('gemini-3.5-flash');
     });
@@ -77,6 +77,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.6-sol');
       expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-5');
       expect(resolveSessionModel('copilot:fable', {})).toBe('claude-fable-5');
+      expect(resolveSessionModel('copilot:opus', {})).toBe('claude-opus-5');
+      expect(resolveSessionModel('copilot:claude', {})).toBe('claude-opus-5');
     });
 
     it('strips copilot: prefix and passes through SDK model names', () => {
@@ -206,7 +208,7 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('advertises exactly the curated catalog (base + 8 curated IDs)', () => {
+    it('advertises exactly the curated catalog (base + 9 curated IDs)', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
@@ -218,6 +220,7 @@ describe('Copilot Provider - Model Selection', () => {
           'gpt-5.6-luna',
           'claude-fable-5',
           'claude-sonnet-5',
+          'claude-opus-5',
           'claude-opus-4.8',
           'gemini-3.1-pro-preview',
           'gemini-3.5-flash',

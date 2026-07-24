@@ -104,6 +104,18 @@ const SUPPORTED_MODELS = {
     description: 'Anthropic Claude Sonnet 5 via Copilot subscription',
     aliases: ['sonnet'],
   },
+  'claude-opus-5': {
+    modelName: 'claude-opus-5',
+    friendlyName: 'Claude Opus 5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 600000,
+    description: 'Anthropic Claude Opus 5 via Copilot subscription',
+    aliases: ['opus', 'claude'],
+  },
   'claude-opus-4.8': {
     modelName: 'claude-opus-4.8',
     friendlyName: 'Claude Opus 4.8 (via Copilot)',
@@ -114,7 +126,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 600000,
     description: 'Anthropic Claude Opus 4.8 via Copilot subscription',
-    aliases: ['opus', 'claude'],
+    aliases: [],
   },
 
   // Google models
