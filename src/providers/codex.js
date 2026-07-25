@@ -27,6 +27,11 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true, // Codex SDK 0.118+ supports images via --image (local_image input)
     supportsWebSearch: false, // Codex accesses files directly, not web
+    // Reasoning tiers this model's backend actually accepts. GPT-5.6 dropped
+    // 'minimal' and added 'none', while the SDK's ModelReasoningEffort type
+    // still advertises the pre-5.6 set — the backend is the authority, so the
+    // accepted tiers are declared per model and requests are clamped onto them.
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
     timeout: 600000, // 10 minutes
     description:
       'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.6)',
@@ -212,23 +217,77 @@ async function getThreadIdFromContinuation(
 }
 
 /**
- * Map tool-level reasoning_effort values to Codex SDK's ModelReasoningEffort.
- * Tool enum:  'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
- * SDK enum:   'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
- *
- * The SDK type still lists 'minimal', but the current GPT-5.6-based Codex
- * backend rejects it (5.6 dropped the minimal tier), so 'low' is the floor.
+ * Every Codex reasoning tier, weakest to strongest. Used to clamp a requested
+ * tier onto the set a given model actually accepts.
  */
-function mapReasoningEffort(effort) {
-  const mapping = {
-    none: 'low',
-    minimal: 'low',
-    low: 'low',
-    medium: 'medium',
-    high: 'high',
-    max: 'xhigh',
-  };
-  return mapping[effort] || 'medium';
+const EFFORT_LADDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+
+/**
+ * Tool-level reasoning_effort values translated to their Codex equivalent.
+ * Tool enum: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
+ */
+const EFFORT_ALIASES = {
+  none: 'none',
+  minimal: 'minimal',
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  max: 'xhigh',
+};
+
+/**
+ * Map a tool-level reasoning_effort onto a tier the target model accepts.
+ *
+ * When the requested tier isn't in the model's supported set, the nearest
+ * *stronger* tier wins: nudging 'minimal' up to 'low' keeps reasoning on,
+ * where falling back to 'none' would silently switch it off.
+ *
+ * @param {string} effort - Tool-level reasoning_effort value
+ * @param {string[]} [supported] - Tiers the model accepts
+ * @returns {string} A tier from `supported`
+ */
+export function mapReasoningEffort(effort, supported = EFFORT_LADDER) {
+  const desired = EFFORT_ALIASES[effort] || 'medium';
+  if (supported.includes(desired)) {
+    return desired;
+  }
+
+  const rank = EFFORT_LADDER.indexOf(desired);
+  const stronger = EFFORT_LADDER.slice(rank + 1).find((tier) =>
+    supported.includes(tier),
+  );
+  if (stronger) {
+    return stronger;
+  }
+
+  const weaker = EFFORT_LADDER.slice(0, rank)
+    .reverse()
+    .find((tier) => supported.includes(tier));
+  return weaker || 'medium';
+}
+
+/**
+ * Resolve a user-facing model name to its entry in SUPPORTED_MODELS.
+ * @param {string} modelName
+ * @returns {Object|null}
+ */
+function findModelConfig(modelName) {
+  const modelNameLower = String(modelName || '').toLowerCase();
+
+  if (SUPPORTED_MODELS[modelNameLower]) {
+    return SUPPORTED_MODELS[modelNameLower];
+  }
+
+  for (const config of Object.values(SUPPORTED_MODELS)) {
+    if (
+      config.aliases &&
+      config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
+    ) {
+      return config;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -353,7 +412,16 @@ export const codexProvider = {
       };
 
       if (reasoning_effort) {
-        threadOptions.modelReasoningEffort = mapReasoningEffort(reasoning_effort);
+        const supportedEfforts =
+          findModelConfig(model)?.supportedEfforts ||
+          SUPPORTED_MODELS.codex.supportedEfforts;
+        const mappedEffort = mapReasoningEffort(reasoning_effort, supportedEfforts);
+        threadOptions.modelReasoningEffort = mappedEffort;
+        if (mappedEffort !== EFFORT_ALIASES[reasoning_effort]) {
+          debugLog(
+            `[Codex] reasoning_effort "${reasoning_effort}" not supported by ${model} — using "${mappedEffort}"`,
+          );
+        }
       }
 
       const thread = threadId
@@ -482,23 +550,6 @@ export const codexProvider = {
    * Get model configuration for specific model
    */
   getModelConfig(modelName) {
-    const modelNameLower = modelName.toLowerCase();
-
-    // Check exact match
-    if (SUPPORTED_MODELS[modelNameLower]) {
-      return SUPPORTED_MODELS[modelNameLower];
-    }
-
-    // Check aliases
-    for (const [_name, config] of Object.entries(SUPPORTED_MODELS)) {
-      if (
-        config.aliases &&
-        config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
-      ) {
-        return config;
-      }
-    }
-
-    return null;
+    return findModelConfig(modelName);
   },
 };

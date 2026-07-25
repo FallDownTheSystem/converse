@@ -133,3 +133,4 @@ logs/
 .claude
 package-lock.json
 cache
+.pnpm-store/
