@@ -36,8 +36,12 @@ jobs:
         if: ${{ github.event.inputs.publish_current != 'true' && steps.release1.outputs.prs_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Via env, never inlined into the script: the PR payload embeds commit
+          # subjects, so an apostrophe would close the shell quote and the rest
+          # would execute.
+          RELEASE_PR: ${{ steps.release1.outputs.pr }}
         run: |
-          PR_NUMBER=$(echo '${{ steps.release1.outputs.pr }}' | jq -r '.number')
+          PR_NUMBER=$(jq -r '.number' <<< "$RELEASE_PR")
           gh pr merge "$PR_NUMBER" --squash --repo "$GITHUB_REPOSITORY"
 
       - name: Re-run release-please to tag the just-merged release
