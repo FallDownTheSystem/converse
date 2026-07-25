@@ -5,6 +5,28 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0](https://github.com/FallDownTheSystem/converse/compare/v3.0.2...v3.1.0) (2026-07-25)
+
+
+### Features
+
+* add Claude Opus 5 across Anthropic, Claude SDK, and Copilot providers ([7211618](https://github.com/FallDownTheSystem/converse/commit/721161854a28b526ebfe9d75d10318f31c017870))
+
+
+### Bug Fixes
+
+* map Codex reasoning effort onto the model's supported tiers ([73de7c6](https://github.com/FallDownTheSystem/converse/commit/73de7c657fe4b6eae8a61f6d55b4e2c507830ae0))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 8 updates ([#51](https://github.com/FallDownTheSystem/converse/issues/51)) ([067f7a7](https://github.com/FallDownTheSystem/converse/commit/067f7a7a41e355c6e102aeb55d2c8c520fb85798))
+
+
+### Documentation
+
+* add task files for 013 (agy provider), 014 (unified chat tool), 015 (model catalogs) ([e25a57c](https://github.com/FallDownTheSystem/converse/commit/e25a57c245ce2524b2942c1a5b47ca4f1a6bd45d))
+
 ## [3.0.2](https://github.com/FallDownTheSystem/converse/compare/v3.0.1...v3.0.2) (2026-07-17)
 
 
