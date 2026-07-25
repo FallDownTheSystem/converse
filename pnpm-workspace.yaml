@@ -1,3 +1,6 @@
 allowBuilds:
   '@google/genai': true
+  # Native FFI module under @github/copilot-sdk; its install script fetches the
+  # prebuilt binary, so blocking it leaves the Copilot provider without one.
+  koffi: true
   protobufjs: true
