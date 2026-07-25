@@ -32,24 +32,31 @@ jobs:
         uses: googleapis/release-please-action@v5
         id: release1
 
-      # Gated on the PR payload, not on prs_created: release-please only reports
-      # prs_created for a *new* PR, so once a release PR exists (a prior run
-      # having failed after opening it) every later push would silently no-op
-      # and the release would stall indefinitely.
-      - name: Auto-merge release PR if one was created or updated
-        if: ${{ github.event.inputs.publish_current != 'true' && steps.release1.outputs.pr != '' }}
+      # Queried from the repo rather than read off release1's outputs, which are
+      # emitted only when that run itself opens the PR. Gating on them assumed
+      # open-and-merge always completes in one run: once a run failed with the
+      # PR already open, every later push produced no outputs, skipped the merge,
+      # and reported success while publishing nothing. Asking for the open
+      # release PR instead lets the next push recover a stalled release.
+      - name: Auto-merge the open release PR, if any
+        if: ${{ github.event.inputs.publish_current != 'true' }}
+        id: automerge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Via env, never inlined into the script: the PR payload embeds commit
-          # subjects, so an apostrophe would close the shell quote and the rest
-          # would execute.
-          RELEASE_PR: ${{ steps.release1.outputs.pr }}
         run: |
-          PR_NUMBER=$(jq -r '.number' <<< "$RELEASE_PR")
+          PR_NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main \
+            --label "autorelease: pending" --json number -q '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open release PR to merge."
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Merging release PR #$PR_NUMBER"
           gh pr merge "$PR_NUMBER" --squash --repo "$GITHUB_REPOSITORY"
+          echo "merged=true" >> "$GITHUB_OUTPUT"
 
       - name: Re-run release-please to tag the just-merged release
-        if: ${{ github.event.inputs.publish_current != 'true' && steps.release1.outputs.pr != '' }}
+        if: ${{ github.event.inputs.publish_current != 'true' && steps.automerge.outputs.merged == 'true' }}
         uses: googleapis/release-please-action@v5
         id: release2
 
