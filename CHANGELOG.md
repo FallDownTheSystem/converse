@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0](https://github.com/FallDownTheSystem/converse/compare/v3.1.0...v3.2.0) (2026-07-26)
+
+
+### Features
+
+* **cli:** add -v/--version flag ([83bd98d](https://github.com/FallDownTheSystem/converse/commit/83bd98d35782aae9a06d5b994c263b5ff0135292))
+
 ## [3.1.0](https://github.com/FallDownTheSystem/converse/compare/v3.0.2...v3.1.0) (2026-07-25)
 
 
