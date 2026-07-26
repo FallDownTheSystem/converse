@@ -2,13 +2,21 @@
 
 /**
  * Converse MCP Server - CLI Entry Point
- * 
+ *
  * This script allows the MCP server to be run via npx/pnpm dlx for easy installation and execution.
  */
 
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { createRequire } from 'module';
+import { getPackageVersion } from '../src/utils/version.js';
+
+// Answer --version before loading the server: version.js pulls in nothing but
+// node builtins, so this stays a sub-100ms round trip for `npx converse -v`.
+if (process.argv.includes('--version') || process.argv.includes('-v')) {
+  console.log(getPackageVersion());
+  process.exit(0);
+}
 
 // Capture the caller's working directory before we chdir to the package root.
 // This is critical for resolving relative file paths passed by MCP clients.

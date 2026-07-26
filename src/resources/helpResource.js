@@ -6,26 +6,7 @@
  */
 
 import { generateHelpContent } from '../prompts/helpPrompt.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-/**
- * Get the current server version from package.json
- * @returns {string} Server version
- */
-function getServerVersion() {
-  try {
-    const packagePath = join(__dirname, '../../package.json');
-    const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-    return packageJson.version || 'unknown';
-  } catch (error) {
-    return 'unknown';
-  }
-}
+import { getPackageVersion } from '../utils/version.js';
 
 /**
  * Resource metadata for the help documentation
@@ -45,7 +26,7 @@ export const helpResourceMetadata = {
  */
 export async function helpResourceHandler(config = null) {
   const helpContent = generateHelpContent(config);
-  const version = getServerVersion();
+  const version = getPackageVersion();
 
   // Add version information to the help content
   const contentWithVersion = `${helpContent}\n\n## Server Information\n\n- **Version**: ${version}\n- **Protocol**: MCP (Model Context Protocol)\n- **Server Type**: HTTP Transport\n- **Default Port**: 3157\n`;

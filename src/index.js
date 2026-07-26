@@ -19,7 +19,8 @@ import {
 import { createRouter } from './router.js';
 import { createHTTPTransport } from './transport/httpTransport.js';
 import { createLogger, startTimer } from './utils/logger.js';
-import { debugError } from './utils/console.js';
+import { debugError, forceLog } from './utils/console.js';
+import { getPackageVersion } from './utils/version.js';
 import { ConfigurationError } from './utils/errorHandler.js';
 
 const logger = createLogger('server');
@@ -36,7 +37,8 @@ Usage: node src/index.js [OPTIONS]
 Options:
   --transport <type>    Transport type: stdio (default) or http
   --transport=<type>    Alternative format for transport type
-  --help               Show this help message
+  --version, -v         Print the server version and exit
+  --help, -h            Show this help message
 
 Environment Variables:
   MCP_TRANSPORT        Transport type (stdio or http)
@@ -90,8 +92,16 @@ function getTransportType() {
 }
 
 async function main() {
-  // Check for help flag
   const args = process.argv.slice(2);
+
+  // Version is printed unconditionally (not via debugError) so it still reaches
+  // stdout when MCP_TRANSPORT=stdio is set — the process exits before any
+  // JSON-RPC traffic starts, so there is no stream to corrupt.
+  if (args.includes('--version') || args.includes('-v')) {
+    forceLog(getPackageVersion());
+    process.exit(0);
+  }
+
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     process.exit(0);
