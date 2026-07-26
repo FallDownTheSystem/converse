@@ -5,6 +5,14 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1](https://github.com/FallDownTheSystem/converse/compare/v3.2.0...v3.2.1) (2026-07-26)
+
+
+### Dependencies
+
+* **deps:** bump actions/checkout from 6 to 7 ([#34](https://github.com/FallDownTheSystem/converse/issues/34)) ([fa3bb62](https://github.com/FallDownTheSystem/converse/commit/fa3bb62c4b4c18f95e761b6ba0ab41c4a0627ca9))
+* **deps:** bump actions/setup-node from 6 to 7 ([#50](https://github.com/FallDownTheSystem/converse/issues/50)) ([13611a8](https://github.com/FallDownTheSystem/converse/commit/13611a87c108f044637ce08469c61044cb4063f9))
+
 ## [3.2.0](https://github.com/FallDownTheSystem/converse/compare/v3.1.0...v3.2.0) (2026-07-26)
 
 
