@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.4](https://github.com/FallDownTheSystem/converse/compare/v3.2.3...v3.2.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* triple provider and transport timeouts for long-running agentic models ([d59e472](https://github.com/FallDownTheSystem/converse/commit/d59e472a3c574cb75819e3e03873822eef72d453))
+
+
+### Dependencies
+
+* **deps:** bump @lydell/node-pty from 1.2.0-beta.12 to 1.2.0-beta.14 ([#58](https://github.com/FallDownTheSystem/converse/issues/58)) ([75571fd](https://github.com/FallDownTheSystem/converse/commit/75571fd91675af99a528195e948bcd12372b3321))
+
 ## [3.2.3](https://github.com/FallDownTheSystem/converse/compare/v3.2.2...v3.2.3) (2026-07-26)
 
 
