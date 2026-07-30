@@ -32,7 +32,7 @@ const SUPPORTED_MODELS = {
     // still advertises the pre-5.6 set — the backend is the authority, so the
     // accepted tiers are declared per model and requests are clamped onto them.
     supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.6)',
     aliases: [

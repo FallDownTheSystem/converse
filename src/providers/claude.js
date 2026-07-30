@@ -29,7 +29,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
     supportsWebSearch: false, // SDK accesses files directly, not web
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Claude Fable 5 via Agent SDK (default) - requires claude login authentication',
     aliases: [
@@ -50,7 +50,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: true, // Supported via streaming input mode
     supportsWebSearch: false, // SDK accesses files directly, not web
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Claude Opus 5 via Agent SDK - requires claude login authentication',
     aliases: ['claude:opus', 'claude-opus-5'],

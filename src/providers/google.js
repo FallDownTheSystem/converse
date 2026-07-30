@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations with grounding',
     aliases: [
@@ -45,7 +45,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     supportsWebSearch: true,
     maxThinkingTokens: 24576,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Lightweight fast model (1M context) - Efficient quick responses with grounding',
     aliases: [
@@ -68,7 +68,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsThinking: true,
     maxThinkingTokens: 32768,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis',
     aliases: ['pro 2.5', 'gemini pro 2.5', 'gemini-2.5-pro-latest'],
@@ -84,7 +84,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     thinkingMode: 'level',
     thinkingLevels: ['minimal', 'low', 'medium', 'high'],
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Gemini 3.1 Pro - Most advanced reasoning with expanded thinking levels (1M context)',
     aliases: [
@@ -113,7 +113,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     thinkingMode: 'level',
     thinkingLevels: ['minimal', 'low', 'medium', 'high'],
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Gemini 3.5 Flash - Frontier-level agentic and coding performance at Flash speed (1M context)',
     aliases: [

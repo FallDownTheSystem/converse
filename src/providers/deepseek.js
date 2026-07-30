@@ -29,7 +29,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     supportsJsonOutput: true,
     supportsFunctionCalling: true,
-    timeout: 600000, // Longer timeout for reasoning
+    timeout: 1800000, // Longer timeout for reasoning
     description:
       'DeepSeek V4 Pro - flagship MoE model with 1M context and thinking mode',
     aliases: ['deepseek', 'deepseek-pro'],
@@ -46,7 +46,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     supportsJsonOutput: true,
     supportsFunctionCalling: true,
-    timeout: 600000, // Longer timeout for reasoning
+    timeout: 1800000, // Longer timeout for reasoning
     description:
       'DeepSeek V4 Flash - faster, lower-cost V4 tier with 1M context and thinking mode',
     aliases: ['deepseek-flash'],

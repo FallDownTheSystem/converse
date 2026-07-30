@@ -21,7 +21,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false,
     supportsReasoning: true,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Mistral Medium 3.5 - Frontier-class multimodal model with adjustable reasoning',
     aliases: [
@@ -40,7 +40,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false,
     supportsReasoning: true,
-    timeout: 180000,
+    timeout: 540000,
     description:
       'Mistral Small 4 - Hybrid multimodal model unifying instruct, reasoning, and coding',
     aliases: ['mistral-small', 'mistral-small-latest'],
@@ -54,7 +54,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false,
     supportsReasoning: false,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Mistral Large 3 - Open-weight MoE flagship (no adjustable reasoning)',
     aliases: ['mistral-large', 'mistral-large-latest'],

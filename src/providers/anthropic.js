@@ -23,7 +23,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true, // Adaptive thinking is the only thinking mode
-    timeout: 600000,
+    timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
     supportsCompaction: true,
@@ -48,7 +48,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     supportsThinking: true,
     supportsAdaptiveThinking: true, // Thinking is on by default; adaptive is the only on-mode
-    timeout: 600000,
+    timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
     supportsCompaction: true,
@@ -76,7 +76,7 @@ const SUPPORTED_MODELS = {
     supportsAdaptiveThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 128000,
-    timeout: 600000,
+    timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
     supports1MContext: true,
@@ -106,7 +106,7 @@ const SUPPORTED_MODELS = {
     supportsAdaptiveThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 128000,
-    timeout: 600000,
+    timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
     supports1MContext: true,
@@ -136,7 +136,7 @@ const SUPPORTED_MODELS = {
     supportsAdaptiveThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 128000,
-    timeout: 600000,
+    timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
     supports1MContext: true,
@@ -165,7 +165,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
-    timeout: 300000,
+    timeout: 900000,
     supportsEffort: true, // Opus 4.5 effort parameter (requires beta header)
     description:
       'Claude Opus 4.5 - Previous most intelligent model combining maximum capability with practical performance',
@@ -191,7 +191,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 32000,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Claude Opus 4.1 - Highest level of intelligence and capability with extended thinking',
     aliases: [
@@ -220,7 +220,7 @@ const SUPPORTED_MODELS = {
     supportsAdaptiveThinking: true, // Sonnet 4.6: thinking: {type: "adaptive"} recommended
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
-    timeout: 300000,
+    timeout: 900000,
     supportsEffort: true,
     effortGA: true, // Effort is generally available, no beta header required
     supports1MContext: true, // Beta 1M context support
@@ -251,7 +251,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
-    timeout: 300000,
+    timeout: 900000,
     supports1MContext: true, // Beta 1M context support
     deprecated: true,
     description:
@@ -275,7 +275,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     minThinkingTokens: 1024,
     maxThinkingTokens: 64000,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Claude Haiku 4.5 - Fast and intelligent model with extended thinking',
     aliases: [
@@ -598,8 +598,8 @@ export const anthropicProvider = {
     // Initialize Anthropic client
     const anthropic = new Anthropic({
       apiKey: config.apiKeys.anthropic,
-      // Increase timeout to 20 minutes for thinking models that may take longer
-      timeout: 20 * 60 * 1000,
+      // Increase timeout to 60 minutes for thinking models that may take longer
+      timeout: 60 * 60 * 1000,
     });
 
     // Build beta features array for the request

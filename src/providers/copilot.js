@@ -27,7 +27,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description:
 			'GitHub Copilot via CLI SDK - uses default or env-configured model',
     aliases: ['copilot-sdk', 'github-copilot'],
@@ -48,7 +48,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'OpenAI GPT-5.6 Sol via Copilot subscription',
     aliases: ['gpt-5.6', 'gpt-5', 'gpt', 'codex'],
   },
@@ -61,7 +61,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'OpenAI GPT-5.6 Terra via Copilot subscription',
     aliases: [],
   },
@@ -74,7 +74,7 @@ const SUPPORTED_MODELS = {
     supportsImages: false,
     supportsWebSearch: false,
     supportsReasoningEffort: true,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'OpenAI GPT-5.6 Luna via Copilot subscription',
     aliases: [],
   },
@@ -88,7 +88,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Anthropic Claude Fable 5 via Copilot subscription',
     aliases: ['fable'],
   },
@@ -100,7 +100,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Anthropic Claude Sonnet 5 via Copilot subscription',
     aliases: ['sonnet'],
   },
@@ -112,7 +112,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Anthropic Claude Opus 5 via Copilot subscription',
     aliases: ['opus', 'claude'],
   },
@@ -124,7 +124,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Anthropic Claude Opus 4.8 via Copilot subscription',
     aliases: [],
   },
@@ -139,7 +139,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Google Gemini 3.1 Pro Preview via Copilot subscription',
     aliases: ['gemini', 'gemini-3.1-pro'],
   },
@@ -151,7 +151,7 @@ const SUPPORTED_MODELS = {
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
-    timeout: 600000,
+    timeout: 1800000,
     description: 'Google Gemini 3.5 Flash via Copilot subscription',
     aliases: ['gemini-flash'],
   },
@@ -553,7 +553,7 @@ async function checkReasoningSupport(client, modelId) {
 }
 
 async function* createStreamingGenerator(client, prompt, options, signal, config) {
-  const { model, timeout = 600000, reasoning_effort } = options;
+  const { model, timeout = 1800000, reasoning_effort } = options;
 
   const sessionModel = resolveSessionModel(model, config);
   const accessLevel = getToolAccessLevel(config);

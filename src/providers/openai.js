@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
-    timeout: 3600000, // 1 hour
+    timeout: 10800000, // 3 hours
     description:
       'Flagship GPT-5.6 model (1M context, 128K output) - Frontier reasoning, coding, agentic workflows. Most token-efficient flagship',
     aliases: [
@@ -45,7 +45,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
-    timeout: 1800000, // 30 minutes
+    timeout: 5400000, // 90 minutes
     description:
       'Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the flagship price',
     aliases: ['gpt5.6-terra', 'gpt-5.6terra', 'gpt 5.6 terra', 'terra'],
@@ -60,7 +60,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads',
     aliases: ['gpt5.6-luna', 'gpt-5.6luna', 'gpt 5.6 luna', 'luna'],
@@ -75,7 +75,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsNoneReasoningEffort: true,
-    timeout: 3600000, // 1 hour
+    timeout: 10800000, // 3 hours
     description:
       'Latest flagship model (1M context, 128K output) - Superior reasoning, coding, agentic workflows, computer use. Most token-efficient reasoning model',
     aliases: [
@@ -92,7 +92,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 1800000, // 30 minutes
+    timeout: 5400000, // 90 minutes
     description:
       'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
     aliases: ['gpt5-mini', 'gpt-5mini', 'gpt 5 mini', 'gpt-5-mini-2025-08-07'],
@@ -106,7 +106,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false, // GPT-5-nano doesn't support web search
     supportsResponsesAPI: true,
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
     aliases: ['gpt5-nano', 'gpt-5nano', 'gpt 5 nano', 'gpt-5-nano-2025-08-07'],
@@ -120,7 +120,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 1800000, // 30 minutes
+    timeout: 5400000, // 90 minutes
     description:
       'Fast, efficient GPT-5.4 (400K context, 128K output) - Coding, subagents, computer use, tool use. 2x faster than GPT-5 mini',
     aliases: [
@@ -139,7 +139,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false,
     supportsResponsesAPI: true,
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Smallest, cheapest GPT-5.4 (400K context, 128K output) - Classification, data extraction, ranking, coding subagents',
     aliases: [
@@ -159,7 +159,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: false,
-    timeout: 3600000, // 60 minutes
+    timeout: 10800000, // 180 minutes
     description:
       'Maximum performance reasoning model (1M context, 272K output) - Most complex tasks, extended compute time (EXPENSIVE)',
     aliases: [
@@ -179,7 +179,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 600000, // 10 minutes
+    timeout: 1800000, // 30 minutes
     description:
       'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
     aliases: ['o3-2025-01-31'],
@@ -193,7 +193,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 3600000, // 60 minutes
+    timeout: 10800000, // 180 minutes
     description:
       'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
     aliases: ['o3-pro', 'o3pro', 'o3 pro'],
@@ -207,7 +207,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 180000, // 3 minutes
+    timeout: 540000, // 9 minutes
     description:
       'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
     aliases: ['o4mini', 'o4', 'o4 mini', 'o4-mini-2025-01-30'],
@@ -221,7 +221,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    timeout: 300000,
+    timeout: 900000,
     description:
       'GPT-4.1 (1M context) - Advanced reasoning model with large context window',
     aliases: ['gpt4.1', 'gpt-4.1', 'gpt 4.1', 'gpt-4.1-latest'],
@@ -236,7 +236,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
-    timeout: 7200000, // 120 minutes for deep research
+    timeout: 21600000, // 360 minutes for deep research
     description:
       'Deep research model (200K context) - In-depth synthesis, comprehensive reports, multi-source analysis (30-90 min runtime)',
     aliases: [
@@ -256,7 +256,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: true,
-    timeout: 3600000, // 60 minutes for faster deep research
+    timeout: 10800000, // 180 minutes for faster deep research
     description:
       'Fast deep research model (200K context) - Lightweight research, faster results, latency-sensitive analysis (15-60 min runtime)',
     aliases: [

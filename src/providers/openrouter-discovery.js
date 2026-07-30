@@ -90,7 +90,7 @@ export function metadataToModelConfig(raw) {
     supportsReasoning,
     // Structured capability object consumed by the OpenRouter reasoning mapper.
     reasoning,
-    timeout: 300000,
+    timeout: 900000,
     isDynamic: true,
   };
 }

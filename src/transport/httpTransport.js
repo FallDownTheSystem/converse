@@ -28,7 +28,7 @@ export class HTTPTransportServer {
       // Server settings
       port: config.port || 3157,
       host: config.host || 'localhost',
-      requestTimeout: config.requestTimeout || 300000,
+      requestTimeout: config.requestTimeout || 900000,
       maxRequestSize: config.maxRequestSize || '10mb',
 
       // Session management

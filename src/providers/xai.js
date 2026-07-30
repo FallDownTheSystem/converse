@@ -36,7 +36,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsReasoning: true,
-    timeout: 300000, // 5 minutes
+    timeout: 900000, // 15 minutes
     description:
       'Grok 4.5 (500K context) - Flagship X.AI model with image input, reasoning content, and native web/X search via Agent Tools',
     aliases: ['grok', 'grok-4.5', 'grok-4.5-latest', 'grok-build-latest'],

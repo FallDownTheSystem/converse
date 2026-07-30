@@ -78,8 +78,8 @@ const CONFIG_SCHEMA = {
     },
     HTTP_REQUEST_TIMEOUT: {
       type: 'number',
-      default: 300000,
-      description: 'HTTP request timeout in milliseconds (5 minutes)',
+      default: 900000,
+      description: 'HTTP request timeout in milliseconds (15 minutes)',
     },
     HTTP_MAX_REQUEST_SIZE: {
       type: 'string',
@@ -768,7 +768,7 @@ export function getHttpTransportConfig(config) {
     // Server settings
     port: transport.port || 3157,
     host: transport.host || 'localhost',
-    requestTimeout: transport.requesttimeout || 300000,
+    requestTimeout: transport.requesttimeout || 900000,
     maxRequestSize: transport.maxrequestsize || '10mb',
 
     // Session management

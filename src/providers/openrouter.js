@@ -54,7 +54,7 @@ const SUPPORTED_MODELS = {
       supported_efforts: ['xhigh', 'high'],
       default_effort: 'high',
     },
-    timeout: 300000,
+    timeout: 900000,
     description:
       'Z.ai GLM 5.2 — large-scale reasoning model with a 1M-token context',
     aliases: ['glm-5.2', 'glm5.2', 'glm'],
@@ -74,7 +74,7 @@ const SUPPORTED_MODELS = {
       supported_efforts: ['xhigh', 'high'],
       default_effort: 'high',
     },
-    timeout: 300000,
+    timeout: 900000,
     description: 'DeepSeek V4 Pro reasoning model (via OpenRouter)',
     aliases: [],
   },
@@ -93,7 +93,7 @@ const SUPPORTED_MODELS = {
       supported_efforts: ['xhigh', 'high'],
       default_effort: 'high',
     },
-    timeout: 300000,
+    timeout: 900000,
     description: 'DeepSeek V4 Flash — faster, lower-cost DeepSeek V4 tier',
     aliases: [],
   },
@@ -108,7 +108,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     // Enable/disable-only — no effort tiers exposed.
     reasoning: { mandatory: false, default_enabled: true },
-    timeout: 300000,
+    timeout: 900000,
     description: 'Qwen3.7 Max — flagship Qwen with a 1M-token context',
     aliases: ['qwen3.7-max'],
   },
@@ -123,7 +123,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     // Enable/disable-only — no effort tiers exposed.
     reasoning: { mandatory: false, default_enabled: true },
-    timeout: 300000,
+    timeout: 900000,
     description: 'Qwen3.7 Plus — image-capable Qwen with a 1M-token context',
     aliases: ['qwen3.7-plus'],
   },
@@ -138,7 +138,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     // Mandatory reasoning — cannot be disabled.
     reasoning: { mandatory: true, default_enabled: true },
-    timeout: 300000,
+    timeout: 900000,
     description: 'Moonshot Kimi K2.7 Code — coding model with mandatory reasoning',
     aliases: ['kimi-k2.7-code'],
   },
@@ -153,7 +153,7 @@ const SUPPORTED_MODELS = {
     supportsReasoning: true,
     // Enable/disable-only — no effort tiers exposed.
     reasoning: { mandatory: false, default_enabled: true },
-    timeout: 300000,
+    timeout: 900000,
     description: 'Moonshot Kimi K2.6 — image-capable general model',
     aliases: ['kimi-k2.6'],
   },
@@ -169,7 +169,7 @@ const SUPPORTED_MODELS = {
     // Router selects the underlying model (and its effort) — do not fabricate a
     // reasoning field.
     reasoning: { passthrough: true },
-    timeout: 300000,
+    timeout: 900000,
     description: 'Auto-selects the best model for your prompt via OpenRouter',
     aliases: ['auto-router', 'openrouter-auto'],
   },
@@ -489,7 +489,7 @@ function createConservativeModelConfig(modelName) {
     maxOutputTokens: 8192,
     supportsStreaming: true,
     supportsWebSearch: false,
-    timeout: 300000,
+    timeout: 900000,
     isDynamic: true,
   };
 }

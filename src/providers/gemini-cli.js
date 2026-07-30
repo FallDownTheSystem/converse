@@ -37,7 +37,7 @@ import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 const ARGV_PROMPT_LIMIT = 24000;
 
 // Default print timeout (ms) when the tool layer passes none.
-const DEFAULT_TIMEOUT_MS = 600000;
+const DEFAULT_TIMEOUT_MS = 1800000;
 
 // Extra wall-clock grace before the JS-side hard kill fires (ms).
 const HARD_KILL_GRACE_MS = 15000;

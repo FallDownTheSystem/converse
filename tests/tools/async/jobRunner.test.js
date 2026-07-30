@@ -69,7 +69,7 @@ describe('JobRunner', () => {
     it('should use default options when none provided', () => {
       const runner = new JobRunner({ asyncJobStore });
       expect(runner.concurrency).toBe(10);
-      expect(runner.defaultTimeout).toBe(30 * 60 * 1000); // 30 minutes
+      expect(runner.defaultTimeout).toBe(90 * 60 * 1000); // 90 minutes
     });
   });
 

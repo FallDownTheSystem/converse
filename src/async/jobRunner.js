@@ -35,7 +35,7 @@ export class JobRunner extends EventEmitter {
    * @param {object} dependencies.eventBus - EventBus instance (optional, uses global if not provided)
    * @param {object} options - Configuration options
    * @param {number} options.concurrency - Maximum concurrent jobs (default: 10)
-   * @param {number} options.defaultTimeout - Default job timeout in ms (default: 30 minutes)
+   * @param {number} options.defaultTimeout - Default job timeout in ms (default: 90 minutes)
    */
   constructor(dependencies, options = {}) {
     super();
@@ -54,7 +54,7 @@ export class JobRunner extends EventEmitter {
 
     // Configuration
     this.concurrency = options.concurrency || 10;
-    this.defaultTimeout = options.defaultTimeout || 30 * 60 * 1000; // 30 minutes
+    this.defaultTimeout = options.defaultTimeout || 90 * 60 * 1000; // 90 minutes
 
     // Create bounded concurrency limiter
     this.limiter = pLimit(this.concurrency);
