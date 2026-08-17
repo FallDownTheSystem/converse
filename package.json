@@ -97,7 +97,7 @@
     "@anthropic-ai/sdk": "^0.117.1",
     "@github/copilot-sdk": "^1.0.9",
     "@google/genai": "^2.17.1",
-    "@lydell/node-pty": "1.2.0-beta.14",
+    "@lydell/node-pty": "1.2.0-beta.15",
     "@mistralai/mistralai": "^2.6.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@openai/codex-sdk": "^0.147.0",
