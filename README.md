@@ -234,6 +234,7 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 - **gemini-3.1-pro-preview** (aliases: `pro`, `gemini-pro`): Most advanced reasoning with expanded thinking levels (1M context, 64K output)
 - **gemini-3.5-flash** (aliases: `gemini-3.5`, `flash-3.5`): Frontier-level agentic and coding performance at Flash speed (1M context, 65K output)
+- **gemini-3.8-flash** (aliases: `gemini-3.8`, `flash-3.8`): Current-generation Flash with stronger long-horizon agentic performance (1M context, 65K output; thinking levels low/medium/high — no minimal)
 - **gemini-2.5-pro** (alias: `pro 2.5`): Deep reasoning with thinking budget (1M context, 65K output)
 - **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context, 65K output)
 - **gemini-2.5-flash-lite** (alias: `flash-lite`): Lightweight fast model (1M context, 65K output)
@@ -301,7 +302,7 @@ Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses y
 
 - **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
 - **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-4.8` (aliases: `opus`, `claude`)
-- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
+- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
 ## 📚 Help & Documentation
@@ -371,16 +372,40 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 
 These must be set in your system environment or when launching Claude Code, NOT in the project .env file:
 
-| Variable                | Description                 | Default  | Example                              |
-| ----------------------- | --------------------------- | -------- | ------------------------------------ |
-| `MAX_MCP_OUTPUT_TOKENS` | Token response limit        | `25000`  | `200000`                             |
-| `MCP_TOOL_TIMEOUT`      | Tool execution timeout (ms) | `120000` | `5400000` (90 min for deep research) |
+| Variable                             | Description                                                             | Default                         | Example                     |
+| ------------------------------------ | ----------------------------------------------------------------------- | ------------------------------- | --------------------------- |
+| `MAX_MCP_OUTPUT_TOKENS`              | Token response limit                                                    | `25000`                         | `200000`                    |
+| `MCP_TOOL_TIMEOUT`                   | Wall-clock limit per tool call (ms)                                     | ~28 hours when unset            | `7200000` (2 h)             |
+| `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`  | Idle window (ms) — aborts a call that produces no output for this long  | 30 min (stdio) / 5 min (HTTP)   | `3600000` (60 min)          |
 
 ```bash
 # Example: Set globally before starting Claude Code
 export MAX_MCP_OUTPUT_TOKENS=200000
-export MCP_TOOL_TIMEOUT=5400000  # 90 minutes for deep research models
+export CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT=3600000  # 60 min for long silent agentic calls
 claude  # Then start Claude Code
+```
+
+Or persist them in `~/.claude/settings.json`:
+
+```json
+{
+	"env": {
+		"MAX_MCP_OUTPUT_TOKENS": "200000",
+		"CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT": "3600000"
+	}
+}
+```
+
+**The idle timeout is usually what kills long calls.** Agentic models (Codex, Claude Agent SDK) can work silently for 30+ minutes; Converse holds one MCP request open the whole time, and Claude Code aborts it after the idle window with an error like _"failed after 30 minutes of silence. The idle timeout aborted it."_ Progress-notification heartbeats can't prevent this — Claude Code doesn't send a `progressToken` on `tools/call`, so an MCP server has no spec-compliant way to emit them ([claude-code#58687](https://github.com/anthropics/claude-code/issues/58687)). Raising the idle window is the only fix.
+
+#### Codex CLI Tool Timeout
+
+If you register Converse in OpenAI's Codex CLI, note that Codex enforces its own **hard 300-second default** per MCP tool call (`tool_timeout_sec`, undocumented — it exists only in Codex's config schema). Progress notifications don't extend it. Raise it in `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.converse]
+# ... command/env ...
+tool_timeout_sec = 3600  # default 300 kills long calls at 5 minutes
 ```
 
 ### Model Selection
@@ -421,7 +446,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 Provider priority order (subscription-based SDK providers first, then API-key providers):
 
 1. Codex (`codex`)
-2. Gemini via Antigravity CLI (`gemini`, `gemini:flash`)
+2. Gemini via Antigravity CLI (`gemini` → Gemini 3.8 Flash, `gemini:pro`)
 3. Claude Agent SDK (`claude` → Claude Fable 5)
 4. Copilot (`copilot`)
 5. OpenAI (`gpt-5.6`)
@@ -531,6 +556,13 @@ For development setup, see the [Development](#-development) section below.
 **Module import errors:**
 
 - Clear cache and reinstall: `npm run clean`
+
+**Long tool calls aborted mid-run (idle/timeout errors):**
+
+- The abort almost always comes from the MCP _client_, not Converse — Converse's own limits are 30 min per provider call and 90 min per async job.
+- Claude Code: raise `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` (idle window, default 30 min stdio / 5 min HTTP) and check `MCP_TOOL_TIMEOUT` (wall-clock). See [Claude Code Environment Variables](#claude-code-environment-variables-systemglobal).
+- Codex CLI: set `tool_timeout_sec` under `[mcp_servers.converse]` in `~/.codex/config.toml` — the undocumented default is 300 seconds.
+- Immune alternative: run the call with `async: true` and poll `check_status` — each poll is a fresh short request, so no client timeout applies.
 
 ### Debug Mode
 

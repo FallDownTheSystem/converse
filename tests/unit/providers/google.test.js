@@ -70,6 +70,19 @@ describe('Google Provider', () => {
       expect('gemini-2.5-flash-lite' in models).toBeTruthy();
       expect('gemini-2.5-pro' in models).toBeTruthy();
       expect('gemini-3.1-pro-preview' in models).toBeTruthy();
+      expect('gemini-3.8-flash' in models).toBeTruthy();
+    });
+
+    it('should expose Gemini 3.8 Flash without the minimal thinking level', () => {
+      const config = googleProvider.getModelConfig('gemini-3.8-flash');
+      expect(config.modelName).toBe('gemini-3.8-flash');
+      expect(config.contextWindow).toBe(1048576);
+      expect(config.maxOutputTokens).toBe(65536);
+      expect(config.thinkingMode).toBe('level');
+      expect(config.thinkingLevels).toEqual(['low', 'medium', 'high']);
+      for (const alias of ['gemini-3.8', 'flash-3.8', 'gemini-flash-3.8', '3.8-flash']) {
+        expect(googleProvider.getModelConfig(alias)?.modelName).toBe('gemini-3.8-flash');
+      }
     });
 
     it('should include model configuration details', () => {

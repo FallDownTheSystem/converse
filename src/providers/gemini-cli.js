@@ -20,7 +20,9 @@
  *
  * The provider registry key remains 'gemini-cli' and the user-facing alias
  * remains 'gemini' for routing/normalization stability. Only three user-facing
- * model names are exposed: gemini (= gemini:pro), gemini:pro, gemini:flash.
+ * model names are exposed: gemini (= gemini:flash), gemini:flash, gemini:pro.
+ * Flash is the default: Gemini 3.8 Flash is the current-generation model agy
+ * lists first, while 3.1 Pro remains the only Pro tier Antigravity offers.
  */
 
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -57,7 +59,7 @@ const PTY_COLS = 1000;
 const SUPPORTED_MODELS = {
   gemini: {
     modelName: 'gemini',
-    friendlyName: 'Gemini 3.1 Pro (via Antigravity CLI)',
+    friendlyName: 'Gemini 3.8 Flash (via Antigravity CLI)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
     supportsStreaming: true,
@@ -66,10 +68,25 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 3.1 Pro via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
+      'Gemini 3.8 Flash via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
     aliases: ['gemini-cli'],
     // agy display-name base; reasoning_effort selects the parenthesized variant
-    agyModelBase: 'Gemini 3.1 Pro',
+    agyModelBase: 'Gemini 3.8 Flash',
+  },
+  'gemini:flash': {
+    modelName: 'gemini:flash',
+    friendlyName: 'Gemini 3.8 Flash (via Antigravity CLI)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    timeout: DEFAULT_TIMEOUT_MS,
+    description:
+      'Gemini 3.8 Flash via Antigravity CLI (agy) - explicit alias of `gemini`',
+    aliases: ['flash'],
+    agyModelBase: 'Gemini 3.8 Flash',
   },
   'gemini:pro': {
     modelName: 'gemini:pro',
@@ -82,24 +99,9 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 3.1 Pro via Antigravity CLI (agy) - explicit alias of `gemini`',
-    aliases: [],
+      'Gemini 3.1 Pro via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
+    aliases: ['pro'],
     agyModelBase: 'Gemini 3.1 Pro',
-  },
-  'gemini:flash': {
-    modelName: 'gemini:flash',
-    friendlyName: 'Gemini 3.5 Flash (via Antigravity CLI)',
-    contextWindow: 1048576,
-    maxOutputTokens: 65536,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsWebSearch: false,
-    supportsThinking: true,
-    timeout: DEFAULT_TIMEOUT_MS,
-    description:
-      'Gemini 3.5 Flash via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
-    aliases: ['flash'],
-    agyModelBase: 'Gemini 3.5 Flash',
   },
 };
 
@@ -175,7 +177,7 @@ export function findAgyBinary() {
 /**
  * Map a reasoning_effort value to the agy parenthesized variant suffix.
  * Flash supports Low/Medium/High; Pro supports Low/High (no Medium).
- * @param {string} base - agy model base ('Gemini 3.5 Flash' / 'Gemini 3.1 Pro')
+ * @param {string} base - agy model base ('Gemini 3.8 Flash' / 'Gemini 3.1 Pro')
  * @param {string} [reasoningEffort]
  * @returns {string} e.g. '(Low)', '(Medium)', '(High)'
  */
@@ -207,7 +209,7 @@ function effortSuffix(base, reasoningEffort) {
  * verbatim so power users aren't blocked.
  * @param {string} model - e.g. 'gemini', 'gemini:flash', or a full agy name
  * @param {string} [reasoningEffort]
- * @returns {string} agy --model value, e.g. 'Gemini 3.1 Pro (High)'
+ * @returns {string} agy --model value, e.g. 'Gemini 3.8 Flash (High)'
  */
 export function resolveAgyModel(model, reasoningEffort) {
   const raw = typeof model === 'string' ? model.trim() : '';
@@ -230,11 +232,11 @@ export function resolveAgyModel(model, reasoningEffort) {
     !nameLower ||
     nameLower === 'gemini' ||
     nameLower === 'gemini-cli' ||
-    nameLower === 'pro'
+    nameLower === 'flash'
   ) {
     base = SUPPORTED_MODELS.gemini.agyModelBase;
-  } else if (nameLower === 'flash') {
-    base = SUPPORTED_MODELS['gemini:flash'].agyModelBase;
+  } else if (nameLower === 'pro') {
+    base = SUPPORTED_MODELS['gemini:pro'].agyModelBase;
   } else {
     // Unknown suffix: pass through verbatim (power-user agy display name)
     return raw;
@@ -762,19 +764,16 @@ export const geminiCliProvider = {
 
     const name = modelName.toLowerCase().trim();
 
-    // Full agy display-name passthrough → matching base config.
-    if (/gemini 3\.5 flash/i.test(modelName)) {
+    // Full agy display-name passthrough → matching tier config. Any 3.x Flash
+    // (agy also lists 3.6/3.7) shares the Flash config; any 3.x Pro the Pro one.
+    if (/gemini 3\.\d+ flash/i.test(modelName)) {
       return SUPPORTED_MODELS['gemini:flash'];
     }
-    if (/gemini 3\.1 pro/i.test(modelName)) {
-      return SUPPORTED_MODELS.gemini;
-    }
-
-    if (name === 'pro') {
+    if (/gemini 3\.\d+ pro/i.test(modelName)) {
       return SUPPORTED_MODELS['gemini:pro'];
     }
 
-    // Exact key match (gemini, gemini:pro, gemini:flash)
+    // Exact key match (gemini, gemini:flash, gemini:pro)
     if (SUPPORTED_MODELS[name]) {
       return SUPPORTED_MODELS[name];
     }

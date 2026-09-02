@@ -24,6 +24,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Supported Models**:
   - `gemini-3.1-pro-preview` (aliases: `pro`, `gemini-pro`) - Most advanced reasoning with expanded thinking levels (1M context, 64K output)
   - `gemini-3.5-flash` (aliases: `gemini-3.5`, `flash-3.5`) - Frontier-level agentic and coding performance at Flash speed (1M context, 65K output)
+  - `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`) - Current-generation Flash with stronger long-horizon agentic performance (1M context, 65K output; thinking levels low/medium/high — no minimal)
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash-lite` (alias: `flash-lite`) - Lightweight fast model (1M context, 65K output)
@@ -129,8 +130,8 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   2. Authenticate: run `agy` once interactively and complete the Google OAuth login. This also establishes workspace trust for your home directory (the provider spawns each call in a per-call subdirectory under `~/.converse/agy-runs`).
 - **Environment Variables**: None (the provider detects the `agy` binary on PATH or at the platform install location)
 - **Supported Models** (text-only — print mode has no image input channel):
-  - `gemini` (= `gemini:pro`) - Gemini 3.1 Pro
-  - `gemini:flash` - Gemini 3.5 Flash
+  - `gemini` (= `gemini:flash`) - Gemini 3.8 Flash (default)
+  - `gemini:pro` - Gemini 3.1 Pro
   - `reasoning_effort` selects the variant: `low` → (Low), `medium` → (Medium) for Flash / (High) for Pro, `high`/`max` → (High); unset defaults to (High)
 
 **Key Features:**
@@ -216,7 +217,7 @@ agy
   - `copilot` - Uses Copilot's default or env-configured model
   - OpenAI: `gpt-5.6-sol` (aliases: bare `gpt-5.6`, `gpt-5`), `gpt-5.6-terra` (recommended balanced tier), `gpt-5.6-luna`
   - Anthropic: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5` (aliases: `opus`, `claude`), `claude-opus-4.8`
-  - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
+  - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - **Reasoning**: The `gpt-5.6-sol`/`terra`/`luna` tiers accept `reasoning_effort`.
 - **Explicit pass-through**: Any other `copilot:<id>` model string is forwarded to the Copilot backend verbatim, so IDs outside the curated list still work while the backend accepts them.
 

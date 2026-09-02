@@ -391,6 +391,7 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 |-------|---------|---------|--------|-------|
 | `gemini-3.1-pro-preview` | `pro`, `gemini-pro` | 1M | 64K | Most advanced reasoning, expanded thinking levels |
 | `gemini-3.5-flash` | `gemini-3.5`, `flash-3.5` | 1M | 65K | Frontier agentic/coding at Flash speed |
+| `gemini-3.8-flash` | `gemini-3.8`, `flash-3.8` | 1M | 65K | Current-generation Flash; thinking low/medium/high only |
 | `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Deep reasoning with thinking budget |
 | `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast |
 | `gemini-2.5-flash-lite` | `flash-lite` | 1M | 65K | Lightweight fast model |
@@ -476,7 +477,7 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 
 The **Antigravity CLI** (`agy`) provides subscription-based access to Gemini models through Google OAuth:
 
-- **Models** (text-only): `gemini` (= `gemini:pro`, Gemini 3.1 Pro), `gemini:flash` (Gemini 3.5 Flash)
+- **Models** (text-only): `gemini` (= `gemini:flash`, Gemini 3.8 Flash), `gemini:pro` (Gemini 3.1 Pro)
 - **Authentication**: Google OAuth via `agy` (one-time interactive login)
 - **Setup**: install the Antigravity CLI and run `agy` once to log in
 - **Billing**: uses your Antigravity subscription/compute allowance instead of API credits
@@ -502,7 +503,7 @@ Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses y
 
 - **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
 - **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5` (aliases: `opus`, `claude`), `claude-opus-4.8`
-- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.5-flash` (alias: `gemini-flash`)
+- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
 ### Model Selection
@@ -522,7 +523,7 @@ Use `"auto"` for automatic selection, or specify exact models:
 "opus"                     // Anthropic API (-> claude-opus-5)
 "claude"                   // Claude Agent SDK (-> Claude Fable 5)
 "claude:opus"              // Claude Agent SDK (Claude Opus 5)
-"gemini"                   // Antigravity CLI (Gemini 3.1 Pro)
+"gemini"                   // Antigravity CLI (Gemini 3.8 Flash)
 "copilot:gpt-5.6-terra"    // GitHub Copilot SDK
 ```
 

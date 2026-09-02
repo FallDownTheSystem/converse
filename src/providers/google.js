@@ -127,6 +127,32 @@ const SUPPORTED_MODELS = {
       '3.5-flash',
     ],
   },
+  'gemini-3.8-flash': {
+    modelName: 'gemini-3.8-flash',
+    friendlyName: 'Gemini (Flash 3.8)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    thinkingMode: 'level',
+    // 3.8 Flash rejects thinkingLevel "minimal" outright (API error), unlike 3.5.
+    thinkingLevels: ['low', 'medium', 'high'],
+    timeout: 900000,
+    description:
+      'Gemini 3.8 Flash - Current-generation Flash with stronger long-horizon agentic performance (1M context)',
+    aliases: [
+      'gemini-3.8',
+      'gemini3.8',
+      'gemini-3.8-flash-latest',
+      'flash-3.8',
+      'flash3.8',
+      'gemini-flash-3.8',
+      'gemini flash 3.8',
+      '3.8-flash',
+    ],
+  },
 };
 
 // Thinking mode budget percentages
@@ -514,10 +540,17 @@ export const googleProvider = {
           };
           thinkingLevel = levelMap[reasoning_effort] || 'high';
           if (!modelConfig.thinkingLevels.includes(thinkingLevel)) {
+            // Clamp to the nearest supported level: a request below the
+            // model's floor (e.g. minimal on 3.8 Flash) takes the lowest
+            // level, anything else the highest.
+            const rank = ['minimal', 'low', 'medium', 'high'];
+            const [lowest] = modelConfig.thinkingLevels;
             thinkingLevel =
-              modelConfig.thinkingLevels[
-                modelConfig.thinkingLevels.length - 1
-              ];
+              rank.indexOf(thinkingLevel) < rank.indexOf(lowest)
+                ? lowest
+                : modelConfig.thinkingLevels[
+                  modelConfig.thinkingLevels.length - 1
+                ];
           }
         } else {
           // Binary levels only (Gemini 3.0 Pro: low/high)

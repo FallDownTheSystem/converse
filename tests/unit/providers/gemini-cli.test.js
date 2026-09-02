@@ -100,33 +100,29 @@ describe('Gemini CLI Provider - cleanAgyOutput', () => {
 });
 
 describe('Gemini CLI Provider - resolveAgyModel', () => {
-  it('maps gemini / gemini:pro to Gemini 3.1 Pro with effort suffix', () => {
-    expect(resolveAgyModel('gemini')).toBe('Gemini 3.1 Pro (High)');
+  it('maps gemini / gemini:flash to Gemini 3.8 Flash with effort suffix', () => {
+    expect(resolveAgyModel('gemini')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('gemini:flash')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('gemini-cli')).toBe('Gemini 3.8 Flash (High)');
+  });
+
+  it('maps gemini:pro to Gemini 3.1 Pro', () => {
     expect(resolveAgyModel('gemini:pro')).toBe('Gemini 3.1 Pro (High)');
   });
 
-  it('maps gemini:flash to Gemini 3.5 Flash', () => {
-    expect(resolveAgyModel('gemini:flash')).toBe('Gemini 3.5 Flash (High)');
-  });
-
   it('applies the reasoning_effort suffix table', () => {
-    expect(resolveAgyModel('gemini:flash', 'none')).toBe(
-      'Gemini 3.5 Flash (Low)',
+    expect(resolveAgyModel('gemini', 'none')).toBe('Gemini 3.8 Flash (Low)');
+    expect(resolveAgyModel('gemini', 'minimal')).toBe(
+      'Gemini 3.8 Flash (Low)',
     );
-    expect(resolveAgyModel('gemini:flash', 'minimal')).toBe(
-      'Gemini 3.5 Flash (Low)',
+    expect(resolveAgyModel('gemini', 'low')).toBe('Gemini 3.8 Flash (Low)');
+    expect(resolveAgyModel('gemini', 'medium')).toBe(
+      'Gemini 3.8 Flash (Medium)',
     );
-    expect(resolveAgyModel('gemini:flash', 'low')).toBe(
-      'Gemini 3.5 Flash (Low)',
-    );
+    expect(resolveAgyModel('gemini', 'high')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('gemini', 'max')).toBe('Gemini 3.8 Flash (High)');
     expect(resolveAgyModel('gemini:flash', 'medium')).toBe(
-      'Gemini 3.5 Flash (Medium)',
-    );
-    expect(resolveAgyModel('gemini:flash', 'high')).toBe(
-      'Gemini 3.5 Flash (High)',
-    );
-    expect(resolveAgyModel('gemini:flash', 'max')).toBe(
-      'Gemini 3.5 Flash (High)',
+      'Gemini 3.8 Flash (Medium)',
     );
   });
 
@@ -134,23 +130,26 @@ describe('Gemini CLI Provider - resolveAgyModel', () => {
     expect(resolveAgyModel('gemini:pro', 'medium')).toBe(
       'Gemini 3.1 Pro (High)',
     );
-    expect(resolveAgyModel('gemini', 'medium')).toBe('Gemini 3.1 Pro (High)');
   });
 
   it('maps Pro low/none to Low', () => {
-    expect(resolveAgyModel('gemini', 'low')).toBe('Gemini 3.1 Pro (Low)');
+    expect(resolveAgyModel('gemini:pro', 'low')).toBe('Gemini 3.1 Pro (Low)');
     expect(resolveAgyModel('gemini:pro', 'none')).toBe('Gemini 3.1 Pro (Low)');
   });
 
   it('is case-insensitive on the prefix', () => {
     expect(resolveAgyModel('GEMINI:FLASH', 'max')).toBe(
-      'Gemini 3.5 Flash (High)',
+      'Gemini 3.8 Flash (High)',
     );
+    expect(resolveAgyModel('GEMINI:PRO', 'max')).toBe('Gemini 3.1 Pro (High)');
   });
 
   it('passes full agy display names through verbatim', () => {
-    expect(resolveAgyModel('Gemini 3.5 Flash (Low)')).toBe(
-      'Gemini 3.5 Flash (Low)',
+    expect(resolveAgyModel('Gemini 3.8 Flash (Low)')).toBe(
+      'Gemini 3.8 Flash (Low)',
+    );
+    expect(resolveAgyModel('Gemini 3.7 Flash (Medium)')).toBe(
+      'Gemini 3.7 Flash (Medium)',
     );
     expect(resolveAgyModel('Gemini 3.1 Pro (High)', 'low')).toBe(
       'Gemini 3.1 Pro (High)',
@@ -190,6 +189,27 @@ describe('Gemini CLI Provider - getModelConfig', () => {
     expect(geminiCliProvider.getModelConfig('flash')?.modelName).toBe(
       'gemini:flash',
     );
+    expect(geminiCliProvider.getModelConfig('pro')?.modelName).toBe(
+      'gemini:pro',
+    );
+  });
+
+  it('defaults bare gemini to Gemini 3.8 Flash', () => {
+    const config = geminiCliProvider.getModelConfig('gemini');
+    expect(config.agyModelBase).toBe('Gemini 3.8 Flash');
+    expect(config.friendlyName).toContain('Gemini 3.8 Flash');
+  });
+
+  it('maps full agy display names of any 3.x Flash / Pro to the tier config', () => {
+    expect(
+      geminiCliProvider.getModelConfig('Gemini 3.8 Flash (High)')?.modelName,
+    ).toBe('gemini:flash');
+    expect(
+      geminiCliProvider.getModelConfig('Gemini 3.7 Flash (Low)')?.modelName,
+    ).toBe('gemini:flash');
+    expect(
+      geminiCliProvider.getModelConfig('Gemini 3.1 Pro (High)')?.modelName,
+    ).toBe('gemini:pro');
   });
 
   it('exposes all three user-facing model names', () => {
@@ -268,7 +288,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     const fake = makeFakePty();
     const promise = runAgy({
       prompt: 'hello world',
-      model: 'Gemini 3.5 Flash (Low)',
+      model: 'Gemini 3.8 Flash (Low)',
       timeoutMs: 5000,
       ptyLib: fake.ptyLib,
       agyPath: 'C:/fake/agy.exe',
@@ -286,7 +306,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     const pIdx = args.indexOf('-p');
     expect(args[pIdx + 1]).toBe('hello world');
     const mIdx = args.indexOf('--model');
-    expect(args[mIdx + 1]).toBe('Gemini 3.5 Flash (Low)');
+    expect(args[mIdx + 1]).toBe('Gemini 3.8 Flash (Low)');
   });
 
   it('routes an oversize prompt to file mode (argv stays small, prompt.md written)', async () => {
@@ -321,7 +341,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     const controller = new AbortController();
     const promise = runAgy({
       prompt: 'hello',
-      model: 'Gemini 3.5 Flash (Low)',
+      model: 'Gemini 3.8 Flash (Low)',
       timeoutMs: 5000,
       signal: controller.signal,
       ptyLib: fake.ptyLib,
@@ -342,7 +362,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     const controller = new AbortController();
     const promise = runAgy({
       prompt: 'hello',
-      model: 'Gemini 3.5 Flash (Low)',
+      model: 'Gemini 3.8 Flash (Low)',
       timeoutMs: 5000,
       signal: controller.signal,
       ptyLib: fake.ptyLib,
@@ -364,7 +384,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     await expect(
       runAgy({
         prompt: 'hello',
-        model: 'Gemini 3.5 Flash (Low)',
+        model: 'Gemini 3.8 Flash (Low)',
         timeoutMs: 5000,
         signal: controller.signal,
         ptyLib: fake.ptyLib,
@@ -384,7 +404,7 @@ describe('Gemini CLI Provider - invoke error mapping (mocked PTY)', () => {
     // and output that the provider maps into an error.
     const promise = runAgy({
       prompt: 'hi',
-      model: 'Gemini 3.5 Flash (Low)',
+      model: 'Gemini 3.8 Flash (Low)',
       timeoutMs: 5000,
       ptyLib: fake.ptyLib,
       agyPath: 'C:/fake/agy.exe',

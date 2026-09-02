@@ -74,7 +74,7 @@ describe('Gemini CLI (Antigravity) Provider E2E Tests', () => {
       requiredProviders: ['GEMINI_CLI'],
       requireAll: true,
     })(
-      'should select Gemini 3.5 Flash via gemini:flash (AC10)',
+      'should select Gemini 3.8 Flash via gemini:flash (AC10)',
       async () => {
         await withHTTPTestServer(async (client) => {
           const result = await client.callTool({
