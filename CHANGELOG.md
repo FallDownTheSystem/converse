@@ -5,6 +5,23 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0](https://github.com/FallDownTheSystem/converse/compare/v3.2.4...v3.3.0) (2026-09-02)
+
+
+### Features
+
+* default the Antigravity provider to Gemini 3.8 Flash and refresh dependencies ([03df6e4](https://github.com/FallDownTheSystem/converse/commit/03df6e4c61141adde7082be0a25fcee0403fab06))
+
+
+### Dependencies
+
+* **deps:** bump @lydell/node-pty from 1.2.0-beta.14 to 1.2.0-beta.15 ([#65](https://github.com/FallDownTheSystem/converse/issues/65)) ([8900a1a](https://github.com/FallDownTheSystem/converse/commit/8900a1a81535c76ec3a929e6c5cdc38735d51e9f))
+* **deps:** bump the npm-minor-and-patch group with 4 updates ([#60](https://github.com/FallDownTheSystem/converse/issues/60)) ([7ad6f16](https://github.com/FallDownTheSystem/converse/commit/7ad6f1663c06ddd39a888fa1c184a2e58351c3fd))
+* **deps:** bump the npm-minor-and-patch group with 4 updates ([#64](https://github.com/FallDownTheSystem/converse/issues/64)) ([c236bbd](https://github.com/FallDownTheSystem/converse/commit/c236bbd188cca0268976fc0ff4a0af31dea63799))
+* **deps:** bump the npm-minor-and-patch group with 6 updates ([#68](https://github.com/FallDownTheSystem/converse/issues/68)) ([0551a76](https://github.com/FallDownTheSystem/converse/commit/0551a76a7167d27443787fd0b2638c26333fbfca))
+* **deps:** bump the npm-minor-and-patch group with 7 updates ([#62](https://github.com/FallDownTheSystem/converse/issues/62)) ([191f596](https://github.com/FallDownTheSystem/converse/commit/191f596fed930ce60ff4e4bc8b4ca28bc0d3bfa7))
+* **deps:** bump the npm-minor-and-patch group with 9 updates ([#66](https://github.com/FallDownTheSystem/converse/issues/66)) ([def6c55](https://github.com/FallDownTheSystem/converse/commit/def6c55f320f0fc31f01f54cf59abccd154b5db4))
+
 ## [3.2.4](https://github.com/FallDownTheSystem/converse/compare/v3.2.3...v3.2.4) (2026-07-30)
 
 
