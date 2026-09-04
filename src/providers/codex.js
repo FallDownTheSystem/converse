@@ -17,35 +17,75 @@ import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { normalizeExtendedPath } from '../utils/pathUtils.js';
 
-// Supported Codex models with their configurations
+/**
+ * Every Codex reasoning tier, weakest to strongest. Used to clamp a requested
+ * tier onto the set a given backend model accepts.
+ *
+ * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
+ * sub-agent delegation — a change in how the run executes, not just how deep
+ * it reasons — so nothing at the tool level maps to it and it is kept off the
+ * ladder so the clamp can never select it.
+ */
+const EFFORT_LADDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+
+/**
+ * Backend models Codex can run, keyed by the slug passed to the CLI as
+ * --model. The reasoning tiers are the ones each model's API accepts, verified
+ * against the API's own rejection messages (gpt-6-astra: "Supported values
+ * are: 'low', 'medium', 'high', 'xhigh', and 'max'"). The SDK's
+ * ModelReasoningEffort type is the union across models, so the backend is the
+ * authority and requests are clamped per model.
+ */
+const CODEX_BACKEND_MODELS = {
+  'gpt-6-astra': {
+    aliases: ['astra', 'gpt-6', 'gpt6', 'gpt6-astra'],
+    contextWindow: 272000,
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  'gpt-5.6-sol': {
+    aliases: ['sol', 'gpt-5.6', 'gpt5.6', 'gpt-5.6-codex'],
+    contextWindow: 272000,
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  'gpt-5.6-terra': {
+    aliases: ['terra'],
+    contextWindow: 272000,
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  'gpt-5.6-luna': {
+    aliases: ['luna'],
+    contextWindow: 272000,
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  'gpt-5.5': {
+    aliases: ['gpt5.5'],
+    contextWindow: 272000,
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
+  },
+  'gpt-5.3-codex-spark': {
+    aliases: ['spark', 'codex-spark'],
+    contextWindow: 128000,
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
+  },
+};
+
+const DEFAULT_BACKEND_MODEL = 'gpt-6-astra';
+
+// The single user-facing model the router exposes. The backend model behind it
+// comes from CODEX_MODEL, or from a `codex:<model>` spec.
 const SUPPORTED_MODELS = {
   codex: {
     modelName: 'codex',
-    friendlyName: 'OpenAI Codex (GPT-5.6)',
-    contextWindow: 400000,
+    friendlyName: 'OpenAI Codex (GPT-6 Astra)',
+    contextWindow: CODEX_BACKEND_MODELS[DEFAULT_BACKEND_MODEL].contextWindow,
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Codex SDK 0.118+ supports images via --image (local_image input)
     supportsWebSearch: false, // Codex accesses files directly, not web
-    // Reasoning tiers this model's backend actually accepts. GPT-5.6 dropped
-    // 'minimal' and added 'none', while the SDK's ModelReasoningEffort type
-    // still advertises the pre-5.6 set — the backend is the authority, so the
-    // accepted tiers are declared per model and requests are clamped onto them.
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
     timeout: 1800000, // 30 minutes
     description:
-      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-5.6)',
-    aliases: [
-      'gpt-5-codex',
-      'gpt5-codex',
-      'gpt-5.2-codex',
-      'gpt-5.3-codex',
-      'gpt5.3-codex',
-      'gpt-5.5',
-      'gpt5.5',
-      'gpt-5.6-codex',
-      'gpt5.6-codex',
-    ],
+      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-6 Astra by default; pick another backend with codex:<model> or CODEX_MODEL)',
+    aliases: [],
   },
 };
 
@@ -196,6 +236,57 @@ function extractPromptText(input) {
 }
 
 /**
+ * Resolve a backend slug or alias (case-insensitive) to its catalog slug.
+ * @param {string} name
+ * @returns {string|null}
+ */
+function findBackendSlug(name) {
+  const lower = String(name || '').trim().toLowerCase();
+  if (!lower) {
+    return null;
+  }
+  if (CODEX_BACKEND_MODELS[lower]) {
+    return lower;
+  }
+  return (
+    Object.keys(CODEX_BACKEND_MODELS).find((slug) =>
+      CODEX_BACKEND_MODELS[slug].aliases.includes(lower),
+    ) || null
+  );
+}
+
+/**
+ * Catalog entry for a backend model, or null when the slug is not catalogued.
+ * @param {string} name - Backend slug or alias
+ * @returns {{ slug: string, aliases: string[], contextWindow: number, supportedEfforts: string[] }|null}
+ */
+export function getBackendModelConfig(name) {
+  const slug = findBackendSlug(name);
+  return slug ? { slug, ...CODEX_BACKEND_MODELS[slug] } : null;
+}
+
+/**
+ * Resolve the requested model spec to the backend slug passed to the CLI.
+ *
+ * `codex` uses CODEX_MODEL (default gpt-6-astra); `codex:<model>` names a
+ * backend directly, by slug or alias. Unknown names pass through verbatim so a
+ * newly released model works before it is catalogued here — the CLI rejects
+ * anything the backend does not know.
+ *
+ * @param {string} spec - Requested model, e.g. 'codex' or 'codex:sol'
+ * @param {Object} [config] - Loaded configuration
+ * @returns {string} Backend slug for the SDK's `model` option
+ */
+export function resolveBackendModel(spec, config) {
+  const raw = String(spec || '').trim();
+  const requested = raw.toLowerCase().startsWith('codex:')
+    ? raw.slice('codex:'.length).trim()
+    : '';
+  const name = requested || config?.providers?.codexmodel || DEFAULT_BACKEND_MODEL;
+  return findBackendSlug(name) || name;
+}
+
+/**
  * Get thread ID from continuation metadata.
  * Codex thread IDs are stored per call-plan in `providerThreads`, keyed by a
  * stable `threadKey` (the requested model spec, e.g. "auto" or "codex") passed
@@ -217,12 +308,6 @@ async function getThreadIdFromContinuation(
 }
 
 /**
- * Every Codex reasoning tier, weakest to strongest. Used to clamp a requested
- * tier onto the set a given model actually accepts.
- */
-const EFFORT_LADDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
-
-/**
  * Tool-level reasoning_effort values translated to their Codex equivalent.
  * Tool enum: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
  */
@@ -232,7 +317,7 @@ const EFFORT_ALIASES = {
   low: 'low',
   medium: 'medium',
   high: 'high',
-  max: 'xhigh',
+  max: 'max',
 };
 
 /**
@@ -403,8 +488,9 @@ export const codexProvider = {
       const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
 
       // Create or resume thread
+      const backendModel = resolveBackendModel(model, config);
       const threadOptions = {
-        model: config.providers?.codexmodel,
+        model: backendModel,
         workingDirectory,
         sandboxMode,
         skipGitRepoCheck,
@@ -413,13 +499,12 @@ export const codexProvider = {
 
       if (reasoning_effort) {
         const supportedEfforts =
-          findModelConfig(model)?.supportedEfforts ||
-          SUPPORTED_MODELS.codex.supportedEfforts;
+          getBackendModelConfig(backendModel)?.supportedEfforts || EFFORT_LADDER;
         const mappedEffort = mapReasoningEffort(reasoning_effort, supportedEfforts);
         threadOptions.modelReasoningEffort = mappedEffort;
         if (mappedEffort !== EFFORT_ALIASES[reasoning_effort]) {
           debugLog(
-            `[Codex] reasoning_effort "${reasoning_effort}" not supported by ${model} — using "${mappedEffort}"`,
+            `[Codex] reasoning_effort "${reasoning_effort}" not supported by ${backendModel} — using "${mappedEffort}"`,
           );
         }
       }
@@ -470,6 +555,7 @@ export const codexProvider = {
         metadata: {
           provider: 'codex',
           model,
+          backendModel,
           threadId: threadIdFromStream || thread.id,
           usage: usage
             ? {

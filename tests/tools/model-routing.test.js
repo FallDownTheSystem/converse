@@ -141,6 +141,17 @@ describe('Model Routing (Foundation)', () => {
       expect(r.resolvedModel).toBe('copilot:gpt-5.6-sol');
     });
 
+    it('routes codex: namespace to the Codex provider unchanged', () => {
+      const r = resolveModelSpec('codex:astra', providers, config);
+      expect(r.providerName).toBe('codex');
+      expect(r.resolvedModel).toBe('codex:astra');
+    });
+
+    it('still routes bare gpt-* names to OpenAI, not Codex', () => {
+      const r = resolveModelSpec('gpt-6-astra', providers, config);
+      expect(r.providerName).not.toBe('codex');
+    });
+
     it('reports unavailable/not_found via status, not substitution', () => {
       const unavailable = {
         xai: { isAvailable: () => false, getModelConfig: () => null },

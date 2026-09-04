@@ -101,9 +101,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
-  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-5.6-sol; e.g. gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
+  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-6-astra; e.g. gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
 - **Supported Models**:
-  - `codex` - OpenAI Codex agentic coding assistant (GPT-5.6 by default)
+  - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
+  - `codex:<model>` - Same, with an explicit backend: `codex:astra`, `codex:sol`, `codex:terra`, `codex:luna`, `codex:gpt-5.5`, `codex:spark`, or any slug the Codex CLI knows
+  - `reasoning_effort` is clamped onto what the backend accepts (GPT-6 Astra: `low`–`max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)

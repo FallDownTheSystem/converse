@@ -138,9 +138,10 @@ function classifyModelSpec(spec, providers) {
   }
 
   // Other explicit namespaces pass the spec through unchanged; the target
-  // provider strips its own prefix (preserves current copilot/claude/gemini-cli
+  // provider strips its own prefix (preserves current codex/copilot/claude/gemini-cli
   // behavior).
   if (
+    lower.startsWith('codex:') ||
     lower.startsWith('copilot:') ||
     lower.startsWith('claude:') ||
     lower.startsWith('gemini:')
@@ -308,8 +309,9 @@ export function mapModelToProvider(model, providers) {
     return 'openai';
   }
 
-  // Check Codex (exact match only - don't route "gpt-5-codex" etc to Codex provider)
-  if (modelLower === 'codex') {
+  // Check Codex: bare `codex` or the `codex:<backend>` namespace (e.g. codex:astra,
+  // codex:gpt-5.6-sol). Bare "gpt-*" names never route here — they are OpenAI API models.
+  if (modelLower === 'codex' || modelLower.startsWith('codex:')) {
     return 'codex';
   }
 

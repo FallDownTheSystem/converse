@@ -281,7 +281,9 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 
 ### Codex Models
 
-- **codex**: OpenAI Codex agentic coding assistant
+- **codex**: OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
+  - Pick another backend per request with `codex:<model>` (e.g. `codex:sol`, `codex:gpt-5.6-terra`) or globally with `CODEX_MODEL`; backends: `gpt-6-astra` (alias `astra`), `gpt-5.6-sol` (`sol`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna` (`luna`), `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
+  - `reasoning_effort` maps onto the tiers the chosen backend accepts (GPT-6 Astra: `low` through `max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -357,6 +359,7 @@ CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login availabl
 CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
 CODEX_SKIP_GIT_CHECK=true                    # true (default), false
 CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
+CODEX_MODEL=gpt-6-astra                      # gpt-6-astra (default), gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5
 ```
 
 ### Configuration Options

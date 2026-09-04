@@ -456,12 +456,13 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 
 **Codex** is an agentic coding assistant with direct filesystem access:
 
-- **Model**: `codex` (underlying model: GPT-5.6)
+- **Model**: `codex` (underlying model: GPT-6 Astra by default)
+- **Backend selection**: `codex:<model>` per request (e.g. `codex:astra`, `codex:sol`, `codex:gpt-5.6-terra`), or `CODEX_MODEL` globally; unknown names pass through to the CLI verbatim
 - **Thread-based sessions**: persistent conversation history via `continuation_id` in `chat` mode
 - **Direct file access**: reads files from the working directory (paths relative to `CLIENT_CWD`)
 - **Response times**: 6-20 seconds typical (complex tasks may take minutes)
 - **Authentication**: ChatGPT login OR `CODEX_API_KEY` (NOT `OPENAI_API_KEY`)
-- `reasoning_effort` and web search are not applicable — Codex manages its own execution
+- `reasoning_effort` is clamped onto the tiers the chosen backend accepts (GPT-6 Astra: `low`–`max`, no `none`; GPT-5.6: `none`–`max`); web search is not applicable — Codex manages its own execution
 
 ### Claude Agent SDK (subscription)
 
