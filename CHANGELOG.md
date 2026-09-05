@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0](https://github.com/FallDownTheSystem/converse/compare/v3.5.0...v3.6.0) (2026-09-05)
+
+
+### Features
+
+* default Claude provider to Fable 5.1 and enable effort control ([987ab53](https://github.com/FallDownTheSystem/converse/commit/987ab5374668686d64255bcee7fe15ddf20ea1a1))
+
 ## [3.5.0](https://github.com/FallDownTheSystem/converse/compare/v3.4.0...v3.5.0) (2026-09-05)
 
 
