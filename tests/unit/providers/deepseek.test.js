@@ -227,11 +227,14 @@ describe('DeepSeek Provider', () => {
       },
     );
 
-    it('should enable thinking with reasoning_effort "max" for "max"', async () => {
-      const callArgs = await invokeWithEffort('max');
-      expect(callArgs.thinking).toEqual({ type: 'enabled' });
-      expect(callArgs.reasoning_effort).toBe('max');
-    });
+    it.each(['xhigh', 'max'])(
+      'should enable thinking with reasoning_effort "max" for "%s"',
+      async (level) => {
+        const callArgs = await invokeWithEffort(level);
+        expect(callArgs.thinking).toEqual({ type: 'enabled' });
+        expect(callArgs.reasoning_effort).toBe('max');
+      },
+    );
 
     it('should default (no explicit effort) to thinking-on with "high"', async () => {
       // The shared base defaults reasoning_effort to 'medium' when unspecified.

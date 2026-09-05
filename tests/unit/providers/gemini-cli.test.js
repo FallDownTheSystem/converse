@@ -120,6 +120,7 @@ describe('Gemini CLI Provider - resolveAgyModel', () => {
       'Gemini 3.8 Flash (Medium)',
     );
     expect(resolveAgyModel('gemini', 'high')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('gemini', 'xhigh')).toBe('Gemini 3.8 Flash (High)');
     expect(resolveAgyModel('gemini', 'max')).toBe('Gemini 3.8 Flash (High)');
     expect(resolveAgyModel('gemini:flash', 'medium')).toBe(
       'Gemini 3.8 Flash (Medium)',

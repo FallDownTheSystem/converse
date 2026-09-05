@@ -17,7 +17,7 @@ export const testSuites = {
    * Execution time: ~30 seconds
    */
   unit: {
-    include: ['tests/unit/providers/**/*.test.js', 'tests/tools/**/*.test.js'],
+    include: ['tests/unit/providers/**/*.test.js', 'tests/unit/utils/**/*.test.js', 'tests/tools/**/*.test.js'],
     exclude: ['tests/integration/**/*'],
     testTimeout: 10000, // 10 seconds
     setupFiles: [],
@@ -138,6 +138,7 @@ export const testSuites = {
   ci: {
     include: [
       'tests/unit/providers/**/*.test.js',
+      'tests/unit/utils/**/*.test.js',
       'tests/tools/**/*.test.js',
       'tests/integration/mcp-protocol/**/*.test.js',
       'tests/integration/tools/**/*.test.js',

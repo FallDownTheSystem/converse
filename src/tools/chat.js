@@ -27,6 +27,7 @@ import { applyTokenLimit, getTokenLimit } from '../utils/tokenLimiter.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { SummarizationService } from '../services/summarizationService.js';
 import { exportConversation } from '../utils/conversationExporter.js';
+import { EFFORT_LADDER } from '../utils/reasoningEffort.js';
 import {
   getDefaultModelForProvider,
   getProviderUnavailableMessage,
@@ -1187,9 +1188,9 @@ chatTool.inputSchema = {
     },
     reasoning_effort: {
       type: 'string',
-      enum: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+      enum: EFFORT_LADDER,
       description:
-        'Reasoning depth for thinking models. Examples: "none" (no reasoning, fastest - GPT-5.1+ only), "minimal", "low", "medium" (balanced), "high", "max". Default: "medium"',
+        'Reasoning depth for thinking models, weakest to strongest: "none" (reasoning off, where the model allows it), "minimal", "low", "medium" (balanced), "high", "xhigh", "max". Passed through by name when the model accepts it, otherwise clamped to the nearest tier it does. Default: "medium"',
     },
     async: {
       type: 'boolean',

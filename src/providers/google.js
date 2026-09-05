@@ -7,6 +7,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { debugLog, debugError } from '../utils/console.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Define supported Gemini models with their capabilities
 const SUPPORTED_MODELS = {
@@ -161,8 +162,13 @@ const THINKING_BUDGETS = {
   low: 0.08, // 8% of max - light reasoning tasks
   medium: 0.33, // 33% of max - balanced reasoning (default)
   high: 0.67, // 67% of max - complex analysis
+  xhigh: 0.85, // 85% of max - near-full budget
   max: 1.0, // 100% of max - full thinking budget
 };
+
+// thinkingLevel values for models without an explicit thinkingLevels list
+// (Gemini 3.0 Pro exposes only low/high).
+const BINARY_THINKING_LEVELS = ['low', 'high'];
 
 /**
  * Custom error class for Google provider errors
@@ -527,37 +533,13 @@ export const googleProvider = {
     // Add thinking configuration for models that support it
     if (modelConfig.supportsThinking && reasoning_effort) {
       if (modelConfig.thinkingMode === 'level') {
-        let thinkingLevel;
-        if (modelConfig.thinkingLevels) {
-          // Model supports specific levels (e.g., Gemini 3.1 Pro: minimal/low/medium/high)
-          const levelMap = {
-            none: 'minimal',
-            minimal: 'minimal',
-            low: 'low',
-            medium: 'medium',
-            high: 'high',
-            max: 'high',
-          };
-          thinkingLevel = levelMap[reasoning_effort] || 'high';
-          if (!modelConfig.thinkingLevels.includes(thinkingLevel)) {
-            // Clamp to the nearest supported level: a request below the
-            // model's floor (e.g. minimal on 3.8 Flash) takes the lowest
-            // level, anything else the highest.
-            const rank = ['minimal', 'low', 'medium', 'high'];
-            const [lowest] = modelConfig.thinkingLevels;
-            thinkingLevel =
-              rank.indexOf(thinkingLevel) < rank.indexOf(lowest)
-                ? lowest
-                : modelConfig.thinkingLevels[
-                  modelConfig.thinkingLevels.length - 1
-                ];
-          }
-        } else {
-          // Binary levels only (Gemini 3.0 Pro: low/high)
-          thinkingLevel = ['minimal', 'low'].includes(reasoning_effort)
-            ? 'low'
-            : 'high';
-        }
+        // Gemini 3.x thinkingLevel names are tool-level tiers, so the request
+        // clamps straight onto the levels the model lists (none → minimal or
+        // the floor, xhigh/max → the ceiling).
+        const thinkingLevel = clampReasoningEffort(
+          reasoning_effort,
+          modelConfig.thinkingLevels || BINARY_THINKING_LEVELS,
+        );
         generationConfig.thinkingConfig = { thinkingLevel };
       } else {
         // Gemini 2.5: Use thinking budget (token count)

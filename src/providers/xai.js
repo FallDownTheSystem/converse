@@ -14,6 +14,7 @@
 
 import OpenAI from 'openai';
 import { debugLog, debugError } from '../utils/console.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Curated catalog: grok-4.5 only (verified live 2026-07-11 against
 // GET https://api.x.ai/v1/models/grok-4.5 — id, aliases, 500k context).
@@ -85,27 +86,15 @@ function resolveModelName(modelName) {
 }
 
 /**
- * Map Converse reasoning_effort to a value grok-4.5 accepts.
- *
- * grok-4.5 supports ONLY low/medium/high (default high) and cannot disable
- * reasoning — there is no `none`/off value. Sending an unsupported value
- * (e.g. `none`/`minimal`/`max`) returns HTTP 400, so unsupported Converse
- * levels are clamped into {low, medium, high} rather than forwarded.
+ * Tiers grok-4.5 accepts (default high). It cannot disable reasoning — there
+ * is no `none`/off value — and sending an unsupported value (`none`,
+ * `minimal`, `xhigh`, `max`) returns HTTP 400, so requests are clamped into
+ * this set rather than forwarded.
  */
+const GROK_EFFORT_TIERS = ['low', 'medium', 'high'];
+
 function resolveReasoningEffort(reasoningEffort) {
-  switch (reasoningEffort) {
-  case 'none':
-  case 'minimal':
-  case 'low':
-    return 'low';
-  case 'medium':
-    return 'medium';
-  case 'high':
-  case 'max':
-    return 'high';
-  default:
-    return 'high';
-  }
+  return clampReasoningEffort(reasoningEffort, GROK_EFFORT_TIERS);
 }
 
 /**

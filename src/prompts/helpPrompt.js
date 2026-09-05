@@ -295,11 +295,12 @@ function generateConfigurationTips(tools) {
     if (effortSchema.enum) {
       for (const value of effortSchema.enum) {
         const descriptions = {
-          none: 'No reasoning, fastest response (GPT-5.1+ only)',
+          none: 'Reasoning off, fastest response (where the model allows it)',
           minimal: 'Quick responses with minimal reasoning',
           low: 'Light analysis, simple problems',
           medium: 'Balanced reasoning (default)',
           high: 'Deep analysis, complex problems',
+          xhigh: 'Very deep analysis, one step below the ceiling',
           max: 'Maximum reasoning capability',
         };
         output += `- **${value}**: ${descriptions[value] || value}\n`;

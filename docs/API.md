@@ -84,8 +84,8 @@ MCP_TRANSPORT=stdio npm start
     },
     "reasoning_effort": {
       "type": "string",
-      "enum": ["none", "minimal", "low", "medium", "high", "max"],
-      "description": "Reasoning depth for thinking models. 'none' (fastest, GPT-5.1+ only), 'minimal', 'low', 'medium' (balanced), 'high', 'max'. Default: 'medium'."
+      "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+      "description": "Reasoning depth for thinking models, weakest to strongest. Passed through by name when the model accepts it, otherwise clamped to the nearest tier it does. Default: 'medium'."
     },
     "async": {
       "type": "boolean",
@@ -404,7 +404,7 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 |-------|---------|---------|-------|
 | `grok-4.5` | `grok`, `grok-4.5-latest`, `grok-build-latest` | 500K | Flagship: image input, reasoning content, native web/X search via Agent Tools |
 
-`reasoning_effort` maps to Grok's `low`/`medium`/`high`; Grok 4.5 always reasons and cannot be disabled. Web search is attached automatically and the model decides whether to use it.
+`reasoning_effort` clamps into Grok's `low`/`medium`/`high` (`xhigh` and `max` become `high`); Grok 4.5 always reasons and cannot be disabled. Web search is attached automatically and the model decides whether to use it.
 
 ### Anthropic Models (API-based)
 
@@ -417,7 +417,7 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 | `claude-sonnet-4-6` | `sonnet`, `sonnet-4.6` | 200K (1M beta) | 64K | Best speed/intelligence balance, adaptive thinking |
 | `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Fast and intelligent |
 
-Models with adaptive thinking control depth via `reasoning_effort`, which maps to Anthropic's `effort` parameter. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
+Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
 
 ### Mistral Models
 
@@ -436,7 +436,7 @@ Models with adaptive thinking control depth via `reasoning_effort`, which maps t
 | `deepseek-v4-pro` | `deepseek`, `deepseek-pro` | 1M | 384K | Flagship MoE, thinking mode, text-only |
 | `deepseek-v4-flash` | `deepseek-flash` | 1M | 384K | Faster, lower-cost V4 tier, text-only |
 
-`reasoning_effort`: `none` disables thinking; enabled levels use `high`; `max` uses `max`.
+`reasoning_effort`: `none` disables thinking; enabled levels up to `high` use `high`; `xhigh` and `max` use `max`.
 
 ### OpenRouter Models
 

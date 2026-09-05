@@ -372,6 +372,59 @@ describe('OpenAI Provider', () => {
       );
     });
 
+    it.each([
+      // GPT-5.6 accepts the whole ladder except minimal
+      ['gpt-5.6-sol', 'none', 'none'],
+      ['gpt-5.6-sol', 'minimal', 'low'],
+      ['gpt-5.6-sol', 'xhigh', 'xhigh'],
+      ['gpt-5.6-sol', 'max', 'max'],
+      // GPT-5.4 stops at xhigh
+      ['gpt-5.4', 'xhigh', 'xhigh'],
+      ['gpt-5.4', 'max', 'xhigh'],
+      ['gpt-5.4-mini', 'none', 'none'],
+      // GPT-5 mini/nano keep minimal but never gained xhigh
+      ['gpt-5-mini', 'minimal', 'minimal'],
+      ['gpt-5-mini', 'xhigh', 'high'],
+      ['gpt-5-nano', 'none', 'minimal'],
+      // o-series accepts only low/medium/high
+      ['o3', 'none', 'low'],
+      ['o3', 'xhigh', 'high'],
+      ['o4-mini', 'max', 'high'],
+      // GPT-5.4 Pro starts at medium and stops at xhigh
+      ['gpt-5.4-pro', 'low', 'medium'],
+      ['gpt-5.4-pro', 'max', 'xhigh'],
+      // Uncatalogued snapshots resolve by family: GPT-5.6 keeps its ladder,
+      // older Pro snapshots are only known to accept high
+      ['gpt-5.6-2026-09-01', 'minimal', 'low'],
+      ['gpt-5.6-2026-09-01', 'max', 'max'],
+      ['gpt-5.2-pro', 'xhigh', 'high'],
+    ])(
+      'clamps reasoning effort onto the tiers %s accepts (%s -> %s)',
+      async (model, level, expected) => {
+        const OpenAI = (await import('openai')).default;
+        const mockCreate = vi.fn().mockResolvedValue({
+          output_text: 'ok',
+          status: 'completed',
+          usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+        });
+
+        OpenAI.mockImplementation(function () {
+          return {
+            chat: { completions: { create: mockCreate } },
+            responses: { create: mockCreate },
+          };
+        });
+
+        await openaiProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          config: validConfig,
+          model,
+          reasoning_effort: level,
+        });
+
+        expect(mockCreate.mock.calls[0][0].reasoning.effort).toBe(expected);
+      },
+    );
+
     it('should attach web search whenever the model supports it (no flag)', async () => {
       const OpenAI = (await import('openai')).default;
       const mockCreate = vi.fn().mockResolvedValue({

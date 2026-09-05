@@ -408,7 +408,7 @@ describe('Anthropic Provider', () => {
         type: 'adaptive',
       });
       expect(callArgs.output_config).toEqual({
-        effort: 'high',
+        effort: 'medium',
       });
       // Fable 5 removed sampling parameters - sending temperature returns 400
       expect(callArgs.temperature).toBeUndefined();
@@ -432,9 +432,55 @@ describe('Anthropic Provider', () => {
         type: 'adaptive',
       });
       expect(callArgs.output_config).toEqual({
-        effort: 'high',
+        effort: 'medium',
       });
     });
+
+    it.each([
+      ['none', 'low'],
+      ['minimal', 'low'],
+      ['low', 'low'],
+      ['medium', 'medium'],
+      ['high', 'high'],
+      ['xhigh', 'xhigh'],
+      ['max', 'max'],
+    ])(
+      'passes reasoning_effort %s to the effort parameter as %s',
+      async (level, expected) => {
+        await anthropicProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model: 'claude-fable-5',
+          reasoning_effort: level,
+          config: mockConfig,
+        });
+
+        expect(mockCreate.mock.calls[0][0].output_config).toEqual({
+          effort: expected,
+        });
+      },
+    );
+
+    it.each([
+      // Opus 4.6 and Sonnet 4.6 accept max but not xhigh
+      ['claude-opus-4-6', 'xhigh', 'max'],
+      ['claude-sonnet-4-6', 'xhigh', 'max'],
+      ['claude-sonnet-4-6', 'max', 'max'],
+      // Opus 4.5 tops out at high
+      ['claude-opus-4-5-20251101', 'xhigh', 'high'],
+      ['claude-opus-4-5-20251101', 'max', 'high'],
+    ])(
+      'clamps effort onto the tiers %s accepts (%s -> %s)',
+      async (model, level, expected) => {
+        await anthropicProvider.invoke([{ role: 'user', content: 'Hi' }], {
+          model,
+          reasoning_effort: level,
+          config: mockConfig,
+        });
+
+        expect(mockCreate.mock.calls[0][0].output_config).toEqual({
+          effort: expected,
+        });
+      },
+    );
 
     it('should add budget-based thinking for legacy Sonnet 4.5', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];

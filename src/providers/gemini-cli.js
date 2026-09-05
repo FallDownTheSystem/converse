@@ -31,6 +31,7 @@ import { join, delimiter } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Prompts at or below this length pass directly as the -p argv value (fast
 // path). Larger prompts are written to a file and -p carries a bootstrap
@@ -174,32 +175,25 @@ export function findAgyBinary() {
   return _cachedAgyPath;
 }
 
+// agy variant tiers per model base. Flash offers Low/Medium/High; Pro has no
+// Medium variant.
+const FLASH_EFFORT_TIERS = ['low', 'medium', 'high'];
+const PRO_EFFORT_TIERS = ['low', 'high'];
+
 /**
  * Map a reasoning_effort value to the agy parenthesized variant suffix.
- * Flash supports Low/Medium/High; Pro supports Low/High (no Medium).
+ * Unset effort selects High, agy's own default.
  * @param {string} base - agy model base ('Gemini 3.8 Flash' / 'Gemini 3.1 Pro')
  * @param {string} [reasoningEffort]
  * @returns {string} e.g. '(Low)', '(Medium)', '(High)'
  */
 function effortSuffix(base, reasoningEffort) {
-  const isPro = /pro/i.test(base);
-  const effort = (reasoningEffort || '').toLowerCase();
-
-  switch (effort) {
-  case 'none':
-  case 'minimal':
-  case 'low':
-    return '(Low)';
-  case 'medium':
-    // Pro has no Medium variant — fall back to High
-    return isPro ? '(High)' : '(Medium)';
-  case 'high':
-  case 'max':
-    return '(High)';
-  default:
-    // unset → High
+  if (!reasoningEffort) {
     return '(High)';
   }
+  const tiers = /pro/i.test(base) ? PRO_EFFORT_TIERS : FLASH_EFFORT_TIERS;
+  const tier = clampReasoningEffort(reasoningEffort.toLowerCase(), tiers);
+  return `(${tier[0].toUpperCase()}${tier.slice(1)})`;
 }
 
 /**

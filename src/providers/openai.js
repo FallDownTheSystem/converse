@@ -7,6 +7,21 @@
 
 import OpenAI from 'openai';
 import { debugLog, debugError } from '../utils/console.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
+
+// Values each family accepts for reasoning effort, per the model pages at
+// developers.openai.com/api/docs/models. GPT-5.6 is the only family with
+// 'max'; the GPT-5.4 tier stops at 'xhigh'; the original GPT-5 minis kept
+// 'minimal' but never gained 'xhigh'; the o-series predates both ends of the
+// ladder; GPT-5.4 Pro starts at 'medium'. Models without a list are passed
+// the requested value unchanged, except uncatalogued GPT-5 Pro snapshots,
+// which are only known to accept 'high'.
+const GPT_56_EFFORT_TIERS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+const GPT_54_EFFORT_TIERS = ['none', 'low', 'medium', 'high', 'xhigh'];
+const GPT_54_PRO_EFFORT_TIERS = ['medium', 'high', 'xhigh'];
+const GPT_5_EFFORT_TIERS = ['minimal', 'low', 'medium', 'high'];
+const O_SERIES_EFFORT_TIERS = ['low', 'medium', 'high'];
+const PRO_PASSTHROUGH_EFFORT_TIERS = ['high'];
 
 // Define supported models with their capabilities
 const SUPPORTED_MODELS = {
@@ -19,7 +34,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true,
+    supportedEfforts: GPT_56_EFFORT_TIERS,
     timeout: 10800000, // 3 hours
     description:
       'Flagship GPT-5.6 model (1M context, 128K output) - Frontier reasoning, coding, agentic workflows. Most token-efficient flagship',
@@ -44,7 +59,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true,
+    supportedEfforts: GPT_56_EFFORT_TIERS,
     timeout: 5400000, // 90 minutes
     description:
       'Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the flagship price',
@@ -59,7 +74,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true,
+    supportedEfforts: GPT_56_EFFORT_TIERS,
     timeout: 1800000, // 30 minutes
     description:
       'Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads',
@@ -74,7 +89,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportsNoneReasoningEffort: true,
+    supportedEfforts: GPT_54_EFFORT_TIERS,
     timeout: 10800000, // 3 hours
     description:
       'Latest flagship model (1M context, 128K output) - Superior reasoning, coding, agentic workflows, computer use. Most token-efficient reasoning model',
@@ -92,6 +107,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportedEfforts: GPT_5_EFFORT_TIERS,
     timeout: 5400000, // 90 minutes
     description:
       'Faster, cost-efficient GPT-5 (400K context, 128K output) - Well-defined tasks, precise prompts',
@@ -106,6 +122,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false, // GPT-5-nano doesn't support web search
     supportsResponsesAPI: true,
+    supportedEfforts: GPT_5_EFFORT_TIERS,
     timeout: 1800000, // 30 minutes
     description:
       'Fastest, most cost-efficient GPT-5 (400K context, 128K output) - Summarization, classification',
@@ -120,6 +137,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportedEfforts: GPT_54_EFFORT_TIERS,
     timeout: 5400000, // 90 minutes
     description:
       'Fast, efficient GPT-5.4 (400K context, 128K output) - Coding, subagents, computer use, tool use. 2x faster than GPT-5 mini',
@@ -139,6 +157,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: false,
     supportsResponsesAPI: true,
+    supportedEfforts: GPT_54_EFFORT_TIERS,
     timeout: 1800000, // 30 minutes
     description:
       'Smallest, cheapest GPT-5.4 (400K context, 128K output) - Classification, data extraction, ranking, coding subagents',
@@ -159,6 +178,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: true,
     supportsResponsesAPI: true,
     supportsDeepResearch: false,
+    supportedEfforts: GPT_54_PRO_EFFORT_TIERS,
     timeout: 10800000, // 180 minutes
     description:
       'Maximum performance reasoning model (1M context, 272K output) - Most complex tasks, extended compute time (EXPENSIVE)',
@@ -179,6 +199,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportedEfforts: O_SERIES_EFFORT_TIERS,
     timeout: 1800000, // 30 minutes
     description:
       'Strong reasoning (200K context) - Logical problems, code generation, systematic analysis',
@@ -193,6 +214,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportedEfforts: O_SERIES_EFFORT_TIERS,
     timeout: 10800000, // 180 minutes
     description:
       'Professional-grade reasoning (200K context) - EXTREMELY EXPENSIVE: Only for the most complex problems',
@@ -207,6 +229,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
+    supportedEfforts: O_SERIES_EFFORT_TIERS,
     timeout: 540000, // 9 minutes
     description:
       'Latest reasoning model (200K context) - Optimized for shorter contexts, rapid reasoning',
@@ -311,17 +334,32 @@ function resolveModelName(modelName) {
 }
 
 /**
- * Resolve the reasoning effort actually sent to the API for a given model.
- * GPT-5 Pro models only accept 'high'. GPT-5.6 models dropped 'minimal'
- * (supported efforts: none, low, medium, high, xhigh, max), so 'minimal'
- * maps to the closest supported value.
+ * Whether a request to this model should carry a reasoning effort at all.
+ * Catalogued models say so through their declared tiers; pass-through IDs
+ * fall back to the o-series / GPT-5 name heuristic.
  */
-function resolveReasoningEffort(resolvedModel, reasoningEffort) {
-  if (resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5')) {
-    return 'high';
+function acceptsReasoningEffort(resolvedModel, modelConfig) {
+  if (modelConfig.supportedEfforts) {
+    return true;
   }
-  if (resolvedModel.startsWith('gpt-5.6') && reasoningEffort === 'minimal') {
-    return 'low';
+  return resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5');
+}
+
+/**
+ * Resolve the reasoning effort actually sent to the API. Catalogued models
+ * clamp onto their declared tiers. Pass-through IDs are matched by family
+ * where the tiers are known (GPT-5 Pro snapshots, GPT-5.6 snapshots) and
+ * otherwise keep the requested value.
+ */
+function resolveReasoningEffort(resolvedModel, modelConfig, reasoningEffort) {
+  if (modelConfig.supportedEfforts) {
+    return clampReasoningEffort(reasoningEffort, modelConfig.supportedEfforts);
+  }
+  if (resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5')) {
+    return clampReasoningEffort(reasoningEffort, PRO_PASSTHROUGH_EFFORT_TIERS);
+  }
+  if (resolvedModel.startsWith('gpt-5.6')) {
+    return clampReasoningEffort(reasoningEffort, GPT_56_EFFORT_TIERS);
   }
   return reasoningEffort;
 }
@@ -511,13 +549,13 @@ export const openaiProvider = {
         requestPayload.tools = [{ type: 'web_search_preview' }];
       }
 
-      // Add reasoning effort for thinking models (o3 series and GPT-5 family)
-      if (
-        (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
-        reasoning_effort
-      ) {
+      if (acceptsReasoningEffort(resolvedModel, modelConfig) && reasoning_effort) {
         requestPayload.reasoning = {
-          effort: resolveReasoningEffort(resolvedModel, reasoning_effort),
+          effort: resolveReasoningEffort(
+            resolvedModel,
+            modelConfig,
+            reasoning_effort,
+          ),
           summary: 'auto', // Enable reasoning summaries
         };
       }
@@ -531,13 +569,10 @@ export const openaiProvider = {
         ...cleanOptions,
       };
 
-      // Add reasoning effort for thinking models (o3 series and GPT-5 family)
-      if (
-        (resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5')) &&
-        reasoning_effort
-      ) {
+      if (acceptsReasoningEffort(resolvedModel, modelConfig) && reasoning_effort) {
         requestPayload.reasoning_effort = resolveReasoningEffort(
           resolvedModel,
+          modelConfig,
           reasoning_effort,
         );
       }

@@ -216,6 +216,9 @@ describe('OpenRouter Provider', () => {
       expect(await reasoningFor('z-ai/glm-5.2', 'max')).toEqual({
         effort: 'xhigh',
       });
+      expect(await reasoningFor('z-ai/glm-5.2', 'xhigh')).toEqual({
+        effort: 'xhigh',
+      });
       expect(await reasoningFor('z-ai/glm-5.2', 'high')).toEqual({
         effort: 'high',
       });

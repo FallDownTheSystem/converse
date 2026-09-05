@@ -7,6 +7,7 @@
 
 import { createOpenAICompatibleProvider } from './openai-compatible.js';
 import { debugLog } from '../utils/console.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Define supported DeepSeek models with their capabilities.
 // V4 unified the catalog: both tiers share a 1M context window and a 384K output
@@ -66,12 +67,18 @@ function validateApiKey(apiKey) {
 }
 
 /**
+ * Values DeepSeek's `reasoning_effort` field accepts once thinking is on.
+ * There is no lower documented tier, so every enabled level below high clamps
+ * up to "high" (the default `medium` runs thinking-on rather than silently
+ * disabling it) and `xhigh` clamps up to "max".
+ */
+const DEEPSEEK_EFFORT_TIERS = ['high', 'max'];
+
+/**
  * Map a Converse reasoning_effort level to DeepSeek's thinking-mode request
- * fields. DeepSeek exposes only two independent controls: a `thinking` toggle
- * ({type:"enabled"|"disabled"}) and a `reasoning_effort` field that accepts
- * ONLY "high" or "max". Every enabled level below max maps to "high" (there is
- * no lower documented tier), preserving enabled-reasoning intent so the default
- * `medium` runs thinking-on rather than silently disabling it.
+ * fields. DeepSeek exposes two independent controls: a `thinking` toggle
+ * ({type:"enabled"|"disabled"}) and the `reasoning_effort` tier. Only `none`
+ * flips the toggle off.
  */
 function applyReasoning(requestPayload, reasoningEffort) {
   if (reasoningEffort === 'none') {
@@ -81,7 +88,10 @@ function applyReasoning(requestPayload, reasoningEffort) {
   }
 
   requestPayload.thinking = { type: 'enabled' };
-  requestPayload.reasoning_effort = reasoningEffort === 'max' ? 'max' : 'high';
+  requestPayload.reasoning_effort = clampReasoningEffort(
+    reasoningEffort,
+    DEEPSEEK_EFFORT_TIERS,
+  );
 }
 
 /**

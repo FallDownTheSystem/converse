@@ -16,17 +16,10 @@
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { normalizeExtendedPath } from '../utils/pathUtils.js';
-
-/**
- * Every Codex reasoning tier, weakest to strongest. Used to clamp a requested
- * tier onto the set a given backend model accepts.
- *
- * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
- * sub-agent delegation — a change in how the run executes, not just how deep
- * it reasons — so nothing at the tool level maps to it and it is kept off the
- * ladder so the clamp can never select it.
- */
-const EFFORT_LADDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+import {
+  EFFORT_LADDER,
+  clampReasoningEffort,
+} from '../utils/reasoningEffort.js';
 
 /**
  * Backend models Codex can run, keyed by the slug passed to the CLI as
@@ -35,6 +28,11 @@ const EFFORT_LADDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max
  * are: 'low', 'medium', 'high', 'xhigh', and 'max'"). The SDK's
  * ModelReasoningEffort type is the union across models, so the backend is the
  * authority and requests are clamped per model.
+ *
+ * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
+ * sub-agent delegation — a change in how the run executes, not just how deep
+ * it reasons — so it is deliberately absent from every supportedEfforts list
+ * and nothing at the tool level can select it.
  */
 const CODEX_BACKEND_MODELS = {
   'gpt-6-astra': {
@@ -308,50 +306,6 @@ async function getThreadIdFromContinuation(
 }
 
 /**
- * Tool-level reasoning_effort values translated to their Codex equivalent.
- * Tool enum: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
- */
-const EFFORT_ALIASES = {
-  none: 'none',
-  minimal: 'minimal',
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  max: 'max',
-};
-
-/**
- * Map a tool-level reasoning_effort onto a tier the target model accepts.
- *
- * When the requested tier isn't in the model's supported set, the nearest
- * *stronger* tier wins: nudging 'minimal' up to 'low' keeps reasoning on,
- * where falling back to 'none' would silently switch it off.
- *
- * @param {string} effort - Tool-level reasoning_effort value
- * @param {string[]} [supported] - Tiers the model accepts
- * @returns {string} A tier from `supported`
- */
-export function mapReasoningEffort(effort, supported = EFFORT_LADDER) {
-  const desired = EFFORT_ALIASES[effort] || 'medium';
-  if (supported.includes(desired)) {
-    return desired;
-  }
-
-  const rank = EFFORT_LADDER.indexOf(desired);
-  const stronger = EFFORT_LADDER.slice(rank + 1).find((tier) =>
-    supported.includes(tier),
-  );
-  if (stronger) {
-    return stronger;
-  }
-
-  const weaker = EFFORT_LADDER.slice(0, rank)
-    .reverse()
-    .find((tier) => supported.includes(tier));
-  return weaker || 'medium';
-}
-
-/**
  * Resolve a user-facing model name to its entry in SUPPORTED_MODELS.
  * @param {string} modelName
  * @returns {Object|null}
@@ -500,9 +454,9 @@ export const codexProvider = {
       if (reasoning_effort) {
         const supportedEfforts =
           getBackendModelConfig(backendModel)?.supportedEfforts || EFFORT_LADDER;
-        const mappedEffort = mapReasoningEffort(reasoning_effort, supportedEfforts);
+        const mappedEffort = clampReasoningEffort(reasoning_effort, supportedEfforts);
         threadOptions.modelReasoningEffort = mappedEffort;
-        if (mappedEffort !== EFFORT_ALIASES[reasoning_effort]) {
+        if (mappedEffort !== reasoning_effort) {
           debugLog(
             `[Codex] reasoning_effort "${reasoning_effort}" not supported by ${backendModel} — using "${mappedEffort}"`,
           );

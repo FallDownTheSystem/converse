@@ -17,6 +17,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 const SUPPORTED_MODELS = {
   copilot: {
@@ -517,20 +518,14 @@ function resolveSessionModel(requestModel, config) {
  * - session.error → { data: { errorType, message } }
  */
 /**
- * Map tool-level reasoning_effort values to Copilot SDK's ReasoningEffort.
- * Tool enum:  'none' | 'minimal' | 'low' | 'medium' | 'high' | 'max'
- * SDK enum:   'low' | 'medium' | 'high' | 'xhigh'
+ * Values the Copilot SDK's ReasoningEffort type accepts. The SDK tops out at
+ * 'xhigh' and cannot switch reasoning off, so 'max' clamps down and
+ * 'none'/'minimal' clamp up.
  */
+const COPILOT_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh'];
+
 function mapReasoningEffort(effort) {
-  const mapping = {
-    none: 'low',
-    minimal: 'low',
-    low: 'low',
-    medium: 'medium',
-    high: 'high',
-    max: 'xhigh',
-  };
-  return mapping[effort] || undefined;
+  return clampReasoningEffort(effort, COPILOT_EFFORT_TIERS);
 }
 
 /**

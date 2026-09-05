@@ -267,7 +267,7 @@ Reasoning maps to `high` (enabled) or `none` (disabled) on Medium 3.5 and Small;
 - **deepseek-v4-pro** (default; aliases: `deepseek`, `deepseek-pro`): Flagship MoE model with thinking mode (1M context, 384K max output, text-only)
 - **deepseek-v4-flash** (alias: `deepseek-flash`): Faster, lower-cost V4 tier with thinking mode (1M context, 384K max output, text-only)
 
-Thinking mode maps `reasoning_effort` to `none` (off), `high` (enabled levels), or `max`.
+Thinking mode maps `reasoning_effort` to `none` (off), `high` (enabled levels up to `high`), or `max` (`xhigh` and `max`).
 
 ### OpenRouter Models
 

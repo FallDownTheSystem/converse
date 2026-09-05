@@ -7,6 +7,7 @@
 
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Define supported Mistral models with their capabilities.
 // Reasoning (`reasoning_effort`) is supported only on Medium 3.5 and Small 4;
@@ -62,18 +63,21 @@ const SUPPORTED_MODELS = {
 };
 
 /**
+ * Values Mistral documents for `reasoning_effort`. Every enabled level clamps
+ * to "high" so the default `medium` runs thinking-on; only `none` disables.
+ */
+const MISTRAL_EFFORT_TIERS = ['none', 'high'];
+
+/**
  * Map a Converse reasoning_effort level to Mistral's documented request value.
- * Mistral documents only "high" and "none". Every enabled level maps to "high"
- * to preserve enabled-reasoning intent (Converse's default `medium` runs
- * thinking-on); only `none` disables. Returns null when reasoning must not be
- * forwarded — i.e. the model does not support it (Large 3) or is an unknown
- * pass-through ID (capability-gated).
+ * Returns null when reasoning must not be forwarded — i.e. the model does not
+ * support it (Large 3) or is an unknown pass-through ID (capability-gated).
  */
 function resolveReasoningEffort(level, modelConfig) {
   if (!modelConfig?.supportsReasoning) {
     return null;
   }
-  return level === 'none' ? 'none' : 'high';
+  return clampReasoningEffort(level, MISTRAL_EFFORT_TIERS);
 }
 
 /**

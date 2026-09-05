@@ -311,6 +311,7 @@ describe('XAI Provider', () => {
       ['low', 'low'],
       ['medium', 'medium'],
       ['high', 'high'],
+      ['xhigh', 'high'],
       ['max', 'high'],
     ];
 

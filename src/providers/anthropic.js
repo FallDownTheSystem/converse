@@ -10,6 +10,14 @@
 
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
+
+// Values each model accepts for the `effort` parameter. Anthropic cannot
+// switch reasoning off via effort, so 'none' and 'minimal' clamp up to 'low'.
+// Not every model that supports 'max' supports 'xhigh'.
+const EFFORT_TIERS_FULL = ['low', 'medium', 'high', 'xhigh', 'max'];
+const EFFORT_TIERS_NO_XHIGH = ['low', 'medium', 'high', 'max'];
+const EFFORT_TIERS_LEGACY = ['low', 'medium', 'high'];
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
@@ -26,6 +34,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
     supportsCompaction: true,
     description:
       'Claude Fable 5 - Most capable model for the most demanding reasoning and long-horizon agentic work',
@@ -51,6 +60,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
     supportsCompaction: true,
     description:
       'Claude Opus 5 - Most capable Opus for complex agentic coding and deep reasoning',
@@ -79,6 +89,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
     supports1MContext: true,
     supportsCompaction: true,
     description:
@@ -109,6 +120,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
     supports1MContext: true,
     supportsCompaction: true,
     description:
@@ -139,6 +151,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     supportsEffort: true,
     effortGA: true,
+    effortTiers: EFFORT_TIERS_NO_XHIGH,
     supports1MContext: true,
     supportsCompaction: true,
     description:
@@ -167,6 +180,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 64000,
     timeout: 900000,
     supportsEffort: true, // Opus 4.5 effort parameter (requires beta header)
+    effortTiers: EFFORT_TIERS_LEGACY,
     description:
       'Claude Opus 4.5 - Previous most intelligent model combining maximum capability with practical performance',
     aliases: [
@@ -223,6 +237,7 @@ const SUPPORTED_MODELS = {
     timeout: 900000,
     supportsEffort: true,
     effortGA: true, // Effort is generally available, no beta header required
+    effortTiers: EFFORT_TIERS_NO_XHIGH,
     supports1MContext: true, // Beta 1M context support
     supportsCompaction: true, // Beta server-side context compaction
     description:
@@ -311,20 +326,8 @@ const THINKING_BUDGETS = {
   low: 0.15, // 15% of max thinking tokens
   medium: 0.33, // 33% of max thinking tokens (default)
   high: 0.67, // 67% of max thinking tokens
+  xhigh: 0.85, // 85% of max thinking tokens
   max: 1.0, // 100% of max thinking tokens
-};
-
-/**
- * Effort parameter mapping for Opus 5, Opus 4.8, Opus 4.7, Opus 4.6, Sonnet 4.6, and Opus 4.5
- * Maps reasoning_effort values to Anthropic's effort parameter values
- */
-const EFFORT_MAP = {
-  none: 'low',
-  minimal: 'low',
-  low: 'medium',
-  medium: 'high',
-  high: 'xhigh',
-  max: 'max',
 };
 
 /**
@@ -716,16 +719,17 @@ export const anthropicProvider = {
 
     // Add effort parameter for models that support it (uses output_config)
     if (modelConfig.supportsEffort && reasoning_effort) {
-      const effortValue = EFFORT_MAP[reasoning_effort];
-      if (effortValue) {
-        requestPayload.output_config = {
-          ...requestPayload.output_config,
-          effort: effortValue,
-        };
-        debugLog(
-          `[Anthropic] Effort parameter set to "${effortValue}" for ${resolvedModel} (from reasoning_effort: ${reasoning_effort})`,
-        );
-      }
+      const effortValue = clampReasoningEffort(
+        reasoning_effort,
+        modelConfig.effortTiers,
+      );
+      requestPayload.output_config = {
+        ...requestPayload.output_config,
+        effort: effortValue,
+      };
+      debugLog(
+        `[Anthropic] Effort parameter set to "${effortValue}" for ${resolvedModel} (from reasoning_effort: ${reasoning_effort})`,
+      );
     }
 
     // If streaming is requested and model doesn't support it, fall back to non-streaming

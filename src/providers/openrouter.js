@@ -26,6 +26,7 @@ import {
   lookupOpenRouterModel,
   DiscoveryStatus,
 } from './openrouter-discovery.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Curated static catalog (verified live 2026-07-11). getSupportedModels() must
 // return exactly these 8 slugs even after a discovery call has run — dynamic
@@ -255,7 +256,7 @@ function extractReasoningText(details) {
  *   1. passthrough (openrouter/auto)  → null (router decides)
  *   2. mandatory (kimi-k2.7-code)     → { enabled: true } (cannot disable)
  *   3. effort-tiered (glm/deepseek)   → clamp into supported_efforts
- *                                       (max→xhigh, else→high; none→disabled)
+ *                                       (nearest stronger tier; none→disabled)
  *   4. enable/disable-only (qwen/kimi) → { enabled: false } for none, else true
  *   5. unavailable metadata           → null (omit conservatively)
  *
@@ -280,14 +281,9 @@ function buildOpenRouterReasoning(modelConfig, reasoningEffort) {
     reasoning.supported_efforts.length > 0
   ) {
     if (level === 'none') return { enabled: false };
-    const wanted = level === 'max' ? 'xhigh' : 'high';
-    const efforts = reasoning.supported_efforts;
-    const effort = efforts.includes(wanted)
-      ? wanted
-      : efforts.includes('high')
-        ? 'high'
-        : efforts[0];
-    return { effort };
+    return {
+      effort: clampReasoningEffort(level, reasoning.supported_efforts),
+    };
   }
 
   // Enable/disable-only.
