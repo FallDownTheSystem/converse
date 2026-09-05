@@ -27,7 +27,7 @@ function createSdkResponse() {
       type: 'system',
       subtype: 'init',
       session_id: 'sess_test',
-      model: 'claude-fable-5',
+      model: 'claude-fable-5-1',
     };
     yield {
       type: 'assistant',
@@ -54,22 +54,23 @@ describe('Claude SDK Provider', () => {
       const models = claudeProvider.getSupportedModels();
 
       expect(models.fable).toBeDefined();
-      expect(models.fable.modelName).toBe('claude-fable-5');
+      expect(models.fable.modelName).toBe('claude-fable-5-1');
+      expect(models['fable-5'].modelName).toBe('claude-fable-5');
       expect(models.opus).toBeDefined();
       expect(models.opus.modelName).toBe('claude-opus-5');
     });
 
-    it('should default bare "claude" (and legacy aliases) to Claude Fable 5', () => {
-      ['claude', 'claude-sdk', 'claude-code'].forEach((name) => {
+    it('should default bare "claude" (and legacy aliases) to Claude Fable 5.1', () => {
+      ['claude', 'claude-sdk', 'claude-code', 'claude:', 'claude: ', ''].forEach((name) => {
         const config = claudeProvider.getModelConfig(name);
         expect(config).toBeDefined();
-        expect(config.modelName).toBe('claude-fable-5');
+        expect(config.modelName).toBe('claude-fable-5-1');
       });
     });
 
     it('should resolve claude: prefixed model names', () => {
       expect(claudeProvider.getModelConfig('claude:fable').modelName).toBe(
-        'claude-fable-5',
+        'claude-fable-5-1',
       );
       expect(claudeProvider.getModelConfig('claude:opus').modelName).toBe(
         'claude-opus-5',
@@ -82,7 +83,7 @@ describe('Claude SDK Provider', () => {
 
     it('should resolve bare fable/opus names', () => {
       expect(claudeProvider.getModelConfig('fable').modelName).toBe(
-        'claude-fable-5',
+        'claude-fable-5-1',
       );
       expect(claudeProvider.getModelConfig('opus').modelName).toBe(
         'claude-opus-5',
@@ -94,10 +95,61 @@ describe('Claude SDK Provider', () => {
     });
   });
 
+  describe('SDK options', () => {
+    it.each([false, true])('should forward effort with stream=%s', async (stream) => {
+      const response = await claudeProvider.invoke(
+        [{ role: 'user', content: 'Hi' }],
+        { config: mockConfig, reasoning_effort: 'xhigh', stream },
+      );
+      if (stream) {
+        await Array.fromAsync(response);
+      }
+      expect(mockQuery.mock.calls[0][0].options.effort).toBe('xhigh');
+      expect(mockQuery.mock.calls[0][0].options.maxTurns).toBe(100);
+    });
+
+    it.each([
+      ['none', 'low'],
+      ['minimal', 'low'],
+      ['low', 'low'],
+      ['medium', 'medium'],
+      ['high', 'high'],
+      ['max', 'max'],
+      ['invalid', 'medium'],
+    ])('should map effort %s to %s', async (requested, expected) => {
+      await claudeProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        config: mockConfig,
+        reasoning_effort: requested,
+      });
+      expect(mockQuery.mock.calls[0][0].options.effort).toBe(expected);
+    });
+
+    it('should allow 100 SDK turns and retain the default effort when omitted', async () => {
+      await claudeProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        config: mockConfig,
+      });
+      expect(mockQuery.mock.calls[0][0].options.maxTurns).toBe(100);
+      expect(mockQuery.mock.calls[0][0].options).not.toHaveProperty('effort');
+    });
+  });
+
   describe('Model resolution in invoke', () => {
     const cases = [
-      ['claude', 'claude-fable-5'],
-      ['claude:fable', 'claude-fable-5'],
+      ['claude', 'claude-fable-5-1'],
+      ['claude-sdk', 'claude-fable-5-1'],
+      ['claude-code', 'claude-fable-5-1'],
+      ['claude:', 'claude-fable-5-1'],
+      ['claude: ', 'claude-fable-5-1'],
+      ['', 'claude-fable-5-1'],
+      ['claude:fable', 'claude-fable-5-1'],
+      ['claude:claude-fable', 'claude-fable-5-1'],
+      ['claude:fable-5', 'claude-fable-5'],
+      ['claude:claude-fable-5', 'claude-fable-5'],
+      ['claude:fable-5.1', 'claude-fable-5-1'],
+      ['claude:fable-5-1', 'claude-fable-5-1'],
+      ['claude:claude-fable-5.1', 'claude-fable-5-1'],
+      ['claude:claude-fable-5-1', 'claude-fable-5-1'],
+      ['CLAUDE:FABLE-5.1', 'claude-fable-5-1'],
       ['claude:opus', 'claude-opus-5'],
     ];
 
@@ -121,13 +173,13 @@ describe('Claude SDK Provider', () => {
       });
     });
 
-    it('should default to Claude Fable 5 when no model is specified', async () => {
+    it('should default to Claude Fable 5.1 when no model is specified', async () => {
       await claudeProvider.invoke([{ role: 'user', content: 'Hi' }], {
         config: mockConfig,
       });
 
       const queryArgs = mockQuery.mock.calls[0][0];
-      expect(queryArgs.options.model).toBe('claude-fable-5');
+      expect(queryArgs.options.model).toBe('claude-fable-5-1');
     });
 
     it('should pass unknown claude: prefixed models through to the SDK', async () => {

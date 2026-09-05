@@ -195,8 +195,9 @@ agy
 - **Setup Required**: Authenticate once with `claude login` (Claude Code CLI)
 - **Environment Variables**: None (uses Claude Code credentials)
 - **Supported Models**:
-  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Fable 5
-  - `claude:fable` - Claude Fable 5 explicitly
+  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Fable 5.1 (`claude-fable-5-1`)
+  - `claude:fable` or `claude:fable-5.1` - Claude Fable 5.1 explicitly
+  - `claude:fable-5` - Claude Fable 5.0 (`claude-fable-5`)
   - `claude:opus` - Claude Opus 5
   - Other `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 
@@ -204,7 +205,9 @@ agy
 - **Subscription Access**: Uses your Claude subscription instead of API credits
 - **Local File Access**: Reads files directly from the working directory
 - **Image Support**: Via the SDK's streaming input mode
-- **SDK-Managed Parameters**: `reasoning_effort` and other sampling parameters are managed internally by the SDK
+- **Reasoning Effort**: `reasoning_effort` maps to the SDK's `effort` option: `low`, `medium`, `high`, `xhigh`, or `max`; `none` and `minimal` become `low`. Omitting it retains the SDK default.
+- **Turn Limit**: SDK requests allow up to 100 turns (`maxTurns: 100`).
+- **SDK-Managed Parameters**: Sampling parameters are managed internally by the SDK.
 
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
@@ -341,7 +344,7 @@ The `models` array always holds plain model-name strings. Each string routes as 
 "fable"                    // Anthropic (keyword match -> claude-fable-5)
 "opus"                     // Anthropic (keyword match -> claude-opus-5)
 "sonnet"                   // Anthropic (keyword match -> claude-sonnet-4-6)
-"claude"                   // Claude Agent SDK (defaults to Claude Fable 5)
+"claude"                   // Claude Agent SDK (defaults to Claude Fable 5.1)
 "claude:opus"              // Claude Agent SDK (Claude Opus 5)
 "gemini-2.5-pro"           // Google (keyword match)
 "grok-4.5"                 // X.AI (keyword match)

@@ -293,7 +293,7 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 ### Claude Agent SDK Models
 
 - **claude** (aliases: `claude-sdk`, `claude-code`): Claude via the Claude Agent SDK
-  - Defaults to Claude Fable 5; pick a specific model with `claude:fable` or `claude:opus`
+  - Defaults to Claude Fable 5.1 (`claude-fable-5-1`); `claude:fable` and `claude:fable-5.1` select 5.1, `claude:fable-5` selects 5.0, and `claude:opus` selects Opus 5
   - Uses Claude Code CLI authentication (`claude login`) - no API key needed
   - Direct filesystem access from working directory
   - Unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
@@ -436,7 +436,7 @@ Use `"auto"` for automatic model selection, or specify exact models:
 "opus"; // -> claude-opus-4-8 (Anthropic API)
 
 // SDK providers (subscription-based, no API key)
-"claude"; // -> Claude Agent SDK (Claude Fable 5)
+"claude"; // -> Claude Agent SDK (Claude Fable 5.1)
 "claude:opus"; // -> Claude Agent SDK (Claude Opus 4.8)
 "copilot:gpt-5.6-terra"; // -> GitHub Copilot SDK
 ```
@@ -450,7 +450,7 @@ Provider priority order (subscription-based SDK providers first, then API-key pr
 
 1. Codex (`codex`)
 2. Gemini via Antigravity CLI (`gemini` → Gemini 3.8 Flash, `gemini:pro`)
-3. Claude Agent SDK (`claude` → Claude Fable 5)
+3. Claude Agent SDK (`claude` → Claude Fable 5.1)
 4. Copilot (`copilot`)
 5. OpenAI (`gpt-5.6`)
 6. Google (`gemini-pro`)

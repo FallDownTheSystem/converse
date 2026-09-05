@@ -15,13 +15,15 @@
 
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
+import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Default underlying model when the request is just "claude" (or "claude:fable")
-const DEFAULT_SDK_MODEL = 'claude-fable-5';
+const DEFAULT_SDK_MODEL = 'claude-fable-5-1';
+const SDK_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 // Supported Claude SDK models with their configurations
 const SUPPORTED_MODELS = {
-  fable: {
+  'fable-5': {
     modelName: 'claude-fable-5',
     friendlyName: 'Claude Fable 5 (via Agent SDK)',
     contextWindow: 1000000,
@@ -31,15 +33,30 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 1800000, // 30 minutes
     description:
-      'Claude Fable 5 via Agent SDK (default) - requires claude login authentication',
+      'Claude Fable 5 via Agent SDK - requires claude login authentication',
+    aliases: ['claude-fable-5'],
+  },
+  fable: {
+    modelName: 'claude-fable-5-1',
+    friendlyName: 'Claude Fable 5.1 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description:
+      'Claude Fable 5.1 via Agent SDK (default) - requires claude login authentication',
     aliases: [
       'claude',
       'claude-sdk',
       'claude-code',
       'claude:fable',
-      'claude-fable-5',
       'claude-fable',
-      'fable-5',
+      'claude-fable-5-1',
+      'claude-fable-5.1',
+      'fable-5-1',
+      'fable-5.1',
     ],
   },
   opus: {
@@ -138,7 +155,7 @@ function findModelConfig(modelName) {
 
 /**
  * Resolve the requested model to the underlying SDK model ID.
- * - "claude" (and bare "claude:") defaults to Claude Fable 5
+ * - "claude" (and bare "claude:") defaults to Claude Fable 5.1
  * - "claude:fable" / "claude:opus" select the specific model
  * - Unknown names are passed through (after prefix stripping) so users can
  *   target any model ID the Agent SDK accepts (e.g. "claude:claude-sonnet-4-6")
@@ -299,18 +316,12 @@ async function* createStreamingGenerator(
   signal,
 ) {
   try {
-    // Build query options
-    // Use higher maxTurns to allow for file reading operations
     const queryOptions = {
+      ...options,
       model: options.model || DEFAULT_SDK_MODEL,
-      maxTurns: 20, // Allow multiple turns for file operations
+      maxTurns: 100,
       permissionMode: 'bypassPermissions', // Don't prompt for permissions
     };
-
-    // Add working directory if provided
-    if (options.cwd) {
-      queryOptions.cwd = options.cwd;
-    }
 
     // Pass abort controller if provided
     // Note: The SDK expects AbortController, not AbortSignal
@@ -459,13 +470,6 @@ export const claudeProvider = {
       );
     }
 
-    // Log unsupported parameters at debug level
-    if (reasoning_effort !== undefined) {
-      debugLog(
-        '[Claude SDK] Parameter "reasoning_effort" not supported by Claude SDK (ignored)',
-      );
-    }
-
     try {
       // Get Claude SDK
       const query = await getClaudeSDK();
@@ -481,7 +485,6 @@ export const claudeProvider = {
         debugLog('[Claude SDK] Using streaming input mode for image support');
       }
 
-      // Resolve requested model (claude/claude:fable -> claude-fable-5, claude:opus -> claude-opus-5)
       const sdkModel = resolveSdkModel(model);
       debugLog(`[Claude SDK] Resolved model "${model}" -> "${sdkModel}"`);
 
@@ -490,6 +493,9 @@ export const claudeProvider = {
         cwd: config.server?.client_cwd || process.cwd(),
         model: sdkModel,
       };
+      if (reasoning_effort !== undefined) {
+        sdkOptions.effort = clampReasoningEffort(reasoning_effort, SDK_EFFORT_TIERS);
+      }
 
       // Streaming mode
       if (stream) {

@@ -468,11 +468,13 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
-- **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) — defaults to Claude Fable 5
-- **Model selection**: `claude:fable` (Claude Fable 5) or `claude:opus` (Claude Opus 5); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+- **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) — defaults to Claude Fable 5.1 (`claude-fable-5-1`)
+- **Model selection**: `claude:fable` or `claude:fable-5.1` (Claude Fable 5.1), `claude:fable-5` (Claude Fable 5.0), or `claude:opus` (Claude Opus 5); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Direct file access**: reads files from the working directory
-- `reasoning_effort` and sampling parameters are managed by the SDK
+- **Reasoning effort**: `reasoning_effort` maps to the SDK's `effort` option: `low`, `medium`, `high`, `xhigh`, or `max`; `none` and `minimal` become `low`. Omitting it retains the SDK default.
+- **Turn limit**: SDK requests allow up to 100 turns (`maxTurns: 100`).
+- Sampling parameters are managed by the SDK.
 
 ### Gemini via Antigravity CLI (subscription)
 
@@ -522,7 +524,7 @@ Use `"auto"` for automatic selection, or specify exact models:
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "fable"                    // Anthropic API (-> claude-fable-5)
 "opus"                     // Anthropic API (-> claude-opus-5)
-"claude"                   // Claude Agent SDK (-> Claude Fable 5)
+"claude"                   // Claude Agent SDK (-> Claude Fable 5.1)
 "claude:opus"              // Claude Agent SDK (Claude Opus 5)
 "gemini"                   // Antigravity CLI (Gemini 3.8 Flash)
 "copilot:gpt-5.6-terra"    // GitHub Copilot SDK
