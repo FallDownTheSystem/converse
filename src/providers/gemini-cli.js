@@ -467,6 +467,7 @@ export async function runAgy({
   const args = [
     '-p',
     promptArg,
+    '--dangerously-skip-permissions',
     '--model',
     model,
     '--print-timeout',

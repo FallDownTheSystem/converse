@@ -111,7 +111,7 @@ jobs:
         with:
           ref: main
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.gate.outputs.release_created == 'true'
         with:
           version: latest

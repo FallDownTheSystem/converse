@@ -304,6 +304,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     expect(res.exitCode).toBe(0);
 
     const { args } = fake.calls[0];
+    expect(args).toContain('--dangerously-skip-permissions');
     const pIdx = args.indexOf('-p');
     expect(args[pIdx + 1]).toBe('hello world');
     const mIdx = args.indexOf('--model');
@@ -327,6 +328,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     await promise;
 
     const { args } = fake.calls[0];
+    expect(args).toContain('--dangerously-skip-permissions');
     const pIdx = args.indexOf('-p');
     const promptArg = args[pIdx + 1];
     // argv carries a short bootstrap, not the 30k-char prompt

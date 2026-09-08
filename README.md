@@ -462,6 +462,8 @@ Provider priority order (subscription-based SDK providers first, then API-key pr
 
 The system will use the first 3 providers that are available (authenticated SDK or valid API key). This enables automatic multi-model consensus without manually specifying models.
 
+**Antigravity CLI permissions:** The `gemini`, `gemini:flash`, and `gemini:pro` aliases launch `agy` with `--dangerously-skip-permissions` because headless calls cannot prompt for tool approval. All tool permission requests are auto-approved, including shell commands and file writes; a read-only prompt is not an enforced security boundary. Use this provider only with trusted prompts and context. This also applies when `auto` selects it. The Google API provider is unaffected.
+
 ### Advanced Configuration
 
 #### Manual Installation Options
