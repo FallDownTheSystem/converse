@@ -5,6 +5,19 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0](https://github.com/FallDownTheSystem/converse/compare/v3.6.1...v3.7.0) (2026-09-22)
+
+
+### Features
+
+* add GPT-6 Sol/Luna and Claude Opus 5.5 and make them the provider defaults ([8608057](https://github.com/FallDownTheSystem/converse/commit/8608057841f78d1297fbb7e2bf657a1bb2858478))
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 7 updates ([#75](https://github.com/FallDownTheSystem/converse/issues/75)) ([aa63dc9](https://github.com/FallDownTheSystem/converse/commit/aa63dc952901a7388fa0b7e368587c582398e4eb))
+* **deps:** bump the npm-minor-and-patch group with 8 updates ([#76](https://github.com/FallDownTheSystem/converse/issues/76)) ([3149283](https://github.com/FallDownTheSystem/converse/commit/314928371b0a09e4221896fb9aa5484de4f9fab0))
+
 ## [3.6.1](https://github.com/FallDownTheSystem/converse/compare/v3.6.0...v3.6.1) (2026-09-08)
 
 
