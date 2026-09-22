@@ -280,9 +280,9 @@ const CONFIG_SCHEMA = {
     },
     CODEX_MODEL: {
       type: 'string',
-      default: 'gpt-6-astra',
+      default: 'gpt-6-sol',
       description:
-        'Default Codex backend model (e.g., gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)',
+        'Default Codex backend model (e.g., gpt-6-sol, gpt-6-luna, gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)',
     },
 
     // Copilot configuration
@@ -295,7 +295,7 @@ const CONFIG_SCHEMA = {
       type: 'string',
       required: false,
       description:
-        'Default model for Copilot SDK sessions (e.g., gpt-5.6-sol, claude-sonnet-5)',
+        'Default model for Copilot SDK sessions (e.g., gpt-6-sol, claude-opus-5.5, claude-sonnet-5)',
     },
     COPILOT_CLI_PATH: {
       type: 'string',

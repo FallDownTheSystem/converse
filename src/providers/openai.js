@@ -10,21 +10,82 @@ import { debugLog, debugError } from '../utils/console.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
 // Values each family accepts for reasoning effort, per the model pages at
-// developers.openai.com/api/docs/models. GPT-5.6 is the only family with
-// 'max'; the GPT-5.4 tier stops at 'xhigh'; the original GPT-5 minis kept
-// 'minimal' but never gained 'xhigh'; the o-series predates both ends of the
-// ladder; GPT-5.4 Pro starts at 'medium'. Models without a list are passed
-// the requested value unchanged, except uncatalogued GPT-5 Pro snapshots,
-// which are only known to accept 'high'.
-const GPT_56_EFFORT_TIERS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+// developers.openai.com/api/docs/models. The GPT-6 Sol/Luna tiers and the
+// GPT-5.6 family take the whole ladder; GPT-6 Astra has no 'none'; the
+// GPT-5.4 tier stops at 'xhigh'; the original GPT-5 minis kept 'minimal' but
+// never gained 'xhigh'; the o-series predates both ends of the ladder;
+// GPT-5.4 Pro starts at 'medium'. Models without a list are passed the
+// requested value unchanged, except uncatalogued GPT-5 Pro snapshots, which
+// are only known to accept 'high'.
+const FULL_EFFORT_TIERS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+const GPT_6_ASTRA_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const GPT_54_EFFORT_TIERS = ['none', 'low', 'medium', 'high', 'xhigh'];
 const GPT_54_PRO_EFFORT_TIERS = ['medium', 'high', 'xhigh'];
 const GPT_5_EFFORT_TIERS = ['minimal', 'low', 'medium', 'high'];
 const O_SERIES_EFFORT_TIERS = ['low', 'medium', 'high'];
 const PRO_PASSTHROUGH_EFFORT_TIERS = ['high'];
 
-// Define supported models with their capabilities
+// Define supported models with their capabilities.
+// Bare tier names (sol, luna) and the bare generation (gpt-6, and the legacy
+// gpt-5 shortcut) follow the current generation; older tiers stay reachable by
+// their versioned names.
 const SUPPORTED_MODELS = {
+  'gpt-6-sol': {
+    modelName: 'gpt-6-sol',
+    friendlyName: 'OpenAI (GPT-6 Sol)',
+    contextWindow: 1050000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportedEfforts: FULL_EFFORT_TIERS,
+    timeout: 10800000, // 3 hours
+    description:
+      'Default GPT-6 model (1M context, 128K output) - Complex coding and agentic workflows at a fifth of the Astra price',
+    aliases: [
+      'gpt-6',
+      'gpt6',
+      'gpt 6',
+      'gpt-5',
+      'gpt5',
+      'gpt 5',
+      'sol',
+      'gpt6-sol',
+      'gpt-6sol',
+      'gpt 6 sol',
+    ],
+  },
+  'gpt-6-luna': {
+    modelName: 'gpt-6-luna',
+    friendlyName: 'OpenAI (GPT-6 Luna)',
+    contextWindow: 1050000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportedEfforts: FULL_EFFORT_TIERS,
+    timeout: 1800000, // 30 minutes
+    description:
+      'Most efficient GPT-6 (1M context, 128K output) - Focused, high-volume tasks',
+    aliases: ['luna', 'gpt6-luna', 'gpt-6luna', 'gpt 6 luna'],
+  },
+  'gpt-6-astra': {
+    modelName: 'gpt-6-astra',
+    friendlyName: 'OpenAI (GPT-6 Astra)',
+    contextWindow: 1050000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: true,
+    supportsResponsesAPI: true,
+    supportedEfforts: GPT_6_ASTRA_EFFORT_TIERS,
+    timeout: 10800000, // 3 hours
+    description:
+      'Frontier GPT-6 flagship (1M context, 128K output) - Maximum intelligence for the hardest end-to-end work (EXPENSIVE: 5x Sol)',
+    aliases: ['astra', 'gpt6-astra', 'gpt-6astra', 'gpt 6 astra'],
+  },
   'gpt-5.6-sol': {
     modelName: 'gpt-5.6-sol',
     friendlyName: 'OpenAI (GPT-5.6 Sol)',
@@ -34,18 +95,15 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportedEfforts: GPT_56_EFFORT_TIERS,
+    supportedEfforts: FULL_EFFORT_TIERS,
     timeout: 10800000, // 3 hours
     description:
-      'Flagship GPT-5.6 model (1M context, 128K output) - Frontier reasoning, coding, agentic workflows. Most token-efficient flagship',
+      'Previous flagship GPT-5.6 (1M context, 128K output) - Frontier reasoning, coding, agentic workflows',
     aliases: [
       'gpt-5.6',
       'gpt5.6',
       'gpt 5.6',
-      'gpt-5',
-      'gpt5',
-      'gpt 5',
-      'sol',
+      'gpt5.6-sol',
       'gpt-5.6sol',
       'gpt 5.6 sol',
     ],
@@ -59,7 +117,7 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportedEfforts: GPT_56_EFFORT_TIERS,
+    supportedEfforts: FULL_EFFORT_TIERS,
     timeout: 5400000, // 90 minutes
     description:
       'Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the flagship price',
@@ -74,11 +132,11 @@ const SUPPORTED_MODELS = {
     supportsImages: true,
     supportsWebSearch: true,
     supportsResponsesAPI: true,
-    supportedEfforts: GPT_56_EFFORT_TIERS,
+    supportedEfforts: FULL_EFFORT_TIERS,
     timeout: 1800000, // 30 minutes
     description:
       'Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads',
-    aliases: ['gpt5.6-luna', 'gpt-5.6luna', 'gpt 5.6 luna', 'luna'],
+    aliases: ['gpt5.6-luna', 'gpt-5.6luna', 'gpt 5.6 luna'],
   },
   'gpt-5.4': {
     modelName: 'gpt-5.4',
@@ -342,14 +400,18 @@ function acceptsReasoningEffort(resolvedModel, modelConfig) {
   if (modelConfig.supportedEfforts) {
     return true;
   }
-  return resolvedModel.startsWith('o3') || resolvedModel.startsWith('gpt-5');
+  return (
+    resolvedModel.startsWith('o3') ||
+    resolvedModel.startsWith('gpt-5') ||
+    resolvedModel.startsWith('gpt-6')
+  );
 }
 
 /**
  * Resolve the reasoning effort actually sent to the API. Catalogued models
  * clamp onto their declared tiers. Pass-through IDs are matched by family
- * where the tiers are known (GPT-5 Pro snapshots, GPT-5.6 snapshots) and
- * otherwise keep the requested value.
+ * where the tiers are known (GPT-5 Pro snapshots, GPT-6 Sol/Luna and GPT-5.6
+ * snapshots) and otherwise keep the requested value.
  */
 function resolveReasoningEffort(resolvedModel, modelConfig, reasoningEffort) {
   if (modelConfig.supportedEfforts) {
@@ -358,8 +420,15 @@ function resolveReasoningEffort(resolvedModel, modelConfig, reasoningEffort) {
   if (resolvedModel.endsWith('-pro') && resolvedModel.startsWith('gpt-5')) {
     return clampReasoningEffort(reasoningEffort, PRO_PASSTHROUGH_EFFORT_TIERS);
   }
-  if (resolvedModel.startsWith('gpt-5.6')) {
-    return clampReasoningEffort(reasoningEffort, GPT_56_EFFORT_TIERS);
+  if (resolvedModel.startsWith('gpt-6-astra')) {
+    return clampReasoningEffort(reasoningEffort, GPT_6_ASTRA_EFFORT_TIERS);
+  }
+  if (
+    resolvedModel.startsWith('gpt-6-sol') ||
+    resolvedModel.startsWith('gpt-6-luna') ||
+    resolvedModel.startsWith('gpt-5.6')
+  ) {
+    return clampReasoningEffort(reasoningEffort, FULL_EFFORT_TIERS);
   }
   return reasoningEffort;
 }
@@ -487,7 +556,7 @@ export const openaiProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'gpt-5.6',
+      model = 'gpt-6',
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

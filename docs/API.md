@@ -374,9 +374,12 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 
 | Model | Aliases | Context | Output | Notes |
 |-------|---------|---------|--------|-------|
-| `gpt-5.6-sol` | `gpt-5.6`, `gpt-5`, `sol` | 1M | 128K | Flagship, default OpenAI model |
-| `gpt-5.6-terra` | `terra` | 400K | 128K | Lower-cost flagship-class tier |
-| `gpt-5.6-luna` | `luna` | 400K | 128K | Fastest, most affordable tier |
+| `gpt-6-sol` | `gpt-6`, `gpt-5`, `sol` | 1M | 128K | Default OpenAI model; effort `none`–`max` |
+| `gpt-6-luna` | `luna` | 1M | 128K | Most efficient GPT-6; effort `none`–`max` |
+| `gpt-6-astra` | `astra` | 1M | 128K | Frontier flagship (expensive); effort `low`–`max`, no `none` |
+| `gpt-5.6-sol` | `gpt-5.6` | 1M | 128K | Previous flagship |
+| `gpt-5.6-terra` | `terra` | 400K | 128K | Lower-cost GPT-5.6 tier |
+| `gpt-5.6-luna` | — | 400K | 128K | Fastest GPT-5.6 tier |
 | `gpt-5.4` | — | 1M | 128K | Flagship-class reasoning |
 | `gpt-5.4-pro` | `gpt-5-pro` | 1M | 272K | Maximum performance (expensive) |
 | `gpt-5-mini`, `gpt-5-nano` | — | 400K | 128K | Fast, cost-efficient tiers |
@@ -410,14 +413,15 @@ Provide models as plain name strings in the `models` array. Bare names and alias
 
 | Model | Aliases | Context | Output | Notes |
 |-------|---------|---------|--------|-------|
+| `claude-opus-5-5` | `opus`, `opus-5.5`, `claude-opus` | 1M | 128K | Default. Flagship Opus, always-on adaptive thinking + effort (no compaction yet) |
 | `claude-fable-5` | `fable`, `fable-5` | 1M | 128K | Most capable, adaptive thinking + effort, images, caching, compaction |
-| `claude-opus-5` | `opus`, `opus-5` | 1M | 128K | Most capable Opus, adaptive thinking + effort, compaction |
+| `claude-opus-5` | `opus-5` | 1M | 128K | Previous Opus, adaptive thinking + effort, compaction |
 | `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` | `opus-4.8`, `opus-4.7`, `opus-4.6` | 200K (1M beta) | 128K | Previous Opus generations |
 | `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` | `opus-4.5`, `opus-4.1` | 200K | 64K / 32K | Earlier Opus tiers |
 | `claude-sonnet-4-6` | `sonnet`, `sonnet-4.6` | 200K (1M beta) | 64K | Best speed/intelligence balance, adaptive thinking |
 | `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Fast and intelligent |
 
-Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
+Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
 
 ### Mistral Models
 
@@ -456,20 +460,20 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 
 **Codex** is an agentic coding assistant with direct filesystem access:
 
-- **Model**: `codex` (underlying model: GPT-6 Astra by default)
-- **Backend selection**: `codex:<model>` per request (e.g. `codex:astra`, `codex:sol`, `codex:gpt-5.6-terra`), or `CODEX_MODEL` globally; unknown names pass through to the CLI verbatim
+- **Model**: `codex` (underlying model: GPT-6 Sol by default)
+- **Backend selection**: `codex:<model>` per request (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`), or `CODEX_MODEL` globally; `sol`/`luna`/`gpt-6` name the GPT-6 tiers, the GPT-5.6 tiers are reached by full slug; unknown names pass through to the CLI verbatim
 - **Thread-based sessions**: persistent conversation history via `continuation_id` in `chat` mode
 - **Direct file access**: reads files from the working directory (paths relative to `CLIENT_CWD`)
 - **Response times**: 6-20 seconds typical (complex tasks may take minutes)
 - **Authentication**: ChatGPT login OR `CODEX_API_KEY` (NOT `OPENAI_API_KEY`)
-- `reasoning_effort` is clamped onto the tiers the chosen backend accepts (GPT-6 Astra: `low`–`max`, no `none`; GPT-5.6: `none`–`max`); web search is not applicable — Codex manages its own execution
+- `reasoning_effort` is clamped onto the tiers the chosen backend accepts (GPT-6 Sol/Luna and GPT-5.6: `none`–`max`; GPT-6 Astra: `low`–`max`, no `none`); web search is not applicable — Codex manages its own execution
 
 ### Claude Agent SDK (subscription)
 
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
-- **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) — defaults to Claude Fable 5.1 (`claude-fable-5-1`)
-- **Model selection**: `claude:fable` or `claude:fable-5.1` (Claude Fable 5.1), `claude:fable-5` (Claude Fable 5.0), or `claude:opus` (Claude Opus 5); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+- **Model**: `claude` (aliases: `claude-sdk`, `claude-code`) — defaults to Claude Opus 5.5 (`claude-opus-5-5`)
+- **Model selection**: `claude:opus` or `claude:opus-5.5` (Claude Opus 5.5), `claude:opus-5` (Claude Opus 5), `claude:fable` or `claude:fable-5.1` (Claude Fable 5.1), `claude:fable-5` (Claude Fable 5.0); unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Direct file access**: reads files from the working directory
 - **Reasoning effort**: `reasoning_effort` maps to the SDK's `effort` option: `low`, `medium`, `high`, `xhigh`, or `max`; `none` and `minimal` become `low`. Omitting it retains the SDK default.
@@ -502,10 +506,10 @@ agy
 
 ### GitHub Copilot SDK (subscription)
 
-Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
+Reach these with the `copilot:` namespace (e.g. `copilot:gpt-6-sol`); uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
 
-- **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
-- **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5` (aliases: `opus`, `claude`), `claude-opus-4.8`
+- **OpenAI**: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
@@ -515,7 +519,7 @@ Use `"auto"` for automatic selection, or specify exact models:
 
 ```text
 "auto"                     // First available provider (chat); first 3 (consensus)
-"gpt-5.6"                  // OpenAI flagship
+"gpt-6"                    // OpenAI flagship (-> gpt-6-sol)
 "gemini-2.5-flash"         // Google API
 "grok-4.5"                 // X.AI
 "deepseek"                 // DeepSeek (-> deepseek-v4-pro)
@@ -523,11 +527,12 @@ Use `"auto"` for automatic selection, or specify exact models:
 "z-ai/glm-5.2"             // OpenRouter (full slug)
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "fable"                    // Anthropic API (-> claude-fable-5)
-"opus"                     // Anthropic API (-> claude-opus-5)
-"claude"                   // Claude Agent SDK (-> Claude Fable 5.1)
-"claude:opus"              // Claude Agent SDK (Claude Opus 5)
+"opus"                     // Anthropic API (-> claude-opus-5-5)
+"claude"                   // Claude Agent SDK (-> Claude Opus 5.5)
+"claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
+"codex:luna"               // Codex (GPT-6 Luna)
 "gemini"                   // Antigravity CLI (Gemini 3.8 Flash)
-"copilot:gpt-5.6-terra"    // GitHub Copilot SDK
+"copilot:gpt-6-sol"        // GitHub Copilot SDK
 ```
 
 **Auto behavior:**
@@ -554,7 +559,7 @@ Control Codex behavior through environment variables:
 - **`CODEX_SANDBOX_MODE`** — filesystem access: `read-only` (default), `workspace-write`, `danger-full-access` (containers only)
 - **`CODEX_SKIP_GIT_CHECK`** — `true` (default) works in any directory; `false` requires a Git repository
 - **`CODEX_APPROVAL_POLICY`** — `never` (default, recommended for servers), `untrusted`, `on-failure`, `on-request`
-- **`CODEX_MODEL`** — underlying model for Codex sessions (default: `gpt-5.6-sol`)
+- **`CODEX_MODEL`** — underlying model for Codex sessions (default: `gpt-6-sol`)
 - **`CODEX_API_KEY`** — optional API key for headless deployments (alternative to ChatGPT login)
 
 **Example (.env):**
@@ -563,7 +568,7 @@ CODEX_API_KEY=your_codex_api_key_here
 CODEX_SANDBOX_MODE=read-only
 CODEX_SKIP_GIT_CHECK=true
 CODEX_APPROVAL_POLICY=never
-CODEX_MODEL=gpt-5.6-sol
+CODEX_MODEL=gpt-6-sol
 ```
 
 ## Context Processing

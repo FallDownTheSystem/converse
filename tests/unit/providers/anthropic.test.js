@@ -93,6 +93,7 @@ describe('Anthropic Provider', () => {
       expect(Object.keys(models).length).toBeGreaterThan(0);
 
       // Check for some expected models
+      expect(models['claude-opus-5-5']).toBeDefined();
       expect(models['claude-fable-5']).toBeDefined();
       expect(models['claude-opus-5']).toBeDefined();
       expect(models['claude-sonnet-4-6']).toBeDefined();
@@ -124,8 +125,40 @@ describe('Anthropic Provider', () => {
       });
     });
 
-    it('should resolve Claude Opus 5 by various aliases', () => {
-      const aliases = ['opus', 'opus-5', 'opus5', 'claude-opus', 'claude-opus-5'];
+    it('should get Claude Opus 5.5 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-opus-5-5');
+
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('claude-opus-5-5');
+      expect(config.friendlyName).toBe('Claude Opus 5.5');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(128000);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.supportsEffort).toBe(true);
+      expect(config.effortGA).toBe(true);
+      expect(config.effortTiers).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    });
+
+    it('should resolve bare opus aliases to Claude Opus 5.5', () => {
+      const aliases = [
+        'opus',
+        'claude-opus',
+        'opus-5.5',
+        'opus-5-5',
+        'opus5.5',
+        'claude-opus-5.5',
+        'claude-opus-5-5',
+      ];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-opus-5-5');
+      });
+    });
+
+    it('should resolve Claude Opus 5 by its versioned aliases', () => {
+      const aliases = ['opus-5', 'opus5', 'claude-opus-5', 'claude-opus-5.0'];
 
       aliases.forEach((alias) => {
         const config = anthropicProvider.getModelConfig(alias);
@@ -414,6 +447,34 @@ describe('Anthropic Provider', () => {
       expect(callArgs.temperature).toBeUndefined();
       // 1M context is the default on Fable 5 - no beta header required
       expect(callArgs.betas).not.toContain('context-1m-2025-08-07');
+    });
+
+    it('should use always-on adaptive thinking and GA effort for Opus 5.5', async () => {
+      await anthropicProvider.invoke([{ role: 'user', content: 'Test opus-5.5' }], {
+        model: 'opus',
+        reasoning_effort: 'xhigh',
+        temperature: 0.5,
+        config: mockConfig,
+      });
+
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('claude-opus-5-5');
+      expect(callArgs.max_tokens).toBe(128000);
+      expect(callArgs.thinking).toEqual({ type: 'adaptive' });
+      expect(callArgs.output_config).toEqual({ effort: 'xhigh' });
+      expect(callArgs.temperature).toBeUndefined();
+      expect(callArgs.betas).not.toContain('context-1m-2025-08-07');
+      expect(callArgs.betas).not.toContain('effort-2025-11-24');
+      // Opus 5.5 is not on Anthropic's compaction compatibility list
+      expect(callArgs.betas).not.toContain('compact-2026-01-12');
+    });
+
+    it('should default to Opus 5.5 when no model is given', async () => {
+      await anthropicProvider.invoke([{ role: 'user', content: 'Hi' }], {
+        config: mockConfig,
+      });
+
+      expect(mockCreate.mock.calls[0][0].model).toBe('claude-opus-5-5');
     });
 
     it('should use adaptive thinking for Sonnet 4.6', async () => {

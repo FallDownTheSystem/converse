@@ -21,6 +21,37 @@ const EFFORT_TIERS_LEGACY = ['low', 'medium', 'high'];
 
 // Define supported Claude models with their capabilities
 const SUPPORTED_MODELS = {
+  'claude-opus-5-5': {
+    modelName: 'claude-opus-5-5',
+    friendlyName: 'Claude Opus 5.5',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Thinking is always on and cannot be disabled
+    timeout: 1800000,
+    supportsEffort: true,
+    effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
+    // Absent from Anthropic's compaction compatibility list, unlike Opus 5
+    supportsCompaction: false,
+    description:
+      'Claude Opus 5.5 - Flagship Opus for complex agentic coding and deep reasoning; matches Fable 5.1 on most work at Opus pricing',
+    aliases: [
+      'claude-opus-5-5',
+      'claude-opus-5.5',
+      'claude-5.5-opus',
+      'claude-5-5-opus',
+      'opus-5.5',
+      'opus-5-5',
+      'opus5.5',
+      'opus5-5',
+      'opus',
+      'claude-opus',
+    ],
+  },
   'claude-fable-5': {
     modelName: 'claude-fable-5',
     friendlyName: 'Claude Fable 5',
@@ -63,15 +94,13 @@ const SUPPORTED_MODELS = {
     effortTiers: EFFORT_TIERS_FULL,
     supportsCompaction: true,
     description:
-      'Claude Opus 5 - Most capable Opus for complex agentic coding and deep reasoning',
+      'Claude Opus 5 - Previous Opus generation for complex agentic coding and deep reasoning',
     aliases: [
       'claude-opus-5',
       'claude-5-opus',
       'opus-5',
       'opus5',
       'claude-opus-5.0',
-      'opus',
-      'claude-opus',
     ],
   },
   'claude-opus-4-8': {
@@ -567,7 +596,7 @@ export const anthropicProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'claude-3-5-sonnet-20241022',
+      model = 'claude-opus-5-5',
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

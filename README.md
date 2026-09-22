@@ -211,9 +211,12 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### OpenAI Models
 
-- **gpt-5.6-sol** (default; aliases: `gpt-5.6`, `gpt-5`, `sol`): Flagship GPT-5.6 (1M context, 128K output) - Frontier reasoning, coding, and agentic workflows
-- **gpt-5.6-terra** (alias: `terra`): Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with the flagship at half the price
-- **gpt-5.6-luna** (alias: `luna`): Fastest, most affordable GPT-5.6 (400K context, 128K output) - High-volume, latency-sensitive workloads
+- **gpt-6-sol** (default; aliases: `gpt-6`, `gpt-5`, `sol`): Default GPT-6 (1M context, 128K output) - Complex coding and agentic workflows; effort `none`–`max`
+- **gpt-6-luna** (alias: `luna`): Most efficient GPT-6 (1M context, 128K output) - Focused, high-volume tasks; effort `none`–`max`
+- **gpt-6-astra** (alias: `astra`): Frontier GPT-6 flagship (1M context, 128K output) - Hardest end-to-end work; effort `low`–`max` (EXPENSIVE: 5x Sol)
+- **gpt-5.6-sol** (alias: `gpt-5.6`): Previous flagship GPT-5.6 (1M context, 128K output)
+- **gpt-5.6-terra** (alias: `terra`): Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the price
+- **gpt-5.6-luna**: Fastest, most affordable GPT-5.6 (400K context, 128K output)
 - **gpt-5.4**: Flagship-class reasoning (1M context, 128K output)
 - **gpt-5.4-pro** (alias: `gpt-5-pro`): Maximum-performance reasoning (1M context, 272K output) - Hardest problems, extended compute time (EXPENSIVE)
 - **gpt-5-mini**, **gpt-5-nano**: Faster, cost-efficient GPT-5 tiers (400K context, 128K output)
@@ -247,9 +250,10 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### Anthropic Models
 
+- **claude-opus-5-5** (default; aliases: `opus`, `opus-5.5`, `claude-opus`): Flagship Opus for complex agentic coding and deep reasoning; thinking always on, effort `low`–`max` (1M context, 128K output)
 - **claude-fable-5** (alias: `fable`): Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
-- **claude-opus-4-8** (alias: `opus`): Most capable Opus for complex reasoning and agentic coding (200K context, 1M via beta, 128K output)
-- **claude-opus-4-7** / **claude-opus-4-6**: Previous Opus generations with adaptive thinking (128K output)
+- **claude-opus-5** (alias: `opus-5`): Previous Opus generation (1M context, 128K output)
+- **claude-opus-4-8** / **claude-opus-4-7** / **claude-opus-4-6**: Earlier Opus generations with adaptive thinking (200K context, 1M via beta, 128K output)
 - **claude-opus-4-5** / **claude-opus-4-1**: Legacy Opus models with extended thinking (64K / 32K output)
 - **claude-sonnet-4-6** (alias: `sonnet`): Best combination of speed and intelligence with adaptive thinking (64K output)
 - **claude-haiku-4-5** (alias: `haiku`): Fast and intelligent for simple queries (64K output)
@@ -281,9 +285,9 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 
 ### Codex Models
 
-- **codex**: OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
-  - Pick another backend per request with `codex:<model>` (e.g. `codex:sol`, `codex:gpt-5.6-terra`) or globally with `CODEX_MODEL`; backends: `gpt-6-astra` (alias `astra`), `gpt-5.6-sol` (`sol`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna` (`luna`), `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
-  - `reasoning_effort` maps onto the tiers the chosen backend accepts (GPT-6 Astra: `low` through `max`, no `none`)
+- **codex**: OpenAI Codex agentic coding assistant (GPT-6 Sol by default)
+  - Pick another backend per request with `codex:<model>` (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`) or globally with `CODEX_MODEL`; backends: `gpt-6-sol` (aliases `sol`, `gpt-6`), `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`), `gpt-5.6-sol`, `gpt-5.6-terra` (`terra`), `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
+  - `reasoning_effort` maps onto the tiers the chosen backend accepts (Sol/Luna: `none` through `max`; GPT-6 Astra: `low` through `max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -293,17 +297,17 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 ### Claude Agent SDK Models
 
 - **claude** (aliases: `claude-sdk`, `claude-code`): Claude via the Claude Agent SDK
-  - Defaults to Claude Fable 5.1 (`claude-fable-5-1`); `claude:fable` and `claude:fable-5.1` select 5.1, `claude:fable-5` selects 5.0, and `claude:opus` selects Opus 5
+  - Defaults to Claude Opus 5.5 (`claude-opus-5-5`); `claude:opus` selects Opus 5.5, `claude:opus-5` selects Opus 5, `claude:fable` / `claude:fable-5.1` select Fable 5.1, and `claude:fable-5` selects Fable 5.0
   - Uses Claude Code CLI authentication (`claude login`) - no API key needed
   - Direct filesystem access from working directory
   - Unknown `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 
 ### GitHub Copilot SDK Models
 
-Reach these with the `copilot:` namespace (e.g. `copilot:gpt-5.6-terra`); uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
+Reach these with the `copilot:` namespace (e.g. `copilot:gpt-6-sol`); uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
-- **OpenAI**: `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
-- **Anthropic**: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-4.8` (aliases: `opus`, `claude`)
+- **OpenAI**: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is forwarded to the Copilot backend verbatim
 
@@ -359,7 +363,7 @@ CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login availabl
 CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
 CODEX_SKIP_GIT_CHECK=true                    # true (default), false
 CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
-CODEX_MODEL=gpt-6-astra                      # gpt-6-astra (default), gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5
+CODEX_MODEL=gpt-6-sol                        # gpt-6-sol (default), gpt-6-luna, gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5
 ```
 
 ### Configuration Options
@@ -433,12 +437,13 @@ Use `"auto"` for automatic model selection, or specify exact models:
 "deepseek"; // -> deepseek-v4-pro
 "mistral"; // -> mistral-medium-3-5
 "fable"; // -> claude-fable-5 (Anthropic API)
-"opus"; // -> claude-opus-4-8 (Anthropic API)
+"opus"; // -> claude-opus-5-5 (Anthropic API)
 
 // SDK providers (subscription-based, no API key)
-"claude"; // -> Claude Agent SDK (Claude Fable 5.1)
-"claude:opus"; // -> Claude Agent SDK (Claude Opus 4.8)
-"copilot:gpt-5.6-terra"; // -> GitHub Copilot SDK
+"claude"; // -> Claude Agent SDK (Claude Opus 5.5)
+"claude:fable"; // -> Claude Agent SDK (Claude Fable 5.1)
+"codex:luna"; // -> Codex (GPT-6 Luna)
+"copilot:gpt-6-sol"; // -> GitHub Copilot SDK
 ```
 
 **Auto Model Behavior:**
@@ -448,14 +453,14 @@ Use `"auto"` for automatic model selection, or specify exact models:
 
 Provider priority order (subscription-based SDK providers first, then API-key providers):
 
-1. Codex (`codex`)
+1. Codex (`codex` → GPT-6 Sol)
 2. Gemini via Antigravity CLI (`gemini` → Gemini 3.8 Flash, `gemini:pro`)
-3. Claude Agent SDK (`claude` → Claude Fable 5.1)
+3. Claude Agent SDK (`claude` → Claude Opus 5.5)
 4. Copilot (`copilot`)
-5. OpenAI (`gpt-5.6`)
+5. OpenAI (`gpt-6` → GPT-6 Sol)
 6. Google (`gemini-pro`)
 7. XAI (`grok-4.5`)
-8. Anthropic (`claude-sonnet-4-20250514`)
+8. Anthropic (`claude-opus-5-5`)
 9. Mistral (`mistral-medium-3-5`)
 10. DeepSeek (`deepseek-v4-pro`)
 11. OpenRouter (`z-ai/glm-5.2`)

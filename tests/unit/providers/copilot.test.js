@@ -18,14 +18,18 @@ import { mapModelToProvider } from '../../../src/utils/modelRouting.js';
 describe('Copilot Provider - Model Selection', () => {
   describe('resolveModelAlias', () => {
     it('resolves version shortcut aliases', () => {
+      expect(resolveModelAlias('gpt-6')).toBe('gpt-6-sol');
       expect(resolveModelAlias('gpt-5.6')).toBe('gpt-5.6-sol');
-      expect(resolveModelAlias('gpt-5')).toBe('gpt-5.6-sol');
-      expect(resolveModelAlias('gpt')).toBe('gpt-5.6-sol');
-      expect(resolveModelAlias('codex')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('gpt-5')).toBe('gpt-6-sol');
+      expect(resolveModelAlias('gpt')).toBe('gpt-6-sol');
+      expect(resolveModelAlias('codex')).toBe('gpt-6-sol');
+      expect(resolveModelAlias('sol')).toBe('gpt-6-sol');
+      expect(resolveModelAlias('luna')).toBe('gpt-6-luna');
       expect(resolveModelAlias('sonnet')).toBe('claude-sonnet-5');
       expect(resolveModelAlias('fable')).toBe('claude-fable-5');
-      expect(resolveModelAlias('opus')).toBe('claude-opus-5');
-      expect(resolveModelAlias('claude')).toBe('claude-opus-5');
+      expect(resolveModelAlias('opus')).toBe('claude-opus-5.5');
+      expect(resolveModelAlias('claude')).toBe('claude-opus-5.5');
+      expect(resolveModelAlias('claude-opus-5-5')).toBe('claude-opus-5.5');
       expect(resolveModelAlias('gemini')).toBe('gemini-3.1-pro-preview');
       expect(resolveModelAlias('gemini-flash')).toBe('gemini-3.5-flash');
     });
@@ -42,7 +46,7 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('is case-insensitive', () => {
-      expect(resolveModelAlias('GPT-5')).toBe('gpt-5.6-sol');
+      expect(resolveModelAlias('GPT-5')).toBe('gpt-6-sol');
       expect(resolveModelAlias('Sonnet')).toBe('claude-sonnet-5');
       expect(resolveModelAlias('FABLE')).toBe('claude-fable-5');
       expect(resolveModelAlias('CLAUDE-OPUS-4.8')).toBe('claude-opus-4.8');
@@ -72,13 +76,14 @@ describe('Copilot Provider - Model Selection', () => {
 
   describe('resolveSessionModel', () => {
     it('strips copilot: prefix and resolves alias', () => {
-      expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-5.6-sol');
-      expect(resolveSessionModel('copilot:gpt', {})).toBe('gpt-5.6-sol');
-      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('copilot:gpt-5', {})).toBe('gpt-6-sol');
+      expect(resolveSessionModel('copilot:gpt', {})).toBe('gpt-6-sol');
+      expect(resolveSessionModel('copilot:codex', {})).toBe('gpt-6-sol');
+      expect(resolveSessionModel('copilot:luna', {})).toBe('gpt-6-luna');
       expect(resolveSessionModel('copilot:sonnet', {})).toBe('claude-sonnet-5');
       expect(resolveSessionModel('copilot:fable', {})).toBe('claude-fable-5');
-      expect(resolveSessionModel('copilot:opus', {})).toBe('claude-opus-5');
-      expect(resolveSessionModel('copilot:claude', {})).toBe('claude-opus-5');
+      expect(resolveSessionModel('copilot:opus', {})).toBe('claude-opus-5.5');
+      expect(resolveSessionModel('copilot:claude', {})).toBe('claude-opus-5.5');
     });
 
     it('strips copilot: prefix and passes through SDK model names', () => {
@@ -91,7 +96,7 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('is case-insensitive for prefix detection', () => {
-      expect(resolveSessionModel('CoPiLoT:GPT-5', {})).toBe('gpt-5.6-sol');
+      expect(resolveSessionModel('CoPiLoT:GPT-5', {})).toBe('gpt-6-sol');
       expect(resolveSessionModel('COPILOT:sonnet', {})).toBe('claude-sonnet-5');
     });
 
@@ -145,7 +150,7 @@ describe('Copilot Provider - Model Selection', () => {
     it('returns config via alias lookup', () => {
       const config = copilotProvider.getModelConfig('gpt-5');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-5.6-sol');
+      expect(config.modelName).toBe('gpt-6-sol');
     });
 
     it('handles copilot: prefix', () => {
@@ -208,16 +213,19 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('advertises exactly the curated catalog (base + 9 curated IDs)', () => {
+    it('advertises exactly the curated catalog (base + 12 curated IDs)', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
       expect(keys).toEqual(
         [
           'copilot',
+          'gpt-6-sol',
+          'gpt-6-luna',
           'gpt-5.6-sol',
           'gpt-5.6-terra',
           'gpt-5.6-luna',
+          'claude-opus-5.5',
           'claude-fable-5',
           'claude-sonnet-5',
           'claude-opus-5',
@@ -251,8 +259,11 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('flags reasoning-effort support only on the GPT-5.6 tier', () => {
+    it('flags reasoning-effort support only on the GPT tiers', () => {
       const models = copilotProvider.getSupportedModels();
+      expect(models['gpt-6-sol'].supportsReasoningEffort).toBe(true);
+      expect(models['gpt-6-luna'].supportsReasoningEffort).toBe(true);
+      expect(models['claude-opus-5.5'].supportsReasoningEffort).toBeUndefined();
       expect(models['gpt-5.6-sol'].supportsReasoningEffort).toBe(true);
       expect(models['gpt-5.6-terra'].supportsReasoningEffort).toBe(true);
       expect(models['gpt-5.6-luna'].supportsReasoningEffort).toBe(true);

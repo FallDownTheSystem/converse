@@ -35,11 +35,38 @@ const SUPPORTED_MODELS = {
   },
 
   // OpenAI models
-  // Bare `gpt-5.6` (and the legacy `gpt-5` shortcut) route to Sol, matching
-  // Copilot's own bare-alias behavior. Terra is the recommended balanced tier.
-  // `codex` and `gpt` point at the latest GPT tier (reachable only via the
-  // `copilot:` namespace — bare `codex` routes to the Codex provider and bare
-  // `gpt*` keyword-routes to OpenAI before Copilot's catalog is consulted).
+  // Bare `gpt-6` / `gpt-5.6` route to that generation's Sol, matching
+  // Copilot's own bare-alias behavior; `sol`/`luna` and the legacy `gpt-5`
+  // shortcut follow the current generation. `codex` and `gpt` point at the
+  // latest GPT tier (reachable only via the `copilot:` namespace — bare
+  // `codex` routes to the Codex provider and bare `gpt*` keyword-routes to
+  // OpenAI before Copilot's catalog is consulted).
+  'gpt-6-sol': {
+    modelName: 'gpt-6-sol',
+    friendlyName: 'GPT-6 Sol (via Copilot)',
+    contextWindow: 1050000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoningEffort: true,
+    timeout: 1800000,
+    description: 'OpenAI GPT-6 Sol via Copilot subscription',
+    aliases: ['gpt-6', 'gpt-5', 'gpt', 'codex', 'sol'],
+  },
+  'gpt-6-luna': {
+    modelName: 'gpt-6-luna',
+    friendlyName: 'GPT-6 Luna (via Copilot)',
+    contextWindow: 1050000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoningEffort: true,
+    timeout: 1800000,
+    description: 'OpenAI GPT-6 Luna via Copilot subscription',
+    aliases: ['luna'],
+  },
   'gpt-5.6-sol': {
     modelName: 'gpt-5.6-sol',
     friendlyName: 'GPT-5.6 Sol (via Copilot)',
@@ -51,7 +78,7 @@ const SUPPORTED_MODELS = {
     supportsReasoningEffort: true,
     timeout: 1800000,
     description: 'OpenAI GPT-5.6 Sol via Copilot subscription',
-    aliases: ['gpt-5.6', 'gpt-5', 'gpt', 'codex'],
+    aliases: ['gpt-5.6'],
   },
   'gpt-5.6-terra': {
     modelName: 'gpt-5.6-terra',
@@ -81,6 +108,19 @@ const SUPPORTED_MODELS = {
   },
 
   // Anthropic models
+  // Bare `opus` and `claude` follow the current Opus generation.
+  'claude-opus-5.5': {
+    modelName: 'claude-opus-5.5',
+    friendlyName: 'Claude Opus 5.5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description: 'Anthropic Claude Opus 5.5 via Copilot subscription',
+    aliases: ['opus', 'claude', 'claude-opus-5-5'],
+  },
   'claude-fable-5': {
     modelName: 'claude-fable-5',
     friendlyName: 'Claude Fable 5 (via Copilot)',
@@ -115,7 +155,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 1800000,
     description: 'Anthropic Claude Opus 5 via Copilot subscription',
-    aliases: ['opus', 'claude'],
+    aliases: [],
   },
   'claude-opus-4.8': {
     modelName: 'claude-opus-4.8',

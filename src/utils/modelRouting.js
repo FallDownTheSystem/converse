@@ -38,16 +38,16 @@ export function getDefaultModelForProvider(providerName) {
     'gemini-cli': 'gemini',
     claude: 'claude',
     copilot: 'copilot',
-    openai: 'gpt-5.6',
+    openai: 'gpt-6',
     xai: 'grok-4.5',
     google: 'gemini-pro',
-    anthropic: 'claude-sonnet-4-20250514',
+    anthropic: 'claude-opus-5-5',
     mistral: 'mistral-medium-3-5',
     deepseek: 'deepseek-v4-pro',
     openrouter: 'z-ai/glm-5.2',
   };
 
-  return defaults[providerName] || 'gpt-5.6';
+  return defaults[providerName] || 'gpt-6';
 }
 
 /**

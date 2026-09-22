@@ -39,8 +39,11 @@ describe('Model Routing (Foundation)', () => {
       expect(getDefaultModelForProvider('openrouter')).toBe('z-ai/glm-5.2');
     });
 
-    it('leaves openai/copilot defaults unchanged', () => {
-      expect(getDefaultModelForProvider('openai')).toBe('gpt-5.6');
+    it('points the SDK and API defaults at the current generation', () => {
+      expect(getDefaultModelForProvider('openai')).toBe('gpt-6');
+      expect(getDefaultModelForProvider('anthropic')).toBe('claude-opus-5-5');
+      expect(getDefaultModelForProvider('claude')).toBe('claude');
+      expect(getDefaultModelForProvider('codex')).toBe('codex');
       expect(getDefaultModelForProvider('copilot')).toBe('copilot');
     });
   });

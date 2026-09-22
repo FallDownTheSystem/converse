@@ -9,9 +9,12 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Environment Variable**: `OPENAI_API_KEY`
 - **Supported Models**:
-  - `gpt-5.6-sol` (aliases: `gpt-5.6`, `gpt-5`, `sol`) - Flagship GPT-5.6, the default OpenAI model
+  - `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`) - Default GPT-6 and the default OpenAI model (1M context, 128K output; effort `none`–`max`)
+  - `gpt-6-luna` (alias: `luna`) - Most efficient GPT-6 for focused, high-volume tasks (1M context, 128K output; effort `none`–`max`)
+  - `gpt-6-astra` (alias: `astra`) - Frontier GPT-6 flagship, 5x the Sol price (1M context, 128K output; effort `low`–`max`)
+  - `gpt-5.6-sol` (alias: `gpt-5.6`) - Previous flagship GPT-5.6
   - `gpt-5.6-terra` (alias: `terra`) - Lower-cost GPT-5.6, competitive with GPT-5.5
-  - `gpt-5.6-luna` (alias: `luna`) - Fastest, most affordable GPT-5.6
+  - `gpt-5.6-luna` - Fastest, most affordable GPT-5.6
   - `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.4-pro`, `gpt-5-mini`, `gpt-5-nano` - GPT-5.4/GPT-5 family
   - `o3`, `o3-pro`, `o4-mini` - Advanced reasoning models
   - `gpt-4.1` - Large context (1M tokens)
@@ -45,9 +48,10 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [console.anthropic.com](https://console.anthropic.com/)
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Supported Models**:
+  - `claude-opus-5-5` (aliases `opus`, `opus-5.5`, `claude-opus`) - Default. Flagship Opus for complex agentic coding and deep reasoning; thinking is always on, effort `low`–`max` (1M context, 128K output)
   - `claude-fable-5` (alias `fable`) - Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
-  - `claude-opus-5` (alias `opus`) - Most capable Opus for complex agentic coding and deep reasoning (1M context, 128K output)
-  - `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` - Previous Opus generations with adaptive thinking (128K output)
+  - `claude-opus-5` (alias `opus-5`) - Previous Opus generation (1M context, 128K output)
+  - `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` - Earlier Opus generations with adaptive thinking (128K output)
   - `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` - Legacy Opus models (64K / 32K output)
   - `claude-sonnet-4-6` (alias `sonnet`) - Best combination of speed and intelligence with adaptive thinking (64K output)
   - `claude-sonnet-4-5-20250929` - Legacy Sonnet (64K output)
@@ -101,11 +105,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
-  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-6-astra; e.g. gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
+  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-6-sol; e.g. gpt-6-luna, gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
 - **Supported Models**:
-  - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
-  - `codex:<model>` - Same, with an explicit backend: `codex:astra`, `codex:sol`, `codex:terra`, `codex:luna`, `codex:gpt-5.5`, `codex:spark`, or any slug the Codex CLI knows
-  - `reasoning_effort` is clamped onto what the backend accepts (GPT-6 Astra: `low`–`max`, no `none`)
+  - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Sol by default)
+  - `codex:<model>` - Same, with an explicit backend: `codex:sol`, `codex:luna`, `codex:astra` (GPT-6), `codex:gpt-5.6-sol`, `codex:terra`, `codex:gpt-5.6-luna`, `codex:gpt-5.5`, `codex:spark`, or any slug the Codex CLI knows
+  - `reasoning_effort` is clamped onto what the backend accepts (Sol/Luna: `none`–`max`; GPT-6 Astra: `low`–`max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -195,10 +199,11 @@ agy
 - **Setup Required**: Authenticate once with `claude login` (Claude Code CLI)
 - **Environment Variables**: None (uses Claude Code credentials)
 - **Supported Models**:
-  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Fable 5.1 (`claude-fable-5-1`)
-  - `claude:fable` or `claude:fable-5.1` - Claude Fable 5.1 explicitly
+  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Opus 5.5 (`claude-opus-5-5`)
+  - `claude:opus` or `claude:opus-5.5` - Claude Opus 5.5 explicitly
+  - `claude:opus-5` - Claude Opus 5 (`claude-opus-5`)
+  - `claude:fable` or `claude:fable-5.1` - Claude Fable 5.1 (`claude-fable-5-1`)
   - `claude:fable-5` - Claude Fable 5.0 (`claude-fable-5`)
-  - `claude:opus` - Claude Opus 5
   - Other `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
 
 **Key Features:**
@@ -218,12 +223,12 @@ agy
 - **Authentication**: GitHub Copilot subscription via the Copilot CLI (`gh auth login` with an active Copilot subscription) — no API key needed
 - **Setup Required**: Authenticate the GitHub CLI and ensure your account has an active Copilot subscription
 - **Environment Variables**: None
-- **Supported Models** (reach them with the `copilot:` namespace, e.g. `copilot:gpt-5.6-terra`):
+- **Supported Models** (reach them with the `copilot:` namespace, e.g. `copilot:gpt-6-sol`):
   - `copilot` - Uses Copilot's default or env-configured model
-  - OpenAI: `gpt-5.6-sol` (aliases: bare `gpt-5.6`, `gpt-5`), `gpt-5.6-terra` (recommended balanced tier), `gpt-5.6-luna`
-  - Anthropic: `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5` (aliases: `opus`, `claude`), `claude-opus-4.8`
+  - OpenAI: `gpt-6-sol` (aliases: bare `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
+  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
-- **Reasoning**: The `gpt-5.6-sol`/`terra`/`luna` tiers accept `reasoning_effort`.
+- **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
 - **Explicit pass-through**: Any other `copilot:<id>` model string is forwarded to the Copilot backend verbatim, so IDs outside the curated list still work while the backend accepts them.
 
 **Key Features:**
@@ -340,12 +345,12 @@ When using the chat tool in any mode, specify models using their identifiers:
 The `models` array always holds plain model-name strings. Each string routes as follows:
 
 ```text
-"gpt-5.6"                  // OpenAI (keyword match)
+"gpt-6"                    // OpenAI (keyword match -> gpt-6-sol)
 "fable"                    // Anthropic (keyword match -> claude-fable-5)
-"opus"                     // Anthropic (keyword match -> claude-opus-5)
+"opus"                     // Anthropic (keyword match -> claude-opus-5-5)
 "sonnet"                   // Anthropic (keyword match -> claude-sonnet-4-6)
-"claude"                   // Claude Agent SDK (defaults to Claude Fable 5.1)
-"claude:opus"              // Claude Agent SDK (Claude Opus 5)
+"claude"                   // Claude Agent SDK (defaults to Claude Opus 5.5)
+"claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
 "gemini-2.5-pro"           // Google (keyword match)
 "grok-4.5"                 // X.AI (keyword match)
 "mistral-large"            // Mistral (alias -> mistral-large-2512)
@@ -377,7 +382,7 @@ The `models` array always holds plain model-name strings. Each string routes as 
 
 ### Model Not Found
 - Use exact model identifiers as listed above
-- Some providers support aliases (e.g., "fable" → "claude-fable-5", "opus" → "claude-opus-5")
+- Some providers support aliases (e.g., "fable" → "claude-fable-5", "opus" → "claude-opus-5-5")
 - Note: bare "claude" routes to the Claude Agent SDK provider, not the Anthropic API
 - Check provider documentation for model availability in your region
 

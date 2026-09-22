@@ -17,15 +17,15 @@ import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 
-// Default underlying model when the request is just "claude" (or "claude:fable")
-const DEFAULT_SDK_MODEL = 'claude-fable-5-1';
+// Default underlying model when the request is just "claude" (or "claude:opus")
+const DEFAULT_SDK_MODEL = 'claude-opus-5-5';
 const SDK_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 // Supported Claude SDK models with their configurations
 const SUPPORTED_MODELS = {
-  'fable-5': {
-    modelName: 'claude-fable-5',
-    friendlyName: 'Claude Fable 5 (via Agent SDK)',
+  opus: {
+    modelName: 'claude-opus-5-5',
+    friendlyName: 'Claude Opus 5.5 (via Agent SDK)',
     contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
@@ -33,8 +33,31 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 1800000, // 30 minutes
     description:
-      'Claude Fable 5 via Agent SDK - requires claude login authentication',
-    aliases: ['claude-fable-5'],
+      'Claude Opus 5.5 via Agent SDK (default) - requires claude login authentication',
+    aliases: [
+      'claude',
+      'claude-sdk',
+      'claude-code',
+      'claude:opus',
+      'claude-opus',
+      'claude-opus-5-5',
+      'claude-opus-5.5',
+      'opus-5-5',
+      'opus-5.5',
+    ],
+  },
+  'opus-5': {
+    modelName: 'claude-opus-5',
+    friendlyName: 'Claude Opus 5 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description:
+      'Claude Opus 5 via Agent SDK - requires claude login authentication',
+    aliases: ['claude-opus-5'],
   },
   fable: {
     modelName: 'claude-fable-5-1',
@@ -46,11 +69,8 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 1800000,
     description:
-      'Claude Fable 5.1 via Agent SDK (default) - requires claude login authentication',
+      'Claude Fable 5.1 via Agent SDK - requires claude login authentication',
     aliases: [
-      'claude',
-      'claude-sdk',
-      'claude-code',
       'claude:fable',
       'claude-fable',
       'claude-fable-5-1',
@@ -59,18 +79,18 @@ const SUPPORTED_MODELS = {
       'fable-5.1',
     ],
   },
-  opus: {
-    modelName: 'claude-opus-5',
-    friendlyName: 'Claude Opus 5 (via Agent SDK)',
+  'fable-5': {
+    modelName: 'claude-fable-5',
+    friendlyName: 'Claude Fable 5 (via Agent SDK)',
     contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
-    supportsImages: true, // Supported via streaming input mode
-    supportsWebSearch: false, // SDK accesses files directly, not web
-    timeout: 1800000, // 30 minutes
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
     description:
-      'Claude Opus 5 via Agent SDK - requires claude login authentication',
-    aliases: ['claude:opus', 'claude-opus-5'],
+      'Claude Fable 5 via Agent SDK - requires claude login authentication',
+    aliases: ['claude-fable-5'],
   },
 };
 
@@ -133,7 +153,7 @@ function findModelConfig(modelName) {
   if (name.toLowerCase().startsWith('claude:')) {
     name = name.slice('claude:'.length).trim();
   }
-  if (!name) return SUPPORTED_MODELS.fable;
+  if (!name) return SUPPORTED_MODELS.opus;
 
   const nameLower = name.toLowerCase();
 
@@ -155,8 +175,8 @@ function findModelConfig(modelName) {
 
 /**
  * Resolve the requested model to the underlying SDK model ID.
- * - "claude" (and bare "claude:") defaults to Claude Fable 5.1
- * - "claude:fable" / "claude:opus" select the specific model
+ * - "claude" (and bare "claude:") defaults to Claude Opus 5.5
+ * - "claude:opus" / "claude:opus-5" / "claude:fable" / "claude:fable-5" select the specific model
  * - Unknown names are passed through (after prefix stripping) so users can
  *   target any model ID the Agent SDK accepts (e.g. "claude:claude-sonnet-4-6")
  */
@@ -624,7 +644,7 @@ export const claudeProvider = {
 
   /**
    * Get model configuration for specific model
-   * Handles claude: prefixed names (e.g. "claude:opus", "claude:fable")
+   * Handles claude: prefixed names (e.g. "claude:opus", "claude:fable", "claude:opus-5")
    */
   getModelConfig(modelName) {
     return findModelConfig(modelName);

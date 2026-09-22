@@ -25,9 +25,13 @@ import {
  * Backend models Codex can run, keyed by the slug passed to the CLI as
  * --model. The reasoning tiers are the ones each model's API accepts, verified
  * against the API's own rejection messages (gpt-6-astra: "Supported values
- * are: 'low', 'medium', 'high', 'xhigh', and 'max'"). The SDK's
- * ModelReasoningEffort type is the union across models, so the backend is the
- * authority and requests are clamped per model.
+ * are: 'low', 'medium', 'high', 'xhigh', and 'max'"; the Sol/Luna tiers of
+ * both generations accept 'none' as well). The SDK's ModelReasoningEffort
+ * type is the union across models, so the backend is the authority and
+ * requests are clamped per model.
+ *
+ * Bare tier names (sol, luna) and the bare generation (gpt-6) point at the
+ * current generation; the GPT-5.6 tiers stay reachable by full slug.
  *
  * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
  * sub-agent delegation — a change in how the run executes, not just how deep
@@ -35,23 +39,33 @@ import {
  * and nothing at the tool level can select it.
  */
 const CODEX_BACKEND_MODELS = {
+  'gpt-6-sol': {
+    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt6-sol', 'gpt-6-codex'],
+    contextWindow: 272000,
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  'gpt-6-luna': {
+    aliases: ['luna', 'gpt6-luna'],
+    contextWindow: 272000,
+    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
   'gpt-6-astra': {
-    aliases: ['astra', 'gpt-6', 'gpt6', 'gpt6-astra'],
+    aliases: ['astra', 'gpt6-astra'],
     contextWindow: 272000,
     supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
   },
   'gpt-5.6-sol': {
-    aliases: ['sol', 'gpt-5.6', 'gpt5.6', 'gpt-5.6-codex'],
+    aliases: ['gpt-5.6', 'gpt5.6', 'gpt5.6-sol', 'gpt-5.6-codex'],
     contextWindow: 272000,
     supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
   },
   'gpt-5.6-terra': {
-    aliases: ['terra'],
+    aliases: ['terra', 'gpt5.6-terra'],
     contextWindow: 272000,
     supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
   },
   'gpt-5.6-luna': {
-    aliases: ['luna'],
+    aliases: ['gpt5.6-luna'],
     contextWindow: 272000,
     supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
   },
@@ -67,14 +81,14 @@ const CODEX_BACKEND_MODELS = {
   },
 };
 
-const DEFAULT_BACKEND_MODEL = 'gpt-6-astra';
+const DEFAULT_BACKEND_MODEL = 'gpt-6-sol';
 
 // The single user-facing model the router exposes. The backend model behind it
 // comes from CODEX_MODEL, or from a `codex:<model>` spec.
 const SUPPORTED_MODELS = {
   codex: {
     modelName: 'codex',
-    friendlyName: 'OpenAI Codex (GPT-6 Astra)',
+    friendlyName: 'OpenAI Codex (GPT-6 Sol)',
     contextWindow: CODEX_BACKEND_MODELS[DEFAULT_BACKEND_MODEL].contextWindow,
     maxOutputTokens: 128000,
     supportsStreaming: true,
@@ -82,7 +96,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 1800000, // 30 minutes
     description:
-      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-6 Astra by default; pick another backend with codex:<model> or CODEX_MODEL)',
+      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-6 Sol by default; pick another backend with codex:<model> or CODEX_MODEL)',
     aliases: [],
   },
 };
@@ -266,7 +280,7 @@ export function getBackendModelConfig(name) {
 /**
  * Resolve the requested model spec to the backend slug passed to the CLI.
  *
- * `codex` uses CODEX_MODEL (default gpt-6-astra); `codex:<model>` names a
+ * `codex` uses CODEX_MODEL (default gpt-6-sol); `codex:<model>` names a
  * backend directly, by slug or alias. Unknown names pass through verbatim so a
  * newly released model works before it is catalogued here — the CLI rejects
  * anything the backend does not know.
