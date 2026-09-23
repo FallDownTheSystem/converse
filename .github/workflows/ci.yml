@@ -1,7 +1,15 @@
 name: CI
 
 on:
+  # Release PRs touch only these files and are merged by release.yml within
+  # seconds of opening, so a run queued for one fails to load its deleted
+  # merge ref. release.yml validates before publishing, and CI still runs on
+  # the resulting push to main.
   pull_request:
+    paths-ignore:
+      - CHANGELOG.md
+      - package.json
+      - .release-please-manifest.json
   push:
     branches: [main]
 

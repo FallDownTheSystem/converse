@@ -1,6 +1,14 @@
 name: Dependabot auto-merge
 
-on: pull_request
+# Release PRs touch only these files and are merged by release.yml within
+# seconds of opening, so a run queued for one fails to load its deleted merge
+# ref. Dependabot PRs always change a lockfile or workflow, so they still run.
+on:
+  pull_request:
+    paths-ignore:
+      - CHANGELOG.md
+      - package.json
+      - .release-please-manifest.json
 
 concurrency:
   group: dependabot-auto-merge-${{ github.event.pull_request.number || github.ref }}
@@ -51,7 +59,8 @@ jobs:
               if [ -n "$EXISTING_RUN_ID" ]; then
                 echo "Release workflow already exists for merge commit $MERGE_SHA (run $EXISTING_RUN_ID)."
               else
-                gh workflow run release.yml --ref main
+                # The job has no checkout, so gh cannot infer the repository.
+                gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main
                 echo "Triggered release workflow for merged Dependabot update at $MERGE_SHA."
               fi
               exit 0
