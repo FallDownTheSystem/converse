@@ -8,6 +8,7 @@ import { resolveDecisionModel } from '../../../src/decisionProviders/index.js';
 import {
   callSystemOne,
   extractErrorMessage,
+  describeHtmlError,
   DecisionError,
 } from '../../../src/decisionProviders/systemOne.js';
 
@@ -159,6 +160,63 @@ describe('callSystemOne', () => {
     const error = await callSystemOne({ ...request, maxRetries: 2 }).catch((e) => e);
     expect(error.status).toBe(503);
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  describe('firewall and HTML error pages', () => {
+    const BLOCK_PAGE = [
+      '<!DOCTYPE html>',
+      '<html class="no-js" lang="en-US"> <head><title>Attention Required! | Cloudflare</title></head>',
+      '<body><h1 data-translate="block_headline">Sorry, you have been blocked</h1>',
+      '<h2 class="cf-subheadline"><span data-translate="unable_to_access">You are unable to access</span> typesafe.ai</h2>',
+      '<span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">a3fc08169cafe4df</strong></span>',
+      '</body></html>',
+    ].join('\n');
+
+    function htmlResponse(status, html) {
+      return new Response(html, { status, headers: { 'content-type': 'text/html' } });
+    }
+
+    it('summarizes a native Cloudflare block page and stops without retrying', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(htmlResponse(403, BLOCK_PAGE));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const error = await callSystemOne(request).catch((e) => e);
+
+      expect(error.message).toBe(
+        'HTTP 403: Blocked by typesafe.ai\'s Cloudflare firewall before reaching the model (Ray ID a3fc08169cafe4df): ' +
+        'the request content matched an attack signature, typically SQL-injection or shell-command patterns in state or questions. ' +
+        'Retrying the same content will not help; report the Ray ID to the provider.',
+      );
+      expect(error.message).not.toContain('<');
+      expect(error.terminal).toBe(true);
+      expect(error.retryable).toBe(false);
+      expect(error.requestId).toBe('a3fc08169cafe4df');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('recognizes the block page when OpenRouter forwards it inside a JSON error', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(403, { error: { message: `HTTP 403: ${BLOCK_PAGE}`, code: 403 } })));
+
+      const error = await callSystemOne(request).catch((e) => e);
+
+      expect(error.message).toMatch(/^HTTP 403: Blocked by typesafe\.ai's Cloudflare firewall .*Ray ID a3fc08169cafe4df/);
+      expect(error.terminal).toBe(true);
+    });
+
+    it('reduces other HTML error pages to their title', () => {
+      const page = '<!DOCTYPE html><html><head><title>502 Bad Gateway</title></head><body>nginx</body></html>';
+      expect(describeHtmlError(page)).toEqual({ firewall: false, rayId: null, message: 'Upstream returned an HTML error page: 502 Bad Gateway' });
+      expect(describeHtmlError('plain text error')).toBeNull();
+    });
+
+    it('truncates long non-HTML error bodies', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('x'.repeat(5000), { status: 400 })));
+
+      const error = await callSystemOne(request).catch((e) => e);
+
+      expect(error.message.length).toBeLessThan(600);
+      expect(error.message.endsWith('…')).toBe(true);
+    });
   });
 
   it('rejects a 2xx body without answers', async () => {

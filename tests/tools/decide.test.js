@@ -151,6 +151,22 @@ describe('Decide Tool', () => {
     expect(result.content[0].text).toContain('typesafe: HTTP 400: Too many score levels.');
   });
 
+  it('does not fail over when the upstream firewall blocks the content', async () => {
+    const blockPage =
+      '<!DOCTYPE html><html><head><title>Attention Required! | Cloudflare</title></head><body>' +
+      '<h1>Sorry, you have been blocked</h1><h2><span>You are unable to access</span> typesafe.ai</h2>' +
+      'Cloudflare Ray ID: <strong class="font-semibold">abc123</strong></body></html>';
+    fetchMock.mockResolvedValueOnce(new Response(blockPage, { status: 403, headers: { 'content-type': 'text/html' } }));
+
+    const result = await decideTool({ state: 'SELECT * FROM users -- ; DROP TABLE users', questions: QUESTIONS }, dependencies);
+
+    expect(result.isError).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const text = result.content[0].text;
+    expect(text).toContain('Blocked by typesafe.ai\'s Cloudflare firewall before reaching the model (Ray ID abc123)');
+    expect(text).not.toContain('<html');
+  });
+
   it('sends OpenRouter attribution headers', async () => {
     dependencies.config.providers = { openrouterreferer: 'https://example.test', openroutertitle: 'Converse' };
     fetchMock.mockResolvedValue(jsonResponse(200, okBody()));

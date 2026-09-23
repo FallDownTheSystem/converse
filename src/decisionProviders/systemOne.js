@@ -84,6 +84,43 @@ export function extractErrorMessage(body, rawText) {
   return rawText?.trim() || 'No error details returned';
 }
 
+const MAX_ERROR_MESSAGE_LENGTH = 500;
+
+/**
+ * Summarize an HTML error page, which arrives raw from TypeSafe's edge and
+ * embedded in OpenRouter's JSON error message when it forwards one.
+ * Cloudflare's block page means the firewall rejected the request content
+ * before any model saw it: typically SQL-injection or shell-command patterns
+ * inside state or questions.
+ * @returns {{ message: string, firewall: boolean, rayId: string|null }|null}
+ *   null when the text is not an HTML page
+ */
+export function describeHtmlError(text) {
+  if (!/<!doctype html|<html[\s>]/i.test(text || '')) return null;
+  const rayId = text.match(/Cloudflare Ray ID:\s*<strong[^>]*>([0-9a-f]+)</i)?.[1] ?? null;
+  if (/cloudflare/i.test(text) && /you have been blocked|Attention Required/i.test(text)) {
+    const host = text.match(/unable to access<\/span>\s*([^<\s]+)/i)?.[1] ?? 'the upstream';
+    return {
+      firewall: true,
+      rayId,
+      message:
+        `Blocked by ${host}'s Cloudflare firewall before reaching the model${rayId ? ` (Ray ID ${rayId})` : ''}: ` +
+        'the request content matched an attack signature, typically SQL-injection or shell-command patterns in state or questions. ' +
+        'Retrying the same content will not help; report the Ray ID to the provider.',
+    };
+  }
+  const title = text.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim();
+  return {
+    firewall: false,
+    rayId,
+    message: `Upstream returned an HTML error page${title ? `: ${title}` : ''}${rayId ? ` (Ray ID ${rayId})` : ''}`,
+  };
+}
+
+function truncate(text) {
+  return text.length > MAX_ERROR_MESSAGE_LENGTH ? `${text.slice(0, MAX_ERROR_MESSAGE_LENGTH)}…` : text;
+}
+
 function parseRetryAfter(headers) {
   const ms = Number(headers.get('retry-after-ms'));
   if (Number.isFinite(ms) && ms > 0) return ms;
@@ -145,11 +182,20 @@ async function sendOnce({ url, headers, body, signal, timeoutMs }) {
 
   if (!response.ok) {
     const status = response.status;
-    throw new DecisionError(`HTTP ${status}: ${extractErrorMessage(parsed, rawText)}`, {
+    const detail = extractErrorMessage(parsed, rawText);
+    const html = describeHtmlError(detail);
+    // Every host forwards to TypeSafe's edge, so a firewall block repeats on
+    // retry and on failover alike.
+    const firewall = html?.firewall === true;
+    throw new DecisionError(`HTTP ${status}: ${html ? html.message : truncate(detail)}`, {
       status,
-      retryable: status === 408 || status === 429 || status >= 500 || status === 401 || status === 403,
-      terminal: status === 400 || status === 422,
-      requestId: response.headers.get('x-typesafe-request-id') || response.headers.get('x-generation-id'),
+      retryable: !firewall && (status === 408 || status === 429 || status >= 500 || status === 401 || status === 403),
+      terminal: firewall || status === 400 || status === 422,
+      requestId:
+        response.headers.get('x-typesafe-request-id') ||
+        response.headers.get('x-generation-id') ||
+        html?.rayId ||
+        response.headers.get('cf-ray'),
       retryAfterMs: parseRetryAfter(response.headers),
     });
   }

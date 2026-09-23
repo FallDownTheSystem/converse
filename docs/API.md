@@ -422,6 +422,8 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
 
 Each provider call retries timeouts, 408, 429 and 5xx with backoff, honoring `Retry-After`. Auth failures, exhausted retries and malformed responses fall back to the next provider. A 400/422 request fault stops immediately, because every host would reject it the same way.
 
+TypeSafe's API sits behind a Cloudflare firewall that rejects some request bodies containing SQL-injection or shell-command patterns (for example `-- ; DROP TABLE`, or a quoted `'...; DROP TABLE ...;'`) with a 403 before the model sees them. This applies through OpenRouter too, since it forwards to the same edge. `decide` reports it as `Blocked by typesafe.ai's Cloudflare firewall before reaching the model (Ray ID …)` and stops without retrying or falling back. Treat a block as an unanswered question, not as a decision, and report the Ray ID to TypeSafe.
+
 ### Example Usage
 
 ```json
