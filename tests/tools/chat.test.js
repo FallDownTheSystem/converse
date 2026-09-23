@@ -30,7 +30,7 @@ describe('Chat Tool (unified) — chat mode', () => {
       exists: vi.fn(),
     };
 
-    const makeProvider = (content, metadata) => ({
+    const makeProvider = (content, metadata, catalog) => ({
       invoke: vi.fn().mockResolvedValue({
         content,
         stop_reason: 'stop',
@@ -38,14 +38,27 @@ describe('Chat Tool (unified) — chat mode', () => {
         metadata,
       }),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
+      defaultModel: Object.keys(catalog)[0],
+      getSupportedModels: vi.fn().mockReturnValue(catalog),
       getModelConfig: vi.fn().mockReturnValue({ contextWindow: 128000, supportsImages: true }),
     });
 
     mockProviders = {
-      openai: makeProvider('Test response from provider', { provider: 'openai', model: 'gpt-5.6' }),
-      xai: makeProvider('Test response from xai provider', { provider: 'xai', model: 'grok' }),
-      google: makeProvider('Test response from google provider', { provider: 'google', model: 'gemini-pro' }),
+      openai: makeProvider(
+        'Test response from provider',
+        { provider: 'openai', model: 'gpt-5.6' },
+        { 'gpt-6-sol': { aliases: ['sol'] }, 'gpt-4o-mini': { aliases: [] } },
+      ),
+      xai: makeProvider(
+        'Test response from xai provider',
+        { provider: 'xai', model: 'grok' },
+        { 'grok-4.5': { aliases: ['grok'] } },
+      ),
+      google: makeProvider(
+        'Test response from google provider',
+        { provider: 'google', model: 'gemini-pro' },
+        { 'gemini-3.1-pro-preview': { aliases: ['gemini-pro'] } },
+      ),
     };
 
     mockContextProcessor = {
@@ -113,13 +126,59 @@ describe('Chat Tool (unified) — chat mode', () => {
       mockProviders.codex = {
         invoke: vi.fn().mockResolvedValue({ content: 'codex answer', metadata: { provider: 'codex', threadId: 'th_1' } }),
         isAvailable: vi.fn().mockReturnValue(true),
-        getSupportedModels: vi.fn(),
+        defaultModel: 'gpt-6-sol',
+        getSupportedModels: vi.fn().mockReturnValue({ 'gpt-6-sol': { aliases: ['sol'] } }),
         getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
       };
       await chatTool({ prompt: 'Test', models: ['codex'] }, mockDependencies);
       const opts = mockProviders.codex.invoke.mock.calls[0][1];
       expect(opts.threadKey).toBe('codex');
+      expect(opts.model).toBe('gpt-6-sol');
       expect(opts.continuationStore).toBeDefined();
+    });
+  });
+
+  describe('Model name routing', () => {
+    const addCodex = (invoke) => {
+      mockProviders.codex = {
+        invoke,
+        isAvailable: vi.fn().mockReturnValue(true),
+        defaultModel: 'gpt-6-sol',
+        getSupportedModels: vi.fn().mockReturnValue({ 'gpt-6-sol': { aliases: ['sol'] } }),
+        getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
+      };
+    };
+
+    it('serves a bare model name from the local provider first', async () => {
+      addCodex(vi.fn().mockResolvedValue({ content: 'codex answer', metadata: {} }));
+      const result = await chatTool({ prompt: 'Test', models: ['sol'] }, mockDependencies);
+      expect(result.isError).toBeFalsy();
+      expect(mockProviders.codex.invoke).toHaveBeenCalledTimes(1);
+      expect(mockProviders.codex.invoke.mock.calls[0][1].model).toBe('gpt-6-sol');
+      expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
+    });
+
+    it('fails over a bare model name to the next provider that serves it', async () => {
+      addCodex(vi.fn().mockRejectedValue(new Error('Codex authentication failed')));
+      const result = await chatTool({ prompt: 'Test', models: ['gpt-6-sol'] }, mockDependencies);
+      expect(result.isError).toBeFalsy();
+      expect(mockProviders.codex.invoke).toHaveBeenCalledTimes(1);
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1);
+      expect(mockProviders.openai.invoke.mock.calls[0][1].model).toBe('gpt-6-sol');
+    });
+
+    it('pins a namespaced model to its provider', async () => {
+      addCodex(vi.fn().mockResolvedValue({ content: 'codex answer', metadata: {} }));
+      await chatTool({ prompt: 'Test', models: ['openai:sol'] }, mockDependencies);
+      expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1);
+      expect(mockProviders.codex.invoke).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown model with suggestions', async () => {
+      const result = await chatTool({ prompt: 'Test', models: ['gpt-4o-mni'] }, mockDependencies);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Did you mean: gpt-4o-mini?');
+      expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
     });
   });
 
@@ -291,7 +350,8 @@ describe('Chat Tool (unified) — chat mode', () => {
           metadata: { provider: 'claude' },
         }),
         isAvailable: vi.fn().mockReturnValue(true),
-        getSupportedModels: vi.fn(),
+        defaultModel: 'claude-opus-5-5',
+        getSupportedModels: vi.fn().mockReturnValue({ 'claude-opus-5-5': { aliases: ['opus'] } }),
         getModelConfig: vi.fn().mockReturnValue({ supportsImages: false }),
       };
 

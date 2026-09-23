@@ -22,17 +22,20 @@ describe('Chat Tool (unified) — consensus mode', () => {
 
     mockContinuationStore = { get: vi.fn().mockResolvedValue(null), set: vi.fn() };
 
-    const makeProvider = (content, metadata) => ({
+    const makeProvider = (content, metadata, catalog) => ({
       invoke: vi.fn().mockResolvedValue({ content, stop_reason: 'stop', rawResponse: {}, metadata }),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
+      defaultModel: Object.keys(catalog)[0],
+      getSupportedModels: vi.fn().mockReturnValue(catalog),
       getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
     });
 
     mockProviders = {
-      openai: makeProvider('openai answer', { provider: 'openai' }),
-      xai: makeProvider('xai answer', { provider: 'xai' }),
-      google: makeProvider('google answer', { provider: 'google' }),
+      openai: makeProvider('openai answer', { provider: 'openai' }, { 'gpt-4o-mini': { aliases: [] } }),
+      xai: makeProvider('xai answer', { provider: 'xai' }, { 'grok-4.5': { aliases: ['grok'] } }),
+      google: makeProvider('google answer', { provider: 'google' }, {
+        'gemini-3.1-pro-preview': { aliases: ['gemini-pro'] },
+      }),
     };
 
     mockContextProcessor = {

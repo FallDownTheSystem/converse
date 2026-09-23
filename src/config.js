@@ -13,6 +13,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { readFileSync } from 'fs';
 import { findAgyBinary } from './providers/gemini-cli.js';
+import {
+  DEFAULT_MODEL_ENV_VARS,
+  validateDefaultModelOverrides,
+} from './utils/modelRouting.js';
 
 // Load environment variables from appropriate .env file
 // Priority: .env.test (for test env) > .env (default)
@@ -280,9 +284,8 @@ const CONFIG_SCHEMA = {
     },
     CODEX_MODEL: {
       type: 'string',
-      default: 'gpt-6-sol',
-      description:
-        'Default Codex backend model (e.g., gpt-6-sol, gpt-6-luna, gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)',
+      required: false,
+      description: 'Deprecated alias of CODEX_DEFAULT_MODEL',
     },
 
     // Copilot configuration
@@ -294,8 +297,7 @@ const CONFIG_SCHEMA = {
     COPILOT_MODEL: {
       type: 'string',
       required: false,
-      description:
-        'Default model for Copilot SDK sessions (e.g., gpt-6-sol, claude-opus-5.5, claude-sonnet-5)',
+      description: 'Deprecated alias of COPILOT_DEFAULT_MODEL',
     },
     COPILOT_CLI_PATH: {
       type: 'string',
@@ -303,6 +305,20 @@ const CONFIG_SCHEMA = {
       description:
         'Explicit path to the Copilot CLI runtime (index.js or copilot binary). Overrides automatic resolution.',
     },
+
+    // Per-provider default models: the model a bare provider name (`codex`,
+    // `openai`, ...) or "auto" uses. Each must name a model or alias in that
+    // provider's catalog; startup fails with suggestions otherwise.
+    ...Object.fromEntries(
+      Object.entries(DEFAULT_MODEL_ENV_VARS).map(([provider, envVar]) => [
+        envVar,
+        {
+          type: 'string',
+          required: false,
+          description: `Default model for the ${provider} provider`,
+        },
+      ]),
+    ),
   },
 
   // MCP configuration
@@ -891,6 +907,14 @@ export async function validateRuntimeConfig(config) {
   try {
     // Validate Codex configuration
     validateCodexConfig(config);
+
+    // Validate per-provider default-model overrides against provider catalogs.
+    // Imported lazily: the provider registry pulls in every provider SDK.
+    const { getProviders } = await import('./providers/index.js');
+    const defaultModelErrors = validateDefaultModelOverrides(getProviders(), config);
+    if (defaultModelErrors.length > 0) {
+      throw new ConfigurationError(defaultModelErrors.join('\n'));
+    }
 
     // Validate environment
     const validEnvs = ['development', 'production', 'test'];

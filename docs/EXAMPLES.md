@@ -74,6 +74,24 @@ I'd be happy to help you understand JavaScript promises! Promises are objects th
 }
 ```
 
+A bare model name goes to the first set-up provider that offers it (here Codex, then the OpenAI API), failing over only to providers serving the same model. Unknown names are rejected with "Did you mean" suggestions.
+
+### Pinning a provider
+
+Use `provider:model` to run a model on one provider only, or a provider name alone for its default model:
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Compare these two approaches to request batching",
+    "models": ["openai:gpt-6-astra", "google:pro", "anthropic:opus", "codex:luna", "copilot:sonnet"]
+  }
+}
+```
+
+Naming the API provider (`google:pro`, `anthropic:opus`) keeps the request off the local agent providers (Antigravity CLI, Claude Agent SDK), which bare names and `auto` otherwise reach first when they are set up.
+
 ### Fast responses with a lightweight model
 
 ```json
@@ -424,6 +442,26 @@ Codex maintains conversation history through threads in `chat` mode:
     "async": true
   }
 }
+```
+
+### Choosing the Codex Model
+
+`codex` uses GPT-6 Sol (or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks another model from the Codex list:
+
+```json
+{
+  "tool": "chat",
+  "arguments": {
+    "prompt": "Find the race condition in the job scheduler",
+    "models": ["codex:astra"],
+    "files": ["/path/to/src/scheduler.js"]
+  }
+}
+```
+
+```bash
+# Default model for "codex" and "auto" (CODEX_MODEL is honored as a legacy fallback)
+CODEX_DEFAULT_MODEL=gpt-6-luna
 ```
 
 ### Sandbox Modes

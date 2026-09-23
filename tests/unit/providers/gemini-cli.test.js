@@ -2,7 +2,8 @@
  * Gemini CLI (Antigravity / agy) Provider Unit Tests
  *
  * Covers the pure helpers (buildPrompt, cleanAgyOutput, resolveAgyModel,
- * findAgyBinary), gemini: prefix routing, and the runAgy subprocess runner with
+ * findAgyBinary), router resolution of the gemini namespace and shared Gemini
+ * IDs, and the runAgy subprocess runner with
  * the PTY layer mocked (oversize-prompt file mode + abort handling). No real agy
  * spawns occur in these tests.
  */
@@ -15,7 +16,9 @@ import {
   runAgy,
   geminiCliProvider,
 } from '../../../src/providers/gemini-cli.js';
-import { mapModelToProvider } from '../../../src/utils/modelRouting.js';
+import { getProviders } from '../../../src/providers/index.js';
+import { ErrorCodes } from '../../../src/providers/interface.js';
+import { resolveModelSpec } from '../../../src/utils/modelRouting.js';
 
 const E = '\x1b';
 const BEL = '\x07';
@@ -100,133 +103,210 @@ describe('Gemini CLI Provider - cleanAgyOutput', () => {
 });
 
 describe('Gemini CLI Provider - resolveAgyModel', () => {
-  it('maps gemini / gemini:flash to Gemini 3.8 Flash with effort suffix', () => {
-    expect(resolveAgyModel('gemini')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('gemini:flash')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('gemini-cli')).toBe('Gemini 3.8 Flash (High)');
+  it('maps flash names (and an omitted model) to Gemini 3.8 Flash with effort suffix', () => {
+    expect(resolveAgyModel('gemini-3.8-flash')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('flash')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('gemini-3.8')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel()).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('  ')).toBe('Gemini 3.8 Flash (High)');
   });
 
-  it('maps gemini:pro to Gemini 3.1 Pro', () => {
-    expect(resolveAgyModel('gemini:pro')).toBe('Gemini 3.1 Pro (High)');
+  it('maps pro names to Gemini 3.1 Pro', () => {
+    expect(resolveAgyModel('gemini-3.1-pro-preview')).toBe(
+      'Gemini 3.1 Pro (High)',
+    );
+    expect(resolveAgyModel('pro')).toBe('Gemini 3.1 Pro (High)');
+    expect(resolveAgyModel('gemini-pro')).toBe('Gemini 3.1 Pro (High)');
+    expect(resolveAgyModel('gemini-3.1-pro')).toBe('Gemini 3.1 Pro (High)');
   });
 
   it('applies the reasoning_effort suffix table', () => {
-    expect(resolveAgyModel('gemini', 'none')).toBe('Gemini 3.8 Flash (Low)');
-    expect(resolveAgyModel('gemini', 'minimal')).toBe(
-      'Gemini 3.8 Flash (Low)',
-    );
-    expect(resolveAgyModel('gemini', 'low')).toBe('Gemini 3.8 Flash (Low)');
-    expect(resolveAgyModel('gemini', 'medium')).toBe(
-      'Gemini 3.8 Flash (Medium)',
-    );
-    expect(resolveAgyModel('gemini', 'high')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('gemini', 'xhigh')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('gemini', 'max')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('gemini:flash', 'medium')).toBe(
-      'Gemini 3.8 Flash (Medium)',
-    );
+    const flash = 'gemini-3.8-flash';
+    expect(resolveAgyModel(flash, 'none')).toBe('Gemini 3.8 Flash (Low)');
+    expect(resolveAgyModel(flash, 'minimal')).toBe('Gemini 3.8 Flash (Low)');
+    expect(resolveAgyModel(flash, 'low')).toBe('Gemini 3.8 Flash (Low)');
+    expect(resolveAgyModel(flash, 'medium')).toBe('Gemini 3.8 Flash (Medium)');
+    expect(resolveAgyModel(flash, 'high')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel(flash, 'xhigh')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel(flash, 'max')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('flash', 'medium')).toBe('Gemini 3.8 Flash (Medium)');
   });
 
   it('falls Pro medium back to High (Pro has no Medium variant)', () => {
-    expect(resolveAgyModel('gemini:pro', 'medium')).toBe(
-      'Gemini 3.1 Pro (High)',
-    );
+    expect(resolveAgyModel('pro', 'medium')).toBe('Gemini 3.1 Pro (High)');
   });
 
   it('maps Pro low/none to Low', () => {
-    expect(resolveAgyModel('gemini:pro', 'low')).toBe('Gemini 3.1 Pro (Low)');
-    expect(resolveAgyModel('gemini:pro', 'none')).toBe('Gemini 3.1 Pro (Low)');
+    expect(resolveAgyModel('pro', 'low')).toBe('Gemini 3.1 Pro (Low)');
+    expect(resolveAgyModel('pro', 'none')).toBe('Gemini 3.1 Pro (Low)');
   });
 
-  it('is case-insensitive on the prefix', () => {
-    expect(resolveAgyModel('GEMINI:FLASH', 'max')).toBe(
-      'Gemini 3.8 Flash (High)',
-    );
-    expect(resolveAgyModel('GEMINI:PRO', 'max')).toBe('Gemini 3.1 Pro (High)');
-  });
-
-  it('passes full agy display names through verbatim', () => {
-    expect(resolveAgyModel('Gemini 3.8 Flash (Low)')).toBe(
-      'Gemini 3.8 Flash (Low)',
-    );
-    expect(resolveAgyModel('Gemini 3.7 Flash (Medium)')).toBe(
-      'Gemini 3.7 Flash (Medium)',
-    );
-    expect(resolveAgyModel('Gemini 3.1 Pro (High)', 'low')).toBe(
+  it('is case-insensitive on catalog names', () => {
+    expect(resolveAgyModel('FLASH', 'max')).toBe('Gemini 3.8 Flash (High)');
+    expect(resolveAgyModel('GEMINI-3.1-PRO-PREVIEW', 'max')).toBe(
       'Gemini 3.1 Pro (High)',
     );
   });
+
+  it('rejects agy display names, namespaced specs and unknown names', () => {
+    for (const name of [
+      'Gemini 3.8 Flash (Low)',
+      'Gemini 3.1 Pro (High)',
+      'gemini:flash',
+      'gemini:pro',
+      'gemini',
+      'gpt-5',
+    ]) {
+      expect(() => resolveAgyModel(name)).toThrow(
+        expect.objectContaining({ code: ErrorCodes.MODEL_NOT_FOUND }),
+      );
+    }
+  });
 });
 
-describe('Gemini CLI Provider - gemini: prefix routing', () => {
-  const providers = { 'gemini-cli': geminiCliProvider, google: {} };
+describe('Gemini CLI Provider - router resolution', () => {
+  // gemini-cli availability depends on an agy binary being installed and
+  // google's on an API key, so each test pins both explicitly.
+  function providersWithAgy(available) {
+    const providers = getProviders();
+    return {
+      ...providers,
+      'gemini-cli': {
+        ...providers['gemini-cli'],
+        isAvailable: () => available,
+      },
+      google: { ...providers.google, isAvailable: () => true },
+    };
+  }
 
   it('routes gemini:flash and gemini:pro to gemini-cli', () => {
-    expect(mapModelToProvider('gemini:flash', providers)).toBe('gemini-cli');
-    expect(mapModelToProvider('gemini:pro', providers)).toBe('gemini-cli');
-    expect(mapModelToProvider('GEMINI:FLASH', providers)).toBe('gemini-cli');
+    const providers = providersWithAgy(true);
+    const cases = [
+      ['gemini:flash', 'gemini-3.8-flash'],
+      ['gemini:pro', 'gemini-3.1-pro-preview'],
+      ['GEMINI:FLASH', 'gemini-3.8-flash'],
+      ['agy:pro', 'gemini-3.1-pro-preview'],
+    ];
+    for (const [spec, model] of cases) {
+      const result = resolveModelSpec(spec, providers, {});
+      expect(result.status).toBe('ok');
+      expect(result.providerName).toBe('gemini-cli');
+      expect(result.resolvedModel).toBe(model);
+    }
   });
 
-  it('routes bare gemini / gemini-cli to gemini-cli', () => {
-    expect(mapModelToProvider('gemini', providers)).toBe('gemini-cli');
-    expect(mapModelToProvider('gemini-cli', providers)).toBe('gemini-cli');
+  it('routes bare gemini / agy / gemini-cli to the gemini-cli default', () => {
+    const providers = providersWithAgy(true);
+    for (const spec of ['gemini', 'agy', 'antigravity', 'gemini-cli', 'gemini:']) {
+      const result = resolveModelSpec(spec, providers, {});
+      expect(result.status).toBe('ok');
+      expect(result.providerName).toBe('gemini-cli');
+      expect(result.resolvedModel).toBe('gemini-3.8-flash');
+    }
   });
 
-  it('routes bare gemini-pro / gemini-flash to the google API provider', () => {
-    expect(mapModelToProvider('gemini-pro', providers)).toBe('google');
-    expect(mapModelToProvider('gemini-flash', providers)).toBe('google');
+  it('honours the AGY_DEFAULT_MODEL override for bare gemini', () => {
+    const result = resolveModelSpec('gemini', providersWithAgy(true), {
+      providers: { agydefaultmodel: 'pro' },
+    });
+    expect(result.status).toBe('ok');
+    expect(result.resolvedModel).toBe('gemini-3.1-pro-preview');
+  });
+
+  it('prefers gemini-cli for shared bare Gemini IDs, with google as failover', () => {
+    const providers = providersWithAgy(true);
+    for (const spec of ['gemini-pro', 'gemini-3.1-pro-preview']) {
+      const result = resolveModelSpec(spec, providers, {});
+      expect(result.status).toBe('ok');
+      expect(result.providerName).toBe('gemini-cli');
+      expect(result.resolvedModel).toBe('gemini-3.1-pro-preview');
+      expect(result.candidates.map((c) => c.providerName)).toEqual([
+        'gemini-cli',
+        'google',
+      ]);
+    }
+  });
+
+  it('routes bare Gemini IDs to the google API provider when agy is absent', () => {
+    const providers = providersWithAgy(false);
+    const pro = resolveModelSpec('gemini-pro', providers, {});
+    expect(pro.status).toBe('ok');
+    expect(pro.providerName).toBe('google');
+    expect(pro.resolvedModel).toBe('gemini-3.1-pro-preview');
+
+    const flash = resolveModelSpec('gemini-flash', providers, {});
+    expect(flash.status).toBe('ok');
+    expect(flash.providerName).toBe('google');
+  });
+
+  it('reports gemini: specs as unavailable when agy is absent', () => {
+    const result = resolveModelSpec('gemini:flash', providersWithAgy(false), {});
+    expect(result.status).toBe('unavailable');
+    expect(result.providerName).toBe('gemini-cli');
+  });
+
+  it('rejects unknown gemini: models with suggestions', () => {
+    const result = resolveModelSpec('gemini:flsh', providersWithAgy(true), {});
+    expect(result.status).toBe('unknown');
+    expect(result.providerName).toBe('gemini-cli');
+    expect(result.error).toContain('Did you mean');
+    expect(result.error).toContain('gemini:flash');
   });
 });
 
 describe('Gemini CLI Provider - getModelConfig', () => {
-  it('resolves the three user-facing names and aliases', () => {
-    expect(geminiCliProvider.getModelConfig('gemini')?.modelName).toBe('gemini');
-    expect(geminiCliProvider.getModelConfig('gemini:pro')?.modelName).toBe(
-      'gemini:pro',
+  it('resolves canonical IDs and aliases', () => {
+    expect(geminiCliProvider.getModelConfig('gemini-3.8-flash')?.modelName).toBe(
+      'gemini-3.8-flash',
     );
-    expect(geminiCliProvider.getModelConfig('gemini:flash')?.modelName).toBe(
-      'gemini:flash',
-    );
+    expect(
+      geminiCliProvider.getModelConfig('gemini-3.1-pro-preview')?.modelName,
+    ).toBe('gemini-3.1-pro-preview');
     expect(geminiCliProvider.getModelConfig('flash')?.modelName).toBe(
-      'gemini:flash',
+      'gemini-3.8-flash',
     );
     expect(geminiCliProvider.getModelConfig('pro')?.modelName).toBe(
-      'gemini:pro',
+      'gemini-3.1-pro-preview',
+    );
+    expect(geminiCliProvider.getModelConfig('Gemini-Pro')?.modelName).toBe(
+      'gemini-3.1-pro-preview',
     );
   });
 
-  it('defaults bare gemini to Gemini 3.8 Flash', () => {
-    const config = geminiCliProvider.getModelConfig('gemini');
+  it('defaults to Gemini 3.8 Flash', () => {
+    expect(geminiCliProvider.defaultModel).toBe('gemini-3.8-flash');
+    const config = geminiCliProvider.getModelConfig(
+      geminiCliProvider.defaultModel,
+    );
     expect(config.agyModelBase).toBe('Gemini 3.8 Flash');
     expect(config.friendlyName).toContain('Gemini 3.8 Flash');
   });
 
-  it('maps full agy display names of any 3.x Flash / Pro to the tier config', () => {
-    expect(
-      geminiCliProvider.getModelConfig('Gemini 3.8 Flash (High)')?.modelName,
-    ).toBe('gemini:flash');
-    expect(
-      geminiCliProvider.getModelConfig('Gemini 3.7 Flash (Low)')?.modelName,
-    ).toBe('gemini:flash');
-    expect(
-      geminiCliProvider.getModelConfig('Gemini 3.1 Pro (High)')?.modelName,
-    ).toBe('gemini:pro');
+  it('does not match agy display names or namespaced specs', () => {
+    expect(geminiCliProvider.getModelConfig('Gemini 3.8 Flash (High)')).toBeNull();
+    expect(geminiCliProvider.getModelConfig('Gemini 3.1 Pro (High)')).toBeNull();
+    expect(geminiCliProvider.getModelConfig('gemini:flash')).toBeNull();
+    expect(geminiCliProvider.getModelConfig('gemini')).toBeNull();
   });
 
-  it('exposes all three user-facing model names', () => {
-    const keys = Object.keys(geminiCliProvider.getSupportedModels());
-    expect(keys).toContain('gemini');
-    expect(keys).toContain('gemini:pro');
-    expect(keys).toContain('gemini:flash');
+  it('is keyed by the same model IDs as the google provider', () => {
+    const models = geminiCliProvider.getSupportedModels();
+    expect(Object.keys(models)).toEqual([
+      'gemini-3.8-flash',
+      'gemini-3.1-pro-preview',
+    ]);
+    expect(models['gemini-3.8-flash'].agyModelBase).toBe('Gemini 3.8 Flash');
+    expect(models['gemini-3.1-pro-preview'].agyModelBase).toBe('Gemini 3.1 Pro');
+    for (const id of Object.keys(models)) {
+      expect(getProviders().google.getModelConfig(id)).toBeTruthy();
+    }
   });
 
   it('reports all models as text-only', () => {
-    expect(geminiCliProvider.getModelConfig('gemini').supportsImages).toBe(
-      false,
-    );
-    expect(
-      geminiCliProvider.getModelConfig('gemini:flash').supportsImages,
-    ).toBe(false);
+    for (const config of Object.values(geminiCliProvider.getSupportedModels())) {
+      expect(config.supportsImages).toBe(false);
+    }
   });
 
   it('returns null for unknown models', () => {
@@ -424,8 +504,17 @@ describe('Gemini CLI Provider - invoke error mapping (mocked PTY)', () => {
     await expect(
       geminiCliProvider.invoke(
         [{ role: 'user', content: [{ type: 'image', source: { data: 'x' } }] }],
-        { model: 'gemini', config: {} },
+        { model: 'gemini-3.8-flash', config: {} },
       ),
     ).rejects.toThrow(/images are not supported/i);
+  });
+
+  it('invoke() rejects an unknown model before spawning agy', async () => {
+    await expect(
+      geminiCliProvider.invoke([{ role: 'user', content: 'hi' }], {
+        model: 'gemini:flash',
+        config: {},
+      }),
+    ).rejects.toMatchObject({ code: ErrorCodes.MODEL_NOT_FOUND });
   });
 });

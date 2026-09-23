@@ -35,17 +35,20 @@ describe('Chat Tool (unified) — roundtable mode', () => {
 
     mockContinuationStore = { get: vi.fn().mockResolvedValue(null), set: vi.fn() };
 
-    const makeProvider = (content, metadata) => ({
+    const makeProvider = (content, metadata, catalog) => ({
       invoke: vi.fn().mockResolvedValue({ content, stop_reason: 'stop', rawResponse: {}, metadata }),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
+      defaultModel: Object.keys(catalog)[0],
+      getSupportedModels: vi.fn().mockReturnValue(catalog),
       getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
     });
 
     mockProviders = {
-      openai: makeProvider('openai answer', { provider: 'openai' }),
-      xai: makeProvider('xai answer', { provider: 'xai' }),
-      google: makeProvider('google answer', { provider: 'google' }),
+      openai: makeProvider('openai answer', { provider: 'openai' }, { 'gpt-4o-mini': { aliases: [] } }),
+      xai: makeProvider('xai answer', { provider: 'xai' }, { 'grok-4.5': { aliases: ['grok'] } }),
+      google: makeProvider('google answer', { provider: 'google' }, {
+        'gemini-3.1-pro-preview': { aliases: ['gemini-pro'] },
+      }),
     };
 
     mockContextProcessor = {
@@ -101,6 +104,34 @@ describe('Chat Tool (unified) — roundtable mode', () => {
     expect(mockProviders.openai.invoke).not.toHaveBeenCalled();
     // The failed turn is still recorded in order.
     expect(result.content[0].text).toContain('gpt-4o-mini');
+  });
+
+  it('fails a bare-name turn over to the next provider serving the same model', async () => {
+    mockProviders.codex = {
+      invoke: vi.fn().mockRejectedValue(new Error('Codex authentication failed')),
+      isAvailable: vi.fn().mockReturnValue(true),
+      defaultModel: 'gpt-4o-mini',
+      getSupportedModels: vi.fn().mockReturnValue({ 'gpt-4o-mini': { aliases: [] } }),
+      getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
+    };
+    const result = await chatTool(
+      { prompt: 'Discuss', mode: 'roundtable', models: ['gpt-4o-mini', 'grok'] },
+      mockDependencies,
+    );
+    expect(result.isError).toBeFalsy();
+    expect(mockProviders.codex.invoke).toHaveBeenCalledTimes(1);
+    expect(mockProviders.openai.invoke).toHaveBeenCalledTimes(1);
+    expect(result.content[0].text).toContain('openai answer');
+    expect(result.content[0].text).not.toContain('did not respond');
+  });
+
+  it('records an unknown model as a failed turn with suggestions', async () => {
+    const result = await chatTool(
+      { prompt: 'Discuss', mode: 'roundtable', models: ['grok', 'gpt-4o-mni'] },
+      mockDependencies,
+    );
+    expect(mockProviders.xai.invoke).toHaveBeenCalledTimes(1);
+    expect(result.content[0].text).toContain('Did you mean: gpt-4o-mini?');
   });
 
   it('allows a single-model roundtable', async () => {

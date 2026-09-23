@@ -73,6 +73,8 @@ describe('Chat Tool Export Feature', () => {
     mockProviders = {
       openai: {
         isAvailable: () => true,
+        defaultModel: 'gpt-5',
+        getSupportedModels: () => ({ 'gpt-5': { aliases: [] } }),
         invoke: vi.fn(async () => ({
           content: 'This is a test response from the AI assistant.',
           metadata: {},

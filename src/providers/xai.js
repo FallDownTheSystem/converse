@@ -212,7 +212,11 @@ function extractCitations(response) {
 /**
  * Main XAI provider implementation
  */
+const DEFAULT_MODEL = 'grok-4.5';
+
 export const xaiProvider = {
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
@@ -221,7 +225,7 @@ export const xaiProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'grok-4.5',
+      model = DEFAULT_MODEL,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

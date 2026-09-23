@@ -550,6 +550,7 @@ export const openrouterProvider = createOpenAICompatibleProvider({
   baseURL: 'https://openrouter.ai/api/v1',
   providerName: 'OpenRouter',
   supportedModels: SUPPORTED_MODELS,
+  defaultModel: 'z-ai/glm-5.2',
   validateApiKey,
   transformRequest,
   transformResponse,

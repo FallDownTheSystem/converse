@@ -20,12 +20,8 @@
 
 import { debugLog } from '../../utils/console.js';
 import { acquireProviderStream } from './streamShared.js';
-import {
-  getDefaultModelForProvider,
-  getProviderUnavailableMessage,
-  getAvailableProviders,
-  resolveModelSpec,
-} from '../../utils/modelRouting.js';
+import { getAutoModelSpecs, resolveModelSpec } from '../../utils/modelRouting.js';
+import { shouldFailoverToNextProvider } from './parallel.js';
 
 /**
  * Render a stored transcript (from prior laps or a prior chat/consensus thread)
@@ -169,7 +165,9 @@ export function formatLapTranscript(lapTurns) {
  * Resolve the ordered model list into a turn plan. Unlike the parallel engine,
  * unknown or unavailable models are NOT dropped — they are recorded with a
  * preFailReason so they keep their position in the order (and produce a failed
- * turn).
+ * turn). A bare model name served by several providers carries every serving
+ * provider in `candidates`, tried in order when a turn fails with a
+ * failover-worthy error.
  * @param {Array<string>} models - Ordered model list
  * @param {object} providers - Provider instances
  * @param {object} config - Configuration
@@ -181,16 +179,14 @@ export function resolveTurnPlan(models, providers, config, hasImages = false) {
   // (a single-model round-table is valid). Multiple explicit models resolve per-entry.
   let modelsToProcess = models;
   if (models.length === 1 && String(models[0]).toLowerCase() === 'auto') {
-    const [firstAvailable] = getAvailableProviders(providers, config, {
+    const [firstAvailable] = getAutoModelSpecs(providers, config, {
       hasImages,
       limit: 1,
     });
 
     // If a provider is available, use its default model. Otherwise keep "auto"
     // so it resolves to a turn that fails cleanly (all-fail laps must complete).
-    modelsToProcess = firstAvailable
-      ? [getDefaultModelForProvider(firstAvailable)]
-      : ['auto'];
+    modelsToProcess = firstAvailable ? [firstAvailable] : ['auto'];
   }
 
   return modelsToProcess.map((modelName) => {
@@ -200,39 +196,31 @@ export function resolveTurnPlan(models, providers, config, hasImages = false) {
         provider: null,
         providerInstance: null,
         resolvedModel: null,
+        candidates: [],
         preFailReason: 'Invalid model specification',
       };
     }
 
-    const { providerName, provider, resolvedModel, status, options } =
-      resolveModelSpec(modelName, providers, config);
+    const resolution = resolveModelSpec(modelName, providers, config);
 
-    if (status === 'not_found') {
+    if (resolution.status !== 'ok') {
       return {
         model: modelName,
-        provider: providerName,
+        provider: resolution.providerName,
         providerInstance: null,
-        resolvedModel,
-        preFailReason: `Provider not found: ${providerName}`,
-      };
-    }
-
-    if (status === 'unavailable') {
-      return {
-        model: modelName,
-        provider: providerName,
-        providerInstance: null,
-        resolvedModel,
-        preFailReason: getProviderUnavailableMessage(providerName),
+        resolvedModel: null,
+        candidates: [],
+        preFailReason: resolution.error,
       };
     }
 
     return {
       model: modelName,
-      provider: providerName,
-      providerInstance: provider,
-      resolvedModel,
-      resolveOptions: options,
+      provider: resolution.providerName,
+      providerInstance: resolution.provider,
+      resolvedModel: resolution.resolvedModel,
+      resolveOptions: resolution.options,
+      candidates: resolution.candidates,
       preFailReason: null,
     };
   });
@@ -254,7 +242,9 @@ function buildTurnUserContent(packetText, contextMessage) {
  * Execute a single turn. Streams (updating job progress) when a job context is
  * present; otherwise performs a plain invoke. Cancellation propagates by throwing
  * so the lap aborts rather than demoting to a failed turn.
- * @returns {Promise<object>} Turn result { model, provider, status, response|error }
+ * @returns {Promise<object>} Turn result { model, provider, status, response|error };
+ *   failed turns also carry the thrown `cause` for the failover decision
+ *   (stripped before the turn is recorded)
  */
 async function executeTurn(
   plan,
@@ -353,6 +343,7 @@ async function executeTurn(
       provider: plan.provider,
       status: 'failed',
       error: error.message,
+      cause: error,
     };
   }
 }
@@ -436,24 +427,44 @@ export async function runRoundtableLap({
         { role: 'user', content: finalUserContent },
       ];
 
-      const turnResult = await executeTurn(
-        plan,
-        messages,
-        {
-          reasoning_effort,
-          signal: activeSignal,
-          config,
-          model: plan.resolvedModel,
-          // Web search opt-in from an OpenRouter `:online` decoration; only ever
-          // set for OpenRouter turns.
-          ...(plan.resolveOptions?.web_search && { web_search: true }),
-        },
-        context,
-        providerStreamNormalizer,
-        i,
-      );
+      let turnResult;
+      for (let ci = 0; ci < plan.candidates.length; ci++) {
+        const candidate = plan.candidates[ci];
+        turnResult = await executeTurn(
+          {
+            model: plan.model,
+            provider: candidate.providerName,
+            providerInstance: candidate.provider,
+          },
+          messages,
+          {
+            reasoning_effort,
+            signal: activeSignal,
+            config,
+            model: candidate.resolvedModel,
+            // Web search opt-in from an OpenRouter `:online` decoration; only ever
+            // set for OpenRouter turns.
+            ...(candidate.options?.web_search && { web_search: true }),
+          },
+          context,
+          providerStreamNormalizer,
+          i,
+        );
+        const isLastCandidate = ci === plan.candidates.length - 1;
+        if (
+          turnResult.status === 'success' ||
+          isLastCandidate ||
+          !shouldFailoverToNextProvider(turnResult.cause)
+        ) {
+          break;
+        }
+        debugLog(
+          `[Roundtable] Turn ${i + 1} (${plan.model}) failed on ${candidate.providerName}; failing over`,
+        );
+      }
 
-      lapTurns.push({ ...turnResult, position: i });
+      const { cause: _cause, ...turn } = turnResult;
+      lapTurns.push({ ...turn, position: i });
     }
 
     if (context) {

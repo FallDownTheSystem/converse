@@ -434,7 +434,11 @@ async function retryWithBackoff(fn, maxRetries = 4) {
 /**
  * Main Google provider implementation
  */
+const DEFAULT_MODEL = 'gemini-3.1-pro-preview';
+
 export const googleProvider = {
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
@@ -443,7 +447,7 @@ export const googleProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'gemini-2.5-flash',
+      model = DEFAULT_MODEL,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

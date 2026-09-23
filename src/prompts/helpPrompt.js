@@ -8,6 +8,11 @@
 import { getProviders } from '../providers/index.js';
 import { getTools } from '../tools/index.js';
 import { CONFIG_SCHEMA } from '../config.js';
+import {
+  BARE_NAME_PRIORITY,
+  PROVIDER_NAMESPACES,
+  PROVIDER_PRIORITY,
+} from '../utils/modelRouting.js';
 
 /**
  * Sample values for generating realistic tool examples.
@@ -352,6 +357,7 @@ export function generateHelpContent(config = null) {
     codex: safeGetModels(providers.codex, 'codex'),
     claude: safeGetModels(providers.claude, 'claude'),
     'gemini-cli': safeGetModels(providers['gemini-cli'], 'gemini-cli'),
+    copilot: safeGetModels(providers.copilot, 'copilot'),
   };
 
   // Limit OpenRouter models if dynamic models enabled (could have hundreds)
@@ -436,6 +442,21 @@ Welcome to the Converse MCP Server! This guide provides detailed information abo
 
 ${toolsSection}
 
+## Model Names
+
+Every entry in \`models\` takes one of these forms:
+
+- **\`provider\`** — that provider's default model (e.g. \`codex\`, \`claude\`, \`gemini\`, \`openai\`). Override a default with \`<PROVIDER>_DEFAULT_MODEL\` (see Environment Variables).
+- **\`provider:model\`** — that model on that provider only (e.g. \`codex:astra\`, \`openai:gpt-6-astra\`, \`gemini:pro\`, \`copilot:sonnet\`). \`model\` is a model ID or alias from the provider's list below.
+- **\`model\`** — a bare model ID or alias (e.g. \`gpt-6-astra\`, \`opus\`). It goes to the first configured provider that offers it, in this order: ${BARE_NAME_PRIORITY.join(', ')}. When that provider fails with an auth or availability error, the next provider offering the same model takes over. Copilot is reachable only as \`copilot:model\`.
+- **\`auto\`** — the default model of the first available provider (${PROVIDER_PRIORITY.join(', ')}).
+
+Provider namespaces: ${Object.entries(PROVIDER_NAMESPACES)
+    .map(([name, tokens]) => (tokens.length > 1 ? `${tokens[0]} (${name}; also ${tokens.slice(1).join(', ')})` : tokens[0]))
+    .join(', ')}. OpenRouter also accepts any \`vendor/model\` slug, bare or as \`openrouter:vendor/model\`, checked against OpenRouter's live catalog.
+
+Names that match nothing are rejected with "did you mean" suggestions rather than guessed.
+
 ## Provider Models
 ${formatProviderModels('OpenAI', allModels.openai)}
 ${formatProviderModels('Google Gemini', allModels.google)}
@@ -447,6 +468,7 @@ ${formatProviderModels('OpenRouter', allModels.openrouter)}
 ${formatProviderModels('Codex', allModels.codex)}
 ${formatProviderModels('Claude CLI', allModels.claude)}
 ${formatProviderModels('Gemini (Antigravity CLI)', allModels['gemini-cli'])}
+${formatProviderModels('GitHub Copilot', allModels.copilot)}
 
 ${generateModelCategories(allModels)}
 
@@ -482,9 +504,12 @@ ${generateEnvironmentVariablesSection()}
 
 These providers use local CLI tools and don't require API keys:
 
-- **codex**: Requires ChatGPT login or CODEX_API_KEY environment variable
-- **claude**: Requires \`claude login\` command (Claude Code CLI authentication)
+- **codex**: Requires ChatGPT login (\`codex login\`) or CODEX_API_KEY environment variable
+- **claude**: Requires \`claude login\` command (Claude Code CLI authentication) or CLAUDE_CODE_OAUTH_TOKEN
 - **gemini-cli**: Requires the Antigravity CLI (\`agy\`) installed and authenticated via Google OAuth (run \`agy\` once interactively to log in)
+- **copilot**: Requires @github/copilot-sdk and a GitHub Copilot subscription
+
+Codex and Claude count as available only when their login file or token is present; an expired login is detected at call time and routing fails over to the next provider.
 
 ## Need More Help?
 

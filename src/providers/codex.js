@@ -20,10 +20,15 @@ import {
   EFFORT_LADDER,
   clampReasoningEffort,
 } from '../utils/reasoningEffort.js';
+import { findCatalogEntry, findCatalogId } from '../utils/modelCatalog.js';
+import {
+  hasCodexCredentials,
+  isPackageResolvable,
+} from '../utils/localProviderAuth.js';
 
 /**
- * Backend models Codex can run, keyed by the slug passed to the CLI as
- * --model. The reasoning tiers are the ones each model's API accepts, verified
+ * Models Codex can run, keyed by the slug passed to the CLI as --model. The
+ * catalog key is the canonical model ID the router resolves to. The reasoning tiers are the ones each model's API accepts, verified
  * against the API's own rejection messages (gpt-6-astra: "Supported values
  * are: 'low', 'medium', 'high', 'xhigh', and 'max'"; the Sol/Luna tiers of
  * both generations accept 'none' as well). The SDK's ModelReasoningEffort
@@ -38,68 +43,56 @@ import {
  * it reasons — so it is deliberately absent from every supportedEfforts list
  * and nothing at the tool level can select it.
  */
-const CODEX_BACKEND_MODELS = {
-  'gpt-6-sol': {
-    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt6-sol', 'gpt-6-codex'],
-    contextWindow: 272000,
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-6-luna': {
-    aliases: ['luna', 'gpt6-luna'],
-    contextWindow: 272000,
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-6-astra': {
-    aliases: ['astra', 'gpt6-astra'],
-    contextWindow: 272000,
-    supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-5.6-sol': {
-    aliases: ['gpt-5.6', 'gpt5.6', 'gpt5.6-sol', 'gpt-5.6-codex'],
-    contextWindow: 272000,
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-5.6-terra': {
-    aliases: ['terra', 'gpt5.6-terra'],
-    contextWindow: 272000,
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-5.6-luna': {
-    aliases: ['gpt5.6-luna'],
-    contextWindow: 272000,
-    supportedEfforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
-  },
-  'gpt-5.5': {
-    aliases: ['gpt5.5'],
-    contextWindow: 272000,
-    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
-  },
-  'gpt-5.3-codex-spark': {
-    aliases: ['spark', 'codex-spark'],
-    contextWindow: 128000,
-    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
-  },
-};
+const ALL_EFFORTS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
 
-const DEFAULT_BACKEND_MODEL = 'gpt-6-sol';
-
-// The single user-facing model the router exposes. The backend model behind it
-// comes from CODEX_MODEL, or from a `codex:<model>` spec.
-const SUPPORTED_MODELS = {
-  codex: {
-    modelName: 'codex',
-    friendlyName: 'OpenAI Codex (GPT-6 Sol)',
-    contextWindow: CODEX_BACKEND_MODELS[DEFAULT_BACKEND_MODEL].contextWindow,
+function codexModel(slug, friendlyName, { aliases, contextWindow = 272000, supportedEfforts = ALL_EFFORTS }) {
+  return {
+    modelName: slug,
+    friendlyName: `OpenAI Codex (${friendlyName})`,
+    contextWindow,
     maxOutputTokens: 128000,
     supportsStreaming: true,
     supportsImages: true, // Codex SDK 0.118+ supports images via --image (local_image input)
     supportsWebSearch: false, // Codex accesses files directly, not web
     timeout: 1800000, // 30 minutes
-    description:
-      'OpenAI Codex agentic coding assistant with local file access and tool execution (GPT-6 Sol by default; pick another backend with codex:<model> or CODEX_MODEL)',
-    aliases: [],
-  },
+    description: `${friendlyName} via the Codex agentic coding assistant, with local file access and tool execution`,
+    aliases,
+    supportedEfforts,
+  };
+}
+
+const SUPPORTED_MODELS = {
+  'gpt-6-sol': codexModel('gpt-6-sol', 'GPT-6 Sol', {
+    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt6-sol', 'gpt-6-codex'],
+  }),
+  'gpt-6-luna': codexModel('gpt-6-luna', 'GPT-6 Luna', {
+    aliases: ['luna', 'gpt6-luna'],
+  }),
+  'gpt-6-astra': codexModel('gpt-6-astra', 'GPT-6 Astra', {
+    aliases: ['astra', 'gpt6-astra'],
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+  }),
+  'gpt-5.6-sol': codexModel('gpt-5.6-sol', 'GPT-5.6 Sol', {
+    aliases: ['gpt-5.6', 'gpt5.6', 'gpt5.6-sol', 'gpt-5.6-codex'],
+  }),
+  'gpt-5.6-terra': codexModel('gpt-5.6-terra', 'GPT-5.6 Terra', {
+    aliases: ['terra', 'gpt5.6-terra'],
+  }),
+  'gpt-5.6-luna': codexModel('gpt-5.6-luna', 'GPT-5.6 Luna', {
+    aliases: ['gpt5.6-luna'],
+  }),
+  'gpt-5.5': codexModel('gpt-5.5', 'GPT-5.5', {
+    aliases: ['gpt5.5'],
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
+  }),
+  'gpt-5.3-codex-spark': codexModel('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', {
+    aliases: ['spark', 'codex-spark'],
+    contextWindow: 128000,
+    supportedEfforts: ['low', 'medium', 'high', 'xhigh'],
+  }),
 };
+
+const DEFAULT_MODEL = 'gpt-6-sol';
 
 /**
  * Custom error class for Codex provider errors
@@ -111,26 +104,14 @@ class CodexProviderError extends ProviderError {
   }
 }
 
-/**
- * Check if Codex SDK is available (optional dependency)
- * Uses import.meta.resolve when available, falls back to filesystem check
- */
-function isCodexAvailable() {
-  try {
-    // Just try to dynamically check if we can import it
-    // This is a simple presence check that works in ES modules
-    return true; // If SDK not available, the actual import() will fail later with clear error
-  } catch {
-    return false;
-  }
-}
+const CODEX_SDK_PACKAGE = '@openai/codex-sdk';
 
 /**
  * Dynamically import Codex SDK (lazy loading)
  * This keeps the SDK as an optional dependency
  */
 async function getCodexSDK() {
-  if (!isCodexAvailable()) {
+  if (!isPackageResolvable(CODEX_SDK_PACKAGE)) {
     throw new CodexProviderError(
       'Codex SDK not installed. Install with: npm install @openai/codex-sdk',
       'CODEX_NOT_INSTALLED',
@@ -248,54 +229,24 @@ function extractPromptText(input) {
 }
 
 /**
- * Resolve a backend slug or alias (case-insensitive) to its catalog slug.
- * @param {string} name
- * @returns {string|null}
- */
-function findBackendSlug(name) {
-  const lower = String(name || '').trim().toLowerCase();
-  if (!lower) {
-    return null;
-  }
-  if (CODEX_BACKEND_MODELS[lower]) {
-    return lower;
-  }
-  return (
-    Object.keys(CODEX_BACKEND_MODELS).find((slug) =>
-      CODEX_BACKEND_MODELS[slug].aliases.includes(lower),
-    ) || null
-  );
-}
-
-/**
- * Catalog entry for a backend model, or null when the slug is not catalogued.
- * @param {string} name - Backend slug or alias
- * @returns {{ slug: string, aliases: string[], contextWindow: number, supportedEfforts: string[] }|null}
- */
-export function getBackendModelConfig(name) {
-  const slug = findBackendSlug(name);
-  return slug ? { slug, ...CODEX_BACKEND_MODELS[slug] } : null;
-}
-
-/**
- * Resolve the requested model spec to the backend slug passed to the CLI.
- *
- * `codex` uses CODEX_MODEL (default gpt-6-sol); `codex:<model>` names a
- * backend directly, by slug or alias. Unknown names pass through verbatim so a
- * newly released model works before it is catalogued here — the CLI rejects
- * anything the backend does not know.
- *
- * @param {string} spec - Requested model, e.g. 'codex' or 'codex:sol'
- * @param {Object} [config] - Loaded configuration
+ * Resolve a model name to the slug passed to the CLI. The router hands over
+ * canonical catalog IDs; aliases are accepted for direct callers.
+ * @param {string} [model] - Catalog ID or alias; defaults to DEFAULT_MODEL
  * @returns {string} Backend slug for the SDK's `model` option
+ * @throws {CodexProviderError} When the name is not in the catalog
  */
-export function resolveBackendModel(spec, config) {
-  const raw = String(spec || '').trim();
-  const requested = raw.toLowerCase().startsWith('codex:')
-    ? raw.slice('codex:'.length).trim()
-    : '';
-  const name = requested || config?.providers?.codexmodel || DEFAULT_BACKEND_MODEL;
-  return findBackendSlug(name) || name;
+export function resolveBackendModel(model) {
+  if (model === undefined || model === null || model === '') {
+    return DEFAULT_MODEL;
+  }
+  const slug = findCatalogId(SUPPORTED_MODELS, model);
+  if (!slug) {
+    throw new CodexProviderError(
+      `Unknown Codex model "${model}"`,
+      ErrorCodes.MODEL_NOT_FOUND,
+    );
+  }
+  return slug;
 }
 
 /**
@@ -317,30 +268,6 @@ async function getThreadIdFromContinuation(
     debugError('[Codex] Failed to retrieve continuation state', error);
     return null;
   }
-}
-
-/**
- * Resolve a user-facing model name to its entry in SUPPORTED_MODELS.
- * @param {string} modelName
- * @returns {Object|null}
- */
-function findModelConfig(modelName) {
-  const modelNameLower = String(modelName || '').toLowerCase();
-
-  if (SUPPORTED_MODELS[modelNameLower]) {
-    return SUPPORTED_MODELS[modelNameLower];
-  }
-
-  for (const config of Object.values(SUPPORTED_MODELS)) {
-    if (
-      config.aliases &&
-      config.aliases.some((alias) => alias.toLowerCase() === modelNameLower)
-    ) {
-      return config;
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -382,7 +309,7 @@ export const codexProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'codex',
+      model = DEFAULT_MODEL,
       config,
       stream = false,
       signal,
@@ -399,6 +326,10 @@ export const codexProvider = {
         ErrorCodes.MISSING_API_KEY,
       );
     }
+
+    // Resolved outside the try so an unknown model keeps MODEL_NOT_FOUND
+    // instead of being rewrapped as a generic execution failure.
+    const backendModel = resolveBackendModel(model);
 
     try {
       // Get Codex SDK
@@ -456,7 +387,6 @@ export const codexProvider = {
       const approvalPolicy = config.providers?.codexapprovalpolicy || 'never';
 
       // Create or resume thread
-      const backendModel = resolveBackendModel(model, config);
       const threadOptions = {
         model: backendModel,
         workingDirectory,
@@ -467,7 +397,7 @@ export const codexProvider = {
 
       if (reasoning_effort) {
         const supportedEfforts =
-          getBackendModelConfig(backendModel)?.supportedEfforts || EFFORT_LADDER;
+          SUPPORTED_MODELS[backendModel]?.supportedEfforts || EFFORT_LADDER;
         const mappedEffort = clampReasoningEffort(reasoning_effort, supportedEfforts);
         threadOptions.modelReasoningEffort = mappedEffort;
         if (mappedEffort !== reasoning_effort) {
@@ -575,15 +505,14 @@ export const codexProvider = {
     }
   },
 
+  defaultModel: DEFAULT_MODEL,
+
   /**
-   * Validate Codex configuration
-   * Codex uses ChatGPT authentication or CODEX_API_KEY (NOT OPENAI_API_KEY)
+   * Validate Codex configuration: the SDK is installed and a credential is
+   * present (ChatGPT login file or CODEX_API_KEY — NOT OPENAI_API_KEY).
    */
-  validateConfig(_config) {
-    // Codex can work with either ChatGPT login or API key
-    // Since we can't reliably check ChatGPT login status, we'll be permissive
-    // and let the SDK handle authentication errors
-    return isCodexAvailable();
+  validateConfig(config) {
+    return isPackageResolvable(CODEX_SDK_PACKAGE) && hasCodexCredentials(config);
   },
 
   /**
@@ -604,6 +533,6 @@ export const codexProvider = {
    * Get model configuration for specific model
    */
   getModelConfig(modelName) {
-    return findModelConfig(modelName);
+    return findCatalogEntry(SUPPORTED_MODELS, modelName);
   },
 };

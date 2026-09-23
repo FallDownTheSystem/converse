@@ -547,7 +547,11 @@ function convertMessages(messages, useResponsesAPI = false) {
 /**
  * Main OpenAI provider implementation
  */
+const DEFAULT_MODEL = 'gpt-6-sol';
+
 export const openaiProvider = {
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
@@ -556,7 +560,7 @@ export const openaiProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'gpt-6',
+      model = DEFAULT_MODEL,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

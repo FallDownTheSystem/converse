@@ -16,14 +16,20 @@
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
+import { findCatalogEntry, findCatalogId } from '../utils/modelCatalog.js';
+import {
+  hasClaudeCredentials,
+  isPackageResolvable,
+} from '../utils/localProviderAuth.js';
 
-// Default underlying model when the request is just "claude" (or "claude:opus")
-const DEFAULT_SDK_MODEL = 'claude-opus-5-5';
+const DEFAULT_MODEL = 'claude-opus-5-5';
 const SDK_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh', 'max'];
+const CLAUDE_SDK_PACKAGE = '@anthropic-ai/claude-agent-sdk';
 
-// Supported Claude SDK models with their configurations
+// Keyed by the model ID the Agent SDK accepts, which is also the canonical ID
+// the router resolves to.
 const SUPPORTED_MODELS = {
-  opus: {
+  'claude-opus-5-5': {
     modelName: 'claude-opus-5-5',
     friendlyName: 'Claude Opus 5.5 (via Agent SDK)',
     contextWindow: 1000000,
@@ -35,18 +41,14 @@ const SUPPORTED_MODELS = {
     description:
       'Claude Opus 5.5 via Agent SDK (default) - requires claude login authentication',
     aliases: [
-      'claude',
-      'claude-sdk',
-      'claude-code',
-      'claude:opus',
+      'opus',
       'claude-opus',
-      'claude-opus-5-5',
       'claude-opus-5.5',
       'opus-5-5',
       'opus-5.5',
     ],
   },
-  'opus-5': {
+  'claude-opus-5': {
     modelName: 'claude-opus-5',
     friendlyName: 'Claude Opus 5 (via Agent SDK)',
     contextWindow: 1000000,
@@ -57,9 +59,9 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     description:
       'Claude Opus 5 via Agent SDK - requires claude login authentication',
-    aliases: ['claude-opus-5'],
+    aliases: ['opus-5', 'opus5'],
   },
-  fable: {
+  'claude-fable-5-1': {
     modelName: 'claude-fable-5-1',
     friendlyName: 'Claude Fable 5.1 (via Agent SDK)',
     contextWindow: 1000000,
@@ -71,15 +73,14 @@ const SUPPORTED_MODELS = {
     description:
       'Claude Fable 5.1 via Agent SDK - requires claude login authentication',
     aliases: [
-      'claude:fable',
+      'fable',
       'claude-fable',
-      'claude-fable-5-1',
       'claude-fable-5.1',
       'fable-5-1',
       'fable-5.1',
     ],
   },
-  'fable-5': {
+  'claude-fable-5': {
     modelName: 'claude-fable-5',
     friendlyName: 'Claude Fable 5 (via Agent SDK)',
     contextWindow: 1000000,
@@ -90,7 +91,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     description:
       'Claude Fable 5 via Agent SDK - requires claude login authentication',
-    aliases: ['claude-fable-5'],
+    aliases: ['fable-5', 'fable5'],
   },
 };
 
@@ -105,24 +106,11 @@ class ClaudeProviderError extends ProviderError {
 }
 
 /**
- * Check if Claude SDK is available (optional dependency)
- */
-function isClaudeSDKAvailable() {
-  try {
-    // Simple presence check that works in ES modules
-    // If SDK not available, the actual import() will fail later with clear error
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Dynamically import Claude SDK (lazy loading)
  * This keeps the SDK as an optional dependency
  */
 async function getClaudeSDK() {
-  if (!isClaudeSDKAvailable()) {
+  if (!isPackageResolvable(CLAUDE_SDK_PACKAGE)) {
     throw new ClaudeProviderError(
       'Claude SDK not installed. Install with: npm install @anthropic-ai/claude-agent-sdk',
       'CLAUDE_SDK_NOT_INSTALLED',
@@ -143,58 +131,24 @@ async function getClaudeSDK() {
 }
 
 /**
- * Look up model config from SUPPORTED_MODELS by name or alias.
- * Strips the claude: prefix first (e.g. "claude:opus" -> "opus").
- */
-function findModelConfig(modelName) {
-  if (typeof modelName !== 'string') return null;
-
-  let name = modelName.trim();
-  if (name.toLowerCase().startsWith('claude:')) {
-    name = name.slice('claude:'.length).trim();
-  }
-  if (!name) return SUPPORTED_MODELS.opus;
-
-  const nameLower = name.toLowerCase();
-
-  if (SUPPORTED_MODELS[nameLower]) {
-    return SUPPORTED_MODELS[nameLower];
-  }
-
-  for (const config of Object.values(SUPPORTED_MODELS)) {
-    if (
-      config.aliases &&
-      config.aliases.some((alias) => alias.toLowerCase() === nameLower)
-    ) {
-      return config;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Resolve the requested model to the underlying SDK model ID.
- * - "claude" (and bare "claude:") defaults to Claude Opus 5.5
- * - "claude:opus" / "claude:opus-5" / "claude:fable" / "claude:fable-5" select the specific model
- * - Unknown names are passed through (after prefix stripping) so users can
- *   target any model ID the Agent SDK accepts (e.g. "claude:claude-sonnet-4-6")
+ * Resolve a model name to the Agent SDK model ID. The router hands over
+ * canonical catalog IDs; aliases are accepted for direct callers.
+ * @param {string} [modelName] - Catalog ID or alias; defaults to DEFAULT_MODEL
+ * @returns {string}
+ * @throws {ClaudeProviderError} When the name is not in the catalog
  */
 function resolveSdkModel(modelName) {
   if (typeof modelName !== 'string' || !modelName.trim()) {
-    return DEFAULT_SDK_MODEL;
+    return DEFAULT_MODEL;
   }
-
-  const config = findModelConfig(modelName);
-  if (config) {
-    return config.modelName;
+  const id = findCatalogId(SUPPORTED_MODELS, modelName);
+  if (!id) {
+    throw new ClaudeProviderError(
+      `Unknown Claude model "${modelName}"`,
+      ErrorCodes.MODEL_NOT_FOUND,
+    );
   }
-
-  let name = modelName.trim();
-  if (name.toLowerCase().startsWith('claude:')) {
-    name = name.slice('claude:'.length).trim();
-  }
-  return name || DEFAULT_SDK_MODEL;
+  return SUPPORTED_MODELS[id].modelName;
 }
 
 /**
@@ -338,7 +292,7 @@ async function* createStreamingGenerator(
   try {
     const queryOptions = {
       ...options,
-      model: options.model || DEFAULT_SDK_MODEL,
+      model: options.model || DEFAULT_MODEL,
       maxTurns: 100,
       permissionMode: 'bypassPermissions', // Don't prompt for permissions
     };
@@ -475,7 +429,7 @@ export const claudeProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'claude',
+      model = DEFAULT_MODEL,
       config,
       stream = false,
       signal,
@@ -616,16 +570,14 @@ export const claudeProvider = {
     }
   },
 
+  defaultModel: DEFAULT_MODEL,
+
   /**
-   * Validate Claude SDK configuration
-   * Claude SDK uses CLI authentication (NOT API keys)
-   * Returns true optimistically - authentication errors handled at runtime
+   * Validate Claude SDK configuration: the SDK is installed and a Claude Code
+   * credential is present. Expired logins surface at invoke time.
    */
   validateConfig(_config) {
-    // Claude SDK uses CLI authentication, not API keys
-    // We can't reliably check auth status, so return true optimistically
-    // and let the SDK handle authentication errors during execution
-    return isClaudeSDKAvailable();
+    return isPackageResolvable(CLAUDE_SDK_PACKAGE) && hasClaudeCredentials();
   },
 
   /**
@@ -644,9 +596,8 @@ export const claudeProvider = {
 
   /**
    * Get model configuration for specific model
-   * Handles claude: prefixed names (e.g. "claude:opus", "claude:fable", "claude:opus-5")
    */
   getModelConfig(modelName) {
-    return findModelConfig(modelName);
+    return findCatalogEntry(SUPPORTED_MODELS, modelName);
   },
 };

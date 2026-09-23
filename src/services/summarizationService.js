@@ -9,20 +9,21 @@
 import { createLogger } from '../utils/logger.js';
 import { debugLog, debugError } from '../utils/console.js';
 
-import { mapModelToProvider } from '../utils/modelRouting.js';
+import { resolveModelSpec } from '../utils/modelRouting.js';
 
 const logger = createLogger('summarization');
 
-// Default fast models for summarization tasks (prioritize GPT-5-nano for speed)
-const FAST_MODELS = {
-  openai: 'gpt-5-nano', // Fastest GPT-5 model with minimal reasoning
-  google: 'flash',
-  xai: 'grok-4.5',
-  anthropic: 'claude-3-5-haiku-latest',
-  mistral: 'mistral-small-latest',
-  deepseek: 'deepseek-v4-flash',
-  openrouter: 'z-ai/glm-5.2',
-};
+// Fast models for summarization tasks, tried in order (GPT-5-nano first for
+// speed). Namespaced so each names exactly one provider.
+export const FAST_MODELS = [
+  'openai:gpt-5-nano',
+  'google:gemini-2.5-flash',
+  'xai:grok-4.5',
+  'anthropic:claude-haiku-4-5-20251001',
+  'mistral:mistral-small-2603',
+  'deepseek:deepseek-v4-flash',
+  'openrouter:z-ai/glm-5.2',
+];
 
 export class SummarizationService {
   constructor(providers, config) {
@@ -51,16 +52,12 @@ export class SummarizationService {
 
     try {
       // Select fast model if not specified
-      const selectedModel = model || this._selectFastModel();
-      const providerName = mapModelToProvider(selectedModel, this.providers);
-      const provider = this.providers[providerName];
-
-      if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(
-          `Summarization: Provider ${providerName} not available for title generation`,
-        );
+      const selected = this._resolve(model || this._selectFastModel());
+      if (!selected) {
+        debugLog('Summarization: No available model for title generation');
         return this._fallbackTitle(prompt);
       }
+      const { provider, resolvedModel: selectedModel } = selected;
 
       // Create messages for title generation
       const messages = [
@@ -112,16 +109,12 @@ export class SummarizationService {
 
     try {
       // Select fast model if not specified
-      const selectedModel = model || this._selectFastModel();
-      const providerName = mapModelToProvider(selectedModel, this.providers);
-      const provider = this.providers[providerName];
-
-      if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(
-          `Summarization: Provider ${providerName} not available for streaming summary`,
-        );
+      const selected = this._resolve(model || this._selectFastModel());
+      if (!selected) {
+        debugLog('Summarization: No available model for streaming summary');
         return this._fallbackStreamingSummary(content, currentFocus);
       }
+      const { provider, resolvedModel: selectedModel } = selected;
 
       // Create messages for streaming summary
       const messages = [
@@ -175,16 +168,12 @@ export class SummarizationService {
 
     try {
       // Select fast model if not specified
-      const selectedModel = model || this._selectFastModel();
-      const providerName = mapModelToProvider(selectedModel, this.providers);
-      const provider = this.providers[providerName];
-
-      if (!provider || !provider.isAvailable(this.config)) {
-        debugLog(
-          `Summarization: Provider ${providerName} not available for final summary`,
-        );
+      const selected = this._resolve(model || this._selectFastModel());
+      if (!selected) {
+        debugLog('Summarization: No available model for final summary');
         return this._fallbackFinalSummary(content);
       }
+      const { provider, resolvedModel: selectedModel } = selected;
 
       // Create messages for final summary
       const messages = [
@@ -222,20 +211,30 @@ export class SummarizationService {
   }
 
   /**
+   * Route a model spec to its first available provider.
+   * @private
+   * @returns {{ provider: object, providerName: string, resolvedModel: string }|null}
+   */
+  _resolve(spec) {
+    const resolution = resolveModelSpec(spec, this.providers, this.config);
+    if (resolution.status !== 'ok') {
+      debugLog(`Summarization: ${resolution.error}`);
+      return null;
+    }
+    return resolution;
+  }
+
+  /**
    * Select the best available fast model
    * @private
    */
   _selectFastModel() {
     // If a model is configured, try to use it first
     if (this.configuredModel) {
-      const providerName = mapModelToProvider(
-        this.configuredModel,
-        this.providers,
-      );
-      const provider = this.providers[providerName];
-      if (provider && provider.isAvailable(this.config)) {
+      const resolution = resolveModelSpec(this.configuredModel, this.providers, this.config);
+      if (resolution.status === 'ok') {
         debugLog(
-          `Summarization: Using configured model ${this.configuredModel} from ${providerName}`,
+          `Summarization: Using configured model ${this.configuredModel} from ${resolution.providerName}`,
         );
         return this.configuredModel;
       }
@@ -244,13 +243,10 @@ export class SummarizationService {
       );
     }
 
-    // Check which providers are available and return the first fast model
-    for (const [providerName, fastModel] of Object.entries(FAST_MODELS)) {
-      const provider = this.providers[providerName];
-      if (provider && provider.isAvailable(this.config)) {
-        debugLog(
-          `Summarization: Selected fast model ${fastModel} from ${providerName}`,
-        );
+    // Return the first fast model whose provider is available
+    for (const fastModel of FAST_MODELS) {
+      if (resolveModelSpec(fastModel, this.providers, this.config).status === 'ok') {
+        debugLog(`Summarization: Selected fast model ${fastModel}`);
         return fastModel;
       }
     }

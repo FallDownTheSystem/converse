@@ -319,7 +319,11 @@ function extractRateLimitInfo(headers) {
 /**
  * Main Mistral provider implementation
  */
+const DEFAULT_MODEL = 'mistral-medium-3-5';
+
 export const mistralProvider = {
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
@@ -328,7 +332,7 @@ export const mistralProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'mistral-medium-3-5',
+      model = DEFAULT_MODEL,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

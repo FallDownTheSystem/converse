@@ -273,6 +273,7 @@ export function createOpenAICompatibleProvider(providerConfig) {
     transformStreamChunk,
     resolveModelConfig,
     defaultParams = {},
+    defaultModel = Object.keys(supportedModels)[0],
   } = providerConfig;
 
   // Create custom error class for this provider
@@ -284,12 +285,14 @@ export function createOpenAICompatibleProvider(providerConfig) {
   }
 
   return {
+    defaultModel,
+
     /**
      * Unified provider interface: invoke messages with options
      */
     async invoke(messages, options = {}) {
       const {
-        model = Object.keys(supportedModels)[0], // Default to first model
+        model = defaultModel,
         maxTokens = null,
         stream = false,
         reasoning_effort = 'medium',

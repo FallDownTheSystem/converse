@@ -18,11 +18,10 @@
  *   interactively (`agy`) via Google OAuth. The first interactive login also
  *   establishes workspace trust for the user's home directory.
  *
- * The provider registry key remains 'gemini-cli' and the user-facing alias
- * remains 'gemini' for routing/normalization stability. Only three user-facing
- * model names are exposed: gemini (= gemini:flash), gemini:flash, gemini:pro.
- * Flash is the default: Gemini 3.8 Flash is the current-generation model agy
- * lists first, while 3.1 Pro remains the only Pro tier Antigravity offers.
+ * The provider registry key remains 'gemini-cli'; its namespaces are `gemini:`
+ * and `agy:`. Flash is the default: Gemini 3.8 Flash is the current-generation
+ * model agy lists first, while 3.1 Pro remains the only Pro tier Antigravity
+ * offers.
  */
 
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -32,6 +31,7 @@ import { randomUUID } from 'node:crypto';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
+import { findCatalogEntry } from '../utils/modelCatalog.js';
 
 // Prompts at or below this length pass directly as the -p argv value (fast
 // path). Larger prompts are written to a file and -p carries a bootstrap
@@ -53,13 +53,15 @@ const POST_KILL_GRACE_MS = 5000;
 const PTY_COLS = 1000;
 
 /**
- * Supported Gemini models. Only three user-facing names are exposed; each maps
- * to an agy display-name base that gets a reasoning-effort suffix appended at
- * spawn time. All are text-only (print mode has no image input channel).
+ * Supported Gemini models, keyed by the same model IDs the Google API provider
+ * uses so a bare name resolves to one model whichever provider serves it. Each
+ * maps to an agy display-name base that gets a reasoning-effort suffix
+ * appended at spawn time. All are text-only (print mode has no image input
+ * channel).
  */
 const SUPPORTED_MODELS = {
-  gemini: {
-    modelName: 'gemini',
+  'gemini-3.8-flash': {
+    modelName: 'gemini-3.8-flash',
     friendlyName: 'Gemini 3.8 Flash (via Antigravity CLI)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
@@ -69,28 +71,23 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 3.8 Flash via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
-    aliases: ['gemini-cli'],
+      'Gemini 3.8 Flash via Antigravity CLI (agy, default) - requires Antigravity Google OAuth login',
+    aliases: [
+      'flash',
+      'gemini-3.8',
+      'gemini3.8',
+      'gemini-3.8-flash-latest',
+      'flash-3.8',
+      'flash3.8',
+      'gemini-flash-3.8',
+      'gemini flash 3.8',
+      '3.8-flash',
+    ],
     // agy display-name base; reasoning_effort selects the parenthesized variant
     agyModelBase: 'Gemini 3.8 Flash',
   },
-  'gemini:flash': {
-    modelName: 'gemini:flash',
-    friendlyName: 'Gemini 3.8 Flash (via Antigravity CLI)',
-    contextWindow: 1048576,
-    maxOutputTokens: 65536,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsWebSearch: false,
-    supportsThinking: true,
-    timeout: DEFAULT_TIMEOUT_MS,
-    description:
-      'Gemini 3.8 Flash via Antigravity CLI (agy) - explicit alias of `gemini`',
-    aliases: ['flash'],
-    agyModelBase: 'Gemini 3.8 Flash',
-  },
-  'gemini:pro': {
-    modelName: 'gemini:pro',
+  'gemini-3.1-pro-preview': {
+    modelName: 'gemini-3.1-pro-preview',
     friendlyName: 'Gemini 3.1 Pro (via Antigravity CLI)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
@@ -101,10 +98,25 @@ const SUPPORTED_MODELS = {
     timeout: DEFAULT_TIMEOUT_MS,
     description:
       'Gemini 3.1 Pro via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
-    aliases: ['pro'],
+    aliases: [
+      'pro',
+      'gemini-pro',
+      'gemini pro',
+      'gemini-3.1-pro',
+      'gemini-3.1',
+      'gemini3.1',
+      '3.1-pro',
+      'gemini-3',
+      'gemini3',
+      'gemini-3-pro',
+      'gemini-3-pro-preview',
+      '3-pro',
+    ],
     agyModelBase: 'Gemini 3.1 Pro',
   },
 };
+
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 
 /**
  * Custom error class for Gemini CLI (agy) provider errors
@@ -197,45 +209,24 @@ function effortSuffix(base, reasoningEffort) {
 }
 
 /**
- * Resolve a user-facing model name + reasoning_effort to the agy display name
- * passed via --model. Strips the gemini: prefix (case-insensitive), maps the
- * alias, and appends the effort suffix. Full agy display names pass through
- * verbatim so power users aren't blocked.
- * @param {string} model - e.g. 'gemini', 'gemini:flash', or a full agy name
+ * Resolve a model name + reasoning_effort to the agy display name passed via
+ * --model. The router hands over canonical catalog IDs; aliases are accepted
+ * for direct callers.
+ * @param {string} [model] - Catalog ID or alias; defaults to DEFAULT_MODEL
  * @param {string} [reasoningEffort]
  * @returns {string} agy --model value, e.g. 'Gemini 3.8 Flash (High)'
+ * @throws {GeminiCliProviderError} When the name is not in the catalog
  */
 export function resolveAgyModel(model, reasoningEffort) {
-  const raw = typeof model === 'string' ? model.trim() : '';
-
-  // Full agy display-name passthrough (already contains a parenthesized variant)
-  if (/\(.*\)\s*$/.test(raw) && /gemini/i.test(raw)) {
-    return raw;
+  const name = typeof model === 'string' && model.trim() ? model : DEFAULT_MODEL;
+  const entry = findCatalogEntry(SUPPORTED_MODELS, name);
+  if (!entry) {
+    throw new GeminiCliProviderError(
+      `Unknown Antigravity model "${model}"`,
+      ErrorCodes.MODEL_NOT_FOUND,
+    );
   }
-
-  let name = raw;
-  if (name.toLowerCase().startsWith('gemini:')) {
-    name = name.slice('gemini:'.length).trim();
-  }
-
-  const nameLower = name.toLowerCase();
-
-  // Determine the agy base
-  let base;
-  if (
-    !nameLower ||
-    nameLower === 'gemini' ||
-    nameLower === 'gemini-cli' ||
-    nameLower === 'flash'
-  ) {
-    base = SUPPORTED_MODELS.gemini.agyModelBase;
-  } else if (nameLower === 'pro') {
-    base = SUPPORTED_MODELS['gemini:pro'].agyModelBase;
-  } else {
-    // Unknown suffix: pass through verbatim (power-user agy display name)
-    return raw;
-  }
-
+  const base = entry.agyModelBase;
   return `${base} ${effortSuffix(base, reasoningEffort)}`;
 }
 
@@ -654,7 +645,7 @@ async function* createStreamingGenerator(fullText, userFacingModel) {
  * provider errors.
  */
 async function executeAgy(messages, options) {
-  const { model = 'gemini', reasoning_effort, signal, timeout } = options;
+  const { model = DEFAULT_MODEL, reasoning_effort, signal, timeout } = options;
 
   const prompt = buildPrompt(messages);
   const agyModel = resolveAgyModel(model, reasoning_effort);
@@ -699,7 +690,7 @@ export const geminiCliProvider = {
    * @returns {Promise<Object>|AsyncGenerator} Response or stream generator
    */
   async invoke(messages, options = {}) {
-    const { model = 'gemini', stream = false, signal } = options;
+    const { model = DEFAULT_MODEL, stream = false, signal } = options;
 
     if (signal?.aborted) {
       throw new GeminiCliProviderError('Request cancelled', 'CANCELLED');
@@ -729,9 +720,13 @@ export const geminiCliProvider = {
     };
   },
 
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Validate configuration. agy uses OAuth (no env keys); always true.
-   * Availability is determined by isAvailable (binary presence).
+   * Availability is determined by isAvailable (binary presence). agy keeps
+   * its login outside any file converse can check, so a logged-out agy
+   * surfaces at invoke time and bare-name/auto routing fails over.
    */
   validateConfig(_config) {
     return true;
@@ -752,37 +747,9 @@ export const geminiCliProvider = {
   },
 
   /**
-   * Get model configuration for a specific model (alias-aware, prefix-aware).
+   * Get model configuration for a specific model (alias-aware).
    */
   getModelConfig(modelName) {
-    if (typeof modelName !== 'string') return null;
-
-    const name = modelName.toLowerCase().trim();
-
-    // Full agy display-name passthrough → matching tier config. Any 3.x Flash
-    // (agy also lists 3.6/3.7) shares the Flash config; any 3.x Pro the Pro one.
-    if (/gemini 3\.\d+ flash/i.test(modelName)) {
-      return SUPPORTED_MODELS['gemini:flash'];
-    }
-    if (/gemini 3\.\d+ pro/i.test(modelName)) {
-      return SUPPORTED_MODELS['gemini:pro'];
-    }
-
-    // Exact key match (gemini, gemini:flash, gemini:pro)
-    if (SUPPORTED_MODELS[name]) {
-      return SUPPORTED_MODELS[name];
-    }
-
-    // Alias match
-    for (const config of Object.values(SUPPORTED_MODELS)) {
-      if (
-        config.aliases &&
-        config.aliases.some((alias) => alias.toLowerCase() === name)
-      ) {
-        return config;
-      }
-    }
-
-    return null;
+    return findCatalogEntry(SUPPORTED_MODELS, modelName);
   },
 };

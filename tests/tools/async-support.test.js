@@ -28,17 +28,18 @@ describe('Async Support (unified chat tool)', () => {
       exists: vi.fn().mockResolvedValue(false),
     };
 
-    const makeProvider = (content) => ({
+    const makeProvider = (content, catalog) => ({
       invoke: vi.fn().mockResolvedValue({ content, metadata: { usage: {} } }),
       isAvailable: vi.fn().mockReturnValue(true),
-      getSupportedModels: vi.fn(),
+      defaultModel: Object.keys(catalog)[0],
+      getSupportedModels: vi.fn().mockReturnValue(catalog),
       getModelConfig: vi.fn().mockReturnValue({ supportsImages: true }),
     });
 
     mockProviders = {
-      openai: makeProvider('Test response from OpenAI'),
-      xai: makeProvider('Test response from XAI'),
-      google: makeProvider('Test response from Google'),
+      openai: makeProvider('Test response from OpenAI', { 'gpt-5': { aliases: [] } }),
+      xai: makeProvider('Test response from XAI', { 'grok-4-0709': { aliases: [] } }),
+      google: makeProvider('Test response from Google', { 'gemini-2.5-pro': { aliases: [] } }),
     };
 
     mockContextProcessor = {

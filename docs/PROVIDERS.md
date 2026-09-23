@@ -31,7 +31,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `gemini-2.5-pro` (alias: `pro 2.5`) - Deep reasoning with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash` (alias: `flash`) - Ultra-fast model with thinking budget (1M context, 65K output)
   - `gemini-2.5-flash-lite` (alias: `flash-lite`) - Lightweight fast model (1M context, 65K output)
-- **Note**: The short model name `gemini` (and `gemini:flash` / `gemini:pro`) routes to the **Antigravity CLI** (`agy`, OAuth-based access). For Google API access, use specific model names like `gemini-3.1-pro-preview` or `gemini-2.5-flash` (bare `gemini-pro`/`gemini-flash` also route to the Google API).
+- **Note**: The **Antigravity CLI** provider (`agy`, OAuth-based access) serves `gemini-3.8-flash` and `gemini-3.1-pro-preview` under the same IDs and aliases, and it comes before the Google API in bare-name order. When `agy` is installed, bare `pro`, `gemini-pro`, `flash`, `gemini-3.1-pro-preview` and `gemini-3.8-flash` go to Antigravity first; the bare name `gemini` is the Antigravity namespace. Use `google:<model>` (e.g. `google:pro`, `google:gemini-2.5-flash`) to always use the Google API. Names only the Google API serves (e.g. `gemini-2.5-pro`, `gemini-3.5-flash`) route there directly.
 
 ### X.AI (Grok)
 - **API Key Format**: `xai-...` (starts with `xai-`)
@@ -41,7 +41,7 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `grok-4.5` (default; aliases: `grok`, `grok-4.5-latest`, `grok-build-latest`) - Flagship model with image input, reasoning content, and native web/X search (500K context)
 - **Reasoning**: `reasoning_effort` maps to Grok's `low`/`medium`/`high`. Grok 4.5 always reasons and cannot be turned off, so `none`/`minimal`/`low` clamp to `low`, `medium` stays `medium`, and `high`/`max` clamp to `high`.
 - **Web search**: Automatic — native web/X search (Agent Tools) is attached on every Grok 4.5 request; the model decides per-request whether to search, and any citations are returned in metadata.
-- **Retired IDs**: Older Grok identifiers (e.g. `grok-4-0709`, `grok-code-fast-1`) still pass through as explicit model strings, but xAI does not surface a retirement error for them — it silently remaps them upstream to a current model (HTTP 200). Use `grok-4.5` for predictable results.
+- **Retired IDs**: Older Grok identifiers (e.g. `grok-4-0709`, `grok-code-fast-1`) are not in the catalog and are rejected as unknown models. Use `grok-4.5`.
 
 ### Anthropic (Claude)
 - **API Key Format**: `sk-ant-...` (starts with `sk-ant-`)
@@ -100,15 +100,20 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 ### Codex
 - **API Key Format**: Optional (uses ChatGPT login by default)
 - **Authentication**: ChatGPT login (system-wide) OR `CODEX_API_KEY`
+- **Availability**: The Codex SDK is installed and either `~/.codex/auth.json` exists (from `codex login`; `$CODEX_HOME/auth.json` when `CODEX_HOME` is set) or `CODEX_API_KEY` is set
 - **Environment Variables**:
   - `CODEX_API_KEY` - Optional API key for headless deployments
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
-  - `CODEX_MODEL` - Underlying model for Codex sessions (default: gpt-6-sol; e.g. gpt-6-luna, gpt-6-astra, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5)
+  - `CODEX_DEFAULT_MODEL` - Model used for bare `codex` and `auto` (default: `gpt-6-sol`; any Codex model ID or alias below). The legacy name `CODEX_MODEL` is honored when `CODEX_DEFAULT_MODEL` is unset.
 - **Supported Models**:
   - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Sol by default)
-  - `codex:<model>` - Same, with an explicit backend: `codex:sol`, `codex:luna`, `codex:astra` (GPT-6), `codex:gpt-5.6-sol`, `codex:terra`, `codex:gpt-5.6-luna`, `codex:gpt-5.5`, `codex:spark`, or any slug the Codex CLI knows
+  - `codex:<model>` - Same, with an explicit backend from the Codex catalog:
+    - `gpt-6-sol` (aliases: `sol`, `gpt-6`), `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`)
+    - `gpt-5.6-sol` (`gpt-5.6`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
+  - Names outside this catalog are rejected with suggestions
+  - These IDs are also bare names: `gpt-6-astra`, `luna` or `terra` alone go to Codex first and fail over to the OpenAI API (see [Model Routing Logic](#model-routing-logic))
   - `reasoning_effort` is clamped onto what the backend accepts (Sol/Luna: `none`–`max`; GPT-6 Astra: `low`–`max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
@@ -134,10 +139,13 @@ This guide documents all supported AI providers in the Converse MCP Server and t
      - Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 | iex`
      - macOS/Linux: `curl -fsSL https://antigravity.google/cli/install.sh | bash`
   2. Authenticate: run `agy` once interactively and complete the Google OAuth login. This also establishes workspace trust for your home directory (the provider spawns each call in a per-call subdirectory under `~/.converse/agy-runs`).
-- **Environment Variables**: None (the provider detects the `agy` binary on PATH or at the platform install location)
+- **Availability**: The `agy` binary is found on PATH or at the platform install location
+- **Environment Variables**:
+  - `AGY_DEFAULT_MODEL` - Model used for bare `gemini` and `auto` (default: `gemini-3.8-flash`)
+- **Namespaces**: `gemini`, `agy`, `antigravity`, `gemini-cli` (all equivalent, e.g. `agy:pro`)
 - **Supported Models** (text-only — print mode has no image input channel):
-  - `gemini` (= `gemini:flash`) - Gemini 3.8 Flash (default)
-  - `gemini:pro` - Gemini 3.1 Pro
+  - `gemini-3.8-flash` (aliases: `flash`, `gemini-3.8`, `flash-3.8`, ...) - Gemini 3.8 Flash (default; `gemini` alone = `gemini:flash`)
+  - `gemini-3.1-pro-preview` (aliases: `pro`, `gemini-pro`, `gemini-3.1-pro`, `gemini-3`, ...) - Gemini 3.1 Pro (`gemini:pro`)
   - `reasoning_effort` selects the variant: `low` → (Low), `medium` → (Medium) for Flash / (High) for Pro, `high`/`max` → (High); unset defaults to (High)
 
 **Key Features:**
@@ -184,27 +192,30 @@ agy
 
 **Best Practices:**
 - Authenticate before first use (run `agy` once interactively to log in)
-- Use specific model names for Google API access (e.g., `gemini-2.5-pro`)
-- Model names `gemini`, `gemini:pro`, and `gemini:flash` are reserved for Antigravity CLI access
+- Use the `google:` namespace for Google API access (e.g., `google:pro`, `google:gemini-2.5-pro`)
+- The `gemini:` / `agy:` namespaces always use the Antigravity CLI; bare `pro`, `gemini-pro` and `flash` also use it first when `agy` is installed
 - If a call returns an empty response, the CLI is likely not authenticated — run `agy` interactively once
 
 **Differences from Google API Provider:**
 - **Authentication**: Google OAuth via `agy` vs API Key (Google API)
 - **Billing**: Antigravity subscription/compute allowance vs pay-per-use API
-- **Model Routing**: `gemini` / `gemini:flash` / `gemini:pro` → Antigravity CLI provider, specific names (e.g., `gemini-2.5-pro`, bare `gemini-pro`) → Google API provider
+- **Model Routing**: `gemini` / `gemini:<model>` / `agy:<model>` → Antigravity CLI provider; `google:<model>` → Google API provider; bare names both serve (`pro`, `gemini-pro`, `gemini-3.1-pro-preview`, `gemini-3.8-flash`) → Antigravity first, then the Google API on authentication/availability failure; bare names only the Google API serves (e.g., `gemini-2.5-pro`) → Google API provider. Bare `flash` is Gemini 3.8 Flash on Antigravity but Gemini 2.5 Flash on the Google API, so it does not fail over between them.
 - **Images**: Not supported (text-only) vs full multimodal on the Google API provider
+- **Permissions**: `agy` runs with `--dangerously-skip-permissions` (headless calls cannot prompt), so every tool request, including shell commands and file writes, is auto-approved. Bare names and `auto` reach it whenever `agy` is installed; use `google:<model>` to keep a request on the plain API.
 
 ### Claude Agent SDK
 - **Authentication**: Claude Code CLI login (no API key needed)
 - **Setup Required**: Authenticate once with `claude login` (Claude Code CLI)
-- **Environment Variables**: None (uses Claude Code credentials)
-- **Supported Models**:
-  - `claude` (aliases: `claude-sdk`, `claude-code`) - Defaults to Claude Opus 5.5 (`claude-opus-5-5`)
-  - `claude:opus` or `claude:opus-5.5` - Claude Opus 5.5 explicitly
-  - `claude:opus-5` - Claude Opus 5 (`claude-opus-5`)
-  - `claude:fable` or `claude:fable-5.1` - Claude Fable 5.1 (`claude-fable-5-1`)
-  - `claude:fable-5` - Claude Fable 5.0 (`claude-fable-5`)
-  - Other `claude:`-prefixed names pass through to the SDK (e.g. `claude:claude-sonnet-4-6`)
+- **Availability**: The Claude Agent SDK is installed and a credential is present: `~/.claude/.credentials.json` (`$CLAUDE_CONFIG_DIR/.credentials.json` when set), or `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` in the environment. On macOS the login lives in the Keychain and is assumed present. An expired login is caught at call time, and bare-name/`auto` routing fails over to the next provider.
+- **Environment Variables**:
+  - `CLAUDE_DEFAULT_MODEL` - Model used for bare `claude` and `auto` (default: `claude-opus-5-5`)
+- **Supported Models** (namespaces: `claude`, `claude-code`, `claude-sdk`):
+  - `claude` - Defaults to Claude Opus 5.5 (`claude-opus-5-5`)
+  - `claude-opus-5-5` (aliases: `opus`, `claude-opus`, `opus-5.5`) - Claude Opus 5.5 (`claude:opus`)
+  - `claude-opus-5` (alias: `opus-5`) - Claude Opus 5
+  - `claude-fable-5-1` (aliases: `fable`, `claude-fable`, `fable-5.1`) - Claude Fable 5.1 (`claude:fable`)
+  - `claude-fable-5` (alias: `fable-5`) - Claude Fable 5.0
+  - Names outside this catalog are rejected with suggestions (e.g. `claude:sonnet` suggests `copilot:sonnet` and `anthropic:sonnet`)
 
 **Key Features:**
 - **Subscription Access**: Uses your Claude subscription instead of API credits
@@ -217,19 +228,22 @@ agy
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
 - **Billing**: Claude subscription vs pay-per-use API
-- **Model Routing**: `claude` and `claude:*` → SDK provider; specific names (e.g., `claude-fable-5`, `opus`, `sonnet`) → API provider
+- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `claude-opus-5-5`, `claude-opus-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `sonnet`, `haiku`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
+- **Permissions**: The SDK runs with `bypassPermissions`, and bare names and `auto` reach it whenever it is available. Use `anthropic:<model>` to keep a request on the plain API.
 
 ### GitHub Copilot SDK
 - **Authentication**: GitHub Copilot subscription via the Copilot CLI (`gh auth login` with an active Copilot subscription) — no API key needed
 - **Setup Required**: Authenticate the GitHub CLI and ensure your account has an active Copilot subscription
-- **Environment Variables**: None
-- **Supported Models** (reach them with the `copilot:` namespace, e.g. `copilot:gpt-6-sol`):
-  - `copilot` - Uses Copilot's default or env-configured model
-  - OpenAI: `gpt-6-sol` (aliases: bare `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
+- **Availability**: The Copilot SDK (`@github/copilot-sdk`) is installed
+- **Environment Variables**:
+  - `COPILOT_DEFAULT_MODEL` - Model used for bare `copilot` and `auto` (default: `gpt-6-sol`). The legacy name `COPILOT_MODEL` is honored when `COPILOT_DEFAULT_MODEL` is unset.
+- **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6-sol`; Copilot never serves bare model names):
+  - `copilot` - GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`
+  - OpenAI: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
   - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
-- **Explicit pass-through**: Any other `copilot:<id>` model string is forwarded to the Copilot backend verbatim, so IDs outside the curated list still work while the backend accepts them.
+- **Unknown IDs**: Any other `copilot:<id>` is rejected with suggestions; only the IDs and aliases above are accepted.
 
 **Key Features:**
 - **Subscription Access**: Uses your GitHub Copilot subscription instead of API credits
@@ -257,6 +271,24 @@ CODEX_API_KEY=your_codex_api_key_here       # Optional if ChatGPT login availabl
 CODEX_SANDBOX_MODE=read-only                 # read-only (default), workspace-write, danger-full-access
 CODEX_SKIP_GIT_CHECK=true                    # true (default), false
 CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-failure, on-request
+```
+
+### Default Model Overrides (.env file)
+
+Each provider has a `<PROVIDER>_DEFAULT_MODEL` variable that sets the model used for its bare provider name (`codex`, `openai`, ...) and for `auto`. The value must be a model ID or alias from that provider's list; startup fails with "Did you mean" suggestions otherwise. OpenRouter also accepts any `vendor/model` slug.
+
+```bash
+CODEX_DEFAULT_MODEL=gpt-6-sol                # CODEX_MODEL is honored as a legacy fallback
+CLAUDE_DEFAULT_MODEL=claude-opus-5-5
+AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
+COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL is honored as a legacy fallback
+OPENAI_DEFAULT_MODEL=gpt-6-sol
+GOOGLE_DEFAULT_MODEL=gemini-3.1-pro-preview
+XAI_DEFAULT_MODEL=grok-4.5
+ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
+MISTRAL_DEFAULT_MODEL=mistral-medium-3-5
+DEEPSEEK_DEFAULT_MODEL=deepseek-v4-pro
+OPENROUTER_DEFAULT_MODEL=z-ai/glm-5.2        # any vendor/model slug is accepted
 ```
 
 ### Claude Configuration (claude_desktop_config.json)
@@ -311,6 +343,7 @@ All providers support streaming responses for real-time output.
 
 ### Local Execution
 - **Codex**: Runs locally with direct filesystem access and thread-based sessions
+- **Claude Agent SDK, Antigravity CLI, Copilot SDK**: Run through a local SDK or CLI using your subscription login
 - **All Others**: API-based remote execution
 
 ## Model Selection in Tools
@@ -319,42 +352,47 @@ When using the chat tool in any mode, specify models using their identifiers:
 
 ### Model Routing Logic
 
-1. **SDK Providers** (exact matches and prefixes, checked first):
+Routing is derived entirely from each provider's model list (canonical IDs plus aliases, matched case-insensitively). Every entry in `models` takes one of four forms:
+
+1. **`provider`** — that provider's default model (hardcoded, or `<PROVIDER>_DEFAULT_MODEL`). Namespace tokens:
    - `codex` → Codex
-   - `gemini`, `gemini-cli`, and any `gemini:`-prefixed name (e.g., `gemini:flash`, `gemini:pro`) → Gemini via Antigravity CLI
-   - `claude`, `claude-sdk`, `claude-code` and any `claude:`-prefixed name (e.g., `claude:fable`, `claude:opus`) → Claude Agent SDK
-   - `copilot`, `copilot-sdk`, `github-copilot` and any `copilot:`-prefixed name (e.g., `copilot:codex`) → Copilot SDK
+   - `gemini`, `agy`, `antigravity`, `gemini-cli` → Gemini via Antigravity CLI
+   - `claude`, `claude-code`, `claude-sdk` → Claude Agent SDK
+   - `copilot`, `github-copilot`, `copilot-sdk` → Copilot SDK
+   - `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter` → the matching API provider
 
-2. **Simple Names**: Other models without "/" are routed by keyword matching:
-   - Contains "gpt", "o1", "o3", "o4" → OpenAI
-   - Contains "claude", "fable", "opus", "sonnet", "haiku" → Anthropic
-   - Contains "gemini", "flash", "pro" → Google
-   - Contains "grok" → X.AI
-   - Contains "mistral", "magistral" → Mistral
-   - Contains "deepseek", "reasoner", "r1" → DeepSeek
-   - Contains "qwen", "kimi", "k2" → OpenRouter
+2. **`provider:model`** — that model on that provider only (e.g. `codex:astra`, `gemini:pro`, `google:pro`, `anthropic:opus`, `copilot:sonnet`). The model must be in that provider's list; there is no failover to another provider.
 
-3. **Slash Format**: Models with "/" check native providers first:
-   - If exact model exists in a native provider → Routes to that provider
-   - If not found in any native provider → Routes to OpenRouter
-   - This allows using models like "anthropic/claude-3.5-sonnet" via OpenRouter
+3. **Bare `model`** — an ID or alias without a namespace goes to the first provider, in this order, whose list contains the name and that is set up: Codex, Antigravity CLI, Claude Agent SDK, OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, OpenRouter.
+   - "Set up" means an API key for API providers; for Codex, the SDK plus a login file or `CODEX_API_KEY`; for the Claude Agent SDK, the SDK plus a login file, a macOS login, or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY`; for Antigravity, the `agy` binary.
+   - If that provider fails with an authentication or availability error (including an expired login, which is only detected at call time), the next set-up provider that serves **the same model** takes over. A provider whose alias of that name points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API; bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API).
+   - Copilot never serves bare names; use `copilot:<model>`.
 
-4. **OpenRouter Auto**: Special aliases route to OpenRouter's auto-selection:
-   - "openrouter/auto", "openrouter auto", "auto router", "auto-router"
+4. **`auto`** — the first available provider's default model, in the priority order above with Copilot between the Claude Agent SDK and OpenAI.
 
-The `models` array always holds plain model-name strings. Each string routes as follows:
+**Unknown names are rejected**, never guessed or forwarded: a typo or an unlisted model returns an error with up to three close matches, e.g. `Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`.
+
+**OpenRouter slugs** are the one open-ended case: a full `vendor/model` slug (bare, or with the `openrouter:` namespace) routes to OpenRouter and is validated against OpenRouter's live catalog. `openrouter/auto` (aliases `auto-router`, `openrouter-auto`) selects OpenRouter's auto-router.
+
+**Local agent permissions**: Bare names and `auto` reach the local agent providers whenever they are set up. The Antigravity CLI auto-approves every tool request (`--dangerously-skip-permissions`) and the Claude Agent SDK runs with `bypassPermissions`. Name the API provider (`google:pro`, `anthropic:opus`, `openai:gpt-6-astra`) to keep a request off the local agents.
+
+Examples:
 
 ```text
-"gpt-6"                    // OpenAI (keyword match -> gpt-6-sol)
-"fable"                    // Anthropic (keyword match -> claude-fable-5)
-"opus"                     // Anthropic (keyword match -> claude-opus-5-5)
-"sonnet"                   // Anthropic (keyword match -> claude-sonnet-4-6)
+"gpt-6"                    // Codex (gpt-6-sol), else OpenAI API
+"openai:gpt-6"             // OpenAI API only
+"fable"                    // Claude Agent SDK (claude-fable-5-1) when set up, otherwise Anthropic API (claude-fable-5)
+"opus"                     // Claude Agent SDK (claude-opus-5-5), else Anthropic API
+"anthropic:opus"           // Anthropic API only
+"sonnet"                   // Anthropic API (claude-sonnet-4-6)
 "claude"                   // Claude Agent SDK (defaults to Claude Opus 5.5)
 "claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
-"gemini-2.5-pro"           // Google (keyword match)
-"grok-4.5"                 // X.AI (keyword match)
+"pro"                      // Antigravity CLI (gemini-3.1-pro-preview), else Google API
+"google:pro"               // Google API only
+"gemini-2.5-pro"           // Google API
+"grok-4.5"                 // X.AI
 "mistral-large"            // Mistral (alias -> mistral-large-2512)
-"deepseek"                 // DeepSeek (alias -> deepseek-v4-pro)
+"deepseek"                 // DeepSeek default model (deepseek-v4-pro)
 "z-ai/glm-5.2"             // OpenRouter (curated slug)
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "anthropic/claude-sonnet-5" // OpenRouter (any full slug routes as-is)
@@ -381,9 +419,11 @@ The `models` array always holds plain model-name strings. Each string routes as 
 - Verify API keys are active and have available quota
 
 ### Model Not Found
-- Use exact model identifiers as listed above
-- Some providers support aliases (e.g., "fable" → "claude-fable-5", "opus" → "claude-opus-5-5")
+- Use model identifiers or aliases as listed above; anything else is rejected with up to three "Did you mean" suggestions
+- Check the namespace: a model must be in that provider's list (`openai:spark` fails and suggests `codex:spark`)
+- Aliases can differ per provider (e.g., bare "fable" → "claude-fable-5-1" on the Claude Agent SDK, `anthropic:fable` → "claude-fable-5")
 - Note: bare "claude" routes to the Claude Agent SDK provider, not the Anthropic API
+- A "none is available" error means the model exists but no provider serving it is set up; the message names the setup step for each
 - Check provider documentation for model availability in your region
 
 ### Rate Limits

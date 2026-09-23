@@ -140,6 +140,7 @@ export const deepseekProvider = createOpenAICompatibleProvider({
   baseURL: 'https://api.deepseek.com',
   providerName: 'DeepSeek',
   supportedModels: SUPPORTED_MODELS,
+  defaultModel: 'deepseek-v4-pro',
   validateApiKey,
   transformRequest,
   transformResponse,

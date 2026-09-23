@@ -29,9 +29,8 @@ import { SummarizationService } from '../services/summarizationService.js';
 import { exportConversation } from '../utils/conversationExporter.js';
 import { EFFORT_LADDER } from '../utils/reasoningEffort.js';
 import {
-  getDefaultModelForProvider,
-  getProviderUnavailableMessage,
-  getAvailableProviders,
+  getAutoCandidates,
+  getAutoModelSpecs,
   resolveModelSpec,
 } from '../utils/modelRouting.js';
 import {
@@ -857,24 +856,52 @@ function buildAsyncResult(pipeline, title, finalSummary) {
 // --- Model resolution helpers ------------------------------------------------
 
 /**
- * Build the full provider-priority candidate list for an "auto" spec (used for
- * chat-mode failover). Skips text-only providers when the request has images.
+ * Convert router candidates into the engine's call-plan candidate shape.
  */
-function buildAutoCandidates(providers, config, hasImages) {
-  return getAvailableProviders(providers, config, { hasImages }).map((name) => ({
-    name,
-    providerInstance: providers[name],
-    resolvedModel: getDefaultModelForProvider(name),
-    displayModel: 'auto',
+function toPlanCandidates(candidates, displayModel) {
+  return candidates.map((c) => ({
+    name: c.providerName,
+    providerInstance: c.provider,
+    resolvedModel: c.resolvedModel,
+    displayModel,
+    resolveOptions: c.options,
   }));
+}
+
+/**
+ * Resolve one explicit spec into a call plan, or a pre-failed entry carrying
+ * the router's error (unknown names include "did you mean" suggestions). A
+ * bare model name served by several providers yields a multi-candidate plan
+ * that fails over in provider priority order.
+ */
+function resolveExplicitPlan(spec, providers, config) {
+  const resolution = resolveModelSpec(spec, providers, config);
+  if (resolution.status !== 'ok') {
+    return {
+      preFailed: {
+        model: spec,
+        ...(resolution.providerName && { provider: resolution.providerName }),
+        error: resolution.error,
+      },
+    };
+  }
+  return {
+    plan: {
+      modelSpec: spec,
+      displayModel: spec,
+      threadKey: spec,
+      candidates: toPlanCandidates(resolution.candidates, spec),
+    },
+  };
 }
 
 /**
  * Resolve chat-mode call plans. Each "auto" spec (whether the list is exactly
  * ["auto"] or "auto" appears alongside explicit models) yields a plan with the
  * full provider-priority candidate list (failover); explicit models yield one
- * single-candidate plan each. Unavailable/unknown explicit models are returned
- * as pre-failed entries (surfaced as per-model failures).
+ * plan each, with failover candidates when a bare name is served by several
+ * providers. Unavailable/unknown explicit models are returned as pre-failed
+ * entries (surfaced as per-model failures).
  */
 function resolveChatCallPlans(models, providers, config, hasImages) {
   const callPlans = [];
@@ -882,7 +909,10 @@ function resolveChatCallPlans(models, providers, config, hasImages) {
 
   for (const spec of models) {
     if (String(spec).toLowerCase() === 'auto') {
-      const candidates = buildAutoCandidates(providers, config, hasImages);
+      const candidates = toPlanCandidates(
+        getAutoCandidates(providers, config, { hasImages }),
+        'auto',
+      );
       if (candidates.length === 0) {
         // A single ["auto"] with no providers is a hard error; an "auto" entry
         // in a multi-model list becomes a per-model failure instead.
@@ -909,28 +939,11 @@ function resolveChatCallPlans(models, providers, config, hasImages) {
       continue;
     }
 
-    const { providerName, provider, resolvedModel, status, options } = resolveModelSpec(spec, providers, config);
-    if (status === 'not_found') {
-      preFailed.push({
-        model: spec,
-        provider: providerName,
-        error: `Provider not found for model: ${spec}`,
-      });
-    } else if (status === 'unavailable') {
-      preFailed.push({
-        model: spec,
-        provider: providerName,
-        error: getProviderUnavailableMessage(providerName),
-      });
+    const { plan, preFailed: failed } = resolveExplicitPlan(spec, providers, config);
+    if (failed) {
+      preFailed.push(failed);
     } else {
-      callPlans.push({
-        modelSpec: spec,
-        displayModel: spec,
-        threadKey: spec,
-        candidates: [
-          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec, resolveOptions: options },
-        ],
-      });
+      callPlans.push(plan);
     }
   }
   return { callPlans, preFailed, error: null };
@@ -938,15 +951,15 @@ function resolveChatCallPlans(models, providers, config, hasImages) {
 
 /**
  * Resolve consensus-mode call plans. Single "auto" expands to the first 3
- * available providers' default models; each spec becomes a single-candidate plan.
+ * available providers' default models (as `namespace:model` specs); each spec
+ * becomes one plan.
  */
 function resolveConsensusCallPlans(models, providers, config, images) {
   const hasImages = Array.isArray(images) && images.length > 0;
 
   let modelsToProcess = models;
   if (models.length === 1 && String(models[0]).toLowerCase() === 'auto') {
-    const available = getAvailableProviders(providers, config, { hasImages, limit: 3 });
-    modelsToProcess = available.map((name) => getDefaultModelForProvider(name));
+    modelsToProcess = getAutoModelSpecs(providers, config, { hasImages, limit: 3 });
   }
 
   const resolved = [];
@@ -956,20 +969,11 @@ function resolveConsensusCallPlans(models, providers, config, images) {
       preFailed.push({ model: spec || 'unknown', error: 'Invalid model specification' });
       continue;
     }
-    const { providerName, provider, resolvedModel, status, options } = resolveModelSpec(spec, providers, config);
-    if (status === 'not_found') {
-      preFailed.push({ model: spec, provider: providerName, error: `Provider not found: ${providerName}` });
-    } else if (status === 'unavailable') {
-      preFailed.push({ model: spec, provider: providerName, error: getProviderUnavailableMessage(providerName) });
+    const { plan, preFailed: failed } = resolveExplicitPlan(spec, providers, config);
+    if (failed) {
+      preFailed.push(failed);
     } else {
-      resolved.push({
-        modelSpec: spec,
-        displayModel: spec,
-        threadKey: spec,
-        candidates: [
-          { name: providerName, providerInstance: provider, resolvedModel, displayModel: spec, resolveOptions: options },
-        ],
-      });
+      resolved.push(plan);
     }
   }
   return { resolved, preFailed };
@@ -1161,7 +1165,7 @@ chatTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'Models to use. Examples: ["auto"] (recommended), ["codex"], ["codex", "gemini", "claude"]. In mode "chat" each model answers independently; in "consensus" they refine after seeing each other; in "roundtable" they speak in the given ORDER, each seeing the transcript. Default: ["auto"].',
+        'Models to use. Examples: ["auto"] (recommended), ["codex"], ["codex", "gemini", "claude"], ["codex:astra"], ["gpt-6-astra"]. Forms: "provider" (its default model), "provider:model" (that provider only), or a bare "model" (served by the first configured provider that offers it, local CLI providers first, failing over to the next). Providers: codex, gemini (agy), claude, copilot, openai, google, xai, anthropic, mistral, deepseek, openrouter. Unknown names are rejected with suggestions. In mode "chat" each model answers independently; in "consensus" they refine after seeing each other; in "roundtable" they speak in the given ORDER, each seeing the transcript. Default: ["auto"].',
     },
     mode: {
       type: 'string',

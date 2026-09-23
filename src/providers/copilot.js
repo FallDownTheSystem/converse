@@ -18,29 +18,19 @@ import { fileURLToPath } from 'node:url';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
+import { findCatalogEntry, findCatalogId } from '../utils/modelCatalog.js';
+import { isPackageResolvable } from '../utils/localProviderAuth.js';
 
+const DEFAULT_MODEL = 'gpt-6-sol';
+
+// Keyed by the SDK model ID, which is also the canonical ID the router
+// resolves to. Every name here is reached only through the `copilot:`
+// namespace — Copilot never serves bare model names.
 const SUPPORTED_MODELS = {
-  copilot: {
-    modelName: 'copilot',
-    friendlyName: 'GitHub Copilot (via CLI SDK)',
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsWebSearch: false,
-    timeout: 1800000,
-    description:
-			'GitHub Copilot via CLI SDK - uses default or env-configured model',
-    aliases: ['copilot-sdk', 'github-copilot'],
-  },
-
   // OpenAI models
-  // Bare `gpt-6` / `gpt-5.6` route to that generation's Sol, matching
-  // Copilot's own bare-alias behavior; `sol`/`luna` and the legacy `gpt-5`
-  // shortcut follow the current generation. `codex` and `gpt` point at the
-  // latest GPT tier (reachable only via the `copilot:` namespace — bare
-  // `codex` routes to the Codex provider and bare `gpt*` keyword-routes to
-  // OpenAI before Copilot's catalog is consulted).
+  // `gpt-6` / `gpt-5.6` point at that generation's Sol, matching Copilot's own
+  // bare-alias behavior; `sol`/`luna` and the legacy `gpt-5` shortcut follow
+  // the current generation. `codex` and `gpt` point at the latest GPT tier.
   'gpt-6-sol': {
     modelName: 'gpt-6-sol',
     friendlyName: 'GPT-6 Sol (via Copilot)',
@@ -203,22 +193,6 @@ class CopilotProviderError extends ProviderError {
     super(message, code, originalError);
     this.name = 'CopilotProviderError';
   }
-}
-
-/**
- * Check if Copilot SDK is available (installed as dependency)
- */
-let _sdkAvailable = null;
-function isCopilotSDKAvailable() {
-  if (_sdkAvailable !== null) return _sdkAvailable;
-  try {
-    // Use synchronous resolve to check if the package exists
-    import.meta.resolve('@github/copilot-sdk');
-    _sdkAvailable = true;
-  } catch {
-    _sdkAvailable = false;
-  }
-  return _sdkAvailable;
 }
 
 /**
@@ -443,106 +417,24 @@ function createPermissionHandler(accessLevel) {
 }
 
 /**
- * Resolve a friendly alias to its SDK model identifier (case-insensitive)
- * Returns the resolved model name, or null if no alias matches
+ * Resolve a model name to the SDK model ID for the session. The router hands
+ * over canonical catalog IDs; aliases are accepted for direct callers.
+ * @param {string} [model] - Catalog ID or alias; defaults to DEFAULT_MODEL
+ * @returns {string}
+ * @throws {CopilotProviderError} When the name is not in the catalog
  */
-function resolveModelAlias(name) {
-  if (typeof name !== 'string') return null;
-  const lower = name.toLowerCase().trim();
-  if (!lower) return null;
-
-  // Direct key match
-  if (SUPPORTED_MODELS[lower] && lower !== 'copilot') {
-    return SUPPORTED_MODELS[lower].modelName;
+function resolveSessionModel(model) {
+  if (typeof model !== 'string' || !model.trim()) {
+    return DEFAULT_MODEL;
   }
-
-  // Alias match
-  for (const config of Object.values(SUPPORTED_MODELS)) {
-    if (config.modelName === 'copilot') continue;
-    if (
-      config.aliases &&
-			config.aliases.some((alias) => alias.toLowerCase() === lower)
-    ) {
-      return config.modelName;
-    }
+  const id = findCatalogId(SUPPORTED_MODELS, model);
+  if (!id) {
+    throw new CopilotProviderError(
+      `Unknown Copilot model "${model}"`,
+      ErrorCodes.MODEL_NOT_FOUND,
+    );
   }
-
-  return null;
-}
-
-/**
- * Look up model config from SUPPORTED_MODELS by name or alias.
- * Strips copilot: prefix and falls back to the base copilot config.
- */
-function findModelConfig(modelName) {
-  if (typeof modelName !== 'string') return null;
-
-  let name = modelName;
-  if (name.toLowerCase().startsWith('copilot:')) {
-    name = name.slice('copilot:'.length).trim();
-  }
-  if (!name) return SUPPORTED_MODELS.copilot;
-
-  const nameLower = name.toLowerCase();
-
-  if (SUPPORTED_MODELS[nameLower]) {
-    return SUPPORTED_MODELS[nameLower];
-  }
-
-  for (const config of Object.values(SUPPORTED_MODELS)) {
-    if (
-      config.aliases &&
-      config.aliases.some((alias) => alias.toLowerCase() === nameLower)
-    ) {
-      return config;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Resolve model to pass to SDK session
- * Precedence: explicit model param > config COPILOT_MODEL > omit (SDK default)
- *
- * Handles copilot: prefix stripping, alias resolution, and env var fallback.
- * Note: "copilot" is a Converse routing alias, not a valid SDK model ID.
- */
-function resolveSessionModel(requestModel, config) {
-  const converseAliases = ['copilot', 'copilot-sdk', 'github-copilot'];
-
-  // Guard non-string inputs
-  if (typeof requestModel !== 'string') {
-    requestModel = '';
-  }
-
-  // Strip copilot: prefix (case-insensitive)
-  let effectiveModel = requestModel;
-  if (effectiveModel.toLowerCase().startsWith('copilot:')) {
-    effectiveModel = effectiveModel.slice('copilot:'.length).trim();
-  }
-
-  // Empty suffix or converse alias → use env/default
-  if (
-    !effectiveModel ||
-		converseAliases.includes(effectiveModel.toLowerCase())
-  ) {
-    const envModel = config?.providers?.copilotmodel;
-    if (envModel) {
-      let resolved = typeof envModel === 'string' ? envModel : '';
-      if (resolved.toLowerCase().startsWith('copilot:')) {
-        resolved = resolved.slice('copilot:'.length).trim();
-      }
-      if (!resolved || converseAliases.includes(resolved.toLowerCase())) {
-        return undefined;
-      }
-      return resolveModelAlias(resolved) || resolved;
-    }
-    return undefined;
-  }
-
-  // Resolve alias or passthrough unknown models to SDK
-  return resolveModelAlias(effectiveModel) || effectiveModel;
+  return SUPPORTED_MODELS[id].modelName;
 }
 
 /**
@@ -590,23 +482,20 @@ async function checkReasoningSupport(client, modelId) {
 async function* createStreamingGenerator(client, prompt, options, signal, config) {
   const { model, timeout = 1800000, reasoning_effort } = options;
 
-  const sessionModel = resolveSessionModel(model, config);
+  const sessionModel = resolveSessionModel(model);
   const accessLevel = getToolAccessLevel(config);
 
   const sessionConfig = {
     streaming: true,
     onPermissionRequest: createPermissionHandler(accessLevel),
+    model: sessionModel,
   };
-
-  if (sessionModel) {
-    sessionConfig.model = sessionModel;
-  }
 
   if (reasoning_effort) {
     const mapped = mapReasoningEffort(reasoning_effort);
     if (mapped) {
-      const effectiveModel = sessionModel || model;
-      const modelDef = findModelConfig(effectiveModel);
+      const effectiveModel = sessionModel;
+      const modelDef = SUPPORTED_MODELS[sessionModel];
 
       let supported;
       if (modelDef && modelDef.supportsReasoningEffort !== undefined) {
@@ -650,7 +539,7 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
     yield {
       type: 'start',
       provider: 'copilot',
-      model: sessionModel || 'copilot',
+      model: sessionModel,
     };
 
     // Bridge push-based SDK events to pull-based generator using queue + promise
@@ -775,7 +664,7 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
   }
 }
 
-export { resolveModelAlias, resolveSessionModel, resolveCopilotCliPath };
+export { resolveSessionModel, resolveCopilotCliPath };
 
 /**
  * Copilot SDK Provider Implementation
@@ -783,7 +672,7 @@ export { resolveModelAlias, resolveSessionModel, resolveCopilotCliPath };
 export const copilotProvider = {
   async invoke(messages, options = {}) {
     const {
-      model = 'copilot',
+      model = DEFAULT_MODEL,
       config,
       stream = false,
       signal,
@@ -797,15 +686,17 @@ export const copilotProvider = {
       );
     }
 
+    // Validated before the client spawns the Copilot CLI.
+    const sessionModel = resolveSessionModel(model);
+
     try {
       const cwd = config.server?.client_cwd || process.cwd();
       const client = await getCopilotClient(cwd, config);
       const prompt = convertMessagesToPrompt(messages);
 
-      const sessionModel = resolveSessionModel(model, config);
-      const modelConfig = findModelConfig(sessionModel || model) || SUPPORTED_MODELS.copilot;
+      const modelConfig = SUPPORTED_MODELS[sessionModel];
       const invokeOptions = {
-        model,
+        model: sessionModel,
         timeout: modelConfig.timeout,
         reasoning_effort,
       };
@@ -843,7 +734,7 @@ export const copilotProvider = {
         rawResponse: { content, usage },
         metadata: {
           provider: 'copilot',
-          model: sessionModel || 'copilot',
+          model: sessionModel,
           usage: usage
             ? {
               input_tokens: usage.input_tokens || 0,
@@ -901,12 +792,14 @@ export const copilotProvider = {
     }
   },
 
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Validate Copilot SDK configuration
    * Returns true optimistically — auth errors surface at runtime
    */
   validateConfig(_config) {
-    return isCopilotSDKAvailable();
+    return isPackageResolvable('@github/copilot-sdk');
   },
 
   isAvailable(config) {
@@ -918,6 +811,6 @@ export const copilotProvider = {
   },
 
   getModelConfig(modelName) {
-    return findModelConfig(modelName);
+    return findCatalogEntry(SUPPORTED_MODELS, modelName);
   },
 };

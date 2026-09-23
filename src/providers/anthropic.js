@@ -587,7 +587,11 @@ async function getAnthropicSDK() {
 /**
  * Main Anthropic provider implementation
  */
+const DEFAULT_MODEL = 'claude-opus-5-5';
+
 export const anthropicProvider = {
+  defaultModel: DEFAULT_MODEL,
+
   /**
    * Unified provider interface: invoke messages with options
    * @param {Array} messages - Array of message objects with role and content
@@ -596,7 +600,7 @@ export const anthropicProvider = {
    */
   async invoke(messages, options = {}) {
     const {
-      model = 'claude-opus-5-5',
+      model = DEFAULT_MODEL,
       maxTokens = null,
       stream = false,
       reasoning_effort = 'medium',

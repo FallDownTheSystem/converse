@@ -1,168 +1,299 @@
 /**
- * Model Routing Tests (task-015 Foundation)
+ * Model Routing Tests
  *
- * Covers the shared resolver's resolution order: curated defaults, curated
- * friendly aliases, explicit namespace prefixes, full OpenRouter slugs and the
- * `openrouter:` namespace (no env gate), `:online`/`:free` decoration parsing,
- * and unknown-ID passthrough.
+ * Exercises the router against the real provider catalogs: `provider`,
+ * `provider:model`, and bare `model` specs; local-first bare-name priority
+ * with same-model failover candidates; per-provider default overrides; and
+ * "did you mean" rejection of unknown names.
  */
 
 import { describe, expect, it } from 'vitest';
+import { getProviders } from '../../src/providers/index.js';
 import {
+  BARE_NAME_PRIORITY,
+  PROVIDER_NAMESPACES,
+  getAutoModelSpecs,
   getDefaultModelForProvider,
+  parseModelSpec,
   resolveModelSpec,
-  CURATED_MODEL_ALIASES,
+  suggestSimilar,
+  validateDefaultModelOverrides,
 } from '../../src/utils/modelRouting.js';
+import { FAST_MODELS } from '../../src/services/summarizationService.js';
 
-// Minimal provider doubles: available, and (for the slash-slug path) never
-// claim to statically own an OpenRouter slug.
-function makeProviders(names) {
+const registry = getProviders();
+
+/**
+ * Real providers with availability forced: every provider is available unless
+ * named in `unavailable`.
+ */
+function providersWith({ unavailable = [] } = {}) {
   const providers = {};
-  for (const name of names) {
-    providers[name] = {
-      isAvailable: () => true,
-      getModelConfig: () => null,
-    };
+  for (const [name, provider] of Object.entries(registry)) {
+    providers[name] = { ...provider, isAvailable: () => !unavailable.includes(name) };
   }
   return providers;
 }
 
-const ALL = ['openai', 'anthropic', 'google', 'xai', 'mistral', 'deepseek', 'openrouter', 'codex', 'copilot', 'gemini-cli'];
-const config = {};
+const route = (spec, options, config = {}) =>
+  resolveModelSpec(spec, providersWith(options), config);
 
-describe('Model Routing (Foundation)', () => {
-  describe('curated defaults', () => {
-    it('returns the modernized per-provider defaults', () => {
-      expect(getDefaultModelForProvider('xai')).toBe('grok-4.5');
-      expect(getDefaultModelForProvider('mistral')).toBe('mistral-medium-3-5');
-      expect(getDefaultModelForProvider('deepseek')).toBe('deepseek-v4-pro');
-      expect(getDefaultModelForProvider('openrouter')).toBe('z-ai/glm-5.2');
-    });
+const candidatesOf = (result) =>
+  result.candidates.map((c) => `${c.providerName}:${c.resolvedModel}`);
 
-    it('points the SDK and API defaults at the current generation', () => {
-      expect(getDefaultModelForProvider('openai')).toBe('gpt-6');
-      expect(getDefaultModelForProvider('anthropic')).toBe('claude-opus-5-5');
-      expect(getDefaultModelForProvider('claude')).toBe('claude');
-      expect(getDefaultModelForProvider('codex')).toBe('codex');
-      expect(getDefaultModelForProvider('copilot')).toBe('copilot');
+describe('Model Routing', () => {
+  describe('spec parsing', () => {
+    it('splits a namespace only when the prefix has no slash', () => {
+      expect(parseModelSpec('codex:astra')).toEqual({
+        namespace: 'codex',
+        providerName: 'codex',
+        name: 'astra',
+      });
+      expect(parseModelSpec('z-ai/glm-5.2:free')).toEqual({
+        namespace: null,
+        providerName: null,
+        name: 'z-ai/glm-5.2:free',
+      });
+      expect(parseModelSpec('AGY:pro').providerName).toBe('gemini-cli');
     });
   });
 
-  describe('curated friendly aliases', () => {
-    const providers = makeProviders(ALL);
+  describe('defaults', () => {
+    it('uses each provider\'s hardcoded default', () => {
+      const providers = providersWith();
+      expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6-sol');
+      expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-opus-5-5');
+      expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-3.8-flash');
+      expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6-sol');
+      expect(getDefaultModelForProvider('openai', providers, {})).toBe('gpt-6-sol');
+      expect(getDefaultModelForProvider('google', providers, {})).toBe('gemini-3.1-pro-preview');
+      expect(getDefaultModelForProvider('xai', providers, {})).toBe('grok-4.5');
+      expect(getDefaultModelForProvider('anthropic', providers, {})).toBe('claude-opus-5-5');
+      expect(getDefaultModelForProvider('mistral', providers, {})).toBe('mistral-medium-3-5');
+      expect(getDefaultModelForProvider('deepseek', providers, {})).toBe('deepseek-v4-pro');
+      expect(getDefaultModelForProvider('openrouter', providers, {})).toBe('z-ai/glm-5.2');
+    });
 
-    it('every curated alias resolves to its intended provider + canonical ID', () => {
-      for (const [alias, { provider, canonicalModel }] of Object.entries(
-        CURATED_MODEL_ALIASES,
-      )) {
-        const r = resolveModelSpec(alias, providers, config);
-        expect(r.providerName).toBe(provider);
-        expect(r.resolvedModel).toBe(canonicalModel);
-        expect(r.status).toBe('ok');
+    it('every hardcoded default is in its provider\'s catalog', () => {
+      for (const [name, provider] of Object.entries(registry)) {
+        expect(provider.getSupportedModels()[provider.defaultModel], name).toBeDefined();
       }
     });
 
-    it('resolves representative aliases', () => {
-      expect(resolveModelSpec('grok', providers, config)).toMatchObject({
-        providerName: 'xai',
-        resolvedModel: 'grok-4.5',
+    it('resolves a bare provider name to its default model', () => {
+      const r = route('codex');
+      expect(r.status).toBe('ok');
+      expect(candidatesOf(r)).toEqual(['codex:gpt-6-sol']);
+      expect(candidatesOf(route('gemini'))).toEqual(['gemini-cli:gemini-3.8-flash']);
+      expect(candidatesOf(route('openai'))).toEqual(['openai:gpt-6-sol']);
+    });
+
+    it('applies an env override given as an alias', () => {
+      const config = { providers: { codexdefaultmodel: 'astra' } };
+      expect(candidatesOf(route('codex', {}, config))).toEqual(['codex:gpt-6-astra']);
+      // An explicit model still wins over the override.
+      expect(candidatesOf(route('codex:sol', {}, config))).toEqual(['codex:gpt-6-sol']);
+    });
+
+    it('honors the legacy CODEX_MODEL / COPILOT_MODEL vars, below the new ones', () => {
+      expect(
+        candidatesOf(route('codex', {}, { providers: { codexmodel: 'luna' } })),
+      ).toEqual(['codex:gpt-6-luna']);
+      expect(
+        candidatesOf(
+          route('codex', {}, { providers: { codexmodel: 'luna', codexdefaultmodel: 'astra' } }),
+        ),
+      ).toEqual(['codex:gpt-6-astra']);
+      expect(
+        candidatesOf(route('copilot', {}, { providers: { copilotmodel: 'sonnet' } })),
+      ).toEqual(['copilot:claude-sonnet-5']);
+    });
+
+    it('rejects an override that is not in the provider catalog, with suggestions', () => {
+      const errors = validateDefaultModelOverrides(registry, {
+        providers: { codexdefaultmodel: 'gpt-6-astr', openaidefaultmodel: 'gpt6' },
       });
-      expect(resolveModelSpec('mistral-small', providers, config)).toMatchObject({
-        providerName: 'mistral',
-        resolvedModel: 'mistral-small-2603',
-      });
-      expect(resolveModelSpec('deepseek-flash', providers, config)).toMatchObject({
-        providerName: 'deepseek',
-        resolvedModel: 'deepseek-v4-flash',
-      });
+      expect(errors).toEqual([
+        'CODEX_DEFAULT_MODEL="gpt-6-astr" is not a codex model. Did you mean: gpt-6-astra, gpt-6-sol?',
+      ]);
+    });
+
+    it('accepts any OpenRouter slug as its default', () => {
+      expect(
+        validateDefaultModelOverrides(registry, {
+          providers: { openrouterdefaultmodel: 'moonshotai/kimi-k3' },
+        }),
+      ).toEqual([]);
+    });
+
+    it('expands auto into namespaced default specs in priority order', () => {
+      expect(getAutoModelSpecs(providersWith(), {}, { limit: 3 })).toEqual([
+        'codex:gpt-6-sol',
+        'gemini:gemini-3.8-flash',
+        'claude:claude-opus-5-5',
+      ]);
     });
   });
 
-  describe('OpenRouter slugs and namespace', () => {
-    const providers = makeProviders(ALL);
-
-    it('routes a full slug to openrouter without any env gate', () => {
-      const r = resolveModelSpec('z-ai/glm-5.2', providers, config);
-      expect(r.providerName).toBe('openrouter');
-      expect(r.resolvedModel).toBe('z-ai/glm-5.2');
-      expect(r.options.web_search).toBeUndefined();
+  describe('namespaced specs', () => {
+    it('pins the model to the named provider', () => {
+      expect(candidatesOf(route('codex:astra'))).toEqual(['codex:gpt-6-astra']);
+      expect(candidatesOf(route('openai:gpt-6-astra'))).toEqual(['openai:gpt-6-astra']);
+      expect(candidatesOf(route('gemini:pro'))).toEqual(['gemini-cli:gemini-3.1-pro-preview']);
+      expect(candidatesOf(route('agy:flash'))).toEqual(['gemini-cli:gemini-3.8-flash']);
+      expect(candidatesOf(route('claude:fable'))).toEqual(['claude:claude-fable-5-1']);
+      expect(candidatesOf(route('copilot:sonnet'))).toEqual(['copilot:claude-sonnet-5']);
     });
 
-    it('routes the openrouter: namespace to openrouter', () => {
-      const r = resolveModelSpec('openrouter:z-ai/glm-5.2', providers, config);
-      expect(r.providerName).toBe('openrouter');
-      expect(r.resolvedModel).toBe('z-ai/glm-5.2');
+    it('is case-insensitive in namespace and model', () => {
+      expect(candidatesOf(route('CODEX:Astra'))).toEqual(['codex:gpt-6-astra']);
     });
 
-    it('routes an OpenRouter DeepSeek slug to openrouter (not native deepseek)', () => {
-      const r = resolveModelSpec('deepseek/deepseek-v4-pro', providers, config);
-      expect(r.providerName).toBe('openrouter');
-      expect(r.resolvedModel).toBe('deepseek/deepseek-v4-pro');
+    it('resolves every catalog ID and alias of every provider to that entry', () => {
+      const providers = providersWith();
+      for (const [name, provider] of Object.entries(registry)) {
+        const ns = PROVIDER_NAMESPACES[name][0];
+        for (const [id, entry] of Object.entries(provider.getSupportedModels())) {
+          for (const alias of [id, ...(entry.aliases || [])]) {
+            const r = resolveModelSpec(`${ns}:${alias}`, providers, {});
+            expect(r.status, `${ns}:${alias}`).toBe('ok');
+            expect(r.providerName, `${ns}:${alias}`).toBe(name);
+            expect(r.resolvedModel, `${ns}:${alias}`).toBe(id);
+          }
+        }
+      }
     });
 
-    it('parses :online into options.web_search and strips it from the slug', () => {
-      const bare = resolveModelSpec('z-ai/glm-5.2:online', providers, config);
-      expect(bare.providerName).toBe('openrouter');
-      expect(bare.resolvedModel).toBe('z-ai/glm-5.2');
-      expect(bare.options.web_search).toBe(true);
-
-      const namespaced = resolveModelSpec(
-        'openrouter:z-ai/glm-5.2:online',
-        providers,
-        config,
-      );
-      expect(namespaced.resolvedModel).toBe('z-ai/glm-5.2');
-      expect(namespaced.options.web_search).toBe(true);
-    });
-
-    it('preserves :free on the request slug without setting web_search', () => {
-      const r = resolveModelSpec('z-ai/glm-5.2:free', providers, config);
-      expect(r.providerName).toBe('openrouter');
-      expect(r.resolvedModel).toBe('z-ai/glm-5.2:free');
-      expect(r.options.web_search).toBeUndefined();
-    });
-
-    it('parses :free:online together (keeps :free, lifts online)', () => {
-      const r = resolveModelSpec('z-ai/glm-5.2:free:online', providers, config);
-      expect(r.resolvedModel).toBe('z-ai/glm-5.2:free');
-      expect(r.options.web_search).toBe(true);
+    it('reports an unavailable provider instead of substituting another', () => {
+      const r = route('codex:astra', { unavailable: ['codex'] });
+      expect(r.status).toBe('unavailable');
+      expect(r.error).toContain('codex login');
     });
   });
 
-  describe('namespace passthrough + unknown IDs', () => {
-    const providers = makeProviders(ALL);
-
-    it('passes an unknown explicit ID through unchanged (no substitution)', () => {
-      const r = resolveModelSpec('grok-legacy-9', providers, config);
-      expect(r.providerName).toBe('xai');
-      expect(r.resolvedModel).toBe('grok-legacy-9');
+  describe('bare model names', () => {
+    it('prefers local providers and lists same-model failover candidates', () => {
+      const r = route('gpt-6-astra');
+      expect(r.status).toBe('ok');
+      expect(candidatesOf(r)).toEqual(['codex:gpt-6-astra', 'openai:gpt-6-astra']);
+      expect(candidatesOf(route('opus'))).toEqual([
+        'claude:claude-opus-5-5',
+        'anthropic:claude-opus-5-5',
+      ]);
+      expect(candidatesOf(route('gemini-3.1-pro-preview'))).toEqual([
+        'gemini-cli:gemini-3.1-pro-preview',
+        'google:gemini-3.1-pro-preview',
+      ]);
     });
 
-    it('keeps copilot: namespace passthrough intact', () => {
-      const r = resolveModelSpec('copilot:gpt-5.6-sol', providers, config);
-      expect(r.providerName).toBe('copilot');
-      expect(r.resolvedModel).toBe('copilot:gpt-5.6-sol');
+    it('skips unavailable providers', () => {
+      expect(candidatesOf(route('gpt-6-astra', { unavailable: ['codex'] }))).toEqual([
+        'openai:gpt-6-astra',
+      ]);
     });
 
-    it('routes codex: namespace to the Codex provider unchanged', () => {
-      const r = resolveModelSpec('codex:astra', providers, config);
-      expect(r.providerName).toBe('codex');
-      expect(r.resolvedModel).toBe('codex:astra');
+    it('never fails over to a provider whose alias names a different model', () => {
+      // claude's `fable` is Fable 5.1; anthropic's is Fable 5.
+      expect(candidatesOf(route('fable'))).toEqual(['claude:claude-fable-5-1']);
+      expect(candidatesOf(route('fable', { unavailable: ['claude'] }))).toEqual([
+        'anthropic:claude-fable-5',
+      ]);
     });
 
-    it('still routes bare gpt-* names to OpenAI, not Codex', () => {
-      const r = resolveModelSpec('gpt-6-astra', providers, config);
-      expect(r.providerName).not.toBe('codex');
+    it('explains which providers serve a model when none is available', () => {
+      const r = route('gpt-6-astra', { unavailable: ['codex', 'openai'] });
+      expect(r.status).toBe('unavailable');
+      expect(r.error).toContain('served by codex, openai');
+      expect(r.error).toContain('OPENAI_API_KEY');
     });
 
-    it('reports unavailable/not_found via status, not substitution', () => {
-      const unavailable = {
-        xai: { isAvailable: () => false, getModelConfig: () => null },
-      };
-      expect(resolveModelSpec('grok', unavailable, config).status).toBe(
-        'unavailable',
+    it('never routes a bare name to Copilot', () => {
+      expect(BARE_NAME_PRIORITY).not.toContain('copilot');
+      const r = route('claude-sonnet-5');
+      expect(r.status).toBe('unknown');
+      expect(r.error).toContain('copilot:claude-sonnet-5');
+    });
+  });
+
+  describe('unknown names', () => {
+    it('suggests the closest bare model, one name per model', () => {
+      const r = route('gtp-6-astra');
+      expect(r.status).toBe('unknown');
+      expect(r.error).toBe('Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?');
+    });
+
+    it('suggests the closest namespace for an unknown provider', () => {
+      expect(route('codx:sol').error).toBe(
+        'Unknown provider "codx" in "codx:sol". Did you mean: codex:sol?',
       );
-      expect(resolveModelSpec('grok', {}, config).status).toBe('not_found');
+    });
+
+    it('points a model under the wrong namespace at the provider that has it', () => {
+      expect(route('openai:spark').error).toContain('Did you mean: codex:spark?');
+    });
+
+    it('suggests close models within a namespace', () => {
+      expect(route('codex:gpt-6-astr').error).toContain('codex:gpt-6-astra');
+    });
+
+    it('offers nothing when nothing is close', () => {
+      expect(route('zzzz').error).toBe('Unknown model "zzzz".');
+    });
+  });
+
+  describe('OpenRouter', () => {
+    it('routes catalogued slugs and aliases', () => {
+      expect(candidatesOf(route('z-ai/glm-5.2'))).toEqual(['openrouter:z-ai/glm-5.2']);
+      expect(candidatesOf(route('openrouter:glm'))).toEqual(['openrouter:z-ai/glm-5.2']);
+    });
+
+    it('passes uncatalogued vendor/model slugs to OpenRouter for live validation', () => {
+      expect(candidatesOf(route('openai/gpt-5'))).toEqual(['openrouter:openai/gpt-5']);
+      expect(candidatesOf(route('openrouter:moonshotai/kimi-k3'))).toEqual([
+        'openrouter:moonshotai/kimi-k3',
+      ]);
+    });
+
+    it('rejects an unknown name without a slash', () => {
+      expect(route('openrouter:glmm').status).toBe('unknown');
+    });
+
+    it('consumes :online into web_search and keeps other decorations', () => {
+      const online = route('z-ai/glm-5.2:online');
+      expect(online.resolvedModel).toBe('z-ai/glm-5.2');
+      expect(online.options).toEqual({ web_search: true });
+
+      const free = route('openrouter:qwen/qwen3.7-plus:free:online');
+      expect(free.resolvedModel).toBe('qwen/qwen3.7-plus:free');
+      expect(free.options).toEqual({ web_search: true });
+    });
+  });
+
+  describe('summarization fast models', () => {
+    it('all resolve against the real catalogs', () => {
+      const providers = providersWith();
+      for (const spec of FAST_MODELS) {
+        expect(resolveModelSpec(spec, providers, {}).status, spec).toBe('ok');
+      }
+    });
+  });
+
+  describe('suggestSimilar', () => {
+    it('counts an adjacent transposition as one edit', () => {
+      expect(suggestSimilar('gtp-6', ['gpt-5.6', 'gpt-6'])).toEqual(['gpt-6']);
+    });
+
+    it('keeps only the closest member of a group', () => {
+      expect(
+        suggestSimilar('astr', [
+          { label: 'gpt-6-astra', group: 'a' },
+          { label: 'astra', group: 'a' },
+        ]),
+      ).toEqual(['astra']);
+    });
+
+    it('caps the list', () => {
+      expect(suggestSimilar('ab', ['aa', 'ac', 'ad', 'ae'], { limit: 2 })).toHaveLength(2);
     });
   });
 });
