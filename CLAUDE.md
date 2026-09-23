@@ -73,10 +73,10 @@ Not directly supported with `always-bump-patch`. Either accept the patch release
 
 ### Dependabot
 
-- `.github/dependabot.yml` runs npm + github-actions weekly (Mon 06:00 UTC). Patch+minor are grouped into one PR per ecosystem; majors are individual.
+- `.github/dependabot.yml` runs npm + github-actions daily (06:00 UTC). Patch+minor are grouped into one PR per ecosystem; majors are individual.
 - Commits use the `deps:` prefix so they bucket under "Dependencies" in CHANGELOG.md.
 - `.github/workflows/dependabot-auto-merge.yml` auto-approves patch+minor PRs, waits for the merge to complete, and dispatches the release workflow so merged dependency updates publish a new npm patch release. Major-version PRs get a `needs-review` label and wait for human review.
-- **Don't manually run `npm update` / bump deps in `package.json`** unless you're fixing something urgent that Dependabot won't catch. The weekly cadence handles routine bumps.
+- **Don't manually run `npm update` / bump deps in `package.json`** unless you're fixing something urgent that Dependabot won't catch. The daily cadence handles routine bumps.
 
 ### CI
 
