@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0](https://github.com/FallDownTheSystem/converse/compare/v4.0.0...v4.1.0) (2026-09-23)
+
+
+### Features
+
+* add decide tool for System One decision models (TypeSafe Jev) ([61bb173](https://github.com/FallDownTheSystem/converse/commit/61bb173990899fc81a8c298d677e6daff5dd5a33))
+
 ## [4.0.0](https://github.com/FallDownTheSystem/converse/compare/v3.7.1...v4.0.0) (2026-09-23)
 
 
