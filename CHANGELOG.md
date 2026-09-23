@@ -5,6 +5,17 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0](https://github.com/FallDownTheSystem/converse/compare/v3.7.1...v4.0.0) (2026-09-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* unknown model names no longer pass through to providers, keyword routing is gone, and bare names such as opus, pro, and gpt-6-astra now prefer the local agent providers (Claude Agent SDK, Antigravity CLI, Codex) over the API providers. Codex, Claude, Antigravity, and Copilot catalogs are keyed by real model IDs, so the codex/claude/gemini/copilot pseudo-model entries are gone.
+
+### Features
+
+* route models by provider:model with local-first bare names ([3a73696](https://github.com/FallDownTheSystem/converse/commit/3a7369692a1882b817bf67dd93bdc23c5038c741))
+
 ## [3.7.1](https://github.com/FallDownTheSystem/converse/compare/v3.7.0...v3.7.1) (2026-09-23)
 
 
