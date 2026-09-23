@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.1](https://github.com/FallDownTheSystem/converse/compare/v4.1.0...v4.1.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* align decide tool guidance with TypeSafe's and trim zero-probability options from summaries ([2ca2014](https://github.com/FallDownTheSystem/converse/commit/2ca201446d195ac6deb77228995b0d866a177f69))
+
 ## [4.1.0](https://github.com/FallDownTheSystem/converse/compare/v4.0.0...v4.1.0) (2026-09-23)
 
 
