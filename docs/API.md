@@ -366,6 +366,110 @@ The response renders a human-readable status (start time, elapsed time, turn/mod
 
 Only jobs in a `queued` or `running` state can be cancelled; already-completed, failed, or cancelled jobs return a non-cancellable status.
 
+## Decide Tool
+
+**Description**: Ask a System One decision model (TypeSafe's Jev family) typed questions about a state. Decision models return calibrated probabilities, never text, so they have their own tool and their own providers: `chat` routing never reaches them, and `decide` never reaches a chat model.
+
+### Request Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "state": { "anyOf": [{ "type": "string" }, { "type": "object" }, { "type": "array" }] },
+    "questions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["noul", "choice", "score"] },
+          "instructions": { "anyOf": [{ "type": "string" }, { "type": "object" }, { "type": "array" }] },
+          "criteria": { "anyOf": [{ "type": "object" }, { "type": "array" }] }
+        },
+        "required": ["type", "instructions"]
+      }
+    },
+    "model": { "type": "string", "description": "Default: \"auto\"" },
+    "files": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["questions"],
+  "additionalProperties": false
+}
+```
+
+- **`state`**: the material to judge. An object with descriptively named fields works best; use an array for sequences such as chat messages. Optional when `files` is given.
+- **`questions`**: named questions, each judged in parallel and in isolation against the same state. The name is your own label and becomes the answer key. Batching many questions into one call adds almost no latency or cost.
+- **`files`**: text files added to the state as `{ "files": { "<path>": "<content>" } }`. When `state` is also given, it moves to `input`. Line ranges (`file.txt{10:50}`) are supported; images are rejected.
+
+| Type | `criteria` | Answer |
+|---|---|---|
+| `noul` | Optional `{ "true": "...", "false": "..." }` | `noul`: probability 0..1 of yes |
+| `choice` | Required `{ "<option>": "description" \| null }`, 2–255 options | `choice`, per-option `probabilities`, `confidence` |
+| `score` | Required ordered array of levels, lowest first, 2–10 levels | `score` (probability-weighted level position), `legend`, per-level `probabilities`, `confidence` |
+
+`instructions` and criteria descriptions may be objects or arrays that bundle reference data with the question; refer to their fields by `` `name` `` in the text. Questions are validated before any request is sent.
+
+### Models and Providers
+
+| Provider | Key | Models |
+|---|---|---|
+| `typesafe` (native, `https://api.typesafe.ai/v1/systemone`) | `TYPESAFE_API_KEY` | `jev-latest`, `jev-1.13.0` (alias `jev-1.13`), `jev-preview`, any versioned `jev-X.Y.Z` |
+| `openrouter` (`https://openrouter.ai/api/v1/systemone`) | `OPENROUTER_API_KEY` | `~typesafe/jev-latest` (alias `jev-latest`), `typesafe/jev-1.13` (aliases `jev-1.13`, `jev-1.13.0`), any `vendor/model` slug |
+
+- `auto` (default): TypeSafe's default model, falling back to OpenRouter's.
+- A bare name such as `jev-1.13` goes to every configured provider that serves it, native first, and each provider receives its own model ID. OpenRouter does not serve `jev-preview` or patch-level IDs other than those listed above.
+- `typesafe:jev-1.13.0` or `openrouter:~typesafe/jev-latest` pins one provider.
+
+Each provider call retries timeouts, 408, 429 and 5xx with backoff, honoring `Retry-After`. Auth failures, exhausted retries and malformed responses fall back to the next provider. A 400/422 request fault stops immediately, because every host would reject it the same way.
+
+### Example Usage
+
+```json
+{
+  "state": { "message": "I was charged twice for order A-104. Please fix this ASAP." },
+  "questions": {
+    "urgent": { "type": "noul", "instructions": "Does the message convey urgency?" },
+    "team": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": { "billing": "Payments, invoicing, refunds", "technical": "Bugs, outages", "sales": null }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer?",
+      "criteria": ["Calm", "Frustrated", "Very angry"]
+    }
+  }
+}
+```
+
+### Response Format
+
+A one-line summary per answer, followed by the answers in the same JSON shape whichever provider served them:
+
+````
+Decision · typesafe/jev-1.13-20260917 via OpenRouter · 394 input tokens · $0.000017
+- urgent (noul): 0.97
+- team (choice): billing · confidence 1.00 · billing 1.00, technical 0.00, sales 0.00
+- frustration (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24, 0 Calm 0.00
+
+```json
+{
+  "model": "typesafe/jev-1.13-20260917",
+  "provider": "openrouter",
+  "answers": { "urgent": { "type": "noul", "noul": 0.97 }, "...": {} },
+  "usage": { "input_tokens": 394, "output_tokens": 70, "cost": 0.000016548 },
+  "id": "gen-dec-..."
+}
+```
+````
+
+`usage.cost` is reported by OpenRouter only (`null` from TypeSafe). A fallback is noted under the summary line.
+
+### Usage Guidance
+
+Jev reads questions literally and is weak at counting, arithmetic, date comparison, and multi-hop reasoning; do those in code and ask narrow, atomic questions. Split compound judgments into separate questions and combine them in code. Treat low `confidence` as a signal to escalate to a generative model or a human. Limits: text only, about 64k tokens per request and 32k for the state plus the longest single question.
+
 ## Supported Models
 
 Provide models as plain name strings in the `models` array. Each entry is `auto`, a provider name (its default model), `provider:model` (that model on that provider only), or a bare model ID/alias (the first set-up provider that offers it). Names that match no provider's list are rejected with suggestions. See [Model Selection](#model-selection) for the full rules.
@@ -714,6 +818,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 MISTRAL_API_KEY=...
 DEEPSEEK_API_KEY=...
 OPENROUTER_API_KEY=sk-or-...
+TYPESAFE_API_KEY=...            # decide tool only
 ```
 
 **MCP client configuration:**

@@ -152,6 +152,27 @@ function generateToolExamplesFromSchema(toolName, inputSchema) {
     ].join('\n');
   }
 
+  if (toolName === 'decide') {
+    const decideExample = {
+      state: { message: 'I was charged twice for order A-104. Please fix this ASAP.' },
+      questions: {
+        urgent: { type: 'noul', instructions: 'Does the message convey urgency?' },
+        team: {
+          type: 'choice',
+          instructions: 'Which team should handle this?',
+          criteria: { billing: 'Payments, invoicing, refunds', technical: 'Bugs, outages', sales: null },
+        },
+        frustration: {
+          type: 'score',
+          instructions: 'How frustrated is the customer?',
+          criteria: ['Calm', 'Frustrated', 'Very angry'],
+        },
+      },
+      model: 'auto',
+    };
+    return `\`\`\`json\n${JSON.stringify(decideExample, null, 2)}\n\`\`\``;
+  }
+
   if (toolName === 'check_status' || toolName === 'cancel_job') {
     if (properties.continuation_id)
       example.continuation_id = SAMPLE_VALUES.continuation_id;
@@ -412,8 +433,9 @@ export function generateHelpContent(config = null) {
         prop.default !== undefined
           ? ` (default: ${JSON.stringify(prop.default)})`
           : '';
+      const type = prop.type ?? prop.anyOf?.map((s) => s.type).join(' | ');
       params.push(
-        `- **${name}** (${isRequired ? 'required' : 'optional'}, ${prop.type}): ${prop.description}${defaultValue}`,
+        `- **${name}** (${isRequired ? 'required' : 'optional'}, ${type}): ${prop.description}${defaultValue}`,
       );
     }
 

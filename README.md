@@ -182,6 +182,25 @@ Cancel running asynchronous operations when needed.
 }
 ```
 
+### 4. Decide Tool
+
+Ask a System One decision model (TypeSafe's Jev) typed questions about a state and get calibrated answers instead of text: a yes probability (`noul`), a chosen option with per-option probabilities (`choice`), or a rubric position with per-level probabilities (`score`). Batch many questions into one call; they are judged in parallel against the same state. Needs `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` (TypeSafe first, falling back to OpenRouter).
+
+```javascript
+{
+  "state": { "message": "I was charged twice for order A-104. Please fix this ASAP." },
+  "questions": {
+    "urgent": { "type": "noul", "instructions": "Does the message convey urgency?" },
+    "team": { "type": "choice", "instructions": "Which team should handle this?",
+              "criteria": { "billing": "Payments, refunds", "technical": "Bugs, outages" } },
+    "frustration": { "type": "score", "instructions": "How frustrated is the customer?",
+                     "criteria": ["Calm", "Frustrated", "Very angry"] }
+  }
+}
+```
+
+See [docs/API.md](docs/API.md#decide-tool) for the full schema, model routing, and usage guidance.
+
 ## 🤖 AI Summarization Feature
 
 When enabled, the server automatically generates intelligent titles and summaries for better context understanding:

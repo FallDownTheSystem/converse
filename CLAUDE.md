@@ -262,7 +262,7 @@ pnpm run test:prompts
 
 ### Available Tools
 
-The Converse MCP Server exposes three tools:
+The Converse MCP Server exposes four tools:
 
 1. **Chat Tool** (`chat`) — one tool, three modes selected by the `mode` parameter:
    - **`chat`** (default): 1..N models invoked in parallel; each responds independently and never sees the others. N=1 preserves auto-mode provider failover and Codex thread reuse; N>1 returns per-model labeled sections.
@@ -290,6 +290,11 @@ The Converse MCP Server exposes three tools:
 3. **Cancel Job Tool** (`cancel_job`)
    - Cancel running asynchronous operations
    - Graceful termination with resource cleanup
+
+4. **Decide Tool** (`decide`)
+   - Asks a System One decision model (TypeSafe Jev) typed questions (`noul` / `choice` / `score`) about a `state`; returns calibrated probabilities, never text
+   - Uses its own provider registry (`src/decisionProviders/`): `typesafe` (`TYPESAFE_API_KEY`) first, then `openrouter` (`OPENROUTER_API_KEY`). Decision models must never be registered as chat providers — chat routing would send them prompts they cannot answer
+   - Synchronous and stateless: no `async`, `continuation_id`, or `export`
 
 ### Mode semantics
 
@@ -341,6 +346,7 @@ LOG_LEVEL=debug npm start
 - `src/config.js` - Configuration and environment management
 - `src/tools/` - MCP tool implementations (chat.js unified tool + modes/parallel.js, modes/roundtable.js engines)
 - `src/providers/` - AI provider implementations (OpenAI, Google, XAI)
+- `src/decisionProviders/` - System One decision model hosts (TypeSafe, OpenRouter) for the `decide` tool
 - `src/utils/` - Utility functions (logging, context processing, etc.)
 - `src/transport/` - HTTP transport layer for MCP communication
 - `src/router.js` - Request routing and middleware

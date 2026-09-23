@@ -214,6 +214,12 @@ const CONFIG_SCHEMA = {
       secret: true,
       description: 'OpenRouter API key',
     },
+    TYPESAFE_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'TypeSafe API key (System One decision models for the decide tool)',
+    },
   },
 
   // Provider-specific configuration
@@ -707,7 +713,7 @@ export async function loadConfig() {
 
     if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, or TYPESAFE_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
       );
     }
 

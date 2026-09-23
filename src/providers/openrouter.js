@@ -203,7 +203,7 @@ function validateApiKey(apiKey) {
  * `X-Title`), while still accepting the legacy `openrouterreferer`/
  * `openroutertitle` config-key spellings as input.
  */
-function getCustomHeaders(config) {
+export function getCustomHeaders(config) {
   const headers = {};
 
   const referer =
