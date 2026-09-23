@@ -148,8 +148,13 @@ function fixed(n) {
   return typeof n === 'number' ? n.toFixed(2) : String(n);
 }
 
+/**
+ * Options at or rounding to zero are left out of the summary line; the JSON
+ * block still carries the full distribution.
+ */
 function byProbability(probabilities, label = (k) => k) {
   return Object.entries(probabilities || {})
+    .filter(([, p]) => fixed(p) !== '0.00')
     .sort(([, a], [, b]) => b - a)
     .map(([k, p]) => `${label(k)} ${fixed(p)}`)
     .join(', ');
@@ -261,9 +266,11 @@ decideTool.description =
   'DECIDE — ask a System One decision model (TypeSafe Jev) typed questions about a state and get calibrated answers, not text. ' +
   'Question types: "noul" (yes/no → probability 0..1), "choice" (pick one of 2–255 named options → choice, per-option probabilities, confidence), ' +
   '"score" (ordered rubric of 2–10 levels → weighted position, per-level probabilities, confidence). ' +
-  'Batch many questions into one call: they are judged in parallel and in isolation against the same state at almost no extra cost. ' +
-  'Best for fast atomic judgments (classify, route, verify, rank). Keep each question literal and narrow; do counting, arithmetic, and date comparison in code; ' +
-  'split compound judgments into separate questions; treat low confidence as a signal to escalate. Text only, no explanations are returned. ' +
+  'Batch independent questions over the same state into one call: they are judged in parallel and in isolation, so none sees another\'s answer; each extra question adds its own input tokens. ' +
+  'Best for fast semantic judgments (classify, route, select, verify, rank). Ask one narrow, coherent judgment per question, with its full meaning in the question; ' +
+  'split independently useful dimensions, but a bounded action choice or contextual interpretation is a valid single question. Do counting, arithmetic, and date comparison in code. ' +
+  'confidence measures how concentrated the distribution is, not permission to act: take the top option to pick a best, and treat a noul near 0.5 as "yes and no equally likely". ' +
+  'Text only, no explanations are returned. ' +
   'Limits: ~64k tokens per request, ~32k for state plus the longest question.';
 
 decideTool.inputSchema = {

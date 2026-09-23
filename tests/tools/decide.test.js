@@ -116,7 +116,8 @@ describe('Decide Tool', () => {
     expect(text).toContain('Decision · jev-1.13.0 via TypeSafe · 394 input tokens');
     expect(text).toContain('- urgent (noul): 0.97');
     expect(text).toContain('- team (choice): billing · confidence 0.81 · billing 0.88, technical 0.12');
-    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24, 0 Calm 0.00');
+    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24');
+    expect(text).not.toContain('Calm 0.00');
     const payload = JSON.parse(text.match(/```json\n([\s\S]+)\n```/)[1]);
     expect(payload).toMatchObject({ model: 'jev-1.13.0', provider: 'typesafe', answers: ANSWERS, usage: { cost: null } });
   });

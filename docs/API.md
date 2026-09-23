@@ -445,13 +445,13 @@ Each provider call retries timeouts, 408, 429 and 5xx with backoff, honoring `Re
 
 ### Response Format
 
-A one-line summary per answer, followed by the answers in the same JSON shape whichever provider served them:
+A one-line summary per answer (options at 0.00 omitted), followed by the answers with full distributions, in the same JSON shape whichever provider served them:
 
 ````
 Decision · typesafe/jev-1.13-20260917 via OpenRouter · 394 input tokens · $0.000017
 - urgent (noul): 0.97
-- team (choice): billing · confidence 1.00 · billing 1.00, technical 0.00, sales 0.00
-- frustration (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24, 0 Calm 0.00
+- team (choice): billing · confidence 1.00 · billing 1.00
+- frustration (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24
 
 ```json
 {
