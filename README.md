@@ -304,7 +304,7 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 
 ### Codex Models
 
-OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Sol, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
+OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Astra, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
 
 - **gpt-6-sol** (default; aliases: `sol`, `gpt-6`), **gpt-6-luna** (`luna`), **gpt-6-astra** (`astra`)
 - **gpt-5.6-sol** (`gpt-5.6`), **gpt-5.6-terra** (`terra`), **gpt-5.6-luna**, **gpt-5.5**, **gpt-5.3-codex-spark** (`spark`)
@@ -388,7 +388,7 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 # Optional: per-provider default model, used for a bare provider name (`codex`,
 # `openai`, ...) and for "auto". Must be a model or alias from that provider's
 # list; startup fails with suggestions otherwise.
-CODEX_DEFAULT_MODEL=gpt-6-sol                # CODEX_MODEL still works as a fallback
+CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL still works as a fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
 AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL still works as a fallback
@@ -459,7 +459,7 @@ Every entry in `models` takes one of four forms:
 "auto";
 
 // A provider: its default model (hardcoded, or <PROVIDER>_DEFAULT_MODEL)
-"codex"; // -> Codex (GPT-6 Sol)
+"codex"; // -> Codex (GPT-6 Astra)
 "claude"; // -> Claude Agent SDK (Claude Opus 5.5)
 "gemini"; // -> Antigravity CLI (Gemini 3.8 Flash); `agy` works too
 "openai"; // -> OpenAI API (GPT-6 Sol)
@@ -492,7 +492,7 @@ Every entry in `models` takes one of four forms:
 
 Provider priority order (subscription-based local providers first, then API-key providers), used by both `auto` and bare model names:
 
-1. Codex (`codex` → GPT-6 Sol)
+1. Codex (`codex` → GPT-6 Astra)
 2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 3.8 Flash)
 3. Claude Agent SDK (`claude` → Claude Opus 5.5)
 4. Copilot (`copilot` → GPT-6 Sol; `auto` only, never bare names)

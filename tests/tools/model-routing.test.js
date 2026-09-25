@@ -61,7 +61,7 @@ describe('Model Routing', () => {
   describe('defaults', () => {
     it('uses each provider\'s hardcoded default', () => {
       const providers = providersWith();
-      expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6-sol');
+      expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6-astra');
       expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-opus-5-5');
       expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-3.8-flash');
       expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6-sol');
@@ -83,14 +83,14 @@ describe('Model Routing', () => {
     it('resolves a bare provider name to its default model', () => {
       const r = route('codex');
       expect(r.status).toBe('ok');
-      expect(candidatesOf(r)).toEqual(['codex:gpt-6-sol']);
+      expect(candidatesOf(r)).toEqual(['codex:gpt-6-astra']);
       expect(candidatesOf(route('gemini'))).toEqual(['gemini-cli:gemini-3.8-flash']);
       expect(candidatesOf(route('openai'))).toEqual(['openai:gpt-6-sol']);
     });
 
     it('applies an env override given as an alias', () => {
-      const config = { providers: { codexdefaultmodel: 'astra' } };
-      expect(candidatesOf(route('codex', {}, config))).toEqual(['codex:gpt-6-astra']);
+      const config = { providers: { codexdefaultmodel: 'luna' } };
+      expect(candidatesOf(route('codex', {}, config))).toEqual(['codex:gpt-6-luna']);
       // An explicit model still wins over the override.
       expect(candidatesOf(route('codex:sol', {}, config))).toEqual(['codex:gpt-6-sol']);
     });
@@ -128,7 +128,7 @@ describe('Model Routing', () => {
 
     it('expands auto into namespaced default specs in priority order', () => {
       expect(getAutoModelSpecs(providersWith(), {}, { limit: 3 })).toEqual([
-        'codex:gpt-6-sol',
+        'codex:gpt-6-astra',
         'gemini:gemini-3.8-flash',
         'claude:claude-opus-5-5',
       ]);

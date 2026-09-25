@@ -106,9 +106,9 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `CODEX_SANDBOX_MODE` - Filesystem access control (default: read-only)
   - `CODEX_SKIP_GIT_CHECK` - Skip Git repository validation (default: true)
   - `CODEX_APPROVAL_POLICY` - Command approval behavior (default: never)
-  - `CODEX_DEFAULT_MODEL` - Model used for bare `codex` and `auto` (default: `gpt-6-sol`; any Codex model ID or alias below). The legacy name `CODEX_MODEL` is honored when `CODEX_DEFAULT_MODEL` is unset.
+  - `CODEX_DEFAULT_MODEL` - Model used for bare `codex` and `auto` (default: `gpt-6-astra`; any Codex model ID or alias below). The legacy name `CODEX_MODEL` is honored when `CODEX_DEFAULT_MODEL` is unset.
 - **Supported Models**:
-  - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Sol by default)
+  - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
   - `codex:<model>` - Same, with an explicit backend from the Codex catalog:
     - `gpt-6-sol` (aliases: `sol`, `gpt-6`), `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`)
     - `gpt-5.6-sol` (`gpt-5.6`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
@@ -278,7 +278,7 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 Each provider has a `<PROVIDER>_DEFAULT_MODEL` variable that sets the model used for its bare provider name (`codex`, `openai`, ...) and for `auto`. The value must be a model ID or alias from that provider's list; startup fails with "Did you mean" suggestions otherwise. OpenRouter also accepts any `vendor/model` slug.
 
 ```bash
-CODEX_DEFAULT_MODEL=gpt-6-sol                # CODEX_MODEL is honored as a legacy fallback
+CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
 AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL is honored as a legacy fallback

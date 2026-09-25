@@ -92,7 +92,7 @@ const SUPPORTED_MODELS = {
   }),
 };
 
-const DEFAULT_MODEL = 'gpt-6-sol';
+const DEFAULT_MODEL = 'gpt-6-astra';
 
 /**
  * Custom error class for Codex provider errors

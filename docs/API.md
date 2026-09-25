@@ -566,7 +566,7 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 
 **Codex** is an agentic coding assistant with direct filesystem access:
 
-- **Model**: `codex` (underlying model: GPT-6 Sol by default, or `CODEX_DEFAULT_MODEL`)
+- **Model**: `codex` (underlying model: GPT-6 Astra by default, or `CODEX_DEFAULT_MODEL`)
 - **Backend selection**: `codex:<model>` per request (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`) from the Codex catalog: `gpt-6-sol` (`sol`, `gpt-6`), `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`), `gpt-5.6-sol` (`gpt-5.6`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`). Other names are rejected with suggestions. Bare IDs from this list (e.g. `gpt-6-astra`) go to Codex first, then the OpenAI API.
 - **Availability**: the Codex SDK is installed and `~/.codex/auth.json` exists (`$CODEX_HOME/auth.json` when set) or `CODEX_API_KEY` is set
 - **Thread-based sessions**: persistent conversation history via `continuation_id` in `chat` mode
@@ -684,7 +684,7 @@ Control Codex behavior through environment variables:
 - **`CODEX_SANDBOX_MODE`** — filesystem access: `read-only` (default), `workspace-write`, `danger-full-access` (containers only)
 - **`CODEX_SKIP_GIT_CHECK`** — `true` (default) works in any directory; `false` requires a Git repository
 - **`CODEX_APPROVAL_POLICY`** — `never` (default, recommended for servers), `untrusted`, `on-failure`, `on-request`
-- **`CODEX_DEFAULT_MODEL`** — model used for `codex` and `auto` (default: `gpt-6-sol`); the legacy name `CODEX_MODEL` is honored when it is unset
+- **`CODEX_DEFAULT_MODEL`** — model used for `codex` and `auto` (default: `gpt-6-astra`); the legacy name `CODEX_MODEL` is honored when it is unset
 - **`CODEX_API_KEY`** — optional API key for headless deployments (alternative to ChatGPT login)
 
 **Example (.env):**
@@ -693,7 +693,7 @@ CODEX_API_KEY=your_codex_api_key_here
 CODEX_SANDBOX_MODE=read-only
 CODEX_SKIP_GIT_CHECK=true
 CODEX_APPROVAL_POLICY=never
-CODEX_DEFAULT_MODEL=gpt-6-sol
+CODEX_DEFAULT_MODEL=gpt-6-astra
 ```
 
 ### Default Models
@@ -701,7 +701,7 @@ CODEX_DEFAULT_MODEL=gpt-6-sol
 Each provider's default model (used for its bare provider name and for `auto`) can be set with `<PROVIDER>_DEFAULT_MODEL`. The value must be a model ID or alias from that provider's list; startup fails with "Did you mean" suggestions otherwise (OpenRouter also accepts any `vendor/model` slug).
 
 ```bash
-CODEX_DEFAULT_MODEL=gpt-6-sol                # CODEX_MODEL is honored as a legacy fallback
+CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
 AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL is honored as a legacy fallback

@@ -66,8 +66,8 @@ describe('codex backend catalog', () => {
     expect(codexProvider.getModelConfig('nope')).toBeNull();
   });
 
-  it('exposes gpt-6-sol as the default model with no codex pseudo-model', () => {
-    expect(codexProvider.defaultModel).toBe('gpt-6-sol');
+  it('exposes gpt-6-astra as the default model with no codex pseudo-model', () => {
+    expect(codexProvider.defaultModel).toBe('gpt-6-astra');
     expect(codexProvider.getModelConfig('codex')).toBeNull();
     expect(codexProvider.getModelConfig('codex:sol')).toBeNull();
     expect(codexProvider.getModelConfig('gpt-5.6-codex').modelName).toBe('gpt-5.6-sol');
@@ -75,10 +75,10 @@ describe('codex backend catalog', () => {
 });
 
 describe('codex resolveBackendModel', () => {
-  it('defaults an omitted model to gpt-6-sol', () => {
-    expect(resolveBackendModel()).toBe('gpt-6-sol');
-    expect(resolveBackendModel('')).toBe('gpt-6-sol');
-    expect(resolveBackendModel(null)).toBe('gpt-6-sol');
+  it('defaults an omitted model to gpt-6-astra', () => {
+    expect(resolveBackendModel()).toBe('gpt-6-astra');
+    expect(resolveBackendModel('')).toBe('gpt-6-astra');
+    expect(resolveBackendModel(null)).toBe('gpt-6-astra');
   });
 
   it('maps canonical IDs and aliases to backend slugs', () => {
@@ -100,13 +100,13 @@ describe('codex resolveBackendModel', () => {
 });
 
 describe('codex router resolution', () => {
-  it('defaults bare codex to gpt-6-sol', () => {
+  it('defaults bare codex to gpt-6-astra', () => {
     const providers = providersWithCodexAvailable();
     for (const config of [{}, { providers: {} }]) {
       const result = resolveModelSpec('codex', providers, config);
       expect(result.status).toBe('ok');
       expect(result.providerName).toBe('codex');
-      expect(result.resolvedModel).toBe('gpt-6-sol');
+      expect(result.resolvedModel).toBe('gpt-6-astra');
     }
   });
 
@@ -115,11 +115,11 @@ describe('codex router resolution', () => {
     const resolve = (providerConfig) =>
       resolveModelSpec('codex', providers, { providers: providerConfig }).resolvedModel;
 
-    expect(resolve({ codexdefaultmodel: 'astra' })).toBe('gpt-6-astra');
+    expect(resolve({ codexdefaultmodel: 'sol' })).toBe('gpt-6-sol');
     expect(resolve({ codexdefaultmodel: 'gpt-5.6-terra' })).toBe('gpt-5.6-terra');
     // Legacy CODEX_MODEL still applies when CODEX_DEFAULT_MODEL is unset
     expect(resolve({ codexmodel: 'sol' })).toBe('gpt-6-sol');
-    expect(resolve({ codexmodel: 'astra' })).toBe('gpt-6-astra');
+    expect(resolve({ codexmodel: 'luna' })).toBe('gpt-6-luna');
     expect(resolve({ codexdefaultmodel: 'luna', codexmodel: 'astra' })).toBe('gpt-6-luna');
   });
 

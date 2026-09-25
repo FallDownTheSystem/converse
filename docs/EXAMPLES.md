@@ -446,7 +446,7 @@ Codex maintains conversation history through threads in `chat` mode:
 
 ### Choosing the Codex Model
 
-`codex` uses GPT-6 Sol (or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks another model from the Codex list:
+`codex` uses GPT-6 Astra (or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks another model from the Codex list:
 
 ```json
 {
