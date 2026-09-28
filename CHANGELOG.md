@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.0](https://github.com/FallDownTheSystem/converse/compare/v4.2.1...v4.3.0) (2026-09-28)
+
+
+### Features
+
+* add Claude Sonnet 5.5 and point sonnet aliases at it ([deae09e](https://github.com/FallDownTheSystem/converse/commit/deae09e9b4ee5355e7d6c27e167ff2e57547caff))
+
+
+### Dependencies
+
+* update dependencies to latest patch and minor releases ([2832934](https://github.com/FallDownTheSystem/converse/commit/28329347d744bebe6d834e7fba806a78fedd2da6))
+
 ## [4.2.1](https://github.com/FallDownTheSystem/converse/compare/v4.2.0...v4.2.1) (2026-09-28)
 
 
