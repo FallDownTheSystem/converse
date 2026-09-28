@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1](https://github.com/FallDownTheSystem/converse/compare/v4.2.0...v4.2.1) (2026-09-28)
+
+
+### Dependencies
+
+* **deps:** bump the npm-minor-and-patch group with 4 updates ([#85](https://github.com/FallDownTheSystem/converse/issues/85)) ([2a96fd4](https://github.com/FallDownTheSystem/converse/commit/2a96fd48b5c8f693724fb26d3b96b6fdebca53c6))
+
 ## [4.2.0](https://github.com/FallDownTheSystem/converse/compare/v4.1.2...v4.2.0) (2026-09-25)
 
 
