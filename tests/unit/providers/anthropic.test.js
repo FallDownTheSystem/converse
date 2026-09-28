@@ -96,6 +96,7 @@ describe('Anthropic Provider', () => {
       expect(models['claude-opus-5-5']).toBeDefined();
       expect(models['claude-fable-5']).toBeDefined();
       expect(models['claude-opus-5']).toBeDefined();
+      expect(models['claude-sonnet-5-5']).toBeDefined();
       expect(models['claude-sonnet-4-6']).toBeDefined();
       expect(models['claude-sonnet-4-5-20250929']).toBeDefined();
       expect(models['claude-haiku-4-5-20251001']).toBeDefined();
@@ -196,11 +197,33 @@ describe('Anthropic Provider', () => {
       expect(config.maxThinkingTokens).toBe(64000);
     });
 
-    it('should get model config by alias', () => {
-      const config = anthropicProvider.getModelConfig('sonnet');
+    it('should get Claude Sonnet 5.5 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-sonnet-5-5');
 
       expect(config).toBeDefined();
-      expect(config.modelName).toBe('claude-sonnet-4-6');
+      expect(config.modelName).toBe('claude-sonnet-5-5');
+      expect(config.friendlyName).toBe('Claude Sonnet 5.5');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(128000);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.effortGA).toBe(true);
+      expect(config.effortTiers).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    });
+
+    it('should resolve bare sonnet aliases to Claude Sonnet 5.5', () => {
+      const aliases = [
+        'sonnet',
+        'claude-sonnet',
+        'sonnet-5.5',
+        'sonnet-5-5',
+        'claude-sonnet-5.5',
+      ];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-sonnet-5-5');
+      });
     });
 
     it('should resolve Claude Haiku 4.5 by various aliases', () => {
@@ -627,6 +650,72 @@ describe('Anthropic Provider', () => {
       );
 
       expect(result.stop_reason).toBe(StopReasons.OTHER);
+    });
+
+    it.each([
+      ['claude-sonnet-5-5', true],
+      ['claude-opus-5-5', true],
+      ['claude-opus-5', true],
+      ['claude-fable-5', false],
+      ['claude-sonnet-4-6', false],
+    ])('should request the default refusal fallback on %s: %s', async (model, expected) => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Test' }],
+        stop_reason: 'end_turn',
+        usage: {},
+      });
+
+      await anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        config: mockConfig,
+        model,
+      });
+
+      const callArgs = mockCreate.mock.calls[0][0];
+      if (expected) {
+        expect(callArgs.fallbacks).toBe('default');
+        expect(callArgs.betas).toContain('server-side-fallback-2026-07-01');
+      } else {
+        expect(callArgs).not.toHaveProperty('fallbacks');
+        expect(callArgs.betas).not.toContain('server-side-fallback-2026-07-01');
+      }
+    });
+
+    it('should reject a refusal with its category instead of returning partial text', async () => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Partial answer' }],
+        stop_reason: 'refusal',
+        stop_details: {
+          type: 'refusal',
+          category: 'general_harms',
+          explanation: 'Declined under the usage policy',
+        },
+        usage: {},
+      });
+
+      const error = await anthropicProvider
+        .invoke([{ role: 'user', content: 'Hello' }], { config: mockConfig })
+        .catch((e) => e);
+
+      expect(error.code).toBe('REFUSED');
+      expect(error.message).toBe(
+        'Anthropic declined the request (category: general_harms): Declined under the usage policy',
+      );
+    });
+
+    it('should report a refusal with no content as a refusal, not a missing response', async () => {
+      mockCreate.mockResolvedValue({
+        content: [],
+        stop_reason: 'refusal',
+        stop_details: null,
+        usage: {},
+      });
+
+      const error = await anthropicProvider
+        .invoke([{ role: 'user', content: 'Hello' }], { config: mockConfig })
+        .catch((e) => e);
+
+      expect(error.code).toBe('REFUSED');
+      expect(error.message).toBe('Anthropic declined the request');
     });
   });
 
@@ -1123,6 +1212,46 @@ describe('Anthropic Provider', () => {
           );
         }
       }
+    });
+
+    it('should end a refused stream with a refusal error instead of an end event', async () => {
+      async function* mockRefusalStream() {
+        yield {
+          type: 'message_start',
+          message: { usage: { input_tokens: 10, output_tokens: 1 } },
+        };
+        yield {
+          type: 'content_block_delta',
+          delta: { type: 'text_delta', text: 'Partial' },
+        };
+        yield {
+          type: 'message_delta',
+          delta: {
+            stop_reason: 'refusal',
+            stop_details: { type: 'refusal', category: 'cyber', explanation: null },
+          },
+          usage: { input_tokens: 10, output_tokens: 5 },
+        };
+        yield { type: 'message_stop' };
+      }
+
+      mockStream.mockResolvedValue(mockRefusalStream());
+
+      const streamResult = await anthropicProvider.invoke(
+        [{ role: 'user', content: 'Hello' }],
+        { stream: true, config: mockConfig },
+      );
+
+      const events = [];
+      const error = await (async () => {
+        for await (const event of streamResult) {
+          events.push(event);
+        }
+      })().catch((e) => e);
+
+      expect(error.code).toBe('REFUSED');
+      expect(error.message).toBe('Anthropic declined the request (category: cyber)');
+      expect(events.map((e) => e.type)).toEqual(['start', 'delta', 'error']);
     });
 
     it('should handle streaming errors gracefully', async () => {

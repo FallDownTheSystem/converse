@@ -29,7 +29,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveSessionModel('codex')).toBe('gpt-6-sol');
       expect(resolveSessionModel('sol')).toBe('gpt-6-sol');
       expect(resolveSessionModel('luna')).toBe('gpt-6-luna');
-      expect(resolveSessionModel('sonnet')).toBe('claude-sonnet-5');
+      expect(resolveSessionModel('sonnet')).toBe('claude-sonnet-5.5');
+      expect(resolveSessionModel('claude-sonnet-5-5')).toBe('claude-sonnet-5.5');
       expect(resolveSessionModel('fable')).toBe('claude-fable-5');
       expect(resolveSessionModel('opus')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude')).toBe('claude-opus-5.5');
@@ -51,7 +52,7 @@ describe('Copilot Provider - Model Selection', () => {
 
     it('is case-insensitive', () => {
       expect(resolveSessionModel('GPT-5')).toBe('gpt-6-sol');
-      expect(resolveSessionModel('Sonnet')).toBe('claude-sonnet-5');
+      expect(resolveSessionModel('Sonnet')).toBe('claude-sonnet-5.5');
       expect(resolveSessionModel('FABLE')).toBe('claude-fable-5');
       expect(resolveSessionModel('CLAUDE-OPUS-4.8')).toBe('claude-opus-4.8');
     });
@@ -153,7 +154,7 @@ describe('Copilot Provider - Model Selection', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
-      expect(keys).toHaveLength(12);
+      expect(keys).toHaveLength(13);
       expect(keys).toEqual(
         [
           'gpt-6-sol',
@@ -163,6 +164,7 @@ describe('Copilot Provider - Model Selection', () => {
           'gpt-5.6-luna',
           'claude-opus-5.5',
           'claude-fable-5',
+          'claude-sonnet-5.5',
           'claude-sonnet-5',
           'claude-opus-5',
           'claude-opus-4.8',
@@ -244,7 +246,7 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
 
   it('routes copilot:alias to copilot provider with the canonical ID', () => {
     expectCopilot('copilot:fable', 'claude-fable-5');
-    expectCopilot('copilot:sonnet', 'claude-sonnet-5');
+    expectCopilot('copilot:sonnet', 'claude-sonnet-5.5');
     expectCopilot('copilot:gpt-5', 'gpt-6-sol');
     expectCopilot('copilot:opus', 'claude-opus-5.5');
     expectCopilot('copilot:claude', 'claude-opus-5.5');
@@ -258,11 +260,11 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   });
 
   it('honours the default-model override for bare copilot', () => {
-    expectCopilot('copilot', 'claude-sonnet-5', {
+    expectCopilot('copilot', 'claude-sonnet-5.5', {
       providers: { copilotdefaultmodel: 'sonnet' },
     });
     // Legacy COPILOT_MODEL still applies when COPILOT_DEFAULT_MODEL is unset
-    expectCopilot('copilot', 'claude-sonnet-5', {
+    expectCopilot('copilot', 'claude-sonnet-5.5', {
       providers: { copilotmodel: 'sonnet' },
     });
     // An explicit copilot:<model> beats the override

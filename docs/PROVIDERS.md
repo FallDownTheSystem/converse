@@ -53,7 +53,8 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `claude-opus-5` (alias `opus-5`) - Previous Opus generation (1M context, 128K output)
   - `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` - Earlier Opus generations with adaptive thinking (128K output)
   - `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` - Legacy Opus models (64K / 32K output)
-  - `claude-sonnet-4-6` (alias `sonnet`) - Best combination of speed and intelligence with adaptive thinking (64K output)
+  - `claude-sonnet-5-5` (aliases `sonnet`, `sonnet-5.5`, `claude-sonnet`) - Current Sonnet: speed and capability for everyday coding and agentic work; adaptive thinking, effort `low`–`max` (1M context, 128K output)
+  - `claude-sonnet-4-6` (alias `sonnet-4.6`) - Previous Sonnet generation with adaptive thinking (64K output)
   - `claude-sonnet-4-5-20250929` - Legacy Sonnet (64K output)
   - `claude-haiku-4-5-20251001` (alias `haiku`) - Fast and intelligent with extended thinking (64K output)
 
@@ -215,7 +216,8 @@ agy
   - `claude-opus-5` (alias: `opus-5`) - Claude Opus 5
   - `claude-fable-5-1` (aliases: `fable`, `claude-fable`, `fable-5.1`) - Claude Fable 5.1 (`claude:fable`)
   - `claude-fable-5` (alias: `fable-5`) - Claude Fable 5.0
-  - Names outside this catalog are rejected with suggestions (e.g. `claude:sonnet` suggests `copilot:sonnet` and `anthropic:sonnet`)
+  - `claude-sonnet-5-5` (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`) - Claude Sonnet 5.5 (`claude:sonnet`)
+  - Names outside this catalog are rejected with suggestions (e.g. `claude:haiku` suggests `anthropic:haiku`)
 
 **Key Features:**
 - **Subscription Access**: Uses your Claude subscription instead of API credits
@@ -228,7 +230,7 @@ agy
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
 - **Billing**: Claude subscription vs pay-per-use API
-- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `claude-opus-5-5`, `claude-opus-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `sonnet`, `haiku`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
+- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `sonnet`, `claude-opus-5-5`, `claude-opus-5`, `claude-sonnet-5-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `haiku`, `sonnet-4.6`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
 - **Permissions**: The SDK runs with `bypassPermissions`, and bare names and `auto` reach it whenever it is available. Use `anthropic:<model>` to keep a request on the plain API.
 
 ### GitHub Copilot SDK
@@ -240,7 +242,7 @@ agy
 - **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6-sol`; Copilot never serves bare model names):
   - `copilot` - GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`
   - OpenAI: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
-  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
+  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
 - **Unknown IDs**: Any other `copilot:<id>` is rejected with suggestions; only the IDs and aliases above are accepted.
@@ -333,7 +335,7 @@ All providers support streaming responses for real-time output.
 - **Google**:
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
-- **Anthropic**: Claude Fable 5, Opus 4.6+, and Sonnet 4.6 use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
+- **Anthropic**: Claude Fable 5, Opus 4.6+, and Sonnet 4.6+ use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
 - **X.AI**: Grok 4.5 maps `reasoning_effort` to `low`/`medium`/`high` and always reasons (cannot be disabled)
 - **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` map `reasoning_effort` to `high` (enabled) or `none` (disabled); `mistral-large-2512` has no adjustable reasoning
 - **DeepSeek**: V4 models use thinking mode via `reasoning_effort` (`none` disables; enabled levels use `high`, `max` uses `max`)
@@ -384,7 +386,7 @@ Examples:
 "fable"                    // Claude Agent SDK (claude-fable-5-1) when set up, otherwise Anthropic API (claude-fable-5)
 "opus"                     // Claude Agent SDK (claude-opus-5-5), else Anthropic API
 "anthropic:opus"           // Anthropic API only
-"sonnet"                   // Anthropic API (claude-sonnet-4-6)
+"sonnet"                   // Claude Agent SDK (claude-sonnet-5-5), else Anthropic API
 "claude"                   // Claude Agent SDK (defaults to Claude Opus 5.5)
 "claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
 "pro"                      // Antigravity CLI (gemini-3.1-pro-preview), else Google API

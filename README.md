@@ -274,7 +274,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **claude-opus-5** (alias: `opus-5`): Previous Opus generation (1M context, 128K output)
 - **claude-opus-4-8** / **claude-opus-4-7** / **claude-opus-4-6**: Earlier Opus generations with adaptive thinking (200K context, 1M via beta, 128K output)
 - **claude-opus-4-5** / **claude-opus-4-1**: Legacy Opus models with extended thinking (64K / 32K output)
-- **claude-sonnet-4-6** (alias: `sonnet`): Best combination of speed and intelligence with adaptive thinking (64K output)
+- **claude-sonnet-5-5** (aliases: `sonnet`, `sonnet-5.5`): Current Sonnet with adaptive thinking and effort (1M context, 128K output)
+- **claude-sonnet-4-6** (alias: `sonnet-4.6`): Previous Sonnet generation with adaptive thinking (64K output)
 - **claude-haiku-4-5** (alias: `haiku`): Fast and intelligent for simple queries (64K output)
 
 ### Mistral Models
@@ -321,6 +322,7 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 
 - **claude-opus-5-5** (default; aliases: `opus`, `claude-opus`, `opus-5.5`), **claude-opus-5** (`opus-5`)
 - **claude-fable-5-1** (aliases: `fable`, `claude-fable`, `fable-5.1`), **claude-fable-5** (`fable-5`)
+- **claude-sonnet-5-5** (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`)
 - Uses Claude Code CLI authentication (`claude login`) - no API key needed
 - Direct filesystem access from working directory
 
@@ -329,7 +331,7 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
 - **OpenAI**: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 
 ## 📚 Help & Documentation
@@ -469,7 +471,7 @@ Every entry in `models` takes one of four forms:
 "openai:gpt-6-astra"; // -> OpenAI API, even when Codex is available
 "gemini:pro"; // -> Antigravity CLI (Gemini 3.1 Pro)
 "google:gemini-3.1-pro-preview"; // -> Google API
-"copilot:sonnet"; // -> GitHub Copilot (Claude Sonnet 5)
+"copilot:sonnet"; // -> GitHub Copilot (Claude Sonnet 5.5)
 "openrouter:z-ai/glm-5.2:online"; // -> OpenRouter with web search opt-in
 
 // A bare model ID or alias — the first configured provider that offers it

@@ -123,6 +123,18 @@ const SUPPORTED_MODELS = {
     description: 'Anthropic Claude Fable 5 via Copilot subscription',
     aliases: ['fable'],
   },
+  'claude-sonnet-5.5': {
+    modelName: 'claude-sonnet-5.5',
+    friendlyName: 'Claude Sonnet 5.5 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description: 'Anthropic Claude Sonnet 5.5 via Copilot subscription',
+    aliases: ['sonnet', 'claude-sonnet-5-5'],
+  },
   'claude-sonnet-5': {
     modelName: 'claude-sonnet-5',
     friendlyName: 'Claude Sonnet 5 (via Copilot)',
@@ -133,7 +145,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 1800000,
     description: 'Anthropic Claude Sonnet 5 via Copilot subscription',
-    aliases: ['sonnet'],
+    aliases: [],
   },
   'claude-opus-5': {
     modelName: 'claude-opus-5',

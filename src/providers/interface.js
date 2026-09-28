@@ -168,6 +168,7 @@ export const ErrorCodes = {
   // Response errors
   NO_RESPONSE_CONTENT: 'NO_RESPONSE_CONTENT',
   NO_RESPONSE_CHOICE: 'NO_RESPONSE_CHOICE',
+  REFUSED: 'REFUSED',
 
   // Rate limiting and quota
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',

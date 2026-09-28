@@ -93,6 +93,25 @@ const SUPPORTED_MODELS = {
       'Claude Fable 5 via Agent SDK - requires claude login authentication',
     aliases: ['fable-5', 'fable5'],
   },
+  'claude-sonnet-5-5': {
+    modelName: 'claude-sonnet-5-5',
+    friendlyName: 'Claude Sonnet 5.5 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description:
+      'Claude Sonnet 5.5 via Agent SDK - requires claude login authentication',
+    aliases: [
+      'sonnet',
+      'claude-sonnet',
+      'claude-sonnet-5.5',
+      'sonnet-5-5',
+      'sonnet-5.5',
+    ],
+  },
 };
 
 /**

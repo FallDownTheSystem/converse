@@ -73,6 +73,7 @@ describe('Claude SDK Provider', () => {
         'claude-opus-5',
         'claude-fable-5-1',
         'claude-fable-5',
+        'claude-sonnet-5-5',
       ]);
       for (const [id, entry] of Object.entries(models)) {
         expect(entry.modelName).toBe(id);
@@ -89,6 +90,9 @@ describe('Claude SDK Provider', () => {
       );
       expect(models['claude-fable-5'].aliases).toEqual(
         expect.arrayContaining(['fable-5', 'fable5']),
+      );
+      expect(models['claude-sonnet-5-5'].aliases).toEqual(
+        expect.arrayContaining(['sonnet', 'claude-sonnet', 'claude-sonnet-5.5', 'sonnet-5-5', 'sonnet-5.5']),
       );
     });
 
@@ -158,6 +162,8 @@ describe('Claude SDK Provider', () => {
       ['claude:claude-fable-5.1', 'claude-fable-5-1'],
       ['claude:claude-fable-5-1', 'claude-fable-5-1'],
       ['CLAUDE:FABLE-5.1', 'claude-fable-5-1'],
+      ['claude:sonnet', 'claude-sonnet-5-5'],
+      ['claude:claude-sonnet-5-5', 'claude-sonnet-5-5'],
     ];
 
     cases.forEach(([spec, expected]) => {
@@ -261,6 +267,8 @@ describe('Claude SDK Provider', () => {
       ['FABLE-5.1', 'claude-fable-5-1'],
       ['claude-fable-5', 'claude-fable-5'],
       ['fable-5', 'claude-fable-5'],
+      ['sonnet', 'claude-sonnet-5-5'],
+      ['sonnet-5.5', 'claude-sonnet-5-5'],
     ];
 
     cases.forEach(([requested, expected]) => {

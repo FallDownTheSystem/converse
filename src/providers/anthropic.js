@@ -37,6 +37,7 @@ const SUPPORTED_MODELS = {
     effortTiers: EFFORT_TIERS_FULL,
     // Absent from Anthropic's compaction compatibility list, unlike Opus 5
     supportsCompaction: false,
+    supportsDefaultFallback: true,
     description:
       'Claude Opus 5.5 - Flagship Opus for complex agentic coding and deep reasoning; matches Fable 5.1 on most work at Opus pricing',
     aliases: [
@@ -93,6 +94,7 @@ const SUPPORTED_MODELS = {
     effortGA: true,
     effortTiers: EFFORT_TIERS_FULL,
     supportsCompaction: true,
+    supportsDefaultFallback: true,
     description:
       'Claude Opus 5 - Previous Opus generation for complex agentic coding and deep reasoning',
     aliases: [
@@ -101,6 +103,37 @@ const SUPPORTED_MODELS = {
       'opus-5',
       'opus5',
       'claude-opus-5.0',
+    ],
+  },
+  'claude-sonnet-5-5': {
+    modelName: 'claude-sonnet-5-5',
+    friendlyName: 'Claude Sonnet 5.5',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // {type: "disabled"} is rejected; adaptive is the only on-mode
+    timeout: 1800000,
+    supportsEffort: true,
+    effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
+    supportsCompaction: true,
+    supportsDefaultFallback: true,
+    description:
+      'Claude Sonnet 5.5 - Current Sonnet: speed and capability for everyday coding and agentic work',
+    aliases: [
+      'claude-sonnet-5-5',
+      'claude-sonnet-5.5',
+      'claude-5.5-sonnet',
+      'claude-5-5-sonnet',
+      'sonnet-5.5',
+      'sonnet-5-5',
+      'sonnet5.5',
+      'sonnet5-5',
+      'sonnet',
+      'claude-sonnet',
     ],
   },
   'claude-opus-4-8': {
@@ -270,7 +303,7 @@ const SUPPORTED_MODELS = {
     supports1MContext: true, // Beta 1M context support
     supportsCompaction: true, // Beta server-side context compaction
     description:
-      'Claude Sonnet 4.6 - Best combination of speed and intelligence with adaptive thinking',
+      'Claude Sonnet 4.6 - Previous Sonnet generation with adaptive thinking',
     aliases: [
       'claude-sonnet-4-6',
       'claude-4.6-sonnet',
@@ -280,8 +313,6 @@ const SUPPORTED_MODELS = {
       'sonnet4.6',
       'sonnet4-6',
       'claude-sonnet-4.6',
-      'sonnet',
-      'claude-sonnet',
     ],
   },
   'claude-sonnet-4-5-20250929': {
@@ -367,6 +398,24 @@ class AnthropicProviderError extends ProviderError {
     super(message, code, originalError);
     this.name = 'AnthropicProviderError';
   }
+}
+
+/**
+ * A refusal arrives as a successful response whose text is empty or cut off
+ * mid-answer, so it must not be passed on as a (partial) answer. The category
+ * tells the caller whether rephrasing or another model is the way forward.
+ */
+function refusalError(stopDetails) {
+  const category = stopDetails?.category
+    ? ` (category: ${stopDetails.category})`
+    : '';
+  const explanation = stopDetails?.explanation
+    ? `: ${stopDetails.explanation}`
+    : '';
+  return new AnthropicProviderError(
+    `Anthropic declined the request${category}${explanation}`,
+    ErrorCodes.REFUSED,
+  );
 }
 
 /**
@@ -661,6 +710,13 @@ export const anthropicProvider = {
       );
     }
 
+    // A safety-classifier decline is retried server-side on the model Anthropic
+    // recommends for that refusal category; only a decline by the whole chain
+    // comes back as a refusal.
+    if (modelConfig.supportsDefaultFallback) {
+      betas.push('server-side-fallback-2026-07-01');
+    }
+
     // Add effort beta feature for models that need it (not GA yet)
     if (modelConfig.supportsEffort && reasoning_effort && !modelConfig.effortGA) {
       betas.push('effort-2025-11-24');
@@ -688,6 +744,10 @@ export const anthropicProvider = {
     // Add system prompt if present
     if (systemPrompt) {
       requestPayload.system = systemPrompt;
+    }
+
+    if (modelConfig.supportsDefaultFallback) {
+      requestPayload.fallbacks = 'default';
     }
 
     // Set max tokens - API requires this field
@@ -822,6 +882,10 @@ export const anthropicProvider = {
 
       const responseTime = Date.now() - startTime;
       debugLog(`[Anthropic] Response received in ${responseTime}ms`);
+
+      if (response.stop_reason === 'refusal') {
+        throw refusalError(response.stop_details);
+      }
 
       // Extract response content
       let content = '';
@@ -965,6 +1029,7 @@ export const anthropicProvider = {
     let thinkingContent = '';
     let lastUsage = null;
     let finishReason = null;
+    let stopDetails = null;
 
     try {
       // Yield start event
@@ -1040,6 +1105,7 @@ export const anthropicProvider = {
             // Message-level updates (usage, stop_reason)
             if (event.delta?.stop_reason) {
               finishReason = event.delta.stop_reason;
+              stopDetails = event.delta.stop_details ?? null;
             }
             if (event.usage) {
               lastUsage = event.usage;
@@ -1081,6 +1147,10 @@ export const anthropicProvider = {
             timestamp: new Date().toISOString(),
           };
         }
+      }
+
+      if (finishReason === 'refusal') {
+        throw refusalError(stopDetails);
       }
 
       const responseTime = Date.now() - startTime;

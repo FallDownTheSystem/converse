@@ -106,7 +106,7 @@ describe('Model Routing', () => {
       ).toEqual(['codex:gpt-6-astra']);
       expect(
         candidatesOf(route('copilot', {}, { providers: { copilotmodel: 'sonnet' } })),
-      ).toEqual(['copilot:claude-sonnet-5']);
+      ).toEqual(['copilot:claude-sonnet-5.5']);
     });
 
     it('rejects an override that is not in the provider catalog, with suggestions', () => {
@@ -142,7 +142,7 @@ describe('Model Routing', () => {
       expect(candidatesOf(route('gemini:pro'))).toEqual(['gemini-cli:gemini-3.1-pro-preview']);
       expect(candidatesOf(route('agy:flash'))).toEqual(['gemini-cli:gemini-3.8-flash']);
       expect(candidatesOf(route('claude:fable'))).toEqual(['claude:claude-fable-5-1']);
-      expect(candidatesOf(route('copilot:sonnet'))).toEqual(['copilot:claude-sonnet-5']);
+      expect(candidatesOf(route('copilot:sonnet'))).toEqual(['copilot:claude-sonnet-5.5']);
     });
 
     it('is case-insensitive in namespace and model', () => {
@@ -179,6 +179,10 @@ describe('Model Routing', () => {
       expect(candidatesOf(route('opus'))).toEqual([
         'claude:claude-opus-5-5',
         'anthropic:claude-opus-5-5',
+      ]);
+      expect(candidatesOf(route('sonnet'))).toEqual([
+        'claude:claude-sonnet-5-5',
+        'anthropic:claude-sonnet-5-5',
       ]);
       expect(candidatesOf(route('gemini-3.1-pro-preview'))).toEqual([
         'gemini-cli:gemini-3.1-pro-preview',

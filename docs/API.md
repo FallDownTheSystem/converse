@@ -524,10 +524,11 @@ Provide models as plain name strings in the `models` array. Each entry is `auto`
 | `claude-opus-5` | `opus-5` | 1M | 128K | Previous Opus, adaptive thinking + effort, compaction |
 | `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` | `opus-4.8`, `opus-4.7`, `opus-4.6` | 200K (1M beta) | 128K | Previous Opus generations |
 | `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` | `opus-4.5`, `opus-4.1` | 200K | 64K / 32K | Earlier Opus tiers |
-| `claude-sonnet-4-6` | `sonnet`, `sonnet-4.6` | 200K (1M beta) | 64K | Best speed/intelligence balance, adaptive thinking |
+| `claude-sonnet-5-5` | `sonnet`, `sonnet-5.5`, `claude-sonnet` | 1M | 128K | Current Sonnet, adaptive thinking + effort, compaction |
+| `claude-sonnet-4-6` | `sonnet-4.6` | 200K (1M beta) | 64K | Previous Sonnet, adaptive thinking |
 | `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Fast and intelligent |
 
-Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
+Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Sonnet 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
 
 ### Mistral Models
 
@@ -580,7 +581,7 @@ Any other model works via its full `provider/model` slug (e.g. `anthropic/claude
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
 - **Model**: `claude` (namespaces: `claude`, `claude-code`, `claude-sdk`) — defaults to Claude Opus 5.5 (`claude-opus-5-5`), or `CLAUDE_DEFAULT_MODEL`
-- **Model selection**: `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-fable-5-1` (`fable`, `claude-fable`, `fable-5.1`), `claude-fable-5` (`fable-5`), e.g. `claude:opus`, `claude:fable`. Other names are rejected with suggestions.
+- **Model selection**: `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-fable-5-1` (`fable`, `claude-fable`, `fable-5.1`), `claude-fable-5` (`fable-5`), `claude-sonnet-5-5` (`sonnet`, `claude-sonnet`, `sonnet-5.5`), e.g. `claude:opus`, `claude:fable`, `claude:sonnet`. Other names are rejected with suggestions.
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Availability**: the Claude Agent SDK is installed and `~/.claude/.credentials.json` exists (`$CLAUDE_CONFIG_DIR` when set), or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY` is in the environment; on macOS the Keychain login is assumed. An expired login is caught at call time and bare-name/`auto` routing fails over.
 - **Permissions**: runs with `bypassPermissions`
@@ -621,7 +622,7 @@ agy
 Reach these only with the `copilot:` namespace (also `github-copilot:`, `copilot-sdk:`; e.g. `copilot:gpt-6-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`. Available when the Copilot SDK is installed; uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
 
 - **OpenAI**: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5` (alias: `sonnet`), `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is rejected with suggestions
 
