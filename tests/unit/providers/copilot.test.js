@@ -22,12 +22,14 @@ const expectModelNotFound = (fn) =>
 describe('Copilot Provider - Model Selection', () => {
   describe('resolveSessionModel', () => {
     it('resolves version shortcut aliases', () => {
-      expect(resolveSessionModel('gpt-6')).toBe('gpt-6-sol');
+      expect(resolveSessionModel('gpt-6')).toBe('gpt-6.1-sol');
       expect(resolveSessionModel('gpt-5.6')).toBe('gpt-5.6-sol');
-      expect(resolveSessionModel('gpt-5')).toBe('gpt-6-sol');
-      expect(resolveSessionModel('gpt')).toBe('gpt-6-sol');
-      expect(resolveSessionModel('codex')).toBe('gpt-6-sol');
-      expect(resolveSessionModel('sol')).toBe('gpt-6-sol');
+      expect(resolveSessionModel('gpt-5')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('gpt')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('codex')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('sol')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('gpt-6.1')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('gpt-6-sol')).toBe('gpt-6-sol');
       expect(resolveSessionModel('luna')).toBe('gpt-6-luna');
       expect(resolveSessionModel('sonnet')).toBe('claude-sonnet-5.5');
       expect(resolveSessionModel('claude-sonnet-5-5')).toBe('claude-sonnet-5.5');
@@ -51,19 +53,19 @@ describe('Copilot Provider - Model Selection', () => {
     });
 
     it('is case-insensitive', () => {
-      expect(resolveSessionModel('GPT-5')).toBe('gpt-6-sol');
+      expect(resolveSessionModel('GPT-5')).toBe('gpt-6.1-sol');
       expect(resolveSessionModel('Sonnet')).toBe('claude-sonnet-5.5');
       expect(resolveSessionModel('FABLE')).toBe('claude-fable-5');
       expect(resolveSessionModel('CLAUDE-OPUS-4.8')).toBe('claude-opus-4.8');
     });
 
-    it('defaults to gpt-6-sol for omitted, empty or non-string models', () => {
-      expect(resolveSessionModel()).toBe('gpt-6-sol');
-      expect(resolveSessionModel(undefined)).toBe('gpt-6-sol');
-      expect(resolveSessionModel(null)).toBe('gpt-6-sol');
-      expect(resolveSessionModel('')).toBe('gpt-6-sol');
-      expect(resolveSessionModel('   ')).toBe('gpt-6-sol');
-      expect(resolveSessionModel(123)).toBe('gpt-6-sol');
+    it('defaults to gpt-6.1-sol for omitted, empty or non-string models', () => {
+      expect(resolveSessionModel()).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel(undefined)).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel(null)).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel('   ')).toBe('gpt-6.1-sol');
+      expect(resolveSessionModel(123)).toBe('gpt-6.1-sol');
     });
 
     it('rejects unknown models', () => {
@@ -90,7 +92,7 @@ describe('Copilot Provider - Model Selection', () => {
     it('returns config via alias lookup', () => {
       const config = copilotProvider.getModelConfig('gpt-5');
       expect(config).toBeTruthy();
-      expect(config.modelName).toBe('gpt-6-sol');
+      expect(config.modelName).toBe('gpt-6.1-sol');
     });
 
     it('does not strip a copilot: prefix', () => {
@@ -100,10 +102,10 @@ describe('Copilot Provider - Model Selection', () => {
       expect(copilotProvider.getModelConfig('copilot')).toBeNull();
     });
 
-    it('exposes gpt-6-sol as the default model', () => {
-      expect(copilotProvider.defaultModel).toBe('gpt-6-sol');
+    it('exposes gpt-6.1-sol as the default model', () => {
+      expect(copilotProvider.defaultModel).toBe('gpt-6.1-sol');
       expect(copilotProvider.getModelConfig(copilotProvider.defaultModel).modelName).toBe(
-        'gpt-6-sol',
+        'gpt-6.1-sol',
       );
     });
 
@@ -150,13 +152,14 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('advertises exactly the 12 curated IDs', () => {
+    it('advertises exactly the 14 curated IDs', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
-      expect(keys).toHaveLength(13);
+      expect(keys).toHaveLength(14);
       expect(keys).toEqual(
         [
+          'gpt-6.1-sol',
           'gpt-6-sol',
           'gpt-6-luna',
           'gpt-5.6-sol',
@@ -199,6 +202,7 @@ describe('Copilot Provider - Model Selection', () => {
 
     it('flags reasoning-effort support only on the GPT tiers', () => {
       const models = copilotProvider.getSupportedModels();
+      expect(models['gpt-6.1-sol'].supportsReasoningEffort).toBe(true);
       expect(models['gpt-6-sol'].supportsReasoningEffort).toBe(true);
       expect(models['gpt-6-luna'].supportsReasoningEffort).toBe(true);
       expect(models['claude-opus-5.5'].supportsReasoningEffort).toBeUndefined();
@@ -247,16 +251,16 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   it('routes copilot:alias to copilot provider with the canonical ID', () => {
     expectCopilot('copilot:fable', 'claude-fable-5');
     expectCopilot('copilot:sonnet', 'claude-sonnet-5.5');
-    expectCopilot('copilot:gpt-5', 'gpt-6-sol');
+    expectCopilot('copilot:gpt-5', 'gpt-6.1-sol');
     expectCopilot('copilot:opus', 'claude-opus-5.5');
     expectCopilot('copilot:claude', 'claude-opus-5.5');
   });
 
   it('routes bare copilot namespaces to the copilot default', () => {
-    expectCopilot('copilot', 'gpt-6-sol');
-    expectCopilot('copilot-sdk', 'gpt-6-sol');
-    expectCopilot('github-copilot', 'gpt-6-sol');
-    expectCopilot('copilot:', 'gpt-6-sol');
+    expectCopilot('copilot', 'gpt-6.1-sol');
+    expectCopilot('copilot-sdk', 'gpt-6.1-sol');
+    expectCopilot('github-copilot', 'gpt-6.1-sol');
+    expectCopilot('copilot:', 'gpt-6.1-sol');
   });
 
   it('honours the default-model override for bare copilot', () => {
@@ -296,8 +300,8 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   });
 
   it('is case-insensitive for the namespace', () => {
-    expectCopilot('COPILOT:gpt-5', 'gpt-6-sol');
-    expectCopilot('CoPiLoT:codex', 'gpt-6-sol');
+    expectCopilot('COPILOT:gpt-5', 'gpt-6.1-sol');
+    expectCopilot('CoPiLoT:codex', 'gpt-6.1-sol');
   });
 
   it('rejects unknown copilot: models', () => {

@@ -9,7 +9,8 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Get Key**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Environment Variable**: `OPENAI_API_KEY`
 - **Supported Models**:
-  - `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`) - Default GPT-6 and the default OpenAI model (1M context, 128K output; effort `none`–`max`)
+  - `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`) - Default OpenAI model (1M context, 128K output); near-Astra coding, computer use, and professional work at a fifth of the Astra price; effort `low`–`max`
+  - `gpt-6-sol` - Previous GPT-6 Sol (1M context, 128K output), reachable by versioned name only; effort `none`–`max`
   - `gpt-6-luna` (alias: `luna`) - Most efficient GPT-6 for focused, high-volume tasks (1M context, 128K output; effort `none`–`max`)
   - `gpt-6-astra` (alias: `astra`) - Frontier GPT-6 flagship, 5x the Sol price (1M context, 128K output; effort `low`–`max`)
   - `gpt-5.6-sol` (alias: `gpt-5.6`) - Previous flagship GPT-5.6
@@ -111,11 +112,11 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Supported Models**:
   - `codex` - OpenAI Codex agentic coding assistant (GPT-6 Astra by default)
   - `codex:<model>` - Same, with an explicit backend from the Codex catalog:
-    - `gpt-6-sol` (aliases: `sol`, `gpt-6`), `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`)
+    - `gpt-6.1-sol` (`sol`, `gpt-6`), `gpt-6-sol`, `gpt-6-luna` (`luna`), `gpt-6-astra` (`astra`)
     - `gpt-5.6-sol` (`gpt-5.6`), `gpt-5.6-terra` (`terra`), `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.3-codex-spark` (`spark`)
   - Names outside this catalog are rejected with suggestions
   - These IDs are also bare names: `gpt-6-astra`, `luna` or `terra` alone go to Codex first and fail over to the OpenAI API (see [Model Routing Logic](#model-routing-logic))
-  - `reasoning_effort` is clamped onto what the backend accepts (Sol/Luna: `none`–`max`; GPT-6 Astra: `low`–`max`, no `none`)
+  - `reasoning_effort` is clamped onto what the backend accepts (versioned GPT-6 Sol, Luna, and GPT-5.6: `none`–`max`; GPT-6.1 Sol and GPT-6 Astra: `low`–`max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -238,10 +239,10 @@ agy
 - **Setup Required**: Authenticate the GitHub CLI and ensure your account has an active Copilot subscription
 - **Availability**: The Copilot SDK (`@github/copilot-sdk`) is installed
 - **Environment Variables**:
-  - `COPILOT_DEFAULT_MODEL` - Model used for bare `copilot` and `auto` (default: `gpt-6-sol`). The legacy name `COPILOT_MODEL` is honored when `COPILOT_DEFAULT_MODEL` is unset.
-- **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6-sol`; Copilot never serves bare model names):
-  - `copilot` - GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`
-  - OpenAI: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
+  - `COPILOT_DEFAULT_MODEL` - Model used for bare `copilot` and `auto` (default: `gpt-6.1-sol`). The legacy name `COPILOT_MODEL` is honored when `COPILOT_DEFAULT_MODEL` is unset.
+- **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6.1-sol`; Copilot never serves bare model names):
+  - `copilot` - GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`
+  - OpenAI: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
   - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
@@ -283,8 +284,8 @@ Each provider has a `<PROVIDER>_DEFAULT_MODEL` variable that sets the model used
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
 AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
-COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL is honored as a legacy fallback
-OPENAI_DEFAULT_MODEL=gpt-6-sol
+COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL is honored as a legacy fallback
+OPENAI_DEFAULT_MODEL=gpt-6.1-sol
 GOOGLE_DEFAULT_MODEL=gemini-3.1-pro-preview
 XAI_DEFAULT_MODEL=grok-4.5
 ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
@@ -381,7 +382,7 @@ Routing is derived entirely from each provider's model list (canonical IDs plus 
 Examples:
 
 ```text
-"gpt-6"                    // Codex (gpt-6-sol), else OpenAI API
+"gpt-6"                    // Codex (gpt-6.1-sol), else OpenAI API
 "openai:gpt-6"             // OpenAI API only
 "fable"                    // Claude Agent SDK (claude-fable-5-1) when set up, otherwise Anthropic API (claude-fable-5)
 "opus"                     // Claude Agent SDK (claude-opus-5-5), else Anthropic API

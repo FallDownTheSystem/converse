@@ -29,14 +29,14 @@ import {
 /**
  * Models Codex can run, keyed by the slug passed to the CLI as --model. The
  * catalog key is the canonical model ID the router resolves to. The reasoning tiers are the ones each model's API accepts, verified
- * against the API's own rejection messages (gpt-6-astra: "Supported values
- * are: 'low', 'medium', 'high', 'xhigh', and 'max'"; the Sol/Luna tiers of
- * both generations accept 'none' as well). The SDK's ModelReasoningEffort
- * type is the union across models, so the backend is the authority and
- * requests are clamped per model.
+ * against the API's own rejection messages (gpt-6-astra and gpt-6.1-sol:
+ * "Supported values are: 'low', 'medium', 'high', 'xhigh', and 'max'"; the
+ * GPT-6 and GPT-5.6 Sol/Luna tiers accept 'none' as well). The SDK's
+ * ModelReasoningEffort type is the union across models, so the backend is the
+ * authority and requests are clamped per model.
  *
  * Bare tier names (sol, luna) and the bare generation (gpt-6) point at the
- * current generation; the GPT-5.6 tiers stay reachable by full slug.
+ * current release of each tier; older releases stay reachable by full slug.
  *
  * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
  * sub-agent delegation — a change in how the run executes, not just how deep
@@ -44,6 +44,7 @@ import {
  * and nothing at the tool level can select it.
  */
 const ALL_EFFORTS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+const NO_NONE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 function codexModel(slug, friendlyName, { aliases, contextWindow = 272000, supportedEfforts = ALL_EFFORTS }) {
   return {
@@ -62,15 +63,19 @@ function codexModel(slug, friendlyName, { aliases, contextWindow = 272000, suppo
 }
 
 const SUPPORTED_MODELS = {
+  'gpt-6.1-sol': codexModel('gpt-6.1-sol', 'GPT-6.1 Sol', {
+    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt-6.1', 'gpt6.1', 'gpt6.1-sol', 'gpt-6-codex'],
+    supportedEfforts: NO_NONE_EFFORTS,
+  }),
   'gpt-6-sol': codexModel('gpt-6-sol', 'GPT-6 Sol', {
-    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt6-sol', 'gpt-6-codex'],
+    aliases: ['gpt6-sol'],
   }),
   'gpt-6-luna': codexModel('gpt-6-luna', 'GPT-6 Luna', {
     aliases: ['luna', 'gpt6-luna'],
   }),
   'gpt-6-astra': codexModel('gpt-6-astra', 'GPT-6 Astra', {
     aliases: ['astra', 'gpt6-astra'],
-    supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportedEfforts: NO_NONE_EFFORTS,
   }),
   'gpt-5.6-sol': codexModel('gpt-5.6-sol', 'GPT-5.6 Sol', {
     aliases: ['gpt-5.6', 'gpt5.6', 'gpt5.6-sol', 'gpt-5.6-codex'],

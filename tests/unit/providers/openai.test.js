@@ -91,6 +91,7 @@ describe('OpenAI Provider', () => {
       expect('gpt-4.1-2025-04-14' in models).toBe(true);
       expect('gpt-5.4' in models).toBe(true);
       expect('gpt-5.4-pro' in models).toBe(true);
+      expect('gpt-6.1-sol' in models).toBe(true);
       expect('gpt-6-sol' in models).toBe(true);
       expect('gpt-6-luna' in models).toBe(true);
       expect('gpt-6-astra' in models).toBe(true);
@@ -101,7 +102,7 @@ describe('OpenAI Provider', () => {
 
     it('should describe the GPT-6 tiers per the OpenAI model pages', () => {
       const models = openaiProvider.getSupportedModels();
-      for (const id of ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra']) {
+      for (const id of ['gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra']) {
         expect(models[id].contextWindow).toBe(1050000);
         expect(models[id].maxOutputTokens).toBe(128000);
         expect(models[id].supportsStreaming).toBe(true);
@@ -118,6 +119,13 @@ describe('OpenAI Provider', () => {
       expect(models['gpt-6-astra'].supportedEfforts).toEqual([
         'low', 'medium', 'high', 'xhigh', 'max',
       ]);
+      expect(models['gpt-6.1-sol'].supportedEfforts).toEqual(
+        models['gpt-6-astra'].supportedEfforts,
+      );
+    });
+
+    it('should default to GPT-6.1 Sol', () => {
+      expect(openaiProvider.defaultModel).toBe('gpt-6.1-sol');
     });
 
     it('should include model configuration details', () => {
@@ -184,14 +192,22 @@ describe('OpenAI Provider', () => {
       });
     });
 
-    it('should resolve generic GPT aliases to GPT-6 Sol', () => {
-      const aliases = ['gpt-6', 'gpt6', 'gpt 6', 'gpt-5', 'gpt5', 'gpt 5', 'sol', 'gpt6-sol'];
+    it('should resolve generic GPT aliases to GPT-6.1 Sol', () => {
+      const aliases = [
+        'gpt-6', 'gpt6', 'gpt 6', 'gpt-6.1', 'gpt6.1', 'gpt-5', 'gpt5', 'gpt 5', 'sol', 'gpt6.1-sol',
+      ];
 
       aliases.forEach((alias) => {
         const config = openaiProvider.getModelConfig(alias);
         expect(config).toBeTruthy();
-        expect(config.modelName).toBe('gpt-6-sol');
+        expect(config.modelName).toBe('gpt-6.1-sol');
       });
+    });
+
+    it('should keep GPT-6 Sol reachable by its versioned names', () => {
+      for (const alias of ['gpt-6-sol', 'gpt6-sol', 'gpt 6 sol']) {
+        expect(openaiProvider.getModelConfig(alias).modelName).toBe('gpt-6-sol');
+      }
     });
 
     it('should resolve GPT-6 tier aliases', () => {
@@ -403,7 +419,11 @@ describe('OpenAI Provider', () => {
     });
 
     it.each([
-      // GPT-6 Sol/Luna accept the whole ladder except minimal; Astra has no none
+      // GPT-6 Sol/Luna accept the whole ladder except minimal; Astra and
+      // GPT-6.1 Sol have no none
+      ['gpt-6.1-sol', 'none', 'low'],
+      ['gpt-6.1-sol', 'minimal', 'low'],
+      ['gpt-6.1-sol', 'max', 'max'],
       ['gpt-6-sol', 'none', 'none'],
       ['gpt-6-sol', 'minimal', 'low'],
       ['gpt-6-sol', 'max', 'max'],
@@ -432,8 +452,9 @@ describe('OpenAI Provider', () => {
       ['gpt-5.4-pro', 'low', 'medium'],
       ['gpt-5.4-pro', 'max', 'xhigh'],
       // Uncatalogued snapshots resolve by family: GPT-6 Sol/Luna and GPT-5.6
-      // keep their ladder, Astra snapshots drop none, older Pro snapshots are
-      // only known to accept high
+      // keep their ladder, Astra and GPT-6.1 Sol snapshots drop none, older Pro
+      // snapshots are only known to accept high
+      ['gpt-6.1-sol-2026-09-29', 'none', 'low'],
       ['gpt-6-sol-2026-09-22', 'none', 'none'],
       ['gpt-6-sol-2026-09-22', 'minimal', 'low'],
       ['gpt-6-luna-2026-09-22', 'max', 'max'],
@@ -735,7 +756,7 @@ describe('OpenAI Provider', () => {
 
       expect(events[0]).toMatchObject({
         type: 'start',
-        model: 'gpt-6-sol', // 'gpt-5' resolves to 'gpt-6-sol'
+        model: 'gpt-6.1-sol', // 'gpt-5' resolves to 'gpt-6.1-sol'
         api_type: 'Responses API',
       });
 

@@ -64,8 +64,8 @@ describe('Model Routing', () => {
       expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6-astra');
       expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-opus-5-5');
       expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-3.8-flash');
-      expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6-sol');
-      expect(getDefaultModelForProvider('openai', providers, {})).toBe('gpt-6-sol');
+      expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6.1-sol');
+      expect(getDefaultModelForProvider('openai', providers, {})).toBe('gpt-6.1-sol');
       expect(getDefaultModelForProvider('google', providers, {})).toBe('gemini-3.1-pro-preview');
       expect(getDefaultModelForProvider('xai', providers, {})).toBe('grok-4.5');
       expect(getDefaultModelForProvider('anthropic', providers, {})).toBe('claude-opus-5-5');
@@ -85,14 +85,14 @@ describe('Model Routing', () => {
       expect(r.status).toBe('ok');
       expect(candidatesOf(r)).toEqual(['codex:gpt-6-astra']);
       expect(candidatesOf(route('gemini'))).toEqual(['gemini-cli:gemini-3.8-flash']);
-      expect(candidatesOf(route('openai'))).toEqual(['openai:gpt-6-sol']);
+      expect(candidatesOf(route('openai'))).toEqual(['openai:gpt-6.1-sol']);
     });
 
     it('applies an env override given as an alias', () => {
       const config = { providers: { codexdefaultmodel: 'luna' } };
       expect(candidatesOf(route('codex', {}, config))).toEqual(['codex:gpt-6-luna']);
       // An explicit model still wins over the override.
-      expect(candidatesOf(route('codex:sol', {}, config))).toEqual(['codex:gpt-6-sol']);
+      expect(candidatesOf(route('codex:sol', {}, config))).toEqual(['codex:gpt-6.1-sol']);
     });
 
     it('honors the legacy CODEX_MODEL / COPILOT_MODEL vars, below the new ones', () => {
@@ -114,7 +114,7 @@ describe('Model Routing', () => {
         providers: { codexdefaultmodel: 'gpt-6-astr', openaidefaultmodel: 'gpt6' },
       });
       expect(errors).toEqual([
-        'CODEX_DEFAULT_MODEL="gpt-6-astr" is not a codex model. Did you mean: gpt-6-astra, gpt-6-sol?',
+        'CODEX_DEFAULT_MODEL="gpt-6-astr" is not a codex model. Did you mean: gpt-6-astra, gpt-6-sol, gpt-6?',
       ]);
     });
 

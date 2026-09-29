@@ -230,7 +230,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### OpenAI Models
 
-- **gpt-6-sol** (default; aliases: `gpt-6`, `gpt-5`, `sol`): Default GPT-6 (1M context, 128K output) - Complex coding and agentic workflows; effort `none`–`max`
+- **gpt-6.1-sol** (default; aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`): GPT-6.1 Sol (1M context, 128K output) - Near-Astra coding, computer use, and professional work at a fifth of the Astra price; effort `low`–`max`
+- **gpt-6-sol**: Previous GPT-6 Sol (1M context, 128K output), reachable by versioned name only; effort `none`–`max`
 - **gpt-6-luna** (alias: `luna`): Most efficient GPT-6 (1M context, 128K output) - Focused, high-volume tasks; effort `none`–`max`
 - **gpt-6-astra** (alias: `astra`): Frontier GPT-6 flagship (1M context, 128K output) - Hardest end-to-end work; effort `low`–`max` (EXPENSIVE: 5x Sol)
 - **gpt-5.6-sol** (alias: `gpt-5.6`): Previous flagship GPT-5.6 (1M context, 128K output)
@@ -307,9 +308,9 @@ Any other model works via its full `provider/model` slug or the `openrouter:` na
 
 OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Astra, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
 
-- **gpt-6-sol** (default; aliases: `sol`, `gpt-6`), **gpt-6-luna** (`luna`), **gpt-6-astra** (`astra`)
+- **gpt-6.1-sol** (`sol`, `gpt-6`), **gpt-6-sol**, **gpt-6-luna** (`luna`), **gpt-6-astra** (`astra`)
 - **gpt-5.6-sol** (`gpt-5.6`), **gpt-5.6-terra** (`terra`), **gpt-5.6-luna**, **gpt-5.5**, **gpt-5.3-codex-spark** (`spark`)
-  - `reasoning_effort` maps onto the tiers the chosen backend accepts (Sol/Luna: `none` through `max`; GPT-6 Astra: `low` through `max`, no `none`)
+  - `reasoning_effort` maps onto the tiers the chosen backend accepts (versioned GPT-6 Sol, Luna, and GPT-5.6: `none` through `max`; GPT-6.1 Sol and GPT-6 Astra: `low` through `max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -328,9 +329,9 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 
 ### GitHub Copilot SDK Models
 
-Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
+Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
-- **OpenAI**: `gpt-6-sol` (aliases: `gpt-6`, `gpt-5`, `sol`), `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
+- **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
 - **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 
@@ -393,8 +394,8 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL still works as a fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
 AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
-COPILOT_DEFAULT_MODEL=gpt-6-sol              # COPILOT_MODEL still works as a fallback
-OPENAI_DEFAULT_MODEL=gpt-6-sol
+COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL still works as a fallback
+OPENAI_DEFAULT_MODEL=gpt-6.1-sol
 GOOGLE_DEFAULT_MODEL=gemini-3.1-pro-preview
 XAI_DEFAULT_MODEL=grok-4.5
 ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
@@ -464,7 +465,7 @@ Every entry in `models` takes one of four forms:
 "codex"; // -> Codex (GPT-6 Astra)
 "claude"; // -> Claude Agent SDK (Claude Opus 5.5)
 "gemini"; // -> Antigravity CLI (Gemini 3.8 Flash); `agy` works too
-"openai"; // -> OpenAI API (GPT-6 Sol)
+"openai"; // -> OpenAI API (GPT-6.1 Sol)
 
 // provider:model — that model on that provider only
 "codex:astra"; // -> Codex (GPT-6 Astra)
@@ -497,8 +498,8 @@ Provider priority order (subscription-based local providers first, then API-key 
 1. Codex (`codex` → GPT-6 Astra)
 2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 3.8 Flash)
 3. Claude Agent SDK (`claude` → Claude Opus 5.5)
-4. Copilot (`copilot` → GPT-6 Sol; `auto` only, never bare names)
-5. OpenAI (`openai` → GPT-6 Sol)
+4. Copilot (`copilot` → GPT-6.1 Sol; `auto` only, never bare names)
+5. OpenAI (`openai` → GPT-6.1 Sol)
 6. Google (`google` → Gemini 3.1 Pro)
 7. XAI (`xai` → Grok 4.5)
 8. Anthropic (`anthropic` → Claude Opus 5.5)
