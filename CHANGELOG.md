@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0](https://github.com/FallDownTheSystem/converse/compare/v4.3.0...v4.4.0) (2026-09-29)
+
+
+### Features
+
+* add GPT-6.1 Sol and make it the Sol default for OpenAI, Codex and Copilot ([b18d2a7](https://github.com/FallDownTheSystem/converse/commit/b18d2a7b0b4c76eedecca066d27e21167bc15655))
+
+
+### Dependencies
+
+* update Codex SDK to 0.159.0 and Copilot SDK to 1.0.15 ([a0a1fc9](https://github.com/FallDownTheSystem/converse/commit/a0a1fc90fed35460769c1e3e1b566b57193255ee))
+
 ## [4.3.0](https://github.com/FallDownTheSystem/converse/compare/v4.2.1...v4.3.0) (2026-09-28)
 
 
