@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.1](https://github.com/FallDownTheSystem/converse/compare/v4.4.0...v4.4.1) (2026-09-30)
+
+
+### Dependencies
+
+* update Codex SDK to 0.159.2, OpenAI to 7.25.0 and Claude Agent SDK to 0.3.285 ([#89](https://github.com/FallDownTheSystem/converse/issues/89)) ([f3b97d1](https://github.com/FallDownTheSystem/converse/commit/f3b97d1bcf9f3778e509c7306627386a330eaf82))
+
 ## [4.4.0](https://github.com/FallDownTheSystem/converse/compare/v4.3.0...v4.4.0) (2026-09-29)
 
 
