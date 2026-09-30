@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.5.0](https://github.com/FallDownTheSystem/converse/compare/v4.4.1...v4.5.0) (2026-09-30)
+
+
+### Features
+
+* add Abliteration provider with abliterated-model-large-v2 as default ([cf19ef7](https://github.com/FallDownTheSystem/converse/commit/cf19ef7bd3024ebc9ea11c0888e87aa0753d86ac))
+
 ## [4.4.1](https://github.com/FallDownTheSystem/converse/compare/v4.4.0...v4.4.1) (2026-09-30)
 
 
