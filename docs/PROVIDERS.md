@@ -99,6 +99,17 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Reasoning**: Per-model. `z-ai/glm-5.2` and the `deepseek/deepseek-v4-*` slugs are effort-tiered (`max` → `xhigh`, other enabled levels → `high`, `none` disables); `qwen/qwen3.7-*` and `moonshotai/kimi-k2.6` are enable/disable only (`none` disables, any other level enables); `moonshotai/kimi-k2.7-code` always reasons and cannot be disabled; `openrouter/auto` lets the router choose.
 - **Web search (opt-in, adds cost)**: OpenRouter web search is off by default because it incurs a real per-request charge. Enable it explicitly by appending `:online` to a slug (e.g. `z-ai/glm-5.2:online` or `openrouter:qwen/qwen3.7-max:online`). When enabled, `annotations[].url_citation` citations are captured into metadata. Ordinary requests never attach a web-search plugin.
 
+### Abliteration
+- **API Key Format**: `ak_...`
+- **Get Key**: [abliteration.ai/console/api-keys](https://abliteration.ai/console/api-keys) ([documentation](https://docs.abliteration.ai))
+- **Environment Variable**: `ABLITERATION_API_KEY`
+- **API**: OpenAI-compatible Chat Completions API at `https://api.abliteration.ai/v1`
+- **Supported Models**:
+  - `abliterated-model-large-v2` (default; aliases: `abliterated-large`, `abliterated-large-v2`) - Uncensored, GLM-5.3-derived reasoning model, text-only (1M context, 999,990 max output)
+  - `abliterated-model-large` (alias: `abliterated-large-v1`) - Previous large model, GLM-5.2-derived, text-only (1M context, 999,990 max output)
+  - `abliterated-model` (aliases: `abliterated`, `abliterated-base`) - Multimodal with image input (256K context, 262,134 max output)
+- **Reasoning**: All models reason by default and return `reasoning_content`, streamed as thinking. The large-v2 model supports `low`/`high`/`max` and cannot disable reasoning (`none`/`minimal`/`low` → `low`, `medium`/`high` → `high`, `xhigh`/`max` → `max`). The large model supports `high`/`max` and can disable reasoning (`none` → `none`, `minimal`–`high` → `high`, `xhigh`/`max` → `max`). The base model accepts every level, with `none` disabling reasoning.
+
 ### Codex
 - **API Key Format**: Optional (uses ChatGPT login by default)
 - **Authentication**: ChatGPT login (system-wide) OR `CODEX_API_KEY`
@@ -265,6 +276,7 @@ DEEPSEEK_API_KEY=your_deepseek_key_here
 
 # OpenRouter needs only an API key; any provider/model slug works directly
 OPENROUTER_API_KEY=sk-or-your_key_here
+ABLITERATION_API_KEY=ak_your_key_here
 # Optional: referer and title for OpenRouter ranking credit
 OPENROUTER_REFERER=https://github.com/YourUsername/YourApp
 OPENROUTER_TITLE=Converse
@@ -292,6 +304,7 @@ ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
 MISTRAL_DEFAULT_MODEL=mistral-medium-3-5
 DEEPSEEK_DEFAULT_MODEL=deepseek-v4-pro
 OPENROUTER_DEFAULT_MODEL=z-ai/glm-5.2        # any vendor/model slug is accepted
+ABLITERATION_DEFAULT_MODEL=abliterated-model-large-v2
 ```
 
 ### Claude Configuration (claude_desktop_config.json)
@@ -307,6 +320,7 @@ OPENROUTER_DEFAULT_MODEL=z-ai/glm-5.2        # any vendor/model slug is accepted
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
+        "ABLITERATION_API_KEY": "ak_your_key_here",
         "OPENROUTER_REFERER": "https://github.com/YourUsername/YourApp",
         "OPENROUTER_TITLE": "Converse"
       }
@@ -324,12 +338,13 @@ All providers support streaming responses for real-time output.
 - **Full Support**: OpenAI, Google, X.AI (Grok 4.5), Anthropic (Claude-4 series, Claude-3-Opus)
 - **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` accept images; `mistral-large-2512` is text-only
 - **Via OpenRouter**: Depends on the model — `qwen/qwen3.7-plus`, `moonshotai/kimi-k2.7-code`, and `moonshotai/kimi-k2.6` accept images; `z-ai/glm-5.2` and the `deepseek/deepseek-v4-*` slugs are text-only
+- **Abliteration**: Only `abliterated-model` accepts images; both large models are text-only, and image requests to them are rejected before sending
 - **No Support**: DeepSeek (native), Codex
 
 ### Web Search
 - **Automatic where supported**: OpenAI, Google, and X.AI (Grok 4.5, via Agent Tools) attach web search on every request for capable models; the model decides whether to use it
 - **OpenRouter (opt-in, adds cost)**: Off by default; append `:online` to a slug to enable it per request (real per-request charge), with citations captured into metadata
-- **No Support**: Anthropic, Mistral, DeepSeek, Codex
+- **No Support**: Anthropic, Mistral, DeepSeek, Codex, Abliteration
 
 ### Thinking/Reasoning Modes
 - **OpenAI**: GPT-5 family and O3 series models support the `reasoning_effort` parameter (GPT-5.6 accepts `none` through `max`, mapping `minimal` to `low`; GPT-5 Pro is fixed at `high`)
@@ -341,6 +356,7 @@ All providers support streaming responses for real-time output.
 - **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` map `reasoning_effort` to `high` (enabled) or `none` (disabled); `mistral-large-2512` has no adjustable reasoning
 - **DeepSeek**: V4 models use thinking mode via `reasoning_effort` (`none` disables; enabled levels use `high`, `max` uses `max`)
 - **OpenRouter**: Reasoning is per-model (effort-tiered, enable/disable-only, mandatory, or router-chosen — see the OpenRouter section)
+- **Abliteration**: All models reason by default and return reasoning traces (`reasoning_content`), streamed as thinking; see the Abliteration section for `reasoning_effort` clamping
 - **Codex**: Thread-based agentic reasoning with persistent context
 - **Others**: Standard inference only
 
@@ -362,11 +378,11 @@ Routing is derived entirely from each provider's model list (canonical IDs plus 
    - `gemini`, `agy`, `antigravity`, `gemini-cli` → Gemini via Antigravity CLI
    - `claude`, `claude-code`, `claude-sdk` → Claude Agent SDK
    - `copilot`, `github-copilot`, `copilot-sdk` → Copilot SDK
-   - `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter` → the matching API provider
+   - `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, `abliteration`, `ablit` → the matching API provider
 
 2. **`provider:model`** — that model on that provider only (e.g. `codex:astra`, `gemini:pro`, `google:pro`, `anthropic:opus`, `copilot:sonnet`). The model must be in that provider's list; there is no failover to another provider.
 
-3. **Bare `model`** — an ID or alias without a namespace goes to the first provider, in this order, whose list contains the name and that is set up: Codex, Antigravity CLI, Claude Agent SDK, OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, OpenRouter.
+3. **Bare `model`** — an ID or alias without a namespace goes to the first provider, in this order, whose list contains the name and that is set up: Codex, Antigravity CLI, Claude Agent SDK, OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, OpenRouter, Abliteration.
    - "Set up" means an API key for API providers; for Codex, the SDK plus a login file or `CODEX_API_KEY`; for the Claude Agent SDK, the SDK plus a login file, a macOS login, or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY`; for Antigravity, the `agy` binary.
    - If that provider fails with an authentication or availability error (including an expired login, which is only detected at call time), the next set-up provider that serves **the same model** takes over. A provider whose alias of that name points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API; bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API).
    - Copilot never serves bare names; use `copilot:<model>`.
@@ -400,6 +416,7 @@ Examples:
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "anthropic/claude-sonnet-5" // OpenRouter (any full slug routes as-is)
 "openrouter/auto"          // OpenRouter auto-selection
+"ablit"                    // Abliteration default model (abliterated-model-large-v2)
 ```
 
 ```json

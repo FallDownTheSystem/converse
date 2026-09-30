@@ -17,6 +17,7 @@ import { codexProvider } from './codex.js';
 import { geminiCliProvider } from './gemini-cli.js';
 import { claudeProvider } from './claude.js';
 import { copilotProvider } from './copilot.js';
+import { abliterationProvider } from './abliteration.js';
 
 /**
  * Provider registry map
@@ -34,6 +35,7 @@ const providers = {
   mistral: mistralProvider,
   deepseek: deepseekProvider,
   openrouter: openrouterProvider,
+  abliteration: abliterationProvider,
   codex: codexProvider,
   claude: claudeProvider,
   copilot: copilotProvider,

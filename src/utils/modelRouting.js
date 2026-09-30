@@ -40,6 +40,7 @@ export const PROVIDER_PRIORITY = [
   'mistral',
   'deepseek',
   'openrouter',
+  'abliteration',
 ];
 
 /**
@@ -70,6 +71,7 @@ export const PROVIDER_NAMESPACES = {
   mistral: ['mistral'],
   deepseek: ['deepseek'],
   openrouter: ['openrouter'],
+  abliteration: ['abliteration', 'ablit'],
 };
 
 /**
@@ -89,6 +91,7 @@ export const DEFAULT_MODEL_ENV_VARS = {
   mistral: 'MISTRAL_DEFAULT_MODEL',
   deepseek: 'DEEPSEEK_DEFAULT_MODEL',
   openrouter: 'OPENROUTER_DEFAULT_MODEL',
+  abliteration: 'ABLITERATION_DEFAULT_MODEL',
 };
 
 /**
@@ -583,6 +586,7 @@ const API_KEY_ENV_VARS = {
   mistral: 'MISTRAL_API_KEY',
   deepseek: 'DEEPSEEK_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
+  abliteration: 'ABLITERATION_API_KEY',
 };
 
 const LOCAL_PROVIDER_SETUP_HINTS = {

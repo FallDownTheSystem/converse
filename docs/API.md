@@ -564,6 +564,16 @@ Models with adaptive thinking control depth via `reasoning_effort`, which is pas
 
 Any other model works via its full `provider/model` slug (e.g. `anthropic/claude-sonnet-5`) or the `openrouter:` namespace. Append `:online` to a slug (e.g. `z-ai/glm-5.2:online`) to opt into web search, which adds a real per-request cost.
 
+### Abliteration Models
+
+| Model | Aliases | Context | Output | Notes |
+|-------|---------|---------|--------|-------|
+| `abliterated-model-large-v2` | `abliterated-large`, `abliterated-large-v2` | 1M | 999,990 | Default; GLM-5.3-derived, text-only |
+| `abliterated-model-large` | `abliterated-large-v1` | 1M | 999,990 | Previous large model, GLM-5.2-derived, text-only |
+| `abliterated-model` | `abliterated`, `abliterated-base` | 256K | 262,134 | Multimodal, image input |
+
+All three are uncensored ("abliterated") reasoning models using Abliteration's OpenAI-compatible Chat Completions API at `https://api.abliteration.ai/v1`. Get an API key at [abliteration.ai/console/api-keys](https://abliteration.ai/console/api-keys); docs: [docs.abliteration.ai](https://docs.abliteration.ai). Route with the `abliteration:` namespace (canonical) or `ablit:`. All reason by default and return `reasoning_content`, streamed as thinking. `reasoning_effort` is clamped to each model's supported levels: large-v2 runs `low`/`high`/`max` and cannot disable reasoning (`none`/`minimal`/`low` → `low`, `medium`/`high` → `high`, `xhigh`/`max` → `max`); large runs `high`/`max` and can disable (`none` → `none`, `minimal`–`high` → `high`, `xhigh`/`max` → `max`); base accepts every level, with `none` disabling reasoning. Only `abliterated-model` accepts images; image requests to the text-only large models are rejected before sending. Web search is not supported.
+
 ### Codex (agentic, local)
 
 **Codex** is an agentic coding assistant with direct filesystem access:
@@ -632,9 +642,9 @@ Reach these only with the `copilot:` namespace (also `github-copilot:`, `copilot
 Every entry in `models` takes one of four forms:
 
 - **`auto`** — the first available provider's default model.
-- **`provider`** — that provider's default model (hardcoded, or `<PROVIDER>_DEFAULT_MODEL`). Namespaces: `codex`; `gemini`/`agy`/`antigravity`/`gemini-cli` (Antigravity CLI); `claude`/`claude-code`/`claude-sdk` (Claude Agent SDK); `copilot`/`github-copilot`/`copilot-sdk`; `openai`; `google`; `xai`; `anthropic`; `mistral`; `deepseek`; `openrouter`.
+- **`provider`** — that provider's default model (hardcoded, or `<PROVIDER>_DEFAULT_MODEL`). Namespaces: `codex`; `gemini`/`agy`/`antigravity`/`gemini-cli` (Antigravity CLI); `claude`/`claude-code`/`claude-sdk` (Claude Agent SDK); `copilot`/`github-copilot`/`copilot-sdk`; `openai`; `google`; `xai`; `anthropic`; `mistral`; `deepseek`; `openrouter`; `abliteration`; `ablit`.
 - **`provider:model`** — that model on that provider only; the model must be in that provider's list.
-- **Bare `model`** — the first provider, in the order `codex`, `gemini-cli`, `claude`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, whose list contains the ID or alias and that is set up (API key for API providers; SDK plus login for Codex and the Claude Agent SDK; the `agy` binary for Antigravity). On an authentication or availability error, the next set-up provider serving **the same model** takes over; a provider whose alias points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API). Copilot never serves bare names.
+- **Bare `model`** — the first provider, in the order `codex`, `gemini-cli`, `claude`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, `abliteration`, whose list contains the ID or alias and that is set up (API key for API providers; SDK plus login for Codex and the Claude Agent SDK; the `agy` binary for Antigravity). On an authentication or availability error, the next set-up provider serving **the same model** takes over; a provider whose alias points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API). Copilot never serves bare names.
 
 **Unknown names are rejected**, never forwarded: the error lists up to three close matches, e.g. `Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`. The exception is OpenRouter: a full `vendor/model` slug (bare or `openrouter:`) is validated against OpenRouter's live catalog.
 
@@ -650,6 +660,7 @@ Every entry in `models` takes one of four forms:
 "mistral"                  // Mistral (-> mistral-medium-3-5)
 "z-ai/glm-5.2"             // OpenRouter (full slug)
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
+"ablit"                    // Abliteration (-> abliterated-model-large-v2)
 "fable"                    // Claude Agent SDK (-> claude-fable-5-1) when set up, otherwise Anthropic API (-> claude-fable-5)
 "opus"                     // Claude Agent SDK (-> claude-opus-5-5), else Anthropic API
 "anthropic:opus"           // Anthropic API only
@@ -666,7 +677,7 @@ Every entry in `models` takes one of four forms:
 - **chat mode**: `["auto"]` selects the first available provider and uses its default model, with failover to the next provider on error.
 - **consensus mode**: `["auto"]` expands to the first 3 available providers.
 
-Provider auto-selection priority (subscription-based CLI/SDK providers first, then API-key providers): `codex`, `gemini-cli`, `claude`, `copilot`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`.
+Provider auto-selection priority (subscription-based CLI/SDK providers first, then API-key providers): `codex`, `gemini-cli`, `claude`, `copilot`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, `abliteration`.
 
 ## Configuration
 
@@ -714,6 +725,7 @@ ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
 MISTRAL_DEFAULT_MODEL=mistral-medium-3-5
 DEEPSEEK_DEFAULT_MODEL=deepseek-v4-pro
 OPENROUTER_DEFAULT_MODEL=z-ai/glm-5.2        # any vendor/model slug is accepted
+ABLITERATION_DEFAULT_MODEL=abliterated-model-large-v2
 ```
 
 ## Context Processing
@@ -822,6 +834,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 MISTRAL_API_KEY=...
 DEEPSEEK_API_KEY=...
 OPENROUTER_API_KEY=sk-or-...
+ABLITERATION_API_KEY=ak_...
 TYPESAFE_API_KEY=...            # decide tool only
 ```
 

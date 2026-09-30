@@ -18,6 +18,7 @@ describe('Configuration API Key Validation', () => {
     'MISTRAL_API_KEY',
     'DEEPSEEK_API_KEY',
     'OPENROUTER_API_KEY',
+    'ABLITERATION_API_KEY',
   ];
 
   beforeEach(() => {
@@ -52,6 +53,11 @@ describe('Configuration API Key Validation', () => {
       envVar: 'OPENROUTER_API_KEY',
       value: 'sk-or-too-short',
       expectedError: /Invalid API key format for OPENROUTER_API_KEY/,
+    },
+    {
+      envVar: 'ABLITERATION_API_KEY',
+      value: 'sk-wrong-prefix-for-abliteration-but-long-enough',
+      expectedError: /Invalid API key format for ABLITERATION_API_KEY/,
     },
     {
       envVar: 'GOOGLE_API_KEY',

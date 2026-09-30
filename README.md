@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/converse-mcp-server.svg)](https://www.npmjs.com/package/converse-mcp-server)
 
-An MCP (Model Context Protocol) server that lets Claude talk to other AI models. Use it to chat with models from OpenAI, Google, Anthropic, X.AI, Mistral, DeepSeek, or OpenRouter. You can either talk to one model at a time or get multiple models to weigh in on complex decisions.
+An MCP (Model Context Protocol) server that lets Claude talk to other AI models. Use it to chat with models from OpenAI, Google, Anthropic, X.AI, Mistral, DeepSeek, OpenRouter, or Abliteration. You can either talk to one model at a time or get multiple models to weigh in on complex decisions.
 
 ## 📋 Requirements
 
@@ -25,6 +25,7 @@ You need at least one API key from these providers:
 | **Mistral**       | [console.mistral.ai](https://console.mistral.ai/)                            | `wfBMkWL0...`           |
 | **DeepSeek**      | [platform.deepseek.com](https://platform.deepseek.com/)                      | `sk-...`                |
 | **OpenRouter**    | [openrouter.ai/keys](https://openrouter.ai/keys)                             | `sk-or-...`             |
+| **Abliteration**  | [abliteration.ai/console/api-keys](https://abliteration.ai/console/api-keys) | `ak_...`                |
 | **Codex**         | ChatGPT login (system-wide)                                                  | Local agentic assistant |
 
 **Note:** Codex uses your ChatGPT login (not an API key). If you have an active ChatGPT session, Codex will work automatically. For headless/server deployments, set `CODEX_API_KEY` in your environment.
@@ -43,6 +44,7 @@ claude mcp add converse \
   -e MISTRAL_API_KEY=your_key_here \
   -e DEEPSEEK_API_KEY=your_key_here \
   -e OPENROUTER_API_KEY=your_key_here \
+  -e ABLITERATION_API_KEY=ak_your_key_here \
   -e ENABLE_RESPONSE_SUMMARIZATION=true \
   -e SUMMARIZATION_MODEL=gpt-5-nano \
   -s user \
@@ -67,6 +69,7 @@ Add this configuration to your Claude Desktop settings:
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
         "OPENROUTER_API_KEY": "your_key_here",
+        "ABLITERATION_API_KEY": "ak_your_key_here",
         "ENABLE_RESPONSE_SUMMARIZATION": "true",
         "SUMMARIZATION_MODEL": "gpt-5-nano"
       }
@@ -304,6 +307,16 @@ Thinking mode maps `reasoning_effort` to `none` (off), `high` (enabled levels up
 
 Any other model works via its full `provider/model` slug or the `openrouter:` namespace — no extra configuration. Append `:online` to a slug to opt into web search (adds a real per-request cost).
 
+### Abliteration Models
+
+Abliteration provides uncensored ("abliterated") reasoning models through its OpenAI-compatible Chat Completions API at `https://api.abliteration.ai/v1`; see [its documentation](https://docs.abliteration.ai). Use the `abliteration` or `ablit` namespace; set `ABLITERATION_DEFAULT_MODEL` to override the default. Web search is not supported.
+
+- **abliterated-model-large-v2** (default; aliases: `abliterated-large`, `abliterated-large-v2`): GLM-5.3-derived, text-only (1M context, 999,990 max output)
+- **abliterated-model-large** (alias: `abliterated-large-v1`): Previous large model, GLM-5.2-derived, text-only (1M context, 999,990 max output)
+- **abliterated-model** (aliases: `abliterated`, `abliterated-base`): Multimodal with image input (256K context, 262,134 max output)
+
+All models reason by default and return reasoning traces (`reasoning_content`), streamed as thinking. `reasoning_effort` is clamped to each model's supported levels: large-v2 runs `low`/`high`/`max` and cannot disable reasoning (`none`/`minimal`/`low` → `low`, `medium`/`high` → `high`, `xhigh`/`max` → `max`); large runs `high`/`max` and can disable (`none` → `none`, `minimal`–`high` → `high`, `xhigh`/`max` → `max`); base accepts every level, with `none` disabling reasoning. Only `abliterated-model` accepts images; image requests to the text-only large models are rejected before sending.
+
 ### Codex Models
 
 OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Astra, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
@@ -369,6 +382,7 @@ ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
 MISTRAL_API_KEY=your_mistral_key_here
 DEEPSEEK_API_KEY=your_deepseek_key_here
 OPENROUTER_API_KEY=sk-or-your_openrouter_key_here
+ABLITERATION_API_KEY=ak_your_key_here
 
 # Optional: Server configuration
 PORT=3157
@@ -402,6 +416,7 @@ ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
 MISTRAL_DEFAULT_MODEL=mistral-medium-3-5
 DEEPSEEK_DEFAULT_MODEL=deepseek-v4-pro
 OPENROUTER_DEFAULT_MODEL=z-ai/glm-5.2        # any vendor/model slug is accepted
+ABLITERATION_DEFAULT_MODEL=abliterated-model-large-v2
 ```
 
 ### Configuration Options
@@ -506,6 +521,7 @@ Provider priority order (subscription-based local providers first, then API-key 
 9. Mistral (`mistral` → Mistral Medium 3.5)
 10. DeepSeek (`deepseek` → DeepSeek V4 Pro)
 11. OpenRouter (`openrouter` → GLM 5.2)
+12. Abliteration (`abliteration` / `ablit` → `abliterated-model-large-v2`)
 
 **Local agent permissions:** Bare model names and `auto` reach the local agent providers whenever they are set up, not only when named explicitly. The Antigravity CLI runs `agy` with `--dangerously-skip-permissions` because headless calls cannot prompt for tool approval — every tool request is auto-approved, including shell commands and file writes. The Claude Agent SDK runs with `bypassPermissions`. Codex uses `CODEX_SANDBOX_MODE` (read-only by default). A read-only prompt is not an enforced security boundary for these providers, so use them only with trusted prompts and context. To keep a request on a plain API, name the provider: `google:pro`, `anthropic:opus`, `openai:gpt-6-astra`.
 
@@ -532,7 +548,8 @@ If you've cloned the repository locally:
         "ANTHROPIC_API_KEY": "your_key_here",
         "MISTRAL_API_KEY": "your_key_here",
         "DEEPSEEK_API_KEY": "your_key_here",
-        "OPENROUTER_API_KEY": "your_key_here"
+        "OPENROUTER_API_KEY": "your_key_here",
+        "ABLITERATION_API_KEY": "ak_your_key_here"
       }
     }
   }
@@ -747,6 +764,7 @@ converse/
 │   │   ├── mistral.js        # Mistral AI provider
 │   │   ├── deepseek.js       # DeepSeek provider
 │   │   ├── openrouter.js     # OpenRouter provider
+│   │   ├── abliteration.js   # Abliteration provider
 │   │   ├── openrouter-discovery.js # Request-local OpenRouter slug discovery
 │   │   ├── openai-compatible.js # Base for OpenAI-compatible APIs
 │   │   ├── codex.js          # Codex agentic SDK provider

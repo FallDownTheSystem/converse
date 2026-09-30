@@ -374,6 +374,7 @@ export function generateHelpContent(config = null) {
     mistral: providers.mistral?.getSupportedModels() || {},
     deepseek: providers.deepseek?.getSupportedModels() || {},
     openrouter: providers.openrouter?.getSupportedModels() || {},
+    abliteration: providers.abliteration?.getSupportedModels() || {},
     // CLI providers - use safeGetModels (may throw if CLI not installed)
     codex: safeGetModels(providers.codex, 'codex'),
     claude: safeGetModels(providers.claude, 'claude'),
@@ -487,6 +488,7 @@ ${formatProviderModels('Anthropic', allModels.anthropic)}
 ${formatProviderModels('Mistral', allModels.mistral)}
 ${formatProviderModels('DeepSeek', allModels.deepseek)}
 ${formatProviderModels('OpenRouter', allModels.openrouter)}
+${formatProviderModels('Abliteration', allModels.abliteration)}
 ${formatProviderModels('Codex', allModels.codex)}
 ${formatProviderModels('Claude CLI', allModels.claude)}
 ${formatProviderModels('Gemini (Antigravity CLI)', allModels['gemini-cli'])}

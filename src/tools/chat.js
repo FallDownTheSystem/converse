@@ -1165,7 +1165,7 @@ chatTool.inputSchema = {
       items: { type: 'string' },
       minItems: 1,
       description:
-        'Models to use. Examples: ["auto"] (recommended), ["codex"], ["codex", "gemini", "claude"], ["codex:astra"], ["gpt-6-astra"]. Forms: "provider" (its default model), "provider:model" (that provider only), or a bare "model" (served by the first configured provider that offers it, local CLI providers first, failing over to the next). Providers: codex, gemini (agy), claude, copilot, openai, google, xai, anthropic, mistral, deepseek, openrouter. Unknown names are rejected with suggestions. In mode "chat" each model answers independently; in "consensus" they refine after seeing each other; in "roundtable" they speak in the given ORDER, each seeing the transcript. Default: ["auto"].',
+        'Models to use. Examples: ["auto"] (recommended), ["codex"], ["codex", "gemini", "claude"], ["codex:astra"], ["gpt-6-astra"]. Forms: "provider" (its default model), "provider:model" (that provider only), or a bare "model" (served by the first configured provider that offers it, local CLI providers first, failing over to the next). Providers: codex, gemini (agy), claude, copilot, openai, google, xai, anthropic, mistral, deepseek, openrouter, abliteration. Unknown names are rejected with suggestions. In mode "chat" each model answers independently; in "consensus" they refine after seeing each other; in "roundtable" they speak in the given ORDER, each seeing the transcript. Default: ["auto"].',
     },
     mode: {
       type: 'string',

@@ -214,6 +214,12 @@ const CONFIG_SCHEMA = {
       secret: true,
       description: 'OpenRouter API key',
     },
+    ABLITERATION_API_KEY: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'abliteration.ai API key',
+    },
     TYPESAFE_API_KEY: {
       type: 'string',
       required: false,
@@ -438,6 +444,8 @@ function validateApiKeyFormat(provider, apiKey) {
     return apiKey.length >= 32; // DeepSeek keys are typically 32+ chars
   case 'openrouter':
     return apiKey.startsWith('sk-or-') && apiKey.length >= 40;
+  case 'abliteration':
+    return apiKey.startsWith('ak_') && apiKey.length > 10;
   default:
     return apiKey.length >= 10; // Basic minimum length check
   }
@@ -713,7 +721,7 @@ export async function loadConfig() {
 
     if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, or TYPESAFE_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, ABLITERATION_API_KEY, or TYPESAFE_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
       );
     }
 

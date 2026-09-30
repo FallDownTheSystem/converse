@@ -9,7 +9,7 @@
  * - error: Error event with recovery information
  *
  * This normalizer enables seamless provider switching and uniform async processing
- * across all supported LLM providers (OpenAI, Google, XAI, Anthropic, Mistral, DeepSeek, OpenRouter).
+ * across all supported LLM providers (OpenAI, Google, XAI, Anthropic, Mistral, DeepSeek, OpenRouter, Abliteration).
  */
 
 import { debugLog, debugError } from '../utils/console.js';
@@ -40,8 +40,11 @@ class ProviderStreamNormalizer {
       google: this.normalizeGoogleStream.bind(this),
       anthropic: this.normalizeAnthropicStream.bind(this),
       mistral: this.normalizeMistralStream.bind(this),
-      deepseek: this.normalizeDeepSeekStream.bind(this),
+      deepseek: (stream, context) =>
+        this.normalizeChatCompletionsStream(stream, context, 'deepseek'),
       openrouter: this.normalizeOpenRouterStream.bind(this),
+      abliteration: (stream, context) =>
+        this.normalizeChatCompletionsStream(stream, context, 'abliteration'),
       codex: this.normalizeCodexStream.bind(this),
       copilot: this.normalizePassthroughStream.bind(this),
       claude: this.normalizePassthroughStream.bind(this),
@@ -507,10 +510,11 @@ class ProviderStreamNormalizer {
   }
 
   /**
-   * Normalize DeepSeek streaming format
+   * Normalize the event stream of a provider built on the shared
+   * OpenAI-compatible Chat Completions base (DeepSeek, Abliteration), where
+   * streamed `reasoning_content` arrives as separate thinking events.
    */
-  async *normalizeDeepSeekStream(stream, context) {
-    const provider = 'deepseek';
+  async *normalizeChatCompletionsStream(stream, context, provider) {
     const model = context.model || 'unknown';
     const startTime = Date.now();
 
@@ -530,7 +534,7 @@ class ProviderStreamNormalizer {
           continue;
         }
 
-        // Handle delta events (including reasoning tokens for DeepSeek-R1)
+        // Handle delta events
         if (event.type === 'delta') {
           accumulatedContent += event.content || '';
           yield this.createDeltaEvent(event.content || '', provider, model, {
@@ -546,7 +550,7 @@ class ProviderStreamNormalizer {
           continue;
         }
 
-        // Handle usage events (with DeepSeek-specific reasoning tokens)
+        // Handle usage events (with reasoning token counts when reported)
         if (event.type === 'usage') {
           accumulatedUsage = event.usage;
           if (event.usage.reasoning_tokens) {
@@ -590,7 +594,7 @@ class ProviderStreamNormalizer {
         }
       }
     } catch (error) {
-      debugError('[StreamNormalizer] DeepSeek stream error:', error);
+      debugError(`[StreamNormalizer] ${provider} stream error:`, error);
       yield this.createErrorEvent(error, provider);
       throw error;
     }
