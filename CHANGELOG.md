@@ -5,6 +5,18 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.0](https://github.com/FallDownTheSystem/converse/compare/v4.5.3...v4.6.0) (2026-10-07)
+
+
+### Features
+
+* add OpenAI and Cloudflare Clef decision providers, image input, and Claude Haiku 5.5 ([9895f7a](https://github.com/FallDownTheSystem/converse/commit/9895f7a4cfaaa77cb0d721067c61218be0ff7041))
+
+
+### Dependencies
+
+* update Claude Agent SDK to 0.3.293, Anthropic SDK to 0.132.0, Codex SDK to 0.161.0, OpenAI to 7.30.0 and other dependencies ([2abbf27](https://github.com/FallDownTheSystem/converse/commit/2abbf277ae10f1a8d25ff47bfa107d7170271524))
+
 ## [4.5.3](https://github.com/FallDownTheSystem/converse/compare/v4.5.2...v4.5.3) (2026-10-07)
 
 
