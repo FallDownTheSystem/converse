@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.1](https://github.com/FallDownTheSystem/converse/compare/v4.6.0...v4.6.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* quote score labels in decide summaries and report Clef limit checks as not sent ([2ae1729](https://github.com/FallDownTheSystem/converse/commit/2ae17295d333452d46ecf82576912a0c35444e94))
+
 ## [4.6.0](https://github.com/FallDownTheSystem/converse/compare/v4.5.3...v4.6.0) (2026-10-07)
 
 
