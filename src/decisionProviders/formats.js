@@ -73,22 +73,26 @@ function decodedBytes(image) {
   return Math.floor((image.base64.length * 3) / 4);
 }
 
+/** Clef's limits hold on every host, so a breach is checked before sending. */
+function clefLimitError(message) {
+  return new DecisionError(message, { terminal: true, notSent: true });
+}
+
 function checkClefImages(images, state, questions) {
   const sizes = images.map(decodedBytes);
   const tooLarge = sizes.findIndex((bytes) => bytes > CLEF_MAX_IMAGE_BYTES);
   if (tooLarge !== -1) {
-    throw new DecisionError(`Clef accepts images up to 4 MiB each; image ${tooLarge + 1} is ${(sizes[tooLarge] / 1048576).toFixed(1)} MiB.`, { terminal: true });
+    throw clefLimitError(`Clef accepts images up to 4 MiB each; image ${tooLarge + 1} is ${(sizes[tooLarge] / 1048576).toFixed(1)} MiB.`);
   }
   if (sizes.reduce((a, b) => a + b, 0) > CLEF_MAX_TOTAL_IMAGE_BYTES) {
-    throw new DecisionError('Clef accepts at most 8 MiB of images per call.', { terminal: true });
+    throw clefLimitError('Clef accepts at most 8 MiB of images per call.');
   }
   const chars = images.reduce((n, image) => n + dataUrl(image).length, 0) + asText(state ?? '').length + JSON.stringify(questions).length;
   const estimate = Math.ceil(chars / CLEF_CHARS_PER_ESTIMATED_TOKEN);
   if (estimate > CLEF_CONTEXT_TOKENS) {
-    throw new DecisionError(
+    throw clefLimitError(
       `Cloudflare estimates this request at ~${estimate} tokens (4 base64 characters per token), over Clef's ${CLEF_CONTEXT_TOKENS}-token window. ` +
       'Downscale or recompress the images (about 180 KB in total fits), or use gpt-6-luna.',
-      { terminal: true },
     );
   }
 }
@@ -104,14 +108,11 @@ export const cloudflareFormat = {
   request(model, state, questions, images = []) {
     const ids = Object.keys(questions);
     if (ids.length > CLEF_MAX_QUESTIONS) {
-      throw new DecisionError(`Clef accepts at most ${CLEF_MAX_QUESTIONS} questions per call (got ${ids.length}).`, { terminal: true });
+      throw clefLimitError(`Clef accepts at most ${CLEF_MAX_QUESTIONS} questions per call (got ${ids.length}).`);
     }
     const bad = ids.filter((id) => !CLEF_QUESTION_ID.test(id));
     if (bad.length) {
-      throw new DecisionError(
-        `Clef question names may use only letters, digits, "_", ".", and "-" (max 100 characters): ${bad.join(', ')}.`,
-        { terminal: true },
-      );
+      throw clefLimitError(`Clef question names may use only letters, digits, "_", ".", and "-" (max 100 characters): ${bad.join(', ')}.`);
     }
     const body = { model, state: state ?? '', questions: toSystemOneQuestions(questions) };
     if (images.length === 0) return body;

@@ -250,7 +250,8 @@ function summarizeAnswer(key, answer) {
   if (type === 'score') {
     const levels = Object.keys(answer.legend || answer.probabilities || {});
     const range = levels.length ? ` on 0–${levels.length - 1}` : '';
-    const label = (k) => (answer.legend?.[k] ? `${k} ${answer.legend[k]}` : k);
+    // Quoted so a numeric label ("4") stays distinct from its level index (3).
+    const label = (k) => (answer.legend?.[k] ? `${k} "${answer.legend[k]}"` : k);
     return `- ${key} (score): ${fixed(answer.score)}${range} · confidence ${fixed(answer.confidence)} · ${byProbability(answer.probabilities, label)}`;
   }
   if (type === 'refusal') {
@@ -269,7 +270,7 @@ function formatResult(response, candidate, failures) {
 
   const lines = [header];
   for (const failure of failures) {
-    lines.push(`(${failure.provider} failed, fell back: ${failure.message})`);
+    lines.push(`(${failure.provider} ${failure.notSent ? 'skipped' : 'failed'}, fell back: ${failure.message})`);
   }
   lines.push(...Object.entries(response.answers).map(([key, answer]) => summarizeAnswer(key, answer)));
 
@@ -352,13 +353,14 @@ export async function decideTool(args, dependencies) {
     } catch (error) {
       if (signal?.aborted) return createToolError('Decision request cancelled.');
       logger.error('Decision request failed', { provider: candidate.providerName, model: candidate.model, error: error.message });
-      failures.push({ provider: candidate.providerName, message: error.message });
+      failures.push({ provider: candidate.providerName, message: error.message, notSent: Boolean(error.notSent) });
       if (error.terminal) rejectedFamilies.add(candidate.family);
     }
   }
 
-  const detail = failures.map((f) => `${f.provider}: ${f.message}`).join('; ');
-  return createToolError(`Decision request failed (${detail})`);
+  const noneSent = failures.every((f) => f.notSent);
+  const detail = failures.map((f) => `${f.provider}${f.notSent && !noneSent ? ', not sent' : ''}: ${f.message}`).join('; ');
+  return createToolError(`Decision request ${noneSent ? 'not sent' : 'failed'} (${detail})`);
 }
 
 decideTool.description =

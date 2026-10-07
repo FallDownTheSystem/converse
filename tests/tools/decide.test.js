@@ -119,8 +119,8 @@ describe('Decide Tool', () => {
     expect(text).toContain('Decision · jev-1.13.0 via TypeSafe · 394 input tokens');
     expect(text).toContain('- urgent (noul): 0.97');
     expect(text).toContain('- team (choice): billing · confidence 0.81 · billing 0.88, technical 0.12');
-    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24');
-    expect(text).not.toContain('Calm 0.00');
+    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 "Frustrated" 0.76, 2 "Very angry" 0.24');
+    expect(text).not.toContain('"Calm" 0.00');
     const payload = JSON.parse(text.match(/```json\n([\s\S]+)\n```/)[1]);
     expect(payload).toMatchObject({ model: 'jev-1.13.0', provider: 'typesafe', answers: ANSWERS, usage: { cost: null } });
   });
@@ -191,7 +191,7 @@ describe('Decide Tool', () => {
     expect(text).toContain('Decision · gpt-6-luna via OpenAI · 398 input tokens');
     expect(text).toContain('- urgent (noul): 0.97');
     expect(text).toContain('- team (choice): billing · confidence 0.81 · billing 0.88, technical 0.12');
-    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 Frustrated 0.76, 2 Very angry 0.24');
+    expect(text).toContain('- mood (score): 1.24 on 0–2 · confidence 0.64 · 1 "Frustrated" 0.76, 2 "Very angry" 0.24');
   });
 
   describe('labeled score levels', () => {
@@ -219,7 +219,7 @@ describe('Decide Tool', () => {
       const body = JSON.parse(fetchMock.mock.calls[0][1].body);
       expect(body.questions.mood.criteria).toEqual(['Calm: No negative emotion', 'Frustrated', 'Very angry']);
       const text = result.content[0].text;
-      expect(text).toContain('- mood (score): 1.10 on 0–2 · confidence 0.50 · 1 Frustrated 0.70, 2 Very angry 0.20, 0 Calm 0.10');
+      expect(text).toContain('- mood (score): 1.10 on 0–2 · confidence 0.50 · 1 "Frustrated" 0.70, 2 "Very angry" 0.20, 0 "Calm" 0.10');
       const payload = JSON.parse(text.match(/```json\n([\s\S]+)\n```/)[1]);
       expect(payload.answers.mood.legend).toEqual({ 0: 'Calm', 1: 'Frustrated', 2: 'Very angry' });
     });
@@ -414,6 +414,27 @@ describe('Decide Tool', () => {
 
       expect(result.isError).toBe(true);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('reports a Clef limit breach as not sent, without calling Cloudflare', async () => {
+      const big = `data:image/png;base64,${'A'.repeat(300_000)}`;
+      const result = await decideTool({ images: [big], questions: { urgent: QUESTIONS.urgent }, model: 'cloudflare:clef' }, dependencies);
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toMatch(/^Decision request not sent \(cloudflare: Cloudflare estimates/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('marks an unsent Clef request when another host also failed', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(401, { error: { message: 'bad key' } }));
+
+      const result = await decideTool({ state: 'x', questions: { 'bad name': QUESTIONS.urgent } }, {
+        ...dependencies,
+        config: { ...dependencies.config, apiKeys: { openai: 'sk-proj-abc' } },
+      });
+
+      expect(result.content[0].text).toContain('Decision request failed (openai: HTTP 401');
+      expect(result.content[0].text).toContain('cloudflare, not sent: Clef question names');
     });
 
     it('rejects unsupported image types and malformed data URLs', async () => {

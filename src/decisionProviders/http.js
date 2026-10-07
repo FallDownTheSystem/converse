@@ -21,15 +21,18 @@ const MAX_RETRY_AFTER_MS = 30_000;
 /**
  * Error from a decision call. `retryable` marks failures worth repeating or
  * failing over (network, timeout, 408/429/5xx, auth); `terminal` marks request
- * faults that every host of the same model would reject the same way.
+ * faults that every host of the same model would reject the same way;
+ * `notSent` marks a request refused by a local limit check before any network
+ * call, so it is not reported as a failed request.
  */
 export class DecisionError extends Error {
-  constructor(message, { status = null, retryable = false, terminal = false, requestId = null, retryAfterMs = null } = {}) {
+  constructor(message, { status = null, retryable = false, terminal = false, notSent = false, requestId = null, retryAfterMs = null } = {}) {
     super(message);
     this.name = 'DecisionError';
     this.status = status;
     this.retryable = retryable;
     this.terminal = terminal;
+    this.notSent = notSent;
     this.requestId = requestId;
     this.retryAfterMs = retryAfterMs;
   }
