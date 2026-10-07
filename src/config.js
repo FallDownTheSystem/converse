@@ -241,6 +241,18 @@ const CONFIG_SCHEMA = {
       description:
         'Optional OpenRouter attribution title, sent as the canonical X-OpenRouter-Title header',
     },
+    // Cloudflare Workers AI (Clef decision models for the decide tool)
+    CLOUDFLARE_ACCOUNT_ID: {
+      type: 'string',
+      required: false,
+      description: 'Cloudflare account ID for Workers AI (decide tool: Clef)',
+    },
+    CLOUDFLARE_API_TOKEN: {
+      type: 'string',
+      required: false,
+      secret: true,
+      description: 'Cloudflare API token with Workers AI access (decide tool: Clef)',
+    },
     OPENROUTER_DYNAMIC_MODELS: {
       type: 'boolean',
       default: false,
@@ -688,6 +700,9 @@ export async function loadConfig() {
     // API-key providers require keys; SDK-based providers (codex, claude, gemini-cli, copilot)
     // work via subscription auth — check if their packages are actually installed
     const availableKeys = Object.keys(config.apiKeys);
+    if (config.providers.cloudflareaccountid && config.providers.cloudflareapitoken) {
+      availableKeys.push('cloudflare');
+    }
     const hasVertexAI =
       config.providers.googlegenaiusevertexai &&
       config.providers.googlecloudproject &&
@@ -721,7 +736,7 @@ export async function loadConfig() {
 
     if (availableKeys.length === 0 && !hasVertexAI && !hasSdkProvider) {
       errors.push(
-        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, ABLITERATION_API_KEY, or TYPESAFE_API_KEY. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
+        'At least one API key must be configured: OPENAI_API_KEY, XAI_API_KEY, GOOGLE_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, ABLITERATION_API_KEY, TYPESAFE_API_KEY, or CLOUDFLARE_ACCOUNT_ID with CLOUDFLARE_API_TOKEN. Alternatively, configure Google Vertex AI or use an SDK-based provider (codex, claude, copilot) or the Antigravity CLI (gemini-cli).',
       );
     }
 

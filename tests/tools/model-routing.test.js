@@ -184,6 +184,10 @@ describe('Model Routing', () => {
         'claude:claude-sonnet-5-5',
         'anthropic:claude-sonnet-5-5',
       ]);
+      expect(candidatesOf(route('haiku'))).toEqual([
+        'claude:claude-haiku-5-5',
+        'anthropic:claude-haiku-5-5',
+      ]);
       expect(candidatesOf(route('gemini-3.1-pro-preview'))).toEqual([
         'gemini-cli:gemini-3.1-pro-preview',
         'google:gemini-3.1-pro-preview',

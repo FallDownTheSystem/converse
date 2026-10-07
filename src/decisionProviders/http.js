@@ -1,14 +1,14 @@
 /**
- * System One HTTP client
+ * Decision API HTTP client
  *
- * One client for every host of the System One decision API. TypeSafe serves it
- * natively at `/v1/systemone`; OpenRouter serves the same request/response
- * schema at the same path under its own base URL, so providers differ only in
- * base URL, key, and headers.
+ * One transport for every decision host: retries, timeouts, cancellation, and
+ * error mapping. Hosts differ in URL, auth, and wire format; each provider's
+ * format (see formats.js) builds the request body and normalizes the response,
+ * so this module only moves JSON.
  *
- * Plain fetch rather than @typesafe-ai/sdk: the schema is small, the tool
- * needs its own abort signal and error mapping, and the SDK's model listing
- * breaks against OpenRouter.
+ * Plain fetch rather than vendor SDKs: the schemas are small, the tool needs
+ * its own abort signal and error mapping across hosts, and @typesafe-ai/sdk's
+ * model listing breaks against OpenRouter.
  */
 
 const DEFAULT_TIMEOUT_MS = 60_000;
@@ -19,9 +19,9 @@ const BACKOFF_MAX_MS = 5_000;
 const MAX_RETRY_AFTER_MS = 30_000;
 
 /**
- * Error from a System One call. `retryable` marks failures worth repeating or
+ * Error from a decision call. `retryable` marks failures worth repeating or
  * failing over (network, timeout, 408/429/5xx, auth); `terminal` marks request
- * faults that every host would reject the same way.
+ * faults that every host of the same model would reject the same way.
  */
 export class DecisionError extends Error {
   constructor(message, { status = null, retryable = false, terminal = false, requestId = null, retryAfterMs = null } = {}) {
@@ -55,11 +55,38 @@ function formatIssues(text) {
 }
 
 /**
- * Extract a readable message from an error body. OpenRouter wraps errors as
- * `{ error: { message } }`; TypeSafe answers `{ detail: { error_type, message } }`,
- * or `{ detail }` as a string or a list of validation issues.
+ * Workers AI embeds the model's own error as JSON inside its message
+ * (`AiError: AiError: {"error":{...,"details":{"fieldErrors":...}}} (id)`);
+ * surface the validation details instead of the raw dump.
+ */
+function describeWorkersAiError(message) {
+  const embedded = message.match(/\{.*\}/s)?.[0];
+  let inner;
+  try {
+    inner = JSON.parse(embedded).error;
+  } catch {
+    return formatIssues(message);
+  }
+  if (typeof inner?.message !== 'string') return message;
+  const fields = Object.entries(inner.details?.fieldErrors ?? {})
+    .map(([field, problems]) => `${field}: ${[].concat(problems).join(', ')}`);
+  const forms = [].concat(inner.details?.formErrors ?? []);
+  const details = [...fields, ...forms];
+  return details.length ? `${inner.message} (${details.join('; ')})` : inner.message;
+}
+
+/**
+ * Extract a readable message from an error body. OpenRouter and OpenAI wrap
+ * errors as `{ error: { message } }`; TypeSafe answers
+ * `{ detail: { error_type, message } }`, or `{ detail }` as a string or a list
+ * of validation issues; Cloudflare answers `{ errors: [{ code, message }] }`.
  */
 export function extractErrorMessage(body, rawText) {
+  if (Array.isArray(body?.errors) && body.errors.length > 0) {
+    return body.errors
+      .map((e) => (typeof e?.message === 'string' ? describeWorkersAiError(e.message) : JSON.stringify(e)))
+      .join('; ');
+  }
   if (typeof body?.detail?.message === 'string') {
     const type = body.detail.error_type ? `${body.detail.error_type}: ` : '';
     return `${type}${body.detail.message}`;
@@ -150,7 +177,7 @@ function sleep(ms, signal) {
   });
 }
 
-async function sendOnce({ url, headers, body, signal, timeoutMs }) {
+async function sendOnce({ url, headers, body, parse, signal, timeoutMs }) {
   const attemptSignal = signal
     ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
     : AbortSignal.timeout(timeoutMs);
@@ -184,8 +211,8 @@ async function sendOnce({ url, headers, body, signal, timeoutMs }) {
     const status = response.status;
     const detail = extractErrorMessage(parsed, rawText);
     const html = describeHtmlError(detail);
-    // Every host forwards to TypeSafe's edge, so a firewall block repeats on
-    // retry and on failover alike.
+    // A firewall block repeats on retry, and on failover to any host that
+    // forwards to the same upstream.
     const firewall = html?.firewall === true;
     throw new DecisionError(`HTTP ${status}: ${html ? html.message : truncate(detail)}`, {
       status,
@@ -194,42 +221,46 @@ async function sendOnce({ url, headers, body, signal, timeoutMs }) {
       requestId:
         response.headers.get('x-typesafe-request-id') ||
         response.headers.get('x-generation-id') ||
+        response.headers.get('x-request-id') ||
         html?.rayId ||
         response.headers.get('cf-ray'),
       retryAfterMs: parseRetryAfter(response.headers),
     });
   }
 
-  if (!parsed || typeof parsed.answers !== 'object' || parsed.answers === null) {
+  const result = parse(parsed);
+  if (!result || typeof result.answers !== 'object' || result.answers === null) {
     throw new DecisionError('Malformed response: missing "answers" object', { status: response.status });
   }
-  return parsed;
+  return result;
 }
 
 /**
  * POST a decision request, retrying transient failures (except auth, which
  * retrying cannot fix) with exponential backoff that honors Retry-After.
  * @param {object} params
- * @param {string} params.baseURL - Host base, e.g. https://api.typesafe.ai
+ * @param {string} params.url - Full endpoint URL
  * @param {object} params.headers - Auth and attribution headers
- * @param {object} params.body - `{ model, state, questions }`
+ * @param {object} params.body - Request body in the host's wire format
+ * @param {(body: object|null) => object} [params.parse] - Maps the response
+ *   body to `{ model, answers, usage, id }` in System One answer shapes
  * @param {AbortSignal} [params.signal] - Caller cancellation
  * @param {number} [params.timeoutMs] - Per-attempt timeout
  * @param {number} [params.maxRetries] - Retries after the first attempt
- * @returns {Promise<object>} Parsed response body
+ * @returns {Promise<object>} Normalized response
  */
-export async function callSystemOne({
-  baseURL,
+export async function callDecisionApi({
+  url,
   headers,
   body,
+  parse = (parsed) => parsed,
   signal,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   maxRetries = DEFAULT_MAX_RETRIES,
 }) {
-  const url = `${baseURL.replace(/\/+$/, '')}/v1/systemone`;
   for (let attempt = 0; ; attempt++) {
     try {
-      return await sendOnce({ url, headers, body, signal, timeoutMs });
+      return await sendOnce({ url, headers, body, parse, signal, timeoutMs });
     } catch (error) {
       const authFailure = error.status === 401 || error.status === 403;
       if (!(error instanceof DecisionError) || !error.retryable || authFailure || attempt >= maxRetries) {

@@ -1,15 +1,17 @@
 /**
  * Decide Tool - System One decision models
  *
- * Asks a decision model (TypeSafe's Jev family) typed questions about a state
- * and returns calibrated answers: a probability for yes/no questions, a
- * probability distribution for choices and rubric scores. Decision models
- * never generate text, so this is a separate tool rather than a chat mode.
+ * Asks a decision model (OpenAI's gpt-6-luna, TypeSafe's Jev, Cloudflare's
+ * Clef) typed questions about a state and returns calibrated answers: a
+ * probability for yes/no questions, a probability distribution for choices
+ * and rubric scores. Decision models never generate text, so this is a
+ * separate tool rather than a chat mode. Questions and answers use the System
+ * One schema whatever the host; providers translate.
  */
 
 import { createToolResponse, createToolError } from './index.js';
-import { resolveDecisionModel } from '../decisionProviders/index.js';
-import { callSystemOne } from '../decisionProviders/systemOne.js';
+import { askDecisionModel, resolveDecisionModel } from '../decisionProviders/index.js';
+import { isLabeledLevel } from '../decisionProviders/formats.js';
 import { validateAllPaths } from '../utils/fileValidator.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -89,10 +91,41 @@ function validateQuestion(key, question) {
   if (criteria.length < MIN_SCORE_LEVELS || criteria.length > MAX_SCORE_LEVELS) {
     return `${at}.criteria must have ${MIN_SCORE_LEVELS} to ${MAX_SCORE_LEVELS} levels (got ${criteria.length}).`;
   }
-  if (!criteria.every(isCriterionValue)) {
-    return `${at}.criteria levels must each be a non-empty description.`;
+  for (const [index, level] of criteria.entries()) {
+    const error = validateScoreLevel(level);
+    if (error) return `${at}.criteria[${index}] ${error}`;
   }
   return null;
+}
+
+function validateScoreLevel(level) {
+  if (!isLabeledLevel(level)) {
+    return isCriterionValue(level) ? null : 'must be a non-empty description or { "label", "description" }.';
+  }
+  const unknown = Object.keys(level).filter((f) => f !== 'label' && f !== 'description');
+  if (unknown.length) return `has unknown field(s): ${unknown.join(', ')}. A labeled level takes "label" and "description".`;
+  if (typeof level.label !== 'string' || !level.label.trim()) return 'needs a non-empty "label" string.';
+  if (level.description !== undefined && !isCriterionValue(level.description)) {
+    return '"description" must be a non-empty string, object, or array.';
+  }
+  return null;
+}
+
+/**
+ * Show each labeled level's short label in the score legend, whatever the
+ * host echoed back: System One hosts only see the flattened description.
+ */
+function labelLegends(answers, questions) {
+  return Object.fromEntries(
+    Object.entries(answers).map(([key, answer]) => {
+      const levels = questions[key]?.type === 'score' ? questions[key].criteria : null;
+      if (answer?.type !== 'score' || !levels?.some(isLabeledLevel)) return [key, answer];
+      const legend = Object.fromEntries(
+        levels.map((level, i) => [String(i), isLabeledLevel(level) ? level.label : answer.legend?.[i] ?? level]),
+      );
+      return [key, { ...answer, legend }];
+    }),
+  );
 }
 
 /**
@@ -135,13 +168,59 @@ async function loadFiles(files, contextProcessor, config) {
     if (file.type === 'error') {
       problems.push(`${file.originalPath}: ${file.error}`);
     } else if (file.type !== 'text') {
-      problems.push(`${file.originalPath}: decision models accept text only`);
+      problems.push(`${file.originalPath}: not a text file (pass images in "images")`);
     } else {
       contents[file.originalPath] = file.content;
     }
   }
   if (result.errors?.length) problems.push(...result.errors.map((e) => e.message));
   return problems.length ? { error: problems.join('; ') } : { contents };
+}
+
+// The formats every image-capable host accepts (Clef takes no GIF or BMP).
+const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const DATA_URL = /^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/i;
+
+/**
+ * Load images from paths or base64 data URLs into `{ mimeType, base64 }`.
+ * Every image must load: judging a partial set would change the answer.
+ */
+async function loadImages(images, contextProcessor, config) {
+  const loaded = new Array(images.length);
+  const problems = [];
+  const paths = [];
+  images.forEach((image, i) => {
+    if (!image.startsWith('data:')) {
+      paths.push(i);
+      return;
+    }
+    const match = image.match(DATA_URL);
+    if (!match) problems.push(`image ${i + 1}: not a base64 data URL`);
+    else loaded[i] = { mimeType: match[1].toLowerCase(), base64: match[2].replace(/\s/g, '') };
+  });
+
+  if (paths.length > 0) {
+    const pathList = paths.map((i) => images[i]);
+    const validation = await validateAllPaths({ images: pathList }, { clientCwd: config?.server?.client_cwd });
+    if (!validation.valid) return { error: validation.errors.join('; ') };
+    const result = await contextProcessor.processUnifiedContext(
+      { images: pathList },
+      { enforceSecurityCheck: false, skipSecurityCheck: true, clientCwd: config?.server?.client_cwd },
+    );
+    result.images.forEach((file, j) => {
+      if (file.type === 'error') problems.push(`${file.originalPath}: ${file.error}`);
+      else if (file.type !== 'image') problems.push(`${file.originalPath}: not an image file`);
+      else loaded[paths[j]] = { mimeType: file.mimeType, base64: file.content };
+    });
+    if (result.errors?.length) problems.push(...result.errors.map((e) => e.message));
+  }
+
+  loaded.forEach((image, i) => {
+    if (image && !IMAGE_MIME_TYPES.includes(image.mimeType)) {
+      problems.push(`image ${i + 1}: ${image.mimeType} is not supported (use PNG, JPEG, or WebP)`);
+    }
+  });
+  return problems.length ? { error: problems.join('; ') } : { images: loaded };
 }
 
 function fixed(n) {
@@ -173,6 +252,9 @@ function summarizeAnswer(key, answer) {
     const range = levels.length ? ` on 0–${levels.length - 1}` : '';
     const label = (k) => (answer.legend?.[k] ? `${k} ${answer.legend[k]}` : k);
     return `- ${key} (score): ${fixed(answer.score)}${range} · confidence ${fixed(answer.confidence)} · ${byProbability(answer.probabilities, label)}`;
+  }
+  if (type === 'refusal') {
+    return `- ${key} (refusal): the model declined to answer`;
   }
   return `- ${key} (${type}): ${JSON.stringify(answer)}`;
 }
@@ -212,18 +294,22 @@ function formatResult(response, candidate, failures) {
  * @param {object} args.questions - Named typed questions
  * @param {string} [args.model] - Model spec, default "auto"
  * @param {string[]} [args.files] - Text files added to the state
+ * @param {string[]} [args.images] - Image paths or base64 data URLs
  * @param {object} dependencies - Injected dependencies (config, contextProcessor, signal)
  * @returns {Promise<object>} MCP tool response
  */
 export async function decideTool(args, dependencies) {
   const { config, contextProcessor, signal } = dependencies;
-  const { state, questions, model = 'auto', files = [] } = args;
+  const { state, questions, model = 'auto', files = [], images = [] } = args;
 
   if (!Array.isArray(files) || !files.every((f) => typeof f === 'string' && f.trim())) {
     return createToolError('"files" must be an array of file paths.');
   }
-  if (state === undefined && files.length === 0) {
-    return createToolError('Provide "state", "files", or both: there is nothing to judge.');
+  if (!Array.isArray(images) || !images.every((i) => typeof i === 'string' && i.trim())) {
+    return createToolError('"images" must be an array of image paths or base64 data URLs.');
+  }
+  if (state === undefined && files.length === 0 && images.length === 0) {
+    return createToolError('Provide "state", "files", or "images": there is nothing to judge.');
   }
   const stateError = state === undefined ? null : validateState(state);
   if (stateError) return createToolError(stateError);
@@ -232,6 +318,13 @@ export async function decideTool(args, dependencies) {
 
   const route = resolveDecisionModel(model, config);
   if (route.status !== 'ok') return createToolError(route.error);
+  const candidates = route.candidates.filter((c) => c.maxImages >= images.length);
+  if (candidates.length === 0) {
+    return createToolError(
+      `"${model}" cannot take ${images.length} image(s) on any configured host. ` +
+      'Images work with gpt-6-luna (OpenAI) and clef / clef-flash (Cloudflare, up to 4); Jev and OpenRouter routes are text only.',
+    );
+  }
 
   let finalState = state;
   if (files.length > 0) {
@@ -239,22 +332,28 @@ export async function decideTool(args, dependencies) {
     if (loaded.error) return createToolError(`Could not load files: ${loaded.error}`);
     finalState = state === undefined ? { files: loaded.contents } : { input: state, files: loaded.contents };
   }
+  let loadedImages = [];
+  if (images.length > 0) {
+    const loaded = await loadImages(images, contextProcessor, config);
+    if (loaded.error) return createToolError(`Could not load images: ${loaded.error}`);
+    loadedImages = loaded.images;
+  }
 
   const failures = [];
-  for (const candidate of route.candidates) {
+  // A request fault on one host repeats on every host of the same model, but
+  // another model behind a different API may still accept the request.
+  const rejectedFamilies = new Set();
+  for (const candidate of candidates) {
+    if (rejectedFamilies.has(candidate.family)) continue;
     try {
-      const response = await callSystemOne({
-        baseURL: candidate.provider.baseURL,
-        headers: candidate.provider.headers(config),
-        body: { model: candidate.model, state: finalState, questions },
-        signal,
-      });
-      return createToolResponse(formatResult(response, candidate, failures));
+      const response = await askDecisionModel(candidate, { state: finalState, questions, images: loadedImages, config, signal });
+      const answers = labelLegends(response.answers, questions);
+      return createToolResponse(formatResult({ ...response, answers }, candidate, failures));
     } catch (error) {
       if (signal?.aborted) return createToolError('Decision request cancelled.');
       logger.error('Decision request failed', { provider: candidate.providerName, model: candidate.model, error: error.message });
       failures.push({ provider: candidate.providerName, message: error.message });
-      if (error.terminal) break;
+      if (error.terminal) rejectedFamilies.add(candidate.family);
     }
   }
 
@@ -263,15 +362,16 @@ export async function decideTool(args, dependencies) {
 }
 
 decideTool.description =
-  'DECIDE — ask a System One decision model (TypeSafe Jev) typed questions about a state and get calibrated answers, not text. ' +
+  'DECIDE — ask a decision model (OpenAI gpt-6-luna, TypeSafe Jev, Cloudflare Clef) typed questions about a state and get calibrated answers, not text. ' +
   'Question types: "noul" (yes/no → probability 0..1), "choice" (pick one of 2–255 named options → choice, per-option probabilities, confidence), ' +
   '"score" (ordered rubric of 2–10 levels → weighted position, per-level probabilities, confidence). ' +
   'Batch independent questions over the same state into one call: they are judged in parallel and in isolation, so none sees another\'s answer; each extra question adds its own input tokens. ' +
   'Best for fast semantic judgments (classify, route, select, verify, rank). Ask one narrow, coherent judgment per question, with its full meaning in the question; ' +
   'split independently useful dimensions, but a bounded action choice or contextual interpretation is a valid single question. Do counting, arithmetic, and date comparison in code. ' +
   'confidence measures how concentrated the distribution is, not permission to act: take the top option to pick a best, and treat a noul near 0.5 as "yes and no equally likely". ' +
-  'Text only, no explanations are returned. ' +
-  'Limits: ~64k tokens per request, ~32k for state plus the longest question.';
+  'No explanations are returned. Images (PNG/JPEG/WebP) work with gpt-6-luna and Clef (up to 4, ~180 KB total); Jev is text only, and "auto" skips models that cannot take the images. ' +
+  'gpt-6-luna may answer a question with type "refusal" instead of a value: treat it as unanswered, never as a no. ' +
+  'Limits per model: Jev ~64k tokens per request (~32k for state plus the longest question); Clef ~64k tokens and at most 64 questions named with letters, digits, "_", ".", "-".';
 
 decideTool.inputSchema = {
   type: 'object',
@@ -279,7 +379,7 @@ decideTool.inputSchema = {
     state: {
       anyOf: [{ type: 'string' }, { type: 'object' }, { type: 'array' }],
       description:
-        'The material to judge: plain text, or JSON (an object with descriptively named fields is best; an array for sequences such as messages). Optional when "files" is given.',
+        'The material to judge: plain text, or JSON (an object with descriptively named fields is best; an array for sequences such as messages). Optional when "files" or "images" are given.',
     },
     questions: {
       type: 'object',
@@ -287,7 +387,7 @@ decideTool.inputSchema = {
         'Named questions, all answered against the same state. The name is your own label and is returned as the answer key. ' +
         'Each question: { "type": "noul"|"choice"|"score", "instructions": string|object|array, "criteria": ... }. ' +
         'criteria — noul: optional { "true": "...", "false": "..." }; choice: required { "<option>": "description" | null } (2–255 options); ' +
-        'score: required ordered array of level descriptions, lowest first (2–10 levels). ' +
+        'score: required ordered array of levels, lowest first (2–10 levels); each level is a description, or { "label": "Short name", "description": "..." } to keep the legend short. ' +
         'instructions may be an object bundling the question with reference data, referenced by `name` in the text. ' +
         'Example: { "team": { "type": "choice", "instructions": "Which team should handle this?", "criteria": { "billing": "Payments, refunds", "technical": "Bugs, outages" } } }',
       additionalProperties: {
@@ -304,14 +404,23 @@ decideTool.inputSchema = {
     model: {
       type: 'string',
       description:
-        'Decision model. "auto" (default): TypeSafe, falling back to OpenRouter. "jev-latest", "jev-1.13": first configured provider that serves it, with fallback. ' +
-        '"typesafe:jev-1.13.0", "openrouter:~typesafe/jev-latest": that provider only. Providers: typesafe (TYPESAFE_API_KEY), openrouter (OPENROUTER_API_KEY).',
+        'Decision model. "auto" (default): gpt-6-luna, then jev-latest, then clef, each on every configured host. ' +
+        'A model name ("gpt-6-luna"/"luna", "jev-latest"/"jev", "jev-1.13", "jev-preview", "clef", "clef-flash"): its native host first, falling back to OpenRouter. ' +
+        '"provider:model" (e.g. "openai:gpt-6-luna", "cloudflare:clef-flash", "openrouter:jev-latest"): that provider only. ' +
+        'Providers: openai (OPENAI_API_KEY), typesafe (TYPESAFE_API_KEY), cloudflare (CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN), openrouter (OPENROUTER_API_KEY).',
     },
     files: {
       type: 'array',
       items: { type: 'string' },
       description:
-        'Text files added to the state as { "files": { "<path>": "<content>" } }; a given state moves to "input". Supports line ranges: file.txt{10:50}. Images are rejected.',
+        'Text files added to the state as { "files": { "<path>": "<content>" } }; a given state moves to "input". Supports line ranges: file.txt{10:50}. Image files belong in "images".',
+    },
+    images: {
+      type: 'array',
+      items: { type: 'string' },
+      description:
+        'Images judged together with the state: file paths or base64 data URLs, PNG/JPEG/WebP. Refer to them in questions ("Does the image show ..."). ' +
+        'Supported by gpt-6-luna and clef/clef-flash (Clef: up to 4, about 180 KB in total); other models are skipped or rejected.',
     },
   },
   required: ['questions'],

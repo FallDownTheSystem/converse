@@ -187,7 +187,7 @@ Cancel running asynchronous operations when needed.
 
 ### 4. Decide Tool
 
-Ask a System One decision model (TypeSafe's Jev) typed questions about a state and get calibrated answers instead of text: a yes probability (`noul`), a chosen option with per-option probabilities (`choice`), or a rubric position with per-level probabilities (`score`). Batch many questions into one call; they are judged in parallel against the same state. Needs `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` (TypeSafe first, falling back to OpenRouter).
+Ask a decision model (OpenAI's `gpt-6-luna`, TypeSafe's Jev, or Cloudflare's Clef) typed questions about a state and get calibrated answers instead of text: a yes probability (`noul`), a chosen option with per-option probabilities (`choice`), or a rubric position with per-level probabilities (`score`). Batch many questions into one call; they are judged in parallel against the same state. Needs any of `OPENAI_API_KEY`, `TYPESAFE_API_KEY`, `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN`, or `OPENROUTER_API_KEY`; each model runs on its native host first and falls back to OpenRouter. `model: "auto"` tries `gpt-6-luna`, then `jev-latest`, then `clef`. Pass `images` to judge pictures with `gpt-6-luna` or Clef.
 
 ```javascript
 {
@@ -280,7 +280,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **claude-opus-4-5** / **claude-opus-4-1**: Legacy Opus models with extended thinking (64K / 32K output)
 - **claude-sonnet-5-5** (aliases: `sonnet`, `sonnet-5.5`): Current Sonnet with adaptive thinking and effort (1M context, 128K output)
 - **claude-sonnet-4-6** (alias: `sonnet-4.6`): Previous Sonnet generation with adaptive thinking (64K output)
-- **claude-haiku-4-5** (alias: `haiku`): Fast and intelligent for simple queries (64K output)
+- **claude-haiku-5-5** (aliases: `haiku`, `haiku-5.5`): Current Haiku, fastest and cheapest Claude, with adaptive thinking and effort (1M context, 128K output)
+- **claude-haiku-4-5** (alias: `haiku-4.5`): Previous Haiku generation with extended thinking (64K output)
 
 ### Mistral Models
 
@@ -337,6 +338,7 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 - **claude-opus-5-5** (default; aliases: `opus`, `claude-opus`, `opus-5.5`), **claude-opus-5** (`opus-5`)
 - **claude-fable-5-1** (aliases: `fable`, `claude-fable`, `fable-5.1`), **claude-fable-5** (`fable-5`)
 - **claude-sonnet-5-5** (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`)
+- **claude-haiku-5-5** (aliases: `haiku`, `claude-haiku`, `haiku-5.5`)
 - Uses Claude Code CLI authentication (`claude login`) - no API key needed
 - Direct filesystem access from working directory
 
@@ -345,7 +347,7 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
 - **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 
 ## 📚 Help & Documentation

@@ -368,7 +368,7 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
 
 ## Decide Tool
 
-**Description**: Ask a System One decision model (TypeSafe's Jev family) typed questions about a state. Decision models return calibrated probabilities, never text, so they have their own tool and their own providers: `chat` routing never reaches them, and `decide` never reaches a chat model.
+**Description**: Ask a decision model (OpenAI's `gpt-6-luna`, TypeSafe's Jev, Cloudflare's Clef) typed questions about a state. Decision models return calibrated probabilities, never text, so they have their own tool and their own providers: `chat` routing never reaches them, and `decide` never reaches a chat model. Requests and answers use TypeSafe's System One schema for every model; providers whose API differs translate it.
 
 ### Request Schema
 
@@ -390,7 +390,8 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
       }
     },
     "model": { "type": "string", "description": "Default: \"auto\"" },
-    "files": { "type": "array", "items": { "type": "string" } }
+    "files": { "type": "array", "items": { "type": "string" } },
+    "images": { "type": "array", "items": { "type": "string" } }
   },
   "required": ["questions"],
   "additionalProperties": false
@@ -399,30 +400,50 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
 
 - **`state`**: the material to judge. An object with descriptively named fields works best; use an array for sequences such as chat messages. Optional when `files` is given.
 - **`questions`**: named questions, each judged in parallel and in isolation against the same state. The name is your own label and becomes the answer key. Batching many questions into one call adds almost no latency or cost.
-- **`files`**: text files added to the state as `{ "files": { "<path>": "<content>" } }`. When `state` is also given, it moves to `input`. Line ranges (`file.txt{10:50}`) are supported; images are rejected.
+- **`files`**: text files added to the state as `{ "files": { "<path>": "<content>" } }`. When `state` is also given, it moves to `input`. Line ranges (`file.txt{10:50}`) are supported; image files belong in `images`.
+- **`images`**: PNG, JPEG or WebP images judged together with the state, as file paths or base64 data URLs; `state` is optional when images are given. Only `gpt-6-luna` (OpenAI) and `clef` / `clef-flash` (Cloudflare) take images, so `auto` skips other models and naming a text-only model is rejected before sending. OpenAI receives the state and images as one user message. Clef takes at most 4 images, and Cloudflare rejects a request whose size estimate (one token per 4 characters, base64 included) exceeds its 65,536-token window, so Clef images must total about 180 KB; `decide` checks this locally and suggests downscaling. OpenRouter routes are text only.
 
 | Type | `criteria` | Answer |
 |---|---|---|
 | `noul` | Optional `{ "true": "...", "false": "..." }` | `noul`: probability 0..1 of yes |
 | `choice` | Required `{ "<option>": "description" \| null }`, 2–255 options | `choice`, per-option `probabilities`, `confidence` |
-| `score` | Required ordered array of levels, lowest first, 2–10 levels | `score` (probability-weighted level position), `legend`, per-level `probabilities`, `confidence` |
+| `score` | Required ordered array of levels, lowest first, 2–10 levels; each a description or `{ "label": "...", "description": ... }` | `score` (probability-weighted level position), `legend`, per-level `probabilities`, `confidence` |
 
 `instructions` and criteria descriptions may be objects or arrays that bundle reference data with the question; refer to their fields by `` `name` `` in the text. Questions are validated before any request is sent.
 
+A labeled score level (`{ "label": "Very angry", "description": "Hostile, threatening to leave" }`) keeps a short name apart from its full description. OpenAI receives the pair as-is; System One hosts (TypeSafe, Cloudflare, OpenRouter) take one description per level, so they receive `"label: description"`. Either way the answer's `legend` shows the labels.
+
+Any answer from `gpt-6-luna` may be `{ "type": "refusal" }` instead of a value, shown as `- name (refusal): the model declined to answer`. Treat it as unanswered, never as a no. Jev and Clef have no refusal answer and always return a value.
+
 ### Models and Providers
 
-| Provider | Key | Models |
-|---|---|---|
-| `typesafe` (native, `https://api.typesafe.ai/v1/systemone`) | `TYPESAFE_API_KEY` | `jev-latest`, `jev-1.13.0` (alias `jev-1.13`), `jev-preview`, any versioned `jev-X.Y.Z` |
-| `openrouter` (`https://openrouter.ai/api/v1/systemone`) | `OPENROUTER_API_KEY` | `~typesafe/jev-latest` (alias `jev-latest`), `typesafe/jev-1.13` (aliases `jev-1.13`, `jev-1.13.0`), any `vendor/model` slug |
+| Model | Aliases | Native host | OpenRouter slug |
+|---|---|---|---|
+| `gpt-6-luna` | `luna`, `gpt-6-luna-decisions` | `openai` | `openai/gpt-6-luna-decisions` |
+| `jev-latest` | `jev` | `typesafe` (`jev-latest`) | `~typesafe/jev-latest` |
+| `jev-1.13` | `jev-1.13.0` | `typesafe` (`jev-1.13.0`) | `typesafe/jev-1.13` |
+| `jev-preview` | | `typesafe` | not served |
+| `clef` | `@cf/cloudflare/clef` | `cloudflare` | `cloudflare/clef` |
+| `clef-flash` | `@cf/cloudflare/clef-flash` | `cloudflare` | `cloudflare/clef-flash` |
 
-- `auto` (default): TypeSafe's default model, falling back to OpenRouter's.
-- A bare name such as `jev-1.13` goes to every configured provider that serves it, native first, and each provider receives its own model ID. OpenRouter does not serve `jev-preview` or patch-level IDs other than those listed above.
-- `typesafe:jev-1.13.0` or `openrouter:~typesafe/jev-latest` pins one provider.
+| Provider | Endpoint | Configuration | Wire format |
+|---|---|---|---|
+| `openai` | `POST https://api.openai.com/v1/decisions` | `OPENAI_API_KEY` | OpenAI Decisions (translated) |
+| `typesafe` | `POST https://api.typesafe.ai/v1/systemone` | `TYPESAFE_API_KEY` | System One; also any versioned `jev-X.Y.Z` |
+| `cloudflare` | `POST https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/@cf/cloudflare/{model}` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (Workers AI permission) | System One in the Workers AI envelope |
+| `openrouter` | `POST https://openrouter.ai/api/v1/systemone` | `OPENROUTER_API_KEY` | System One; also any `vendor/model` slug |
 
-Each provider call retries timeouts, 408, 429 and 5xx with backoff, honoring `Retry-After`. Auth failures, exhausted retries and malformed responses fall back to the next provider. A 400/422 request fault stops immediately, because every host would reject it the same way.
+- `auto` (default): `gpt-6-luna`, then `jev-latest`, then `clef`, each on every configured host (native first, then OpenRouter).
+- A model name goes to every configured provider that serves it, native first, and each provider receives its own model ID.
+- `provider` alone uses that provider's default (`openai` and `openrouter`: `gpt-6-luna`; `typesafe`: `jev-latest`; `cloudflare`: `clef`). `provider:model` pins one provider, e.g. `cloudflare:clef-flash` or `openrouter:jev-latest`.
 
-TypeSafe's API sits behind a Cloudflare firewall that rejects some request bodies containing SQL-injection or shell-command patterns (for example `-- ; DROP TABLE`, or a quoted `'...; DROP TABLE ...;'`) with a 403 before the model sees them. This applies through OpenRouter too, since it forwards to the same edge. `decide` reports it as `Blocked by typesafe.ai's Cloudflare firewall before reaching the model (Ray ID …)` and stops without retrying or falling back. Treat a block as an unanswered question, not as a decision, and report the Ray ID to TypeSafe.
+OpenAI's Decisions API takes the same three kinds of question in its own schema, and only strings for the input and instructions. `decide` translates: object or array `state` and `instructions` are sent as JSON text, `noul` becomes a predicate whose `true`/`false` criteria are appended to the instructions, choice options and score levels become `choices` and `levels` arrays, and answers are mapped back to System One shapes.
+
+Clef accepts at most 64 questions per call, named with letters, digits, `_`, `.` and `-` (up to 100 characters); `decide` checks this before sending.
+
+Each provider call retries timeouts, 408, 429 and 5xx with backoff, honoring `Retry-After`. Auth failures, exhausted retries and malformed responses fall back to the next candidate. A 400/422 request fault skips the remaining hosts of the same model, which would reject it the same way, but `auto` still moves on to its next model.
+
+TypeSafe's API sits behind a Cloudflare firewall that rejects some request bodies containing SQL-injection or shell-command patterns (for example `-- ; DROP TABLE`, or a quoted `'...; DROP TABLE ...;'`) with a 403 before the model sees them. This applies to Jev through OpenRouter too, since it forwards to the same edge. `decide` reports it as `Blocked by typesafe.ai's Cloudflare firewall before reaching the model (Ray ID …)` and does not retry Jev on another host. Treat a block as an unanswered question, not as a decision, and report the Ray ID to TypeSafe.
 
 ### Example Usage
 
@@ -466,11 +487,11 @@ Decision · typesafe/jev-1.13-20260917 via OpenRouter · 394 input tokens · $0.
 ```
 ````
 
-`usage.cost` is reported by OpenRouter only (`null` from TypeSafe). A fallback is noted under the summary line.
+`usage.cost` is reported by OpenRouter only (`null` from the native hosts). A fallback is noted under the summary line.
 
 ### Usage Guidance
 
-Jev reads questions literally and is weak at counting, arithmetic, date comparison, and multi-hop reasoning; do those in code and ask narrow, atomic questions. Split compound judgments into separate questions and combine them in code. Treat low `confidence` as a signal to escalate to a generative model or a human. Limits: text only, about 64k tokens per request and 32k for the state plus the longest single question.
+Decision models read questions literally and are weak at counting, arithmetic, date comparison, and multi-hop reasoning; do those in code and ask narrow, atomic questions. Split compound judgments into separate questions and combine them in code. Treat low `confidence` as a signal to escalate to a generative model or a human. Limits: Jev is text only and takes about 64k tokens per request and 32k for the state plus the longest single question; Clef has a 65,536-token context.
 
 ## Supported Models
 
@@ -527,9 +548,10 @@ Provide models as plain name strings in the `models` array. Each entry is `auto`
 | `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` | `opus-4.5`, `opus-4.1` | 200K | 64K / 32K | Earlier Opus tiers |
 | `claude-sonnet-5-5` | `sonnet`, `sonnet-5.5`, `claude-sonnet` | 1M | 128K | Current Sonnet, adaptive thinking + effort, compaction |
 | `claude-sonnet-4-6` | `sonnet-4.6` | 200K (1M beta) | 64K | Previous Sonnet, adaptive thinking |
-| `claude-haiku-4-5-20251001` | `haiku`, `haiku-4.5` | 200K | 64K | Fast and intelligent |
+| `claude-haiku-5-5` | `haiku`, `haiku-5.5`, `claude-haiku` | 1M | 128K | Current Haiku, adaptive thinking + effort, compaction |
+| `claude-haiku-4-5-20251001` | `haiku-4.5` | 200K | 64K | Previous Haiku, extended thinking |
 
-Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Sonnet 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
+Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
 
 ### Mistral Models
 
@@ -592,7 +614,7 @@ All three are uncensored ("abliterated") reasoning models using Abliteration's O
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
 - **Model**: `claude` (namespaces: `claude`, `claude-code`, `claude-sdk`) — defaults to Claude Opus 5.5 (`claude-opus-5-5`), or `CLAUDE_DEFAULT_MODEL`
-- **Model selection**: `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-fable-5-1` (`fable`, `claude-fable`, `fable-5.1`), `claude-fable-5` (`fable-5`), `claude-sonnet-5-5` (`sonnet`, `claude-sonnet`, `sonnet-5.5`), e.g. `claude:opus`, `claude:fable`, `claude:sonnet`. Other names are rejected with suggestions.
+- **Model selection**: `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-fable-5-1` (`fable`, `claude-fable`, `fable-5.1`), `claude-fable-5` (`fable-5`), `claude-sonnet-5-5` (`sonnet`, `claude-sonnet`, `sonnet-5.5`), `claude-haiku-5-5` (`haiku`, `claude-haiku`, `haiku-5.5`), e.g. `claude:opus`, `claude:fable`, `claude:sonnet`, `claude:haiku`. Other names are rejected with suggestions.
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Availability**: the Claude Agent SDK is installed and `~/.claude/.credentials.json` exists (`$CLAUDE_CONFIG_DIR` when set), or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY` is in the environment; on macOS the Keychain login is assumed. An expired login is caught at call time and bare-name/`auto` routing fails over.
 - **Permissions**: runs with `bypassPermissions`
@@ -633,7 +655,7 @@ agy
 Reach these only with the `copilot:` namespace (also `github-copilot:`, `copilot-sdk:`; e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Available when the Copilot SDK is installed; uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
 
 - **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is rejected with suggestions
 
@@ -836,6 +858,8 @@ DEEPSEEK_API_KEY=...
 OPENROUTER_API_KEY=sk-or-...
 ABLITERATION_API_KEY=ak_...
 TYPESAFE_API_KEY=...            # decide tool only
+CLOUDFLARE_ACCOUNT_ID=...       # decide tool only (Clef), with CLOUDFLARE_API_TOKEN
+CLOUDFLARE_API_TOKEN=...
 ```
 
 **MCP client configuration:**

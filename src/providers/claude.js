@@ -112,6 +112,25 @@ const SUPPORTED_MODELS = {
       'sonnet-5.5',
     ],
   },
+  'claude-haiku-5-5': {
+    modelName: 'claude-haiku-5-5',
+    friendlyName: 'Claude Haiku 5.5 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description:
+      'Claude Haiku 5.5 via Agent SDK - requires claude login authentication',
+    aliases: [
+      'haiku',
+      'claude-haiku',
+      'claude-haiku-5.5',
+      'haiku-5-5',
+      'haiku-5.5',
+    ],
+  },
 };
 
 /**

@@ -99,6 +99,7 @@ describe('Anthropic Provider', () => {
       expect(models['claude-sonnet-5-5']).toBeDefined();
       expect(models['claude-sonnet-4-6']).toBeDefined();
       expect(models['claude-sonnet-4-5-20250929']).toBeDefined();
+      expect(models['claude-haiku-5-5']).toBeDefined();
       expect(models['claude-haiku-4-5-20251001']).toBeDefined();
       expect(models['claude-opus-4-5-20251101']).toBeDefined();
     });
@@ -226,15 +227,70 @@ describe('Anthropic Provider', () => {
       });
     });
 
-    it('should resolve Claude Haiku 4.5 by various aliases', () => {
+    it('should get Claude Haiku 5.5 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-haiku-5-5');
+
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('claude-haiku-5-5');
+      expect(config.friendlyName).toBe('Claude Haiku 5.5');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(128000);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.effortGA).toBe(true);
+      expect(config.effortTiers).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+      expect(config.supports1MContext).toBeUndefined();
+      expect(config.supportsDefaultFallback).toBeUndefined();
+    });
+
+    it('should resolve bare haiku aliases to Claude Haiku 5.5', () => {
+      const aliases = [
+        'haiku',
+        'claude-haiku',
+        'haiku-5.5',
+        'haiku-5-5',
+        'haiku5.5',
+        'claude-haiku-5.5',
+        'claude-haiku-5-5',
+      ];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-haiku-5-5');
+      });
+    });
+
+    it('should send adaptive thinking and effort without a budget for Claude Haiku 5.5', async () => {
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: 'Test' }],
+        stop_reason: 'end_turn',
+        usage: {},
+      });
+
+      await anthropicProvider.invoke([{ role: 'user', content: 'Hello' }], {
+        config: mockConfig,
+        model: 'haiku',
+        reasoning_effort: 'minimal',
+      });
+
+      const callArgs = mockCreate.mock.calls[0][0];
+      expect(callArgs.model).toBe('claude-haiku-5-5');
+      expect(callArgs.thinking).toEqual({ type: 'adaptive' });
+      expect(callArgs.output_config).toEqual({ effort: 'low' });
+      expect(callArgs.max_tokens).toBe(128000);
+      expect(callArgs.temperature).toBeUndefined();
+      expect(callArgs.betas).not.toContain('context-1m-2025-08-07');
+      expect(callArgs.betas).not.toContain('effort-2025-11-24');
+    });
+
+    it('should resolve Claude Haiku 4.5 by its versioned aliases', () => {
       const aliases = [
         'haiku-4.5',
         'haiku-4-5',
         'claude-haiku-4.5',
         'claude-haiku-4-5',
         'haiku4.5',
-        'haiku',
-        'claude-haiku',
+        'claude-haiku-4',
       ];
 
       aliases.forEach((alias) => {
@@ -657,6 +713,7 @@ describe('Anthropic Provider', () => {
       ['claude-opus-5-5', true],
       ['claude-opus-5', true],
       ['claude-fable-5', false],
+      ['claude-haiku-5-5', false],
       ['claude-sonnet-4-6', false],
     ])('should request the default refusal fallback on %s: %s', async (model, expected) => {
       mockCreate.mockResolvedValue({

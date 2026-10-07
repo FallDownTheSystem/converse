@@ -339,6 +339,37 @@ const SUPPORTED_MODELS = {
       'claude-sonnet-4-5',
     ],
   },
+  'claude-haiku-5-5': {
+    modelName: 'claude-haiku-5-5',
+    friendlyName: 'Claude Haiku 5.5',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // budget_tokens is rejected; adaptive is the only on-mode
+    timeout: 1800000,
+    supportsEffort: true,
+    effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
+    supportsCompaction: true,
+    // No server-side refusal fallback, so `fallbacks` must not be sent
+    description:
+      'Claude Haiku 5.5 - Current Haiku: fastest and cheapest Claude for high-volume and latency-sensitive work',
+    aliases: [
+      'claude-haiku-5-5',
+      'claude-haiku-5.5',
+      'claude-5.5-haiku',
+      'claude-5-5-haiku',
+      'haiku-5.5',
+      'haiku-5-5',
+      'haiku5.5',
+      'haiku5-5',
+      'haiku',
+      'claude-haiku',
+    ],
+  },
   'claude-haiku-4-5-20251001': {
     modelName: 'claude-haiku-4-5-20251001',
     friendlyName: 'Claude Haiku 4.5',
@@ -352,7 +383,7 @@ const SUPPORTED_MODELS = {
     maxThinkingTokens: 64000,
     timeout: 900000,
     description:
-      'Claude Haiku 4.5 - Fast and intelligent model with extended thinking',
+      'Claude Haiku 4.5 - Previous Haiku generation with extended thinking',
     aliases: [
       'claude-haiku-4-5',
       'claude-4.5-haiku',
@@ -362,8 +393,6 @@ const SUPPORTED_MODELS = {
       'claude-haiku-4.5',
       'haiku4.5',
       'claude-haiku-4',
-      'haiku',
-      'claude-haiku',
     ],
   },
 };

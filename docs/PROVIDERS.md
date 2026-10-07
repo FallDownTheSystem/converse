@@ -57,7 +57,8 @@ This guide documents all supported AI providers in the Converse MCP Server and t
   - `claude-sonnet-5-5` (aliases `sonnet`, `sonnet-5.5`, `claude-sonnet`) - Current Sonnet: speed and capability for everyday coding and agentic work; adaptive thinking, effort `low`–`max` (1M context, 128K output)
   - `claude-sonnet-4-6` (alias `sonnet-4.6`) - Previous Sonnet generation with adaptive thinking (64K output)
   - `claude-sonnet-4-5-20250929` - Legacy Sonnet (64K output)
-  - `claude-haiku-4-5-20251001` (alias `haiku`) - Fast and intelligent with extended thinking (64K output)
+  - `claude-haiku-5-5` (aliases `haiku`, `haiku-5.5`, `claude-haiku`) - Current Haiku: fastest and cheapest Claude for high-volume and latency-sensitive work; adaptive thinking, effort `low`–`max` (1M context, 128K output)
+  - `claude-haiku-4-5-20251001` (alias `haiku-4.5`) - Previous Haiku generation with extended thinking (64K output)
 
 ### Mistral
 - **API Key Format**: 32+ character string
@@ -229,7 +230,8 @@ agy
   - `claude-fable-5-1` (aliases: `fable`, `claude-fable`, `fable-5.1`) - Claude Fable 5.1 (`claude:fable`)
   - `claude-fable-5` (alias: `fable-5`) - Claude Fable 5.0
   - `claude-sonnet-5-5` (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`) - Claude Sonnet 5.5 (`claude:sonnet`)
-  - Names outside this catalog are rejected with suggestions (e.g. `claude:haiku` suggests `anthropic:haiku`)
+  - `claude-haiku-5-5` (aliases: `haiku`, `claude-haiku`, `haiku-5.5`) - Claude Haiku 5.5 (`claude:haiku`)
+  - Names outside this catalog are rejected with suggestions (e.g. `claude:sonnet-4.6` suggests `anthropic:sonnet-4.6`)
 
 **Key Features:**
 - **Subscription Access**: Uses your Claude subscription instead of API credits
@@ -242,7 +244,7 @@ agy
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
 - **Billing**: Claude subscription vs pay-per-use API
-- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `sonnet`, `claude-opus-5-5`, `claude-opus-5`, `claude-sonnet-5-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `haiku`, `sonnet-4.6`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
+- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `sonnet`, `haiku`, `claude-opus-5-5`, `claude-opus-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `haiku-4.5`, `sonnet-4.6`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
 - **Permissions**: The SDK runs with `bypassPermissions`, and bare names and `auto` reach it whenever it is available. Use `anthropic:<model>` to keep a request on the plain API.
 
 ### GitHub Copilot SDK
@@ -254,7 +256,7 @@ agy
 - **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6.1-sol`; Copilot never serves bare model names):
   - `copilot` - GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`
   - OpenAI: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
-  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5` (alias: `fable`), `claude-sonnet-5.5` (alias: `sonnet`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
 - **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
 - **Unknown IDs**: Any other `copilot:<id>` is rejected with suggestions; only the IDs and aliases above are accepted.
