@@ -98,6 +98,30 @@ const SUPPORTED_MODELS = {
       'gemini3.1',
       'gemini-3.1-pro',
       '3.1-pro',
+    ],
+  },
+  'gemini-4-argon': {
+    modelName: 'gemini-4-argon',
+    friendlyName: 'Gemini (4 Argon)',
+    contextWindow: 1048576, // 1M tokens
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    thinkingMode: 'level',
+    thinkingLevels: ['low', 'medium', 'high'],
+    timeout: 900000,
+    description:
+      'Gemini 4 Argon - Flagship reasoning model for complex software engineering and agentic work (1M context)',
+    aliases: [
+      'argon',
+      'gemini-argon',
+      'gemini argon',
+      'gemini-4',
+      'gemini4',
+      'gemini 4 argon',
+      '4-argon',
       'gemini pro',
       'gemini-pro',
       'pro',
@@ -434,7 +458,7 @@ async function retryWithBackoff(fn, maxRetries = 4) {
 /**
  * Main Google provider implementation
  */
-const DEFAULT_MODEL = 'gemini-3.1-pro-preview';
+const DEFAULT_MODEL = 'gemini-4-argon';
 
 export const googleProvider = {
   defaultModel: DEFAULT_MODEL,

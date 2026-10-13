@@ -40,19 +40,16 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveSessionModel('opus')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude-opus-5-5')).toBe('claude-opus-5.5');
-      expect(resolveSessionModel('gemini')).toBe('gemini-3.1-pro-preview');
-      expect(resolveSessionModel('gemini-flash')).toBe('gemini-3.5-flash');
-    });
-
-    it('resolves convenience aliases without -preview suffix', () => {
-      expect(resolveSessionModel('gemini-3.1-pro')).toBe('gemini-3.1-pro-preview');
+      expect(resolveSessionModel('gemini')).toBe('gemini-4-argon');
+      expect(resolveSessionModel('argon')).toBe('gemini-4-argon');
+      expect(resolveSessionModel('gemini-flash')).toBe('gemini-3.8-flash');
     });
 
     it('resolves direct SDK model names', () => {
       expect(resolveSessionModel('gpt-5.6-terra')).toBe('gpt-5.6-terra');
       expect(resolveSessionModel('claude-sonnet-5')).toBe('claude-sonnet-5');
-      expect(resolveSessionModel('gemini-3.5-flash')).toBe('gemini-3.5-flash');
-      expect(resolveSessionModel('gemini-3.1-pro-preview')).toBe('gemini-3.1-pro-preview');
+      expect(resolveSessionModel('gemini-3.8-flash')).toBe('gemini-3.8-flash');
+      expect(resolveSessionModel('gemini-4-argon')).toBe('gemini-4-argon');
     });
 
     it('is case-insensitive', () => {
@@ -176,8 +173,8 @@ describe('Copilot Provider - Model Selection', () => {
           'claude-sonnet-5',
           'claude-opus-5',
           'claude-opus-4.8',
-          'gemini-3.1-pro-preview',
-          'gemini-3.5-flash',
+          'gemini-4-argon',
+          'gemini-3.8-flash',
         ].sort(),
       );
     });
@@ -200,6 +197,9 @@ describe('Copilot Provider - Model Selection', () => {
         'claude-opus-4.6',
         'claude-opus-4.7',
         'gemini-3-pro-preview',
+        'gemini-3.1-pro-preview',
+        'gemini-3.5-flash',
+        'gemini-3.6-flash',
       ]) {
         expect(keys).not.toContain(retired);
       }
@@ -250,7 +250,7 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   it('routes copilot:modelname to copilot provider', () => {
     expectCopilot('copilot:gpt-5.6-terra', 'gpt-5.6-terra');
     expectCopilot('copilot:claude-sonnet-5', 'claude-sonnet-5');
-    expectCopilot('copilot:gemini-3.1-pro-preview', 'gemini-3.1-pro-preview');
+    expectCopilot('copilot:gemini-4-argon', 'gemini-4-argon');
   });
 
   it('routes copilot:alias to copilot provider with the canonical ID', () => {
@@ -284,7 +284,7 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   });
 
   it('never routes bare model names to copilot', () => {
-    for (const spec of ['claude-sonnet-5', 'gpt-5.6', 'sonnet', 'gemini-3.1-pro-preview']) {
+    for (const spec of ['claude-sonnet-5', 'gpt-5.6', 'sonnet', 'gemini-4-argon']) {
       const result = resolve(spec);
       expect(result.providerName).not.toBe('copilot');
       expect(result.candidates.map((c) => c.providerName)).not.toContain('copilot');

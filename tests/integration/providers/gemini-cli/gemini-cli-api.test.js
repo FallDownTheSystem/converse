@@ -57,7 +57,7 @@ describe('Gemini CLI (Antigravity) Provider E2E Tests', () => {
             name: 'chat',
             arguments: {
               prompt: 'What is 2+2? Answer with just the number.',
-              model: 'gemini',
+              model: 'gemini:flash',
             },
           });
 
@@ -273,7 +273,7 @@ describe('Gemini CLI (Antigravity) Provider E2E Tests', () => {
             arguments: {
               prompt:
                 'Write a long, detailed essay about distributed systems.',
-              model: 'gemini',
+              model: 'gemini:flash',
               async: true,
             },
           });

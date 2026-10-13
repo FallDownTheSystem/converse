@@ -211,29 +211,28 @@ const SUPPORTED_MODELS = {
   },
 
   // Google models
-  // GA `gemini-3.1-pro` does not exist upstream — keep the -preview suffix.
-  'gemini-3.1-pro-preview': {
-    modelName: 'gemini-3.1-pro-preview',
-    friendlyName: 'Gemini 3.1 Pro Preview (via Copilot)',
+  'gemini-4-argon': {
+    modelName: 'gemini-4-argon',
+    friendlyName: 'Gemini 4 Argon (via Copilot)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
     timeout: 1800000,
-    description: 'Google Gemini 3.1 Pro Preview via Copilot subscription',
-    aliases: ['gemini', 'gemini-3.1-pro'],
+    description: 'Google Gemini 4 Argon via Copilot subscription',
+    aliases: ['gemini', 'argon', 'gemini-4'],
   },
-  'gemini-3.5-flash': {
-    modelName: 'gemini-3.5-flash',
-    friendlyName: 'Gemini 3.5 Flash (via Copilot)',
+  'gemini-3.8-flash': {
+    modelName: 'gemini-3.8-flash',
+    friendlyName: 'Gemini 3.8 Flash (via Copilot)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
     timeout: 1800000,
-    description: 'Google Gemini 3.5 Flash via Copilot subscription',
+    description: 'Google Gemini 3.8 Flash via Copilot subscription',
     aliases: ['gemini-flash'],
   },
 };

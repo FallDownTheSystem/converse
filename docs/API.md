@@ -520,14 +520,15 @@ Provide models as plain name strings in the `models` array. Each entry is `auto`
 
 | Model | Aliases | Context | Output | Notes |
 |-------|---------|---------|--------|-------|
-| `gemini-3.1-pro-preview` | `pro`, `gemini-pro` | 1M | 64K | Most advanced reasoning, expanded thinking levels |
+| `gemini-4-argon` | `argon`, `pro`, `gemini-pro` | 1M | 65K | Default; flagship reasoning for complex software engineering and agentic work; paid API tier only |
+| `gemini-3.1-pro-preview` | `gemini-3.1-pro`, `gemini-3` | 1M | 64K | Gemini 3.1 Pro reasoning, expanded thinking levels |
 | `gemini-3.5-flash` | `gemini-3.5`, `flash-3.5` | 1M | 65K | Frontier agentic/coding at Flash speed |
 | `gemini-3.8-flash` | `gemini-3.8`, `flash-3.8` | 1M | 65K | Current-generation Flash; thinking low/medium/high only |
 | `gemini-2.5-pro` | `pro 2.5` | 1M | 65K | Deep reasoning with thinking budget |
 | `gemini-2.5-flash` | `flash` | 1M | 65K | Ultra-fast |
 | `gemini-2.5-flash-lite` | `flash-lite` | 1M | 65K | Lightweight fast model |
 
-**Note:** The **Antigravity CLI** provider (`agy`, OAuth-based) serves `gemini-3.8-flash` and `gemini-3.1-pro-preview` under the same IDs and aliases, so bare `pro`, `gemini-pro`, `flash` and those IDs go to Antigravity first when `agy` is installed; the bare name `gemini` is the Antigravity namespace. Use `google:<model>` (e.g. `google:pro`) to always use the Google API.
+**Note:** The **Antigravity CLI** provider (`agy`, OAuth-based) serves `gemini-4-argon` and `gemini-3.8-flash`. Bare `pro` and `gemini-pro` resolve to Gemini 4 Argon on Antigravity first, then the Google API as failover; bare `gemini-3.1-pro-preview` routes to the Google API only. Bare `flash` and `gemini-3.8-flash` route to Antigravity first when `agy` is installed; the bare name `gemini` is the Antigravity namespace. Use `google:<model>` (e.g. `google:pro`) to always use the Google API.
 
 ### X.AI / Grok Models
 
@@ -627,14 +628,14 @@ All three are uncensored ("abliterated") reasoning models using Abliteration's O
 
 The **Antigravity CLI** (`agy`) provides subscription-based access to Gemini models through Google OAuth:
 
-- **Models** (text-only): `gemini-3.8-flash` (`flash`, `gemini-3.8`, `flash-3.8`, ...; default, `gemini` = `gemini:flash`), `gemini-3.1-pro-preview` (`pro`, `gemini-pro`, `gemini-3.1-pro`, ...; `gemini:pro`). Default override: `AGY_DEFAULT_MODEL`.
+- **Models** (text-only): `gemini-4-argon` (default; `argon`, `pro`, `gemini-pro`, ...; `gemini:pro`), `gemini-3.8-flash` (`flash`, `gemini-3.8`, `flash-3.8`, ...; `gemini:flash`). Gemini 4 Argon requires Google AI Ultra; other plans can use `gemini:flash` or set `AGY_DEFAULT_MODEL=gemini-3.8-flash`. Default override: `AGY_DEFAULT_MODEL`.
 - **Namespaces**: `gemini`, `agy`, `antigravity`, `gemini-cli`
 - **Availability**: the `agy` binary is found on PATH or at the platform install location
 - **Permissions**: `agy` runs with `--dangerously-skip-permissions`, so every tool request is auto-approved
 - **Authentication**: Google OAuth via `agy` (one-time interactive login)
 - **Setup**: install the Antigravity CLI and run `agy` once to log in
 - **Billing**: uses your Antigravity subscription/compute allowance instead of API credits
-- **Reasoning effort**: `low`/`medium`/`high`/`max` select the model variant
+- **Reasoning effort**: Every model has Low, Medium, and High variants selected by `reasoning_effort`
 - **Context**: 1M tokens
 - One-shot responses (no token-level streaming); ~7s minimum per call
 
@@ -656,7 +657,7 @@ Reach these only with the `copilot:` namespace (also `github-copilot:`, `copilot
 
 - **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
 - **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
-- **Google**: `gemini-3.1-pro-preview` (aliases: `gemini`, `gemini-3.1-pro`), `gemini-3.8-flash` (aliases: `gemini-3.8`, `flash-3.8`), `gemini-3.5-flash` (alias: `gemini-flash`)
+- **Google**: `gemini-4-argon` (aliases: `gemini`, `argon`, `gemini-4`), `gemini-3.8-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is rejected with suggestions
 
 ### Model Selection
@@ -675,7 +676,7 @@ Every entry in `models` takes one of four forms:
 "gpt-6"                    // Codex (-> gpt-6.1-sol), else OpenAI API
 "openai:gpt-6"             // OpenAI API only
 "gemini-2.5-flash"         // Google API
-"pro"                      // Antigravity CLI (-> gemini-3.1-pro-preview), else Google API
+"pro"                      // Antigravity CLI (-> gemini-4-argon), else Google API
 "google:pro"               // Google API only
 "grok-4.5"                 // X.AI
 "deepseek"                 // DeepSeek (-> deepseek-v4-pro)
@@ -689,7 +690,7 @@ Every entry in `models` takes one of four forms:
 "claude"                   // Claude Agent SDK (-> Claude Opus 5.5)
 "claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
 "codex:luna"               // Codex (GPT-6 Luna)
-"gemini"                   // Antigravity CLI (Gemini 3.8 Flash)
+"gemini"                   // Antigravity CLI (Gemini 4 Argon)
 "copilot:gpt-6.1-sol"      // GitHub Copilot SDK
 ```
 
@@ -738,10 +739,10 @@ Each provider's default model (used for its bare provider name and for `auto`) c
 ```bash
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
 CLAUDE_DEFAULT_MODEL=claude-opus-5-5
-AGY_DEFAULT_MODEL=gemini-3.8-flash           # Antigravity CLI (gemini)
+AGY_DEFAULT_MODEL=gemini-4-argon             # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL is honored as a legacy fallback
 OPENAI_DEFAULT_MODEL=gpt-6.1-sol
-GOOGLE_DEFAULT_MODEL=gemini-3.1-pro-preview
+GOOGLE_DEFAULT_MODEL=gemini-4-argon
 XAI_DEFAULT_MODEL=grok-4.5
 ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
 MISTRAL_DEFAULT_MODEL=mistral-medium-3-5

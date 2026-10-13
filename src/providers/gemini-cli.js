@@ -19,9 +19,9 @@
  *   establishes workspace trust for the user's home directory.
  *
  * The provider registry key remains 'gemini-cli'; its namespaces are `gemini:`
- * and `agy:`. Flash is the default: Gemini 3.8 Flash is the current-generation
- * model agy lists first, while 3.1 Pro remains the only Pro tier Antigravity
- * offers.
+ * and `agy:`. Gemini 4 Argon is the default; Antigravity serves it only on
+ * Google AI Ultra plans, so other plans select `gemini:flash` (or set
+ * AGY_DEFAULT_MODEL). Antigravity no longer offers Gemini 3.1 Pro.
  */
 
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -60,6 +60,33 @@ const PTY_COLS = 1000;
  * channel).
  */
 const SUPPORTED_MODELS = {
+  'gemini-4-argon': {
+    modelName: 'gemini-4-argon',
+    friendlyName: 'Gemini 4 Argon (via Antigravity CLI)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    timeout: DEFAULT_TIMEOUT_MS,
+    description:
+      'Gemini 4 Argon via Antigravity CLI (agy, default) - requires Antigravity Google OAuth login on a Google AI Ultra plan',
+    aliases: [
+      'argon',
+      'gemini-argon',
+      'gemini argon',
+      'gemini-4',
+      'gemini4',
+      'gemini 4 argon',
+      '4-argon',
+      'pro',
+      'gemini-pro',
+      'gemini pro',
+    ],
+    // agy display-name base; reasoning_effort selects the parenthesized variant
+    agyModelBase: 'Gemini 4 Argon',
+  },
   'gemini-3.8-flash': {
     modelName: 'gemini-3.8-flash',
     friendlyName: 'Gemini 3.8 Flash (via Antigravity CLI)',
@@ -71,7 +98,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 3.8 Flash via Antigravity CLI (agy, default) - requires Antigravity Google OAuth login',
+      'Gemini 3.8 Flash via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
     aliases: [
       'flash',
       'gemini-3.8',
@@ -83,40 +110,11 @@ const SUPPORTED_MODELS = {
       'gemini flash 3.8',
       '3.8-flash',
     ],
-    // agy display-name base; reasoning_effort selects the parenthesized variant
     agyModelBase: 'Gemini 3.8 Flash',
-  },
-  'gemini-3.1-pro-preview': {
-    modelName: 'gemini-3.1-pro-preview',
-    friendlyName: 'Gemini 3.1 Pro (via Antigravity CLI)',
-    contextWindow: 1048576,
-    maxOutputTokens: 65536,
-    supportsStreaming: true,
-    supportsImages: false,
-    supportsWebSearch: false,
-    supportsThinking: true,
-    timeout: DEFAULT_TIMEOUT_MS,
-    description:
-      'Gemini 3.1 Pro via Antigravity CLI (agy) - requires Antigravity Google OAuth login',
-    aliases: [
-      'pro',
-      'gemini-pro',
-      'gemini pro',
-      'gemini-3.1-pro',
-      'gemini-3.1',
-      'gemini3.1',
-      '3.1-pro',
-      'gemini-3',
-      'gemini3',
-      'gemini-3-pro',
-      'gemini-3-pro-preview',
-      '3-pro',
-    ],
-    agyModelBase: 'Gemini 3.1 Pro',
   },
 };
 
-const DEFAULT_MODEL = 'gemini-3.8-flash';
+const DEFAULT_MODEL = 'gemini-4-argon';
 
 /**
  * Custom error class for Gemini CLI (agy) provider errors
@@ -187,24 +185,21 @@ export function findAgyBinary() {
   return _cachedAgyPath;
 }
 
-// agy variant tiers per model base. Flash offers Low/Medium/High; Pro has no
-// Medium variant.
-const FLASH_EFFORT_TIERS = ['low', 'medium', 'high'];
-const PRO_EFFORT_TIERS = ['low', 'high'];
+// agy variant tiers shared by every catalog model: each is listed as
+// '<base> (Low)', '(Medium)' and '(High)'.
+const EFFORT_TIERS = ['low', 'medium', 'high'];
 
 /**
  * Map a reasoning_effort value to the agy parenthesized variant suffix.
  * Unset effort selects High, agy's own default.
- * @param {string} base - agy model base ('Gemini 3.8 Flash' / 'Gemini 3.1 Pro')
  * @param {string} [reasoningEffort]
  * @returns {string} e.g. '(Low)', '(Medium)', '(High)'
  */
-function effortSuffix(base, reasoningEffort) {
+function effortSuffix(reasoningEffort) {
   if (!reasoningEffort) {
     return '(High)';
   }
-  const tiers = /pro/i.test(base) ? PRO_EFFORT_TIERS : FLASH_EFFORT_TIERS;
-  const tier = clampReasoningEffort(reasoningEffort.toLowerCase(), tiers);
+  const tier = clampReasoningEffort(reasoningEffort.toLowerCase(), EFFORT_TIERS);
   return `(${tier[0].toUpperCase()}${tier.slice(1)})`;
 }
 
@@ -226,8 +221,7 @@ export function resolveAgyModel(model, reasoningEffort) {
       ErrorCodes.MODEL_NOT_FOUND,
     );
   }
-  const base = entry.agyModelBase;
-  return `${base} ${effortSuffix(base, reasoningEffort)}`;
+  return `${entry.agyModelBase} ${effortSuffix(reasoningEffort)}`;
 }
 
 /**
@@ -662,6 +656,14 @@ async function executeAgy(messages, options) {
   const cleaned = cleanAgyOutput(output);
 
   if (exitCode !== 0) {
+    // agy's model list is per-plan (Gemini 4 Argon is Ultra-only), so a
+    // catalog model can still be missing for the signed-in account.
+    if (/not recognized as a known model/i.test(cleaned)) {
+      throw new GeminiCliProviderError(
+        `Antigravity CLI (agy) does not offer "${agyModel}" to the signed-in account (Gemini 4 Argon requires a Google AI Ultra plan). Use gemini:flash, or set AGY_DEFAULT_MODEL to change the default. agy output: ${cleaned.slice(0, 800)}`,
+        ErrorCodes.MODEL_NOT_FOUND,
+      );
+    }
     const tail = cleaned.slice(-500);
     throw new GeminiCliProviderError(
       `Antigravity CLI (agy) exited with code ${exitCode}. ${tail ? `Output tail: ${tail}` : 'No output.'} If this persists, run \`agy\` interactively once to authenticate (Antigravity Google OAuth).`,

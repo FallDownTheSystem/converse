@@ -135,6 +135,20 @@ describe('Google Provider', () => {
       expect(gemini31Model.supportsImages).toBe(true);
       expect(gemini31Model.supportsWebSearch).toBe(true);
     });
+
+    it('should include Gemini 4 Argon with correct configuration', () => {
+      const argon = googleProvider.getSupportedModels()['gemini-4-argon'];
+
+      expect(argon.modelName).toBe('gemini-4-argon');
+      expect(argon.friendlyName).toBe('Gemini (4 Argon)');
+      expect(argon.contextWindow).toBe(1048576);
+      expect(argon.maxOutputTokens).toBe(65536);
+      expect(argon.supportsThinking).toBe(true);
+      expect(argon.thinkingMode).toBe('level');
+      expect(argon.thinkingLevels).toEqual(['low', 'medium', 'high']);
+      expect(argon.supportsImages).toBe(true);
+      expect(argon.supportsWebSearch).toBe(true);
+    });
   });
 
   describe('getModelConfig', () => {
@@ -164,13 +178,13 @@ describe('Google Provider', () => {
       }
     });
 
-    it('should return config for default aliases (now pointing to Gemini 3.1)', () => {
-      const aliases = ['pro', 'gemini pro', 'gemini-pro'];
+    it('should return config for Pro-tier aliases (pointing to Gemini 4 Argon)', () => {
+      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'argon', 'gemini-4'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-3.1-pro-preview');
+        expect(config.modelName).toBe('gemini-4-argon');
       }
     });
 
@@ -346,11 +360,9 @@ describe('Google Provider', () => {
   });
 
   describe('default model selection', () => {
-    it('should default to gemini-2.5-flash', () => {
-      // The implementation defaults to 'gemini-2.5-flash'
-      const defaultConfig = googleProvider.getModelConfig('gemini-2.5-flash');
-      expect(defaultConfig).toBeTruthy();
-      expect(defaultConfig.modelName).toBe('gemini-flash-latest');
+    it('should default to gemini-4-argon', () => {
+      expect(googleProvider.defaultModel).toBe('gemini-4-argon');
+      expect(googleProvider.getModelConfig(googleProvider.defaultModel)).toBeTruthy();
     });
 
     it('should support flash as default alias', () => {
