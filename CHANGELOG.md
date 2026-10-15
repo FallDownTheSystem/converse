@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.8.0](https://github.com/FallDownTheSystem/converse/compare/v4.7.1...v4.8.0) (2026-10-15)
+
+
+### Features
+
+* add Jev 1.14, Jev images, box questions, and long context to decide ([9d3febe](https://github.com/FallDownTheSystem/converse/commit/9d3febe01a596e7a708d1a776918db8ff82cadb6))
+
 ## [4.7.1](https://github.com/FallDownTheSystem/converse/compare/v4.7.0...v4.7.1) (2026-10-14)
 
 
