@@ -388,7 +388,8 @@ describe('Decide Tool', () => {
       expect(body).toMatchObject({ model: 'clef', state: '', images: [PNG] });
     });
 
-    it('skips models that cannot take images under auto', async () => {
+    it('skips routes that cannot take images under auto', async () => {
+      dependencies.config.apiKeys = { openai: 'sk-proj-abc', openrouter: 'sk-or-v1-abc' };
       fetchMock
         .mockResolvedValueOnce(jsonResponse(401, { error: { message: 'bad key' } }))
         .mockResolvedValueOnce(jsonResponse(200, { result: { model: 'clef', answers: {} }, success: true }));
@@ -401,7 +402,35 @@ describe('Decide Tool', () => {
       ]);
     });
 
-    it('rejects image requests for text-only models before sending', async () => {
+    it('sends images to Jev on TypeSafe with the images header', async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, okBody('jev-1.13.0')));
+
+      const result = await decideTool({ state: 'x', images: [PNG], questions: QUESTIONS, model: 'jev' }, dependencies);
+
+      expect(result.isError).toBe(false);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://api.typesafe.ai/v1/systemone');
+      expect(init.headers['TypeSafe-Danger-Zone-Images']).toBe('true');
+      const body = JSON.parse(init.body);
+      const [ref] = body.state.images;
+      expect(body.state).toEqual({ input: 'x', images: [ref] });
+      expect(body.assets[ref]).toEqual({ type: 'image', format: 'png', data_base64: 'iVBORw0KGgo=' });
+    });
+
+    it('falls back from Jev to Clef for a WebP image under auto', async () => {
+      dependencies.config.apiKeys = { typesafe: 'ts-key-1234567890' };
+      fetchMock.mockResolvedValue(jsonResponse(200, { result: { model: 'clef', answers: {} }, success: true }));
+      const webp = 'data:image/webp;base64,UklGRg==';
+
+      const result = await decideTool({ state: 'x', images: [webp], questions: { urgent: QUESTIONS.urgent } }, dependencies);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toContain('/ai/run/@cf/cloudflare/clef');
+      expect(result.content[0].text).toContain('typesafe skipped, fell back: Jev accepts PNG and JPEG images only');
+    });
+
+    it('rejects image requests for text-only routes before sending', async () => {
+      dependencies.config.apiKeys = { openrouter: 'sk-or-v1-abc' };
       const result = await decideTool({ state: 'x', images: [PNG], questions: QUESTIONS, model: 'jev' }, dependencies);
 
       expect(result.isError).toBe(true);
@@ -445,5 +474,57 @@ describe('Decide Tool', () => {
       expect(bad.content[0].text).toContain('not a base64 data URL');
       expect(fetchMock).not.toHaveBeenCalled();
     });
+  });
+
+  describe('box questions', () => {
+    const PNG = 'data:image/png;base64,iVBORw0KGgo=';
+    const BOX = { mug: { type: 'box', instructions: 'the coffee mug' } };
+
+    it('validates that a box takes no criteria', () => {
+      expect(validateQuestions(BOX)).toBeNull();
+      expect(validateQuestions({ mug: { ...BOX.mug, criteria: { true: 'a', false: 'b' } } })).toContain('takes no criteria');
+    });
+
+    it('needs an image', async () => {
+      const result = await decideTool({ state: 'x', questions: BOX, model: 'jev-1.14' }, dependencies);
+      expect(result.content[0].text).toContain('pass the image in "images"');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects models that cannot answer box questions before sending', async () => {
+      for (const model of ['auto', 'jev-latest', 'openrouter:jev-1.14']) {
+        const result = await decideTool({ images: [PNG], questions: BOX, model }, dependencies);
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('cannot answer box questions');
+      }
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('asks jev-1.14 on TypeSafe and summarizes the box', async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, {
+        model: 'jev-1.14.0',
+        answers: { mug: { type: 'box', box: { top: 0.25, bottom: 0.82, left: 0.44, right: 0.84 }, confidence: 0.92 } },
+        usage: { input_tokens: 290, output_tokens: 21 },
+      }));
+
+      const result = await decideTool({ images: [PNG], questions: BOX, model: 'jev-1.14' }, dependencies);
+
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://api.typesafe.ai/v1/systemone');
+      expect(JSON.parse(init.body)).toMatchObject({ model: 'jev-1.14.0', questions: BOX });
+      expect(result.content[0].text).toContain('- mug (box): left 0.44, top 0.25, right 0.84, bottom 0.82 · confidence 0.92');
+    });
+  });
+
+  it('marks answers that needed long context', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(400, { detail: { error_type: 'max_tokens_exceeded' } }))
+      .mockResolvedValueOnce(jsonResponse(200, okBody('jev-1.13.0')));
+
+    const result = await decideTool({ state: 'x', questions: QUESTIONS, model: 'typesafe' }, dependencies);
+
+    const text = result.content[0].text;
+    expect(text).toContain('Decision · jev-1.13.0 via TypeSafe · long context · 394 input tokens');
+    expect(JSON.parse(text.match(/```json\n([\s\S]+)\n```/)[1]).long_context).toBe(true);
   });
 });

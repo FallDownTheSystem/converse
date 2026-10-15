@@ -17,7 +17,7 @@ import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('decide');
 
-const QUESTION_TYPES = ['noul', 'choice', 'score'];
+const QUESTION_TYPES = ['noul', 'choice', 'score', 'box'];
 const QUESTION_FIELDS = ['type', 'instructions', 'criteria'];
 const MAX_CHOICE_OPTIONS = 255;
 const MIN_SCORE_LEVELS = 2;
@@ -59,6 +59,10 @@ function validateQuestion(key, question) {
     (Array.isArray(instructions) && instructions.length > 0);
   if (!hasInstructions) {
     return `${at}.instructions must be a non-empty string, object, or array.`;
+  }
+
+  if (question.type === 'box') {
+    return criteria === undefined ? null : `${at} is a box question, which takes no criteria: describe the target in instructions.`;
   }
 
   if (question.type === 'noul') {
@@ -177,7 +181,8 @@ async function loadFiles(files, contextProcessor, config) {
   return problems.length ? { error: problems.join('; ') } : { contents };
 }
 
-// The formats every image-capable host accepts (Clef takes no GIF or BMP).
+// The formats some image-capable host accepts (Clef takes no GIF or BMP; Jev
+// takes PNG and JPEG only, which its format checks).
 const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const DATA_URL = /^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/i;
 
@@ -254,6 +259,11 @@ function summarizeAnswer(key, answer) {
     const label = (k) => (answer.legend?.[k] ? `${k} "${answer.legend[k]}"` : k);
     return `- ${key} (score): ${fixed(answer.score)}${range} · confidence ${fixed(answer.confidence)} · ${byProbability(answer.probabilities, label)}`;
   }
+  if (type === 'box') {
+    const box = answer.box || {};
+    const edges = ['left', 'top', 'right', 'bottom'].map((edge) => `${edge} ${fixed(box[edge])}`).join(', ');
+    return `- ${key} (box): ${edges} · confidence ${fixed(answer.confidence)}`;
+  }
   if (type === 'refusal') {
     return `- ${key} (refusal): the model declined to answer`;
   }
@@ -264,6 +274,7 @@ function formatResult(response, candidate, failures) {
   const usage = response.usage || {};
   const header = [
     `Decision · ${response.model || candidate.model} via ${candidate.provider.label}`,
+    response.longContext ? 'long context' : null,
     usage.input_tokens !== undefined ? `${usage.input_tokens} input tokens` : null,
     typeof usage.cost === 'number' ? `$${usage.cost.toFixed(6)}` : null,
   ].filter(Boolean).join(' · ');
@@ -277,6 +288,7 @@ function formatResult(response, candidate, failures) {
   const payload = {
     model: response.model ?? candidate.model,
     provider: candidate.providerName,
+    ...(response.longContext ? { long_context: true } : {}),
     answers: response.answers,
     usage: {
       input_tokens: usage.input_tokens ?? null,
@@ -316,14 +328,25 @@ export async function decideTool(args, dependencies) {
   if (stateError) return createToolError(stateError);
   const questionError = validateQuestions(questions);
   if (questionError) return createToolError(questionError);
+  const types = [...new Set(Object.values(questions).map((q) => q.type))];
+  if (types.includes('box') && images.length === 0) {
+    return createToolError('Box questions locate something in an image: pass the image in "images".');
+  }
 
   const route = resolveDecisionModel(model, config);
   if (route.status !== 'ok') return createToolError(route.error);
-  const candidates = route.candidates.filter((c) => c.maxImages >= images.length);
+  const answersAll = (c) => types.every((type) => c.questionTypes.includes(type));
+  if (!route.candidates.some(answersAll)) {
+    return createToolError(
+      `"${model}" cannot answer box questions on any configured host. ` +
+      'Box needs model "jev-1.14" or "jev-preview" on TypeSafe (TYPESAFE_API_KEY).',
+    );
+  }
+  const candidates = route.candidates.filter((c) => answersAll(c) && c.maxImages >= images.length);
   if (candidates.length === 0) {
     return createToolError(
       `"${model}" cannot take ${images.length} image(s) on any configured host. ` +
-      'Images work with gpt-6-luna (OpenAI) and clef / clef-flash (Cloudflare, up to 4); Jev and OpenRouter routes are text only.',
+      'Images work with gpt-6-luna (OpenAI), Jev (TypeSafe), and clef / clef-flash (Cloudflare, up to 4); OpenRouter routes Jev text only.',
     );
   }
 
@@ -366,14 +389,18 @@ export async function decideTool(args, dependencies) {
 decideTool.description =
   'DECIDE — ask a decision model (OpenAI gpt-6-luna, TypeSafe Jev, Cloudflare Clef) typed questions about a state and get calibrated answers, not text. ' +
   'Question types: "noul" (yes/no → probability 0..1), "choice" (pick one of 2–255 named options → choice, per-option probabilities, confidence), ' +
-  '"score" (ordered rubric of 2–10 levels → weighted position, per-level probabilities, confidence). ' +
+  '"score" (ordered rubric of 2–10 levels → weighted position, per-level probabilities, confidence), ' +
+  '"box" (where one target is in an image → left/top/right/bottom edges as 0..1 fractions of width/height, confidence; jev-1.14 / jev-preview only, needs an image, ' +
+  'always returns a box, so pair it with a noul asking whether the target is there). ' +
   'Batch independent questions over the same state into one call: they are judged in parallel and in isolation, so none sees another\'s answer; each extra question adds its own input tokens. ' +
   'Best for fast semantic judgments (classify, route, select, verify, rank). Ask one narrow, coherent judgment per question, with its full meaning in the question; ' +
   'split independently useful dimensions, but a bounded action choice or contextual interpretation is a valid single question. Do counting, arithmetic, and date comparison in code. ' +
   'confidence measures how concentrated the distribution is, not permission to act: take the top option to pick a best, and treat a noul near 0.5 as "yes and no equally likely". ' +
-  'No explanations are returned. Images (PNG/JPEG/WebP) work with gpt-6-luna and Clef (up to 4, ~180 KB total); Jev is text only, and "auto" skips models that cannot take the images. ' +
+  'No explanations are returned. Images work with gpt-6-luna (PNG/JPEG/WebP), Jev on TypeSafe (PNG/JPEG, 256–1568 px per side, upright pixels: EXIF rotation is ignored), ' +
+  'and Clef (PNG/JPEG/WebP, up to 4, ~180 KB total); "auto" skips models that cannot take the images. ' +
   'gpt-6-luna may answer a question with type "refusal" instead of a value: treat it as unanswered, never as a no. ' +
-  'Limits per model: Jev ~64k tokens per request (~32k for state plus the longest question); Clef ~64k tokens and at most 64 questions named with letters, digits, "_", ".", "-".';
+  'Limits per model: Jev ~64k tokens per request (~32k for state plus the longest question), and on TypeSafe a request over that is resent once in long-context mode ' +
+  '(262k, slower and less accurate; the result says "long context"); Clef ~64k tokens and at most 64 questions named with letters, digits, "_", ".", "-".';
 
 decideTool.inputSchema = {
   type: 'object',
@@ -387,9 +414,10 @@ decideTool.inputSchema = {
       type: 'object',
       description:
         'Named questions, all answered against the same state. The name is your own label and is returned as the answer key. ' +
-        'Each question: { "type": "noul"|"choice"|"score", "instructions": string|object|array, "criteria": ... }. ' +
+        'Each question: { "type": "noul"|"choice"|"score"|"box", "instructions": string|object|array, "criteria": ... }. ' +
         'criteria — noul: optional { "true": "...", "false": "..." }; choice: required { "<option>": "description" | null } (2–255 options); ' +
-        'score: required ordered array of levels, lowest first (2–10 levels); each level is a description, or { "label": "Short name", "description": "..." } to keep the legend short. ' +
+        'score: required ordered array of levels, lowest first (2–10 levels); each level is a description, or { "label": "Short name", "description": "..." } to keep the legend short; ' +
+        'box: none, the instructions name the target ("the coffee mug nearest the sink"). ' +
         'instructions may be an object bundling the question with reference data, referenced by `name` in the text. ' +
         'Example: { "team": { "type": "choice", "instructions": "Which team should handle this?", "criteria": { "billing": "Payments, refunds", "technical": "Bugs, outages" } } }',
       additionalProperties: {
@@ -407,7 +435,8 @@ decideTool.inputSchema = {
       type: 'string',
       description:
         'Decision model. "auto" (default): gpt-6-luna, then jev-latest, then clef, each on every configured host. ' +
-        'A model name ("gpt-6-luna"/"luna", "jev-latest"/"jev", "jev-1.13", "jev-preview", "clef", "clef-flash"): its native host first, falling back to OpenRouter. ' +
+        'A model name ("gpt-6-luna"/"luna", "jev-latest"/"jev", "jev-1.13", "jev-1.14", "jev-preview", "clef", "clef-flash"): its native host first, falling back to OpenRouter. ' +
+        'jev-latest is TypeSafe\'s stable release (1.13); jev-preview is its newest (1.14). ' +
         '"provider:model" (e.g. "openai:gpt-6-luna", "cloudflare:clef-flash", "openrouter:jev-latest"): that provider only. ' +
         'Providers: openai (OPENAI_API_KEY), typesafe (TYPESAFE_API_KEY), cloudflare (CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN), openrouter (OPENROUTER_API_KEY).',
     },
@@ -422,7 +451,8 @@ decideTool.inputSchema = {
       items: { type: 'string' },
       description:
         'Images judged together with the state: file paths or base64 data URLs, PNG/JPEG/WebP. Refer to them in questions ("Does the image show ..."). ' +
-        'Supported by gpt-6-luna and clef/clef-flash (Clef: up to 4, about 180 KB in total); other models are skipped or rejected.',
+        'Supported by gpt-6-luna, Jev on TypeSafe (PNG/JPEG, 256–1568 px per side; sent as state { "input": <state>, "images": [...] }), ' +
+        'and clef/clef-flash (Clef: up to 4, about 180 KB in total); other routes are skipped or rejected.',
     },
   },
   required: ['questions'],

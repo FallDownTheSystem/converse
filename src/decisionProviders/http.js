@@ -23,16 +23,18 @@ const MAX_RETRY_AFTER_MS = 30_000;
  * failing over (network, timeout, 408/429/5xx, auth); `terminal` marks request
  * faults that every host of the same model would reject the same way;
  * `notSent` marks a request refused by a local limit check before any network
- * call, so it is not reported as a failed request.
+ * call, so it is not reported as a failed request. `code` is the host's
+ * machine-readable error type, when it sends one.
  */
 export class DecisionError extends Error {
-  constructor(message, { status = null, retryable = false, terminal = false, notSent = false, requestId = null, retryAfterMs = null } = {}) {
+  constructor(message, { status = null, retryable = false, terminal = false, notSent = false, code = null, requestId = null, retryAfterMs = null } = {}) {
     super(message);
     this.name = 'DecisionError';
     this.status = status;
     this.retryable = retryable;
     this.terminal = terminal;
     this.notSent = notSent;
+    this.code = code;
     this.requestId = requestId;
     this.retryAfterMs = retryAfterMs;
   }
@@ -93,6 +95,11 @@ export function extractErrorMessage(body, rawText) {
   if (typeof body?.detail?.message === 'string') {
     const type = body.detail.error_type ? `${body.detail.error_type}: ` : '';
     return `${type}${body.detail.message}`;
+  }
+  if (typeof body?.detail?.error_type === 'string') {
+    return body.detail.error_type === 'max_tokens_exceeded'
+      ? 'max_tokens_exceeded: the request is longer than the model\'s context length'
+      : body.detail.error_type;
   }
   const nested = body?.error?.message ?? body?.error ?? body?.detail ?? body?.message;
   if (typeof nested === 'string') {
@@ -221,6 +228,7 @@ async function sendOnce({ url, headers, body, parse, signal, timeoutMs }) {
       status,
       retryable: !firewall && (status === 408 || status === 429 || status >= 500 || status === 401 || status === 403),
       terminal: firewall || status === 400 || status === 422,
+      code: typeof parsed?.detail?.error_type === 'string' ? parsed.detail.error_type : null,
       requestId:
         response.headers.get('x-typesafe-request-id') ||
         response.headers.get('x-generation-id') ||

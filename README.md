@@ -187,7 +187,7 @@ Cancel running asynchronous operations when needed.
 
 ### 4. Decide Tool
 
-Ask a decision model (OpenAI's `gpt-6-luna`, TypeSafe's Jev, or Cloudflare's Clef) typed questions about a state and get calibrated answers instead of text: a yes probability (`noul`), a chosen option with per-option probabilities (`choice`), or a rubric position with per-level probabilities (`score`). Batch many questions into one call; they are judged in parallel against the same state. Needs any of `OPENAI_API_KEY`, `TYPESAFE_API_KEY`, `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN`, or `OPENROUTER_API_KEY`; each model runs on its native host first and falls back to OpenRouter. `model: "auto"` tries `gpt-6-luna`, then `jev-latest`, then `clef`. Pass `images` to judge pictures with `gpt-6-luna` or Clef.
+Ask a decision model (OpenAI's `gpt-6-luna`, TypeSafe's Jev, or Cloudflare's Clef) typed questions about a state and get calibrated answers instead of text: a yes probability (`noul`), a chosen option with per-option probabilities (`choice`), a rubric position with per-level probabilities (`score`), or where a target is in an image (`box`, Jev 1.14). Batch many questions into one call; they are judged in parallel against the same state. Needs any of `OPENAI_API_KEY`, `TYPESAFE_API_KEY`, `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN`, or `OPENROUTER_API_KEY`; each model runs on its native host first and falls back to OpenRouter. `model: "auto"` tries `gpt-6-luna`, then `jev-latest`, then `clef`. Pass `images` to judge pictures with `gpt-6-luna`, Jev, or Clef.
 
 ```javascript
 {

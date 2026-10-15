@@ -12,7 +12,32 @@ import {
   describeHtmlError,
   DecisionError,
 } from '../../../src/decisionProviders/http.js';
-import { cloudflareFormat, openaiFormat } from '../../../src/decisionProviders/formats.js';
+import { cloudflareFormat, openaiFormat, typesafeFormat } from '../../../src/decisionProviders/formats.js';
+import { readImageSize } from '../../../src/decisionProviders/imageSize.js';
+
+/** A PNG header with the given dimensions; enough for size checks. */
+function pngBytes(width, height, { animated = false } = {}) {
+  const header = Buffer.alloc(33);
+  header.writeUInt32BE(0x89504e47, 0);
+  header.writeUInt32BE(0x0d0a1a0a, 4);
+  header.writeUInt32BE(13, 8);
+  header.write('IHDR', 12, 'ascii');
+  header.writeUInt32BE(width, 16);
+  header.writeUInt32BE(height, 20);
+  const tail = Buffer.from(animated ? 'acTL....IDAT' : 'IDAT', 'ascii');
+  return Buffer.concat([header, tail]);
+}
+
+/** A JPEG with an APP0 segment ahead of its baseline frame header. */
+function jpegBytes(width, height) {
+  const app0 = Buffer.from([0xff, 0xe0, 0x00, 0x04, 0x4a, 0x46]);
+  const sof = Buffer.from([0xff, 0xc0, 0x00, 0x0b, 0x08, height >> 8, height & 0xff, width >> 8, width & 0xff, 0x01, 0x01, 0x11, 0x00]);
+  return Buffer.concat([Buffer.from([0xff, 0xd8]), app0, sof]);
+}
+
+function image(bytes, mimeType = 'image/png') {
+  return { mimeType, base64: bytes.toString('base64') };
+}
 
 const both = { apiKeys: { typesafe: 'ts-key-1234567890', openrouter: 'sk-or-v1-abc' }, providers: {} };
 const openrouterOnly = { apiKeys: { openrouter: 'sk-or-v1-abc' }, providers: {} };
@@ -95,7 +120,8 @@ describe('resolveDecisionModel', () => {
 
   it('routes names OpenRouter does not serve to TypeSafe only', () => {
     expect(routes(resolveDecisionModel('jev-preview', both))).toEqual(['typesafe:jev-preview']);
-    expect(routes(resolveDecisionModel('jev-1.14.0', both))).toEqual(['typesafe:jev-1.14.0']);
+    expect(routes(resolveDecisionModel('jev-1.15.0', both))).toEqual(['typesafe:jev-1.15.0']);
+    expect(routes(resolveDecisionModel('jev-1.14.0', both))).toEqual(['typesafe:jev-1.14.0', 'openrouter:typesafe/jev-1.14']);
     const result = resolveDecisionModel('jev-preview', openrouterOnly);
     expect(result.status).toBe('unavailable');
     expect(result.error).toContain('TYPESAFE_API_KEY');
@@ -120,6 +146,14 @@ describe('resolveDecisionModel', () => {
     expect(chatModel.error).toContain('jev-latest');
   });
 
+  it('offers images and box questions only where the host can send them', () => {
+    const capabilities = (spec) =>
+      resolveDecisionModel(spec, both).candidates.map((c) => [c.providerName, c.maxImages, c.questionTypes.includes('box')]);
+    expect(capabilities('jev-1.14')).toEqual([['typesafe', Infinity, true], ['openrouter', 0, false]]);
+    expect(capabilities('jev-latest')).toEqual([['typesafe', Infinity, false], ['openrouter', 0, false]]);
+    expect(capabilities('jev-1.15.0')).toEqual([['typesafe', 0, false]]);
+  });
+
   it('reports a configured-provider gap for a pinned provider', () => {
     const result = resolveDecisionModel('typesafe:jev-latest', openrouterOnly);
     expect(result.status).toBe('unavailable');
@@ -131,6 +165,9 @@ describe('extractErrorMessage', () => {
   it('reads TypeSafe detail objects', () => {
     const body = { detail: { error_type: 'authentication_error', message: 'Bad key' } };
     expect(extractErrorMessage(body, '')).toBe('authentication_error: Bad key');
+    expect(extractErrorMessage({ detail: { error_type: 'max_tokens_exceeded' } }, '')).toBe(
+      'max_tokens_exceeded: the request is longer than the model\'s context length',
+    );
   });
 
   it('unwraps OpenRouter-forwarded upstream details', () => {
@@ -249,6 +286,65 @@ describe('cloudflareFormat', () => {
   });
 });
 
+describe('readImageSize', () => {
+  it('reads PNG and JPEG dimensions and flags animated PNGs', () => {
+    expect(readImageSize(pngBytes(1254, 800))).toEqual({ width: 1254, height: 800, animated: false });
+    expect(readImageSize(pngBytes(300, 300, { animated: true })).animated).toBe(true);
+    expect(readImageSize(jpegBytes(1568, 1176))).toEqual({ width: 1568, height: 1176, animated: false });
+  });
+
+  it('returns null for bytes it cannot read', () => {
+    expect(readImageSize(Buffer.from('fake png bytes'))).toBeNull();
+    expect(readImageSize(Buffer.from([0xff, 0xd8, 0x00]))).toBeNull();
+  });
+});
+
+describe('typesafeFormat', () => {
+  const questions = { a: { type: 'noul', instructions: 'Is `images[0]` a cat?' } };
+
+  it('sends text requests unchanged', () => {
+    expect(typesafeFormat.request('jev-latest', 's', questions)).toEqual({ model: 'jev-latest', state: 's', questions });
+  });
+
+  it('puts image references in the state and the images in assets', () => {
+    const png = pngBytes(512, 512);
+    const jpeg = jpegBytes(800, 600);
+    const body = typesafeFormat.request('jev-latest', { caption: 'x' }, questions, [image(png), image(jpeg, 'image/jpeg')]);
+
+    const refs = body.state.images;
+    expect(body.state).toEqual({ input: { caption: 'x' }, images: refs });
+    expect(refs).toHaveLength(2);
+    refs.forEach((ref) => expect(ref).toMatch(/^image-[0-9a-f-]{36}$/));
+    expect(body.assets).toEqual({
+      [refs[0]]: { type: 'image', format: 'png', data_base64: png.toString('base64') },
+      [refs[1]]: { type: 'image', format: 'jpg', data_base64: jpeg.toString('base64') },
+    });
+    expect(typesafeFormat.request('jev-latest', undefined, questions, [image(png)]).state).toEqual({ images: [expect.any(String)] });
+  });
+
+  it.each([
+    [image(pngBytes(512, 512), 'image/webp'), 'PNG and JPEG images only'],
+    [image(pngBytes(100, 100)), 'image 1 is 100×100'],
+    [image(pngBytes(2000, 1000)), 'at most 1568 px'],
+    [image(pngBytes(256, 256)), 'at least 78400 px'],
+    [image(pngBytes(400, 400, { animated: true })), 'animated PNG'],
+  ])('rejects images TypeSafe would refuse before sending (%#)', (img, message) => {
+    let error;
+    try {
+      typesafeFormat.request('jev-latest', 's', questions, [img]);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(DecisionError);
+    expect(error).toMatchObject({ terminal: true, notSent: true });
+    expect(error.message).toContain(message);
+  });
+
+  it('lets images through whose size it cannot read', () => {
+    expect(typesafeFormat.request('jev-latest', 's', questions, [image(Buffer.from('opaque'))]).assets).toBeDefined();
+  });
+});
+
 function jsonResponse(status, body, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
 }
@@ -283,6 +379,73 @@ describe('askDecisionModel', () => {
     expect(url).toBe('https://api.openai.com/v1/decisions');
     expect(init.headers.Authorization).toBe('Bearer sk-proj-abc');
     expect(JSON.parse(init.body).questions).toEqual([{ type: 'predicate', name: 'urgent', instructions: 'q' }]);
+  });
+
+  describe('TypeSafe opt-in headers', () => {
+    const tooLong = { detail: { error_type: 'max_tokens_exceeded' } };
+    const ok = { model: 'jev-1.13.0', answers: { urgent: { type: 'noul', noul: 0.9 } } };
+    const [typesafe] = resolveDecisionModel('typesafe:jev-latest', all).candidates;
+    const headersOf = (fetchMock) => fetchMock.mock.calls.map(([, init]) => init.headers);
+
+    it('sends no opt-in headers for a plain text request', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, ok));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await askDecisionModel(typesafe, { state: 's', questions, config: all });
+      expect(Object.keys(headersOf(fetchMock)[0])).toEqual(['Content-Type', 'Authorization']);
+    });
+
+    it('turns images on for requests with images or box questions', async () => {
+      const fetchMock = vi.fn().mockImplementation(async () => jsonResponse(200, ok));
+      vi.stubGlobal('fetch', fetchMock);
+      const [jev14] = resolveDecisionModel('typesafe:jev-1.14', all).candidates;
+
+      await askDecisionModel(typesafe, { state: 's', questions, images: [image(pngBytes(512, 512))], config: all });
+      await askDecisionModel(jev14, { state: 's', questions: { at: { type: 'box', instructions: 'the cat' } }, config: all });
+      for (const headers of headersOf(fetchMock)) {
+        expect(headers['TypeSafe-Danger-Zone-Images']).toBe('true');
+        expect(headers['TypeSafe-Danger-Zone-Long-Context']).toBeUndefined();
+      }
+    });
+
+    it('resends a request over the default context in long-context mode', async () => {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(jsonResponse(400, tooLong))
+        .mockResolvedValueOnce(jsonResponse(200, ok));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await askDecisionModel(typesafe, { state: 's', questions, config: all });
+      expect(response).toEqual({ ...ok, longContext: true });
+      const [first, second] = headersOf(fetchMock);
+      expect(first['TypeSafe-Danger-Zone-Long-Context']).toBeUndefined();
+      expect(second['TypeSafe-Danger-Zone-Long-Context']).toBe('true');
+      expect(fetchMock.mock.calls[0][1].body).toBe(fetchMock.mock.calls[1][1].body);
+    });
+
+    it('reports a request over the long context too as terminal', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => jsonResponse(400, tooLong)));
+
+      const error = await askDecisionModel(typesafe, { state: 's', questions, config: all }).catch((e) => e);
+      expect(error.terminal).toBe(true);
+      expect(error.message).toContain('over the 262k-token long context too');
+    });
+
+    it('does not resend other request faults', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(400, { detail: { error_type: 'api_usage_error', message: 'Invalid request.' } }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(askDecisionModel(typesafe, { state: 's', questions, config: all })).rejects.toThrow('Invalid request.');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('never asks OpenRouter for long context', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(400, tooLong));
+      vi.stubGlobal('fetch', fetchMock);
+      const [openrouter] = resolveDecisionModel('openrouter:jev-latest', all).candidates;
+
+      await expect(askDecisionModel(openrouter, { state: 's', questions, config: all })).rejects.toThrow('max_tokens_exceeded');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

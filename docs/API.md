@@ -382,7 +382,7 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "type": { "type": "string", "enum": ["noul", "choice", "score"] },
+          "type": { "type": "string", "enum": ["noul", "choice", "score", "box"] },
           "instructions": { "anyOf": [{ "type": "string" }, { "type": "object" }, { "type": "array" }] },
           "criteria": { "anyOf": [{ "type": "object" }, { "type": "array" }] }
         },
@@ -401,13 +401,19 @@ Only jobs in a `queued` or `running` state can be cancelled; already-completed, 
 - **`state`**: the material to judge. An object with descriptively named fields works best; use an array for sequences such as chat messages. Optional when `files` is given.
 - **`questions`**: named questions, each judged in parallel and in isolation against the same state. The name is your own label and becomes the answer key. Batching many questions into one call adds almost no latency or cost.
 - **`files`**: text files added to the state as `{ "files": { "<path>": "<content>" } }`. When `state` is also given, it moves to `input`. Line ranges (`file.txt{10:50}`) are supported; image files belong in `images`.
-- **`images`**: PNG, JPEG or WebP images judged together with the state, as file paths or base64 data URLs; `state` is optional when images are given. Only `gpt-6-luna` (OpenAI) and `clef` / `clef-flash` (Cloudflare) take images, so `auto` skips other models and naming a text-only model is rejected before sending. OpenAI receives the state and images as one user message. Clef takes at most 4 images, and Cloudflare rejects a request whose size estimate (one token per 4 characters, base64 included) exceeds its 65,536-token window, so Clef images must total about 180 KB; `decide` checks this locally and suggests downscaling. OpenRouter routes are text only.
+- **`images`**: PNG, JPEG or WebP images judged together with the state, as file paths or base64 data URLs; `state` is optional when images are given. `gpt-6-luna` (OpenAI), Jev on TypeSafe, and `clef` / `clef-flash` (Cloudflare) take images; `auto` skips routes that cannot, and naming one is rejected before sending. OpenRouter routes are text only: OpenRouter accepts Jev image assets but drops them, and Jev answers as if no image were sent.
+  - OpenAI receives the state and images as one user message.
+  - TypeSafe receives each image as an asset with a UUID reference, and the state as `{ "input": <state>, "images": [<references>] }` (just `{ "images": [...] }` without a state), with the `TypeSafe-Danger-Zone-Images: true` header TypeSafe requires for images. Jev takes PNG and JPEG only, 256–1568 px per side and at least 78,400 px in total, up to 16 MiB each and 32 MiB per request, and never resizes; `decide` checks these locally, so a WebP image under `auto` moves on to Clef. TypeSafe ignores EXIF orientation, so rotate the pixels upright first. TypeSafe labels images "dreamer-ready": prototype quality whose format and accuracy may change between releases.
+  - Clef takes at most 4 images, and Cloudflare rejects a request whose size estimate (one token per 4 characters, base64 included) exceeds its 65,536-token window, so Clef images must total about 180 KB; `decide` checks this locally and suggests downscaling.
 
 | Type | `criteria` | Answer |
 |---|---|---|
 | `noul` | Optional `{ "true": "...", "false": "..." }` | `noul`: probability 0..1 of yes |
 | `choice` | Required `{ "<option>": "description" \| null }`, 2–255 options | `choice`, per-option `probabilities`, `confidence` |
 | `score` | Required ordered array of levels, lowest first, 2–10 levels; each a description or `{ "label": "...", "description": ... }` | `score` (probability-weighted level position), `legend`, per-level `probabilities`, `confidence` |
+| `box` | None; `instructions` names the target ("the coffee mug nearest the sink") | `box`: `{ top, bottom, left, right }` as fractions 0..1 of the image's height and width from the top-left corner, `confidence` |
+
+`box` needs an image and `jev-1.14` or `jev-preview` on TypeSafe; any other model, including `auto`, is rejected before sending. A box answer is always a box, even when the target is absent, so ask a `noul` about whether it is there in the same call. Each box question finds one target.
 
 `instructions` and criteria descriptions may be objects or arrays that bundle reference data with the question; refer to their fields by `` `name` `` in the text. Questions are validated before any request is sent.
 
@@ -422,7 +428,10 @@ Any answer from `gpt-6-luna` may be `{ "type": "refusal" }` instead of a value, 
 | `gpt-6-luna` | `luna`, `gpt-6-luna-decisions` | `openai` | `openai/gpt-6-luna-decisions` |
 | `jev-latest` | `jev` | `typesafe` (`jev-latest`) | `~typesafe/jev-latest` |
 | `jev-1.13` | `jev-1.13.0` | `typesafe` (`jev-1.13.0`) | `typesafe/jev-1.13` |
+| `jev-1.14` | `jev-1.14.0` | `typesafe` (`jev-1.14.0`) | `typesafe/jev-1.14` |
 | `jev-preview` | | `typesafe` | not served |
+
+TypeSafe moves its aliases on each release: `jev-latest` is the newest stable release (1.13 as of 1.14's launch on 2026-10-14) and `jev-preview` the newest release of any kind (1.14). OpenRouter's `~typesafe/jev-latest` follows its own schedule and already serves 1.14, so a `jev-latest` fallback to OpenRouter can answer with a different version. The response's `model` names the version that answered.
 | `clef` | `@cf/cloudflare/clef` | `cloudflare` | `cloudflare/clef` |
 | `clef-flash` | `@cf/cloudflare/clef-flash` | `cloudflare` | `cloudflare/clef-flash` |
 
@@ -491,7 +500,9 @@ Decision · typesafe/jev-1.13-20260917 via OpenRouter · 394 input tokens · $0.
 
 ### Usage Guidance
 
-Decision models read questions literally and are weak at counting, arithmetic, date comparison, and multi-hop reasoning; do those in code and ask narrow, atomic questions. Split compound judgments into separate questions and combine them in code. Treat low `confidence` as a signal to escalate to a generative model or a human. Limits: Jev is text only and takes about 64k tokens per request and 32k for the state plus the longest single question; Clef has a 65,536-token context.
+Decision models read questions literally and are weak at counting, arithmetic, date comparison, and multi-hop reasoning; do those in code and ask narrow, atomic questions. Split compound judgments into separate questions and combine them in code. Treat low `confidence` as a signal to escalate to a generative model or a human. Limits: Jev takes about 64k tokens per request and 32k for the state plus the longest single question; Clef has a 65,536-token context.
+
+When TypeSafe rejects a request as longer than Jev's default context (`max_tokens_exceeded`), `decide` sends it once more with `TypeSafe-Danger-Zone-Long-Context: true`, which raises both limits to 262k tokens. TypeSafe documents long context as slower and less accurate, so it is never sent up front; an answer that needed it says `long context` in the summary line and carries `"long_context": true`. OpenRouter routes never retry this way; OpenRouter serves Jev with a 262k context and no header.
 
 ## Supported Models
 

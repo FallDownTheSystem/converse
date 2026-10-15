@@ -17,8 +17,22 @@
  */
 
 import { getCustomHeaders as getOpenRouterAttributionHeaders } from '../providers/openrouter.js';
-import { callDecisionApi } from './http.js';
-import { cloudflareFormat, openaiFormat, systemOneFormat } from './formats.js';
+import { callDecisionApi, DecisionError } from './http.js';
+import { BASE_QUESTION_TYPES, cloudflareFormat, openaiFormat, systemOneFormat, typesafeFormat } from './formats.js';
+
+// TypeSafe gates experimental features behind per-request opt-in headers.
+const TYPESAFE_IMAGES_HEADER = 'TypeSafe-Danger-Zone-Images';
+const TYPESAFE_LONG_CONTEXT_HEADER = 'TypeSafe-Danger-Zone-Long-Context';
+const TYPESAFE_LONG_CONTEXT_TOKENS = 262_144;
+
+function typesafeHeaders(config, { images = [], questions = {}, longContext = false } = {}) {
+  const usesImages = images.length > 0 || Object.values(questions).some((q) => q?.type === 'box');
+  return {
+    Authorization: `Bearer ${config.apiKeys.typesafe}`,
+    ...(usesImages ? { [TYPESAFE_IMAGES_HEADER]: 'true' } : {}),
+    ...(longContext ? { [TYPESAFE_LONG_CONTEXT_HEADER]: 'true' } : {}),
+  };
+}
 
 export const DECISION_PROVIDERS = {
   openai: {
@@ -37,9 +51,12 @@ export const DECISION_PROVIDERS = {
     label: 'TypeSafe',
     setup: 'set TYPESAFE_API_KEY',
     defaultModel: 'jev-latest',
-    format: systemOneFormat,
+    format: typesafeFormat,
     endpoint: () => 'https://api.typesafe.ai/v1/systemone',
-    headers: (config) => ({ Authorization: `Bearer ${config.apiKeys.typesafe}` }),
+    headers: typesafeHeaders,
+    // Long context is slower and less accurate, so it is only turned on for a
+    // request the default context rejects.
+    longContext: true,
     isAvailable: (config) => Boolean(config?.apiKeys?.typesafe),
     // TypeSafe accepts every published versioned ID, listed or not.
     passthrough: (name) => /^jev-\d+\.\d+(\.\d+)?$/i.test(name),
@@ -79,14 +96,17 @@ export const DECISION_PROVIDERS = {
 /** Failover order: each model's native host first, then OpenRouter. */
 export const DECISION_PROVIDER_PRIORITY = ['openai', 'typesafe', 'cloudflare', 'openrouter'];
 
+const WITH_BOX = [...BASE_QUESTION_TYPES, 'box'];
+
 /**
  * Decision models by canonical name. `hosts` maps each provider that serves
  * the model to that provider's own ID: OpenRouter only knows
- * `~typesafe/jev-latest` and `typesafe/jev-1.13` (it rejects `jev-1.13.0` and
- * `jev-preview`), so IDs are translated per host rather than by a blanket
- * prefix rewrite. Every host ID also routes to its model. `maxImages` is how
- * many images the model takes per call; a host also needs a format that can
- * send them.
+ * `~typesafe/jev-latest` and `typesafe/jev-1.13` / `typesafe/jev-1.14` (it
+ * rejects `jev-1.13.0` and `jev-preview`), so IDs are translated per host
+ * rather than by a blanket prefix rewrite. Every host ID also routes to its
+ * model. `maxImages` is how many images the model takes per call and
+ * `questionTypes` which question types it answers; a host also needs a format
+ * that can send them.
  */
 export const DECISION_MODELS = {
   'gpt-6-luna': {
@@ -94,31 +114,44 @@ export const DECISION_MODELS = {
     hosts: { openai: 'gpt-6-luna', openrouter: 'openai/gpt-6-luna-decisions' },
     // OpenAI documents no image count limit; the API enforces its own.
     maxImages: Infinity,
+    questionTypes: BASE_QUESTION_TYPES,
   },
+  // Jev's image limits are by size, not count; the format checks them.
   'jev-latest': {
     aliases: ['jev'],
     hosts: { typesafe: 'jev-latest', openrouter: '~typesafe/jev-latest' },
-    maxImages: 0,
+    maxImages: Infinity,
+    questionTypes: BASE_QUESTION_TYPES,
   },
   'jev-1.13': {
     aliases: [],
     hosts: { typesafe: 'jev-1.13.0', openrouter: 'typesafe/jev-1.13' },
-    maxImages: 0,
+    maxImages: Infinity,
+    questionTypes: BASE_QUESTION_TYPES,
+  },
+  'jev-1.14': {
+    aliases: [],
+    hosts: { typesafe: 'jev-1.14.0', openrouter: 'typesafe/jev-1.14' },
+    maxImages: Infinity,
+    questionTypes: WITH_BOX,
   },
   'jev-preview': {
     aliases: [],
     hosts: { typesafe: 'jev-preview' },
-    maxImages: 0,
+    maxImages: Infinity,
+    questionTypes: WITH_BOX,
   },
   clef: {
     aliases: ['@cf/cloudflare/clef'],
     hosts: { cloudflare: 'clef', openrouter: 'cloudflare/clef' },
     maxImages: 4,
+    questionTypes: BASE_QUESTION_TYPES,
   },
   'clef-flash': {
     aliases: ['@cf/cloudflare/clef-flash'],
     hosts: { cloudflare: 'clef-flash', openrouter: 'cloudflare/clef-flash' },
     maxImages: 4,
+    questionTypes: BASE_QUESTION_TYPES,
   },
 };
 
@@ -137,9 +170,10 @@ function findCanonicalModel(name) {
 /**
  * Resolve a name on one provider: a catalog model it hosts, then its
  * passthrough rule.
- * @returns {{ model: string, family: string, maxImages: number }|null} The ID
- *   to send to that provider, the model it names (hosts of one family share
- *   failures), and how many images this host can send that model
+ * @returns {{ model: string, family: string, maxImages: number, questionTypes: string[] }|null}
+ *   The ID to send to that provider, the model it names (hosts of one family
+ *   share failures), and how many images and which question types this host
+ *   can send that model
  */
 export function findDecisionModel(provider, name) {
   const trimmed = String(name).trim();
@@ -147,10 +181,17 @@ export function findDecisionModel(provider, name) {
   const canonical = findCanonicalModel(trimmed);
   const hosted = canonical ? DECISION_MODELS[canonical].hosts[provider.name] : undefined;
   if (hosted) {
-    const maxImages = provider.format.images ? DECISION_MODELS[canonical].maxImages : 0;
-    return { model: hosted, family: canonical, maxImages };
+    const entry = DECISION_MODELS[canonical];
+    return {
+      model: hosted,
+      family: canonical,
+      maxImages: provider.format.images ? entry.maxImages : 0,
+      questionTypes: entry.questionTypes.filter((type) => provider.format.questionTypes.includes(type)),
+    };
   }
-  return provider.passthrough(trimmed) ? { model: trimmed, family: trimmed, maxImages: 0 } : null;
+  return provider.passthrough(trimmed)
+    ? { model: trimmed, family: trimmed, maxImages: 0, questionTypes: BASE_QUESTION_TYPES }
+    : null;
 }
 
 function servedBy(providerName) {
@@ -246,7 +287,8 @@ export function resolveDecisionModel(spec, config) {
 
 /**
  * Ask one candidate: translate the System One request into the host's wire
- * format, send it, and map the answers back.
+ * format, send it, and map the answers back. A host with a long-context mode
+ * gets the request again in that mode when its default context rejects it.
  * @param {object} candidate - From resolveDecisionModel
  * @param {object} params
  * @param {string|object|Array} params.state
@@ -254,15 +296,32 @@ export function resolveDecisionModel(spec, config) {
  * @param {Array<{ mimeType: string, base64: string }>} [params.images]
  * @param {object} params.config - Server configuration
  * @param {AbortSignal} [params.signal]
- * @returns {Promise<{ model?: string, answers: object, usage?: object, id?: string }>}
+ * @returns {Promise<{ model?: string, answers: object, usage?: object, id?: string, longContext?: boolean }>}
  */
 export async function askDecisionModel(candidate, { state, questions, images = [], config, signal }) {
   const { provider, model } = candidate;
-  return callDecisionApi({
-    url: provider.endpoint(config, model),
-    headers: provider.headers(config),
-    body: provider.format.request(model, state, questions, images),
-    parse: provider.format.parse,
-    signal,
-  });
+  const body = provider.format.request(model, state, questions, images);
+  const send = (longContext) =>
+    callDecisionApi({
+      url: provider.endpoint(config, model),
+      headers: provider.headers(config, { images, questions, longContext }),
+      body,
+      parse: provider.format.parse,
+      signal,
+    });
+
+  try {
+    return await send(false);
+  } catch (error) {
+    if (!provider.longContext || error.code !== 'max_tokens_exceeded') throw error;
+  }
+  try {
+    return { ...(await send(true)), longContext: true };
+  } catch (error) {
+    if (error.code !== 'max_tokens_exceeded') throw error;
+    throw new DecisionError(
+      `${error.message} (over the ${Math.round(TYPESAFE_LONG_CONTEXT_TOKENS / 1000)}k-token long context too)`,
+      { status: error.status, terminal: true, code: error.code, requestId: error.requestId },
+    );
+  }
 }

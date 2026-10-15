@@ -8,10 +8,16 @@
  *
  * Every format returns `{ model, answers, usage, id }` from `parse`.
  * `request(model, state, questions, images)` receives images as
- * `{ mimeType, base64 }`; `images: true` marks formats that can send them.
+ * `{ mimeType, base64 }`; `images: true` marks formats that can send them, and
+ * `questionTypes` lists the question types the format can express.
  */
 
+import { randomUUID } from 'node:crypto';
 import { DecisionError } from './http.js';
+import { readImageSize } from './imageSize.js';
+
+/** The question types every decision model answers. */
+export const BASE_QUESTION_TYPES = ['noul', 'choice', 'score'];
 
 function asText(value) {
   return typeof value === 'string' ? value : JSON.stringify(value);
@@ -47,13 +53,78 @@ function toSystemOneQuestions(questions) {
 }
 
 /**
- * TypeSafe and OpenRouter serve System One natively. Jev is text only, and
- * OpenRouter's image routing for other decision models is unverified, so this
- * format sends no images.
+ * OpenRouter serves System One natively but drops TypeSafe `assets` without
+ * an error: Jev answers as if no image were sent, with confident-looking
+ * guesses. So this format sends text and the base question types only.
  */
 export const systemOneFormat = {
   images: false,
+  questionTypes: BASE_QUESTION_TYPES,
   request: (model, state, questions) => ({ model, state, questions: toSystemOneQuestions(questions) }),
+  parse: (body) => body,
+};
+
+// TypeSafe rejects images outside these bounds rather than resizing them, and
+// its error names no limit, so they are checked before sending.
+const JEV_IMAGE_FORMATS = { 'image/png': 'png', 'image/jpeg': 'jpg' };
+const JEV_MIN_SIDE = 256;
+const JEV_MAX_SIDE = 1568;
+const JEV_MIN_PIXELS = 78_400;
+const JEV_MAX_IMAGE_BYTES = 16 * 1024 * 1024;
+const JEV_MAX_BODY_BYTES = 32 * 1024 * 1024;
+
+function jevLimitError(message) {
+  return new DecisionError(message, { terminal: true, notSent: true });
+}
+
+function checkJevImage(image, n) {
+  if (!JEV_IMAGE_FORMATS[image.mimeType]) {
+    throw jevLimitError(`Jev accepts PNG and JPEG images only; image ${n} is ${image.mimeType}.`);
+  }
+  const bytes = Buffer.from(image.base64, 'base64');
+  if (bytes.length > JEV_MAX_IMAGE_BYTES) {
+    throw jevLimitError(`Jev accepts images up to 16 MiB each; image ${n} is ${(bytes.length / 1048576).toFixed(1)} MiB.`);
+  }
+  const size = readImageSize(bytes);
+  if (!size) return;
+  if (size.animated) throw jevLimitError(`Jev accepts still images only; image ${n} is an animated PNG.`);
+  const { width, height } = size;
+  if (width < JEV_MIN_SIDE || height < JEV_MIN_SIDE || width > JEV_MAX_SIDE || height > JEV_MAX_SIDE || width * height < JEV_MIN_PIXELS) {
+    throw jevLimitError(
+      `Jev accepts images ${JEV_MIN_SIDE}–${JEV_MAX_SIDE} px per side and at least ${JEV_MIN_PIXELS} px in total; image ${n} is ${width}×${height}. ` +
+      `Resize it so the longest side is at most ${JEV_MAX_SIDE} px, or upscale or pad a small one.`,
+    );
+  }
+}
+
+/**
+ * TypeSafe's own System One endpoint. Images travel in a top-level `assets`
+ * map and appear wherever their reference string occurs; the references go
+ * into the state, so every question sees them. A reference is matched as
+ * plain text anywhere in the request, hence a UUID that cannot occur by
+ * accident.
+ */
+export const typesafeFormat = {
+  images: true,
+  questionTypes: [...BASE_QUESTION_TYPES, 'box'],
+  request(model, state, questions, images = []) {
+    const body = { model, state, questions: toSystemOneQuestions(questions) };
+    if (images.length === 0) return body;
+    images.forEach((image, i) => checkJevImage(image, i + 1));
+    const refs = images.map(() => `image-${randomUUID()}`);
+    const request = {
+      ...body,
+      state: state === undefined ? { images: refs } : { input: state, images: refs },
+      assets: Object.fromEntries(refs.map((ref, i) => [
+        ref,
+        { type: 'image', format: JEV_IMAGE_FORMATS[images[i].mimeType], data_base64: images[i].base64 },
+      ])),
+    };
+    if (Buffer.byteLength(JSON.stringify(request)) > JEV_MAX_BODY_BYTES) {
+      throw jevLimitError('Jev accepts requests up to 32 MiB including base64 image data; send fewer or smaller images.');
+    }
+    return request;
+  },
   parse: (body) => body,
 };
 
@@ -105,6 +176,7 @@ function checkClefImages(images, state, questions) {
  */
 export const cloudflareFormat = {
   images: true,
+  questionTypes: BASE_QUESTION_TYPES,
   request(model, state, questions, images = []) {
     const ids = Object.keys(questions);
     if (ids.length > CLEF_MAX_QUESTIONS) {
@@ -201,6 +273,7 @@ function fromOpenAIAnswer(answer) {
  */
 export const openaiFormat = {
   images: true,
+  questionTypes: BASE_QUESTION_TYPES,
   request(model, state, questions, images = []) {
     const input = images.length === 0
       ? asText(state)

@@ -292,7 +292,7 @@ The Converse MCP Server exposes four tools:
    - Graceful termination with resource cleanup
 
 4. **Decide Tool** (`decide`)
-   - Asks a decision model (OpenAI `gpt-6-luna`, TypeSafe Jev, Cloudflare Clef) typed questions (`noul` / `choice` / `score`) about a `state`; returns calibrated probabilities, never text
+   - Asks a decision model (OpenAI `gpt-6-luna`, TypeSafe Jev, Cloudflare Clef) typed questions (`noul` / `choice` / `score`, plus image-locating `box` on Jev 1.14) about a `state`; returns calibrated probabilities, never text
    - Uses its own provider registry (`src/decisionProviders/`): native hosts `openai` (`OPENAI_API_KEY`, `/v1/decisions`, translated in `formats.js`), `typesafe` (`TYPESAFE_API_KEY`), `cloudflare` (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN`), then `openrouter` (`OPENROUTER_API_KEY`) for every model. `auto` = `gpt-6-luna` → `jev-latest` → `clef`. Decision models must never be registered as chat providers — chat routing would send them prompts they cannot answer
    - Synchronous and stateless: no `async`, `continuation_id`, or `export`
 
