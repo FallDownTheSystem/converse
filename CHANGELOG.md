@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.8.4](https://github.com/FallDownTheSystem/converse/compare/v4.8.3...v4.8.4) (2026-10-21)
+
+
+### Dependencies
+
+* **deps:** bump openai ([#112](https://github.com/FallDownTheSystem/converse/issues/112)) ([c791ca8](https://github.com/FallDownTheSystem/converse/commit/c791ca8270bb51eadc6ee7e96796ae29ab43f075))
+
 ## [4.8.3](https://github.com/FallDownTheSystem/converse/compare/v4.8.2...v4.8.3) (2026-10-20)
 
 
