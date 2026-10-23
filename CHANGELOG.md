@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.9.0](https://github.com/FallDownTheSystem/converse/compare/v4.8.6...v4.9.0) (2026-10-23)
+
+
+### Features
+
+* support MCP tasks for the chat tool ([c242ec1](https://github.com/FallDownTheSystem/converse/commit/c242ec141e7f5cda3110383fd833c52798bd24c7))
+
 ## [4.8.6](https://github.com/FallDownTheSystem/converse/compare/v4.8.5...v4.8.6) (2026-10-23)
 
 
