@@ -15,6 +15,7 @@ export default [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         fetch: 'readonly',
+        Request: 'readonly',
         Response: 'readonly',
         DOMException: 'readonly',
         URL: 'readonly',

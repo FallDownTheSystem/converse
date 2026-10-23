@@ -269,6 +269,7 @@ The Converse MCP Server exposes four tools:
    - **`consensus`**: ≥2 models answer in parallel, then a cross-feedback refinement phase runs where each model sees the others' answers and refines its own. `["auto"]` expands to the first 3 available providers.
    - **`roundtable`**: models respond SEQUENTIALLY in the order given; each sees the full running transcript and builds on prior turns. One call = one lap; pass `continuation_id` for more laps. A single model talks to itself across laps; duplicate model entries are allowed only in this mode.
    - Shared across modes: `files`/`images` context, `reasoning_effort`, `async: true` background execution, `export: true` disk export, and `continuation_id` for persistent multi-turn threads. You MAY switch modes on a resuming turn — the shared transcript is the context.
+   - **MCP tasks**: on protocol revision 2026-07-28, a `chat` call whose request declares the `io.modelcontextprotocol/tasks` extension (and isn't `async: true`) is answered with a task handle; the client polls `tasks/get` and receives the same `CallToolResult` a blocking call returns. Opt-in is per tool via a `task` policy on the tool function (`src/async/taskStore.js`, `src/router.js`). Clients on earlier revisions are unaffected.
 
    ```javascript
    // mode "chat" (default) — single answer or independent parallel answers
@@ -342,14 +343,16 @@ LOG_LEVEL=debug npm start
 
 ### File Structure Context
 
-- `src/index.js` - Main entry point and MCP server setup
+- `src/index.js` - Main entry point and transport startup (`serveStdio` / HTTP)
+- `src/serverFactory.js` - Per-era MCP `Server` factory (SDK v2 `@modelcontextprotocol/server`; serves 2026-07-28 and earlier revisions side by side)
+- `src/async/taskStore.js` - MCP Tasks extension store (process-global)
 - `src/config.js` - Configuration and environment management
 - `src/tools/` - MCP tool implementations (chat.js unified tool + modes/parallel.js, modes/roundtable.js engines)
 - `src/providers/` - AI provider implementations (OpenAI, Google, XAI)
 - `src/decisionProviders/` - Decision model hosts (OpenAI, TypeSafe, Cloudflare, OpenRouter), wire formats, and HTTP client for the `decide` tool
 - `src/utils/` - Utility functions (logging, context processing, etc.)
 - `src/transport/` - HTTP transport layer for MCP communication
-- `src/router.js` - Request routing and middleware
+- `src/router.js` - Request handlers (registered by method name on each SDK v2 `Server`), tool dispatch, and `tasks/*` handlers
 - `src/systemPrompts.js` - System prompt templates
 - `src/continuationStore.js` - Conversation state management
 - `tests/` - Comprehensive test suite

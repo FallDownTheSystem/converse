@@ -99,7 +99,8 @@
     "@google/genai": "^2.30.0",
     "@lydell/node-pty": "1.2.0-beta.15",
     "@mistralai/mistralai": "^2.7.0",
-    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@modelcontextprotocol/node": "^2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@openai/codex-sdk": "^0.163.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.8",
@@ -108,9 +109,11 @@
     "nanoid": "^6.0.2",
     "openai": "^7.39.0",
     "p-limit": "^7.3.3",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@vitest/coverage-v8": "^5.0.5",
     "cross-env": "^10.1.0",
     "eslint": "^10.13.0",

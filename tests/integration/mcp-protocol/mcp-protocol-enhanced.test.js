@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { loadConfig } from '../../../src/config.js';
+import { getMcpClientConfig, loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
+import { createServerFactory } from '../../../src/serverFactory.js';
 import { logger } from '../../../src/utils/logger.js';
 import { parseJsonResponse } from '../../utils/responseParser.js';
 
@@ -19,23 +15,12 @@ describe('Enhanced MCP Protocol Compliance Tests', () => {
       // Load configuration
       config = await loadConfig();
 
-      // Create MCP server with proper capabilities
-      server = new Server(
-        {
-          name: config.mcp.name,
-          version: config.mcp.version,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
+      router = await createRouter(config);
+      const serverFactory = createServerFactory(
+        router,
+        getMcpClientConfig(config),
       );
-
-      // Create router with server and config (this sets up the MCP handlers)
-      router = await createRouter(server, config);
+      server = serverFactory({ era: 'legacy' });
 
       logger.info(
         '[mcp-protocol-enhanced-test] Enhanced MCP protocol test setup completed',

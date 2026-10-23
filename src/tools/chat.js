@@ -1209,3 +1209,15 @@ chatTool.inputSchema = {
   },
   required: ['prompt'],
 };
+
+// Every model call takes seconds to minutes, so a client that supports the MCP
+// Tasks extension gets a task handle instead of a blocked call. `async: true`
+// is excluded: it already returns at once and is followed via check_status.
+chatTool.task = {
+  eligible: (args) => args.async !== true,
+  statusMessage: (args) => {
+    const mode = args.mode ?? 'chat';
+    const models = Array.isArray(args.models) ? args.models : ['auto'];
+    return `${mode}: ${models.join(', ')}`;
+  },
+};

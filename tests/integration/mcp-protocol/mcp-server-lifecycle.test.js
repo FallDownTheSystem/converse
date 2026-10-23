@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig, getMcpClientConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
+import { createServerFactory } from '../../../src/serverFactory.js';
 import { logger } from '../../../src/utils/logger.js';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -27,38 +22,17 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Load configuration
       config = await loadConfig();
 
-      // Create MCP server instance
-      server = new Server(
-        {
-          name: config.mcp.name,
-          version: config.mcp.version,
-        },
-        {
-          capabilities: { tools: {}, prompts: {}, resources: {} },
-        },
+      router = await createRouter(config);
+      const serverFactory = createServerFactory(
+        router,
+        getMcpClientConfig(config),
       );
-
-      // Create router with server and config (createRouter doesn't return anything)
-      await createRouter(server, config);
+      server = serverFactory({ era: 'legacy' });
 
       // Mock transport for testing (we don't actually connect stdio)
       transport = {
         start: vi.fn(),
         close: vi.fn(),
-      };
-
-      // Create mock router interface for testing
-      router = {
-        listTools: async () => {
-          // Use the server's registered handlers
-          return await server.request({ method: 'tools/list', params: {} }, {});
-        },
-        callTool: async (request) => {
-          return await server.request(
-            { method: 'tools/call', params: request },
-            {},
-          );
-        },
       };
 
       logger.info('[mcp-lifecycle-test] Server lifecycle test setup completed');
@@ -214,11 +188,11 @@ describe('MCP Server Lifecycle Integration Tests', () => {
         expect(server).toBeDefined();
 
         // 4. Server configuration
-        server.setRequestHandler(ListToolsRequestSchema, async () => {
+        server.setRequestHandler('tools/list', async () => {
           return await router.listTools();
         });
 
-        server.setRequestHandler(CallToolRequestSchema, async (request) => {
+        server.setRequestHandler('tools/call', async (request) => {
           return await router.callTool(request.params);
         });
 
@@ -447,22 +421,7 @@ describe('MCP Server Lifecycle Integration Tests', () => {
       // Test router creation time
       const startTime = Date.now();
 
-      // Create temporary server for performance test
-      const testServer = new Server(
-        {
-          name: config.mcp.serverName,
-          version: config.mcp.serverVersion,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
-
-      const testRouter = await createRouter(testServer, config);
+      const testRouter = await createRouter(config);
 
       const duration = Date.now() - startTime;
 

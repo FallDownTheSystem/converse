@@ -98,6 +98,7 @@ Once installed, you can:
 
 - **Chat with a specific model**: Ask Claude to use the chat tool with your preferred model
 - **Get consensus**: Ask Claude to use the chat tool with `mode: "consensus"` when you need multiple perspectives
+- **Keep working while models think**: In Claude Code v2.1.304+, chat calls run as [MCP tasks](docs/API.md#mcp-tasks) — they move to the background immediately and the answer arrives as a task notification
 - **Run tasks in background**: Use `async: true` for long-running operations that you can check later
 - **Monitor progress**: Use the check_status tool to monitor async operations with AI-generated summaries
 - **Cancel jobs**: Use the cancel_job tool to stop running operations

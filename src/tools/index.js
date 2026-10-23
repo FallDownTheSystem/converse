@@ -60,6 +60,7 @@ export function getTools(config = null) {
       };
       wrappedTool.description = tool.description;
       wrappedTool.inputSchema = modifiedSchema;
+      wrappedTool.task = tool.task;
 
       filteredTools[name] = wrappedTool;
     } else {

@@ -8,8 +8,7 @@
  */
 
 import { fileURLToPath, pathToFileURL } from 'url';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import {
   loadConfig,
   validateRuntimeConfig,
@@ -17,6 +16,7 @@ import {
   getHttpTransportConfig,
 } from './config.js';
 import { createRouter } from './router.js';
+import { createServerFactory } from './serverFactory.js';
 import { createHTTPTransport } from './transport/httpTransport.js';
 import { createLogger, startTimer } from './utils/logger.js';
 import { debugError, forceLog } from './utils/console.js';
@@ -135,27 +135,22 @@ async function main() {
 
     logger.info('Using transport type', { data: { transport: transportType } });
 
-    logger.debug('Creating MCP server instance', {
+    logger.debug('Creating MCP server factory', {
       data: { name: mcpConfig.name, version: mcpConfig.version },
     });
 
-    // Create MCP server with configuration
-    const server = new Server(
-      {
-        name: mcpConfig.name,
-        version: mcpConfig.version,
-      },
-      mcpConfig,
-    );
-
-    // Set up router with server and config
-    await createRouter(server, config);
+    const router = await createRouter(config);
+    const serverFactory = createServerFactory(router, mcpConfig);
 
     // Start server with appropriate transport
     if (transportType === 'http') {
       // HTTP streaming transport with full configuration
       const httpConfig = getHttpTransportConfig(config);
-      const httpTransport = await createHTTPTransport(server, httpConfig);
+      const httpTransport = await createHTTPTransport(serverFactory, {
+        ...httpConfig,
+        serverName: mcpConfig.name,
+        serverVersion: mcpConfig.version,
+      });
 
       await httpTransport.start();
       const status = httpTransport.getStatus();
@@ -176,9 +171,12 @@ async function main() {
       // Store reference for shutdown
       process.httpTransport = httpTransport;
     } else {
-      // Stdio transport (legacy)
-      const transport = new StdioServerTransport();
-      await server.connect(transport);
+      // The opening message decides the connection's era: server/discover (or
+      // an envelope-carrying request) pins a 2026-07-28 instance, initialize
+      // pins a legacy one.
+      serveStdio(serverFactory, {
+        onerror: (error) => logger.error('Stdio transport error', { error }),
+      });
 
       const startupTime = serverTimer('completed');
       logger.info(
@@ -227,6 +225,9 @@ async function gracefulShutdown(signal) {
     stopAsyncJobStoreCleanup();
     stopFileCacheCleanup();
     logger.info('Cleanup timers stopped successfully');
+
+    const { getTaskStore } = await import('./async/taskStore.js');
+    getTaskStore().abortAll();
   } catch (error) {
     logger.error('Error stopping cleanup timers', { error });
   }

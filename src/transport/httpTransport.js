@@ -1,15 +1,27 @@
 /**
  * HTTP Streaming Transport for MCP Server
  *
- * Implements StreamableHTTPServerTransport to replace stdio transport,
- * eliminating console output interference and providing better local development experience.
+ * Serves both protocol eras on one /mcp endpoint. Requests carrying the
+ * 2026-07-28 per-request envelope are stateless and go to the SDK's modern
+ * handler, which builds a server per request. Everything else is 2025-era
+ * traffic and keeps its session model: initialize creates a sessionful
+ * transport, and later POST/GET/DELETE requests find it by Mcp-Session-Id.
  */
 
 import express from 'express';
 import cors from 'cors';
 import { randomUUID } from 'node:crypto';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMcpHandler,
+  isInitializeRequest,
+  isLegacyRequest,
+} from '@modelcontextprotocol/server';
+import {
+  NodeStreamableHTTPServerTransport,
+  hostHeaderValidation,
+  toNodeHandler,
+  toWebRequest,
+} from '@modelcontextprotocol/node';
 import { createLogger } from '../utils/logger.js';
 import {
   registerTransportSession,
@@ -41,7 +53,14 @@ export class HTTPTransportServer {
       corsOptions: config.corsOptions || {
         origin: '*',
         methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'mcp-session-id', 'Authorization'],
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'mcp-session-id',
+          'mcp-protocol-version',
+          'mcp-method',
+          'mcp-name',
+        ],
         credentials: false,
         exposedHeaders: ['Mcp-Session-Id'],
       },
@@ -61,17 +80,27 @@ export class HTTPTransportServer {
     this.server = null;
     this.transports = new Map(); // sessionId -> transport
     this.sessionTimers = new Map(); // sessionId -> timeout timer
-    this.mcpServer = null;
+    this.serverFactory = null;
+    this.modernHandler = null;
     this.isStarted = false;
     this.cleanupInterval = null;
   }
 
   /**
    * Initialize the HTTP transport server
-   * @param {object} mcpServer - MCP Server instance
+   * @param {Function} serverFactory - Builds an MCP Server for a given era
    */
-  async initialize(mcpServer) {
-    this.mcpServer = mcpServer;
+  async initialize(serverFactory) {
+    this.serverFactory = serverFactory;
+    // Legacy traffic never reaches this handler (it is routed to the session
+    // map first), so 'reject' only guards against a misrouted request.
+    this.modernHandler = toNodeHandler(
+      createMcpHandler(serverFactory, {
+        legacy: 'reject',
+        onerror: (error) =>
+          logger.error('Modern MCP request failed', { error }),
+      }),
+    );
     this.setupMiddleware();
     this.setupRoutes();
     return this;
@@ -160,6 +189,14 @@ export class HTTPTransportServer {
       });
     }
 
+    // Applied ahead of era routing so both eras get the same protection.
+    if (this.config.enableDnsRebindingProtection) {
+      const validateHost = hostHeaderValidation(this.config.allowedHosts);
+      this.app.use('/mcp', (req, res, next) => {
+        if (validateHost(req, res)) next();
+      });
+    }
+
     // CORS configuration for browser clients
     if (this.config.enableCors) {
       this.app.use(cors(this.config.corsOptions));
@@ -185,19 +222,34 @@ export class HTTPTransportServer {
    * Setup MCP HTTP routes
    */
   setupRoutes() {
-    // Main MCP endpoint - handles POST requests for client-to-server communication
-    this.app.post('/mcp', async (req, res) => {
-      await this.handleMcpRequest(req, res);
-    });
+    this.app.all('/mcp', async (req, res) => {
+      try {
+        const webRequest = await toWebRequest(req, req.body);
+        if (!(await isLegacyRequest(webRequest, req.body))) {
+          await this.modernHandler(req, res, req.body);
+          return;
+        }
+      } catch (error) {
+        logger.error('Error classifying MCP request', { error });
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: { code: -32603, message: 'Internal server error' },
+            id: null,
+          });
+        }
+        return;
+      }
 
-    // SSE endpoint - handles GET requests for server-to-client notifications
-    this.app.get('/mcp', async (req, res) => {
-      await this.handleSseRequest(req, res);
-    });
-
-    // Session termination - handles DELETE requests
-    this.app.delete('/mcp', async (req, res) => {
-      await this.handleSessionTermination(req, res);
+      if (req.method === 'POST') {
+        await this.handleMcpRequest(req, res);
+      } else if (req.method === 'GET') {
+        await this.handleSseRequest(req, res);
+      } else if (req.method === 'DELETE') {
+        await this.handleSessionTermination(req, res);
+      } else {
+        res.status(405).set('Allow', 'GET, POST, DELETE').end();
+      }
     });
 
     // Health check endpoint
@@ -205,7 +257,7 @@ export class HTTPTransportServer {
       res.json({
         status: 'healthy',
         transport: 'http',
-        server: this.mcpServer ? 'connected' : 'disconnected',
+        server: this.serverFactory ? 'connected' : 'disconnected',
         sessions: this.transports.size,
         timestamp: new Date().toISOString(),
       });
@@ -214,8 +266,8 @@ export class HTTPTransportServer {
     // Server info endpoint
     this.app.get('/info', (req, res) => {
       res.json({
-        name: this.mcpServer?.serverCapabilities?.name || 'unknown',
-        version: this.mcpServer?.serverCapabilities?.version || 'unknown',
+        name: this.config.serverName || 'unknown',
+        version: this.config.serverVersion || 'unknown',
         transport: 'http-streaming',
         endpoints: {
           mcp: '/mcp',
@@ -363,7 +415,7 @@ export class HTTPTransportServer {
    * Create a new MCP transport with session management
    */
   async createNewTransport() {
-    const transport = new StreamableHTTPServerTransport({
+    const transport = new NodeStreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
       onsessioninitialized: (sessionId) => {
         this.transports.set(sessionId, transport);
@@ -372,8 +424,6 @@ export class HTTPTransportServer {
         registerTransportSession(transport, sessionId);
         logger.debug('Transport session initialized', { data: { sessionId } });
       },
-      enableDnsRebindingProtection: this.config.enableDnsRebindingProtection,
-      allowedHosts: this.config.allowedHosts,
     });
 
     // Clean up transport when closed
@@ -387,8 +437,7 @@ export class HTTPTransportServer {
       }
     };
 
-    // Connect to the MCP server
-    await this.mcpServer.connect(transport);
+    await this.serverFactory({ era: 'legacy' }).connect(transport);
 
     return transport;
   }
@@ -573,12 +622,12 @@ export class HTTPTransportServer {
 
 /**
  * Factory function to create and configure HTTP transport server
- * @param {object} mcpServer - MCP Server instance
+ * @param {Function} serverFactory - Builds an MCP Server for a given era
  * @param {object} config - HTTP transport configuration
  * @returns {Promise<HTTPTransportServer>}
  */
-export async function createHTTPTransport(mcpServer, config = {}) {
+export async function createHTTPTransport(serverFactory, config = {}) {
   const httpTransport = new HTTPTransportServer(config);
-  await httpTransport.initialize(mcpServer);
+  await httpTransport.initialize(serverFactory);
   return httpTransport;
 }

@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { getContinuationStore } from '../../../src/continuationStore.js';
@@ -12,28 +11,12 @@ describe('Continuation Flow Integration Tests', () => {
   let config;
   let tools;
   let dependencies;
-  let server;
   let continuationStore;
 
   beforeAll(async () => {
     try {
       // Load configuration
       config = await loadConfig();
-
-      // Create MCP server instance
-      server = new Server(
-        {
-          name: config.mcp.name,
-          version: config.mcp.version,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
 
       // Set up dependencies like tools-integration test
       const providers = getProviders();
@@ -48,8 +31,7 @@ describe('Continuation Flow Integration Tests', () => {
       // Get tools
       tools = getTools();
 
-      // Create router with server and config (configures MCP handlers)
-      await createRouter(server, config);
+      await createRouter(config);
 
       logger.info(
         '[continuation-flow-test] Continuation flow test setup completed',
@@ -129,30 +111,16 @@ describe('Continuation Flow Integration Tests', () => {
       const conversationId = firstResponse.continuation.id;
 
       // Create a new router instance (simulating server restart)
-      const newServer = new Server(
-        {
-          name: config.mcp.serverName,
-          version: config.mcp.serverVersion,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
+      const newRouter = await createRouter(config);
 
-      const newRouter = await createRouter(newServer, config);
-
-      // Continue conversation with new router instance (use same tools/dependencies)
-      const secondResponse = await tools.chat(
-        {
+      // Continue conversation with the new router instance
+      const secondResponse = await newRouter.callTool({
+        name: 'chat',
+        arguments: {
           prompt: 'Continue the conversation after restart',
           continuation_id: conversationId,
         },
-        dependencies,
-      );
+      });
 
       expect(secondResponse.continuation.id).toBe(conversationId);
       expect(secondResponse.continuation.messageCount).toBeGreaterThan(2);

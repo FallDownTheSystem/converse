@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { logger } from '../../../src/utils/logger.js';
@@ -8,7 +7,6 @@ import { parseJsonResponse } from '../../utils/responseParser.js';
 describe('Consensus Performance Tests', () => {
   let config;
   let router;
-  let server;
   let hasMultipleProviders = false;
 
   // Helper function to safely parse consensus response
@@ -44,23 +42,7 @@ describe('Consensus Performance Tests', () => {
     try {
       config = await loadConfig();
 
-      // Create MCP server instance
-      server = new Server(
-        {
-          name: config.mcp.serverName,
-          version: config.mcp.serverVersion,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
-
-      // Create router with server and config
-      router = await createRouter(server, config);
+      router = await createRouter(config);
 
       // Check if we have multiple providers for performance testing
       const providers = {
@@ -474,22 +456,7 @@ describe('Consensus Performance Tests', () => {
         },
       };
 
-      // Create temporary server for empty config test
-      const tempServer = new Server(
-        {
-          name: 'test-server',
-          version: '1.0.0',
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
-
-      const emptyRouter = await createRouter(tempServer, emptyConfig);
+      const emptyRouter = await createRouter(emptyConfig);
 
       const startTime = Date.now();
       const result = await emptyRouter.callTool({

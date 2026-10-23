@@ -11,36 +11,33 @@ The Converse MCP Server exposes three tools through the Model Context Protocol (
 2. **Check Status Tool** (`check_status`) — monitor and retrieve results from asynchronous jobs.
 3. **Cancel Job Tool** (`cancel_job`) — cancel a running background job.
 
-The chat tool runs **synchronously** (immediate response) or **asynchronously** (`async: true`, background processing polled with `check_status`). When AI summarization is enabled, the server generates titles and summaries for better context tracking.
+The chat tool runs **synchronously** (immediate response), as an **MCP task** (automatic, for clients that support the [Tasks extension](#mcp-tasks)), or **asynchronously** (`async: true`, background processing polled with `check_status`). When AI summarization is enabled, the server generates titles and summaries for better context tracking.
 
 ## Transport Protocols
 
-The server supports two transport modes:
+The server supports two transport modes. Both serve two MCP protocol eras side by side: the stateless **2026-07-28** revision (`server/discover`, per-request capabilities), which is required for [MCP tasks](#mcp-tasks), and the earlier `initialize`-based revisions for older clients.
 
-### HTTP Transport (Default)
+### HTTP Transport
 - **Endpoint**: `http://localhost:3157/mcp`
 - **Protocol**: HTTP streaming with JSON-RPC 2.0
 - **Usage**: Best for development, debugging, and web integrations
-- **Features**: Health endpoints, CORS support, session management
+- **Features**: Health endpoints, CORS support. 2026-07-28 requests are stateless; earlier-revision clients get `Mcp-Session-Id` sessions
 
-### Stdio Transport (Legacy)
+### Stdio Transport (Default)
 - **Protocol**: Standard input/output with JSON-RPC 2.0
 - **Usage**: Traditional MCP client integrations
-- **Features**: Process-based communication, lower latency
+- **Features**: Process-based communication, lower latency. The client's first message picks the protocol era for the connection
 
 **Transport Selection:**
 ```bash
-# Default (HTTP)
+# Default (stdio)
 npm start
 
-# Explicit HTTP
+# HTTP transport
 npm start -- --transport=http
 
-# Stdio transport
-npm start -- --transport=stdio
-
 # Environment variable
-MCP_TRANSPORT=stdio npm start
+MCP_TRANSPORT=http npm start
 ```
 
 ## Chat Tool
@@ -811,6 +808,36 @@ The first request creates a continuation automatically and returns its ID; pass 
 // Follow-up (reuse the returned id)
 { "prompt": "What about microservices?", "continuation_id": "conv_abc123" }
 ```
+
+## MCP Tasks
+
+The server implements the [MCP Tasks extension](https://modelcontextprotocol.io/extensions/tasks/overview) (`io.modelcontextprotocol/tasks`) on protocol revision 2026-07-28 and advertises it in `server/discover`. When a `chat` call's per-request client capabilities declare the extension, the server answers the `tools/call` at once with a task handle instead of blocking until the models finish:
+
+```json
+{
+  "resultType": "task",
+  "taskId": "task_V1StGXR8_Z5jdHi6B-myT",
+  "status": "working",
+  "statusMessage": "consensus: codex, gemini",
+  "createdAt": "2026-10-23T18:43:28.419Z",
+  "lastUpdatedAt": "2026-10-23T18:43:28.419Z",
+  "ttlMs": null,
+  "pollIntervalMs": 2000
+}
+```
+
+The client polls `tasks/get` with the `taskId`. On `completed`, the `result` field holds exactly the `CallToolResult` a blocking call would have returned, including `isError: true` for tool-level failures. `tasks/cancel` aborts the in-flight provider calls. `tasks/update` is acknowledged but never needed, because no tool asks for input mid-task.
+
+| Behaviour | Detail |
+|-----------|--------|
+| Which calls become tasks | `chat` only, and only without `async: true` (that path already returns at once and is followed with `check_status`). `decide`, `check_status`, and `cancel_job` always answer directly |
+| Clients without the extension | Get the normal blocking result. Earlier protocol revisions never see tasks |
+| `ttlMs` | `null` while the task runs (it never expires mid-flight). Once it finishes, the task stays answerable for one hour |
+| Unknown or expired `taskId` | JSON-RPC error `-32602` |
+| `tasks/*` without the extension declared | JSON-RPC error `-32021` |
+| Server restart | Tasks live in server memory. A restarted server answers `-32602` for earlier task IDs; completed conversations are still saved under their `continuation_id` |
+
+**Claude Code** uses MCP tasks on v2.1.304 or later, in interactive terminal sessions and in Agent SDK or `--input-format stream-json` sessions with `CLAUDE_AUTO_BACKGROUND_TASKS=1`. A task-backed `chat` call moves to the background right away: Claude keeps working and gets the answer as a task notification, and the task appears in `/tasks` with its `statusMessage`. Set `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND=1` to make Claude wait for the result instead. See [MCP tasks in Claude Code](https://code.claude.com/docs/en/mcp#mcp-tasks-for-server-authors).
 
 ## Asynchronous Execution
 

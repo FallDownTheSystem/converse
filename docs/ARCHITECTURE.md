@@ -8,7 +8,10 @@ The Converse MCP Server follows a **functional, modular architecture** designed 
 
 ```
 src/
-├── index.js              # Main entry point & MCP server setup
+├── index.js              # Main entry point & transport startup
+├── serverFactory.js      # Per-era MCP Server factory (SDK v2)
+├── router.js             # Request handlers, tool dispatch, MCP tasks
+├── async/taskStore.js    # MCP Tasks extension store
 ├── config.js             # Configuration and environment management
 ├── systemPrompts.js      # System prompts for tools
 ├── providers/            # AI provider implementations
@@ -54,55 +57,30 @@ tests/                    # Test suites
 
 ### Server Setup
 
-**HTTP Transport (Default):**
+The server is built on MCP TypeScript SDK v2 (`@modelcontextprotocol/server`), which serves the stateless 2026-07-28 protocol revision alongside the earlier `initialize`-based ones. The SDK builds a `Server` per connection (stdio), per request (2026-07-28 over HTTP), or per session (earlier revisions over HTTP), so nothing request-scoped lives on a `Server` instance:
+
 ```javascript
-// index.js - HTTP transport setup
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+// index.js
+const router = await createRouter(config);            // built once: dependencies, tools, task store
+const serverFactory = createServerFactory(router, mcpConfig);
 
-const server = new Server(
-  { name: 'converse-mcp-server', version: '1.0.0' },
-  { capabilities: { tools: {} } }
-);
+// serverFactory({ era }) → new Server(...) + router.attach(server, { era })
+// era 'modern' (2026-07-28) also advertises the Tasks extension and
+// registers tasks/get, tasks/update, tasks/cancel.
 
-// HTTP transport on port 3157 (default)
-const httpTransport = new StreamableHTTPServerTransport({
-  host: 'localhost',
-  port: 3157
-});
-```
-
-**Stdio Transport (Legacy):**
-```javascript
-// Alternative stdio transport
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
-const transport = new StdioServerTransport();
-await server.connect(transport);
+serveStdio(serverFactory);                            // stdio: the first message picks the era
+await createHTTPTransport(serverFactory, httpConfig); // HTTP: see below
 ```
 
 **Transport Selection:**
-- **HTTP**: Default, better for development and debugging
-- **Stdio**: Use `--transport=stdio` or `MCP_TRANSPORT=stdio`
+- **Stdio**: Default
+- **HTTP**: Use `--transport=http` or `MCP_TRANSPORT=http`. `/mcp` classifies each request with the SDK's `isLegacyRequest`. Requests carrying the 2026-07-28 `_meta` envelope go to `createMcpHandler` (stateless). Everything else keeps the `Mcp-Session-Id` session map backed by `NodeStreamableHTTPServerTransport`
 
 ### Tool Registration
-```javascript
-// Dynamic tool registration
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
-  
-  switch (name) {
-    case 'chat':
-      return await chatTool(args); // mode: chat | consensus | roundtable
-    case 'check_status':
-      return await checkStatusTool(args);
-    case 'cancel_job':
-      return await cancelJobTool(args);
-    default:
-      throw new McpError(ErrorCode.MethodNotFound, `Tool not found: ${name}`);
-  }
-});
-```
+`router.attach(server, { era })` registers handlers by method name (`tools/call`, `tools/list`, `prompts/*`, `resources/*`) that dispatch to the tool registry in `src/tools/index.js`. Each tool is an `async (args, dependencies) => CallToolResult` function with `description` and `inputSchema` attached.
+
+### MCP Tasks
+A tool can attach a `task` policy (`{ eligible(args), statusMessage(args) }`); `chat` does. When a `tools/call` request's per-request client capabilities declare `io.modelcontextprotocol/tasks` and the policy accepts the arguments, the router creates a task in the process-global store (`src/async/taskStore.js`) and returns the `resultType: "task"` handle immediately. The tool then runs exactly as a blocking call would, under the task's own `AbortSignal`, and its `CallToolResult` becomes the task's `result`. The store is process-global so a task ID stays answerable across HTTP requests and reconnects; finished tasks are retained for an hour.
 
 ## 🤖 Provider System
 

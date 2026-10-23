@@ -7,13 +7,11 @@
  */
 
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+  MissingRequiredClientCapabilityError,
+  ProtocolError,
+  ProtocolErrorCode,
+} from '@modelcontextprotocol/server';
+import { z } from 'zod';
 import { getContinuationStore } from './continuationStore.js';
 import { getTools } from './tools/index.js';
 import { getProviders } from './providers/index.js';
@@ -27,6 +25,11 @@ import { processUnifiedContext } from './utils/contextProcessor.js';
 import { getAsyncJobStore } from './async/asyncJobStore.js';
 import { getJobRunner } from './async/jobRunner.js';
 import { getFileCache } from './async/fileCache.js';
+import {
+  getTaskStore,
+  clientSupportsTasks,
+  TASKS_EXTENSION_ID,
+} from './async/taskStore.js';
 import providerStreamNormalizer from './async/providerStreamNormalizer.js';
 import { createLogger, startTimer } from './utils/logger.js';
 import { debugError } from './utils/console.js';
@@ -177,12 +180,63 @@ async function createDependencies(config, context = {}) {
 }
 
 /**
- * Creates and configures the central router for handling MCP requests
- * @param {object} server - MCP Server instance
- * @param {object} config - Configuration object with provider settings
- * @returns {Promise<void>}
+ * Resolve a tool and validate its arguments, throwing on either failure.
+ * @returns {Function} The tool handler
  */
-export async function createRouter(server, config) {
+function prepareTool(toolName, toolArgs, tools) {
+  const { tool } = validateTool(toolName, tools);
+
+  if (tool.inputSchema) {
+    const isValidArgs = validateToolArguments(toolArgs, tool.inputSchema);
+    if (!isValidArgs) {
+      throw new ValidationError(
+        `Invalid arguments for tool ${toolName}`,
+        ERROR_CODES.INVALID_TOOL_ARGS,
+        {
+          providedArgs: Object.keys(toolArgs),
+          expectedSchema: tool.inputSchema,
+        },
+      );
+    }
+  }
+
+  return tool;
+}
+
+const TaskIdParamsSchema = z.object({ taskId: z.string() });
+
+// inputResponses is lifted out of params by the SDK before validation (it is
+// read from ctx.mcpReq.inputResponses), so it must stay optional here.
+const TaskUpdateParamsSchema = z.object({
+  taskId: z.string(),
+  inputResponses: z.record(z.string(), z.unknown()).optional(),
+});
+
+function requireTasksCapability(ctx) {
+  if (!clientSupportsTasks(ctx?.mcpReq?.envelope)) {
+    throw new MissingRequiredClientCapabilityError({
+      requiredCapabilities: { extensions: { [TASKS_EXTENSION_ID]: {} } },
+    });
+  }
+}
+
+function taskNotFoundError(taskId) {
+  return new ProtocolError(
+    ProtocolErrorCode.InvalidParams,
+    'Failed to retrieve task: Task not found',
+    { taskId },
+  );
+}
+
+/**
+ * Creates the central router. Built once per process; `attach` registers its
+ * handlers on every Server instance the transports create (one per stdio
+ * connection, per modern HTTP request, and per legacy HTTP session), so all of
+ * them share the same dependencies and the same task store.
+ * @param {object} config - Configuration object with provider settings
+ * @returns {Promise<object>} Router interface: attach, listTools, callTool
+ */
+export async function createRouter(config) {
   const createRouterLogger = logger.operation('createRouter');
   const timer = startTimer('router-initialization', 'router');
 
@@ -192,16 +246,19 @@ export async function createRouter(server, config) {
     // Initialize dependencies with validation
     const dependencies = await createDependencies(config);
     const tools = getTools(config);
+    const taskStore = getTaskStore();
 
     createRouterLogger.info(
       `Router initialized with ${Object.keys(tools).length} tools`,
     );
 
-    // Register unified tool call handler with enhanced error handling
-    server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    /**
+     * Run a tool to completion. Always resolves to a CallToolResult: failures
+     * become `isError` results, which is what both a plain tools/call and a
+     * completed task carry.
+     */
+    const executeTool = async (toolName, toolArgs, { signal, requestId }) => {
       const toolTimer = startTimer('tool-execution', 'router');
-      const toolName = request.params?.name;
-      const toolArgs = request.params?.arguments || {};
       const requestLogger = logger.operation(`tool-call:${toolName}`);
 
       try {
@@ -209,33 +266,14 @@ export async function createRouter(server, config) {
           data: { toolName, argCount: Object.keys(toolArgs).length },
         });
 
-        // Validate tool existence and callability
-        const { tool } = validateTool(toolName, tools);
-
-        // Validate tool arguments if schema is provided
-        if (tool.inputSchema) {
-          const isValidArgs = validateToolArguments(toolArgs, tool.inputSchema);
-          if (!isValidArgs) {
-            throw new ValidationError(
-              `Invalid arguments for tool ${toolName}`,
-              ERROR_CODES.INVALID_TOOL_ARGS,
-              {
-                providedArgs: Object.keys(toolArgs),
-                expectedSchema: tool.inputSchema,
-              },
-            );
-          }
-        }
-
-        // Execute the tool with dependency injection (signal is per-request from MCP SDK)
-        const result = await tool(toolArgs, { ...dependencies, signal: extra?.signal });
+        const tool = prepareTool(toolName, toolArgs, tools);
+        const result = await tool(toolArgs, { ...dependencies, signal });
 
         const executionTime = toolTimer('completed');
         requestLogger.info('Tool execution completed', {
           data: { executionTime: `${executionTime}ms` },
         });
 
-        // Ensure result has proper format
         if (!result || !result.content) {
           throw new ToolError(
             `Tool ${toolName} returned invalid result format`,
@@ -250,7 +288,7 @@ export async function createRouter(server, config) {
         const executionTime = toolTimer('failed');
 
         // Detect cancellation — log at debug, not error
-        if (extra?.signal?.aborted || error.name === 'AbortError') {
+        if (signal?.aborted || error.name === 'AbortError') {
           requestLogger.debug('Tool execution cancelled by client', {
             data: { executionTime: `${executionTime}ms` },
           });
@@ -268,13 +306,54 @@ export async function createRouter(server, config) {
         return createErrorResponse(error, toolName, {
           executionTime,
           arguments: Object.keys(toolArgs),
-          requestId: request.id || 'unknown',
+          requestId,
         });
       }
-    });
+    };
 
-    // Register enhanced list_tools handler
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
+    /**
+     * tools/call: answer with a task handle when the tool is long-running and
+     * this request's client declared the tasks extension; otherwise block.
+     */
+    const handleToolCall = async (request, ctx) => {
+      const toolName = request.params?.name;
+      const toolArgs = request.params?.arguments || {};
+      const requestId = ctx?.mcpReq?.id ?? 'unknown';
+      const taskPolicy = tools[toolName]?.task;
+
+      if (
+        taskPolicy &&
+        clientSupportsTasks(ctx?.mcpReq?.envelope) &&
+        taskPolicy.eligible(toolArgs)
+      ) {
+        // Bad arguments are reported on the call itself rather than as a task
+        // that fails on its first poll.
+        try {
+          prepareTool(toolName, toolArgs, tools);
+        } catch (error) {
+          return createErrorResponse(error, toolName, {
+            arguments: Object.keys(toolArgs),
+            requestId,
+          });
+        }
+
+        // The task owns its own abort signal: this request finishes as soon as
+        // the handle is returned, and only tasks/cancel may stop the work.
+        return taskStore.create({
+          toolName,
+          statusMessage: taskPolicy.statusMessage?.(toolArgs),
+          run: (taskSignal) =>
+            executeTool(toolName, toolArgs, { signal: taskSignal, requestId }),
+        });
+      }
+
+      return executeTool(toolName, toolArgs, {
+        signal: ctx?.mcpReq?.signal,
+        requestId,
+      });
+    };
+
+    const handleListTools = async () => {
       try {
         const toolList = Object.entries(tools).map(([name, handler]) => {
           const toolInfo = {
@@ -315,17 +394,9 @@ export async function createRouter(server, config) {
           { error: error.message },
         );
       }
-    });
+    };
 
-    // Register list_prompts handler
-    server.setRequestHandler(ListPromptsRequestSchema, async () => {
-      return {
-        prompts: [helpPromptMetadata],
-      };
-    });
-
-    // Register get_prompt handler
-    server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const handleGetPrompt = async (request) => {
       const promptName = request.params?.name;
 
       if (promptName === 'help') {
@@ -343,18 +414,9 @@ export async function createRouter(server, config) {
         'PROMPT_NOT_FOUND',
         { requestedPrompt: promptName },
       );
-    });
+    };
 
-    // Register list_resources handler
-    server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const resources = listResources();
-      return {
-        resources,
-      };
-    });
-
-    // Register read_resource handler
-    server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const handleReadResource = async (request) => {
       const resourceUri = request.params?.uri;
 
       if (resourceUri === helpResourceMetadata.uri) {
@@ -366,9 +428,73 @@ export async function createRouter(server, config) {
         'RESOURCE_NOT_FOUND',
         { requestedResource: resourceUri },
       );
-    });
+    };
 
-    // Note: Custom health endpoint removed - MCP uses standard protocol methods only
+    const handleGetTask = async ({ taskId }, ctx) => {
+      requireTasksCapability(ctx);
+      const task = taskStore.get(taskId);
+      if (!task) {
+        throw taskNotFoundError(taskId);
+      }
+      return task;
+    };
+
+    // No tool asks for input mid-task, so there is never an outstanding
+    // inputRequest to fulfil; the spec says to ignore unknown keys and ack.
+    const handleUpdateTask = async ({ taskId }, ctx) => {
+      requireTasksCapability(ctx);
+      if (!taskStore.get(taskId)) {
+        throw taskNotFoundError(taskId);
+      }
+      return {};
+    };
+
+    const handleCancelTask = async ({ taskId }, ctx) => {
+      requireTasksCapability(ctx);
+      if (!taskStore.cancel(taskId)) {
+        throw taskNotFoundError(taskId);
+      }
+      return {};
+    };
+
+    /**
+     * Register the router's handlers on one Server instance.
+     * @param {object} server - MCP Server instance
+     * @param {object} [options]
+     * @param {'legacy'|'modern'} [options.era] - Protocol era the instance serves.
+     *   The tasks/* methods exist only on the modern (2026-07-28) era; on the
+     *   legacy era those names belong to the removed 2025-11-25 tasks design.
+     */
+    const attach = (server, { era = 'legacy' } = {}) => {
+      server.setRequestHandler('tools/call', handleToolCall);
+      server.setRequestHandler('tools/list', handleListTools);
+      server.setRequestHandler('prompts/list', async () => ({
+        prompts: [helpPromptMetadata],
+      }));
+      server.setRequestHandler('prompts/get', handleGetPrompt);
+      server.setRequestHandler('resources/list', async () => ({
+        resources: listResources(),
+      }));
+      server.setRequestHandler('resources/read', handleReadResource);
+
+      if (era === 'modern') {
+        server.setRequestHandler(
+          'tasks/get',
+          { params: TaskIdParamsSchema },
+          handleGetTask,
+        );
+        server.setRequestHandler(
+          'tasks/update',
+          { params: TaskUpdateParamsSchema },
+          handleUpdateTask,
+        );
+        server.setRequestHandler(
+          'tasks/cancel',
+          { params: TaskIdParamsSchema },
+          handleCancelTask,
+        );
+      }
+    };
 
     timer('completed');
     createRouterLogger.info('Router configured successfully', {
@@ -380,8 +506,9 @@ export async function createRouter(server, config) {
       },
     });
 
-    // Return router interface for testing purposes
     return {
+      attach,
+
       listTools: async () => {
         const tools = getTools(config);
         return {
@@ -405,28 +532,7 @@ export async function createRouter(server, config) {
         const toolArgs = toolCall.arguments || {};
 
         try {
-          // Validate tool existence and callability
-          const { tool } = validateTool(toolName, tools);
-
-          // Validate tool arguments if schema is provided
-          if (tool.inputSchema) {
-            const isValidArgs = validateToolArguments(
-              toolArgs,
-              tool.inputSchema,
-            );
-            if (!isValidArgs) {
-              throw new ValidationError(
-                `Invalid arguments for tool ${toolName}`,
-                ERROR_CODES.INVALID_TOOL_ARGS,
-                {
-                  providedArgs: Object.keys(toolArgs),
-                  expectedSchema: tool.inputSchema,
-                },
-              );
-            }
-          }
-
-          // Execute the tool with dependency injection (signal is per-request)
+          const tool = prepareTool(toolName, toolArgs, tools);
           return await tool(toolArgs, { ...dependencies, signal });
         } catch (error) {
           return createErrorResponse(error, toolName, {

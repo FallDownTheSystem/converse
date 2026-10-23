@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { loadConfig } from '../../../src/config.js';
 import { createRouter } from '../../../src/router.js';
 import { getContinuationStore } from '../../../src/continuationStore.js';
@@ -12,7 +11,6 @@ import { parseJsonResponse } from '../../utils/responseParser.js';
 describe('Error Scenario and Recovery Tests', () => {
   let config;
   let router;
-  let server;
   let continuationStore;
   let dependencies;
   let tools;
@@ -20,21 +18,6 @@ describe('Error Scenario and Recovery Tests', () => {
   beforeAll(async () => {
     try {
       config = await loadConfig();
-
-      // Create MCP server instance
-      server = new Server(
-        {
-          name: config.mcp.name,
-          version: config.mcp.version,
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
 
       // Set up dependencies like tools-integration test
       const providers = getProviders();
@@ -49,8 +32,7 @@ describe('Error Scenario and Recovery Tests', () => {
       // Get tools
       tools = getTools();
 
-      // Create router with server and config (configures MCP handlers)
-      router = await createRouter(server, config);
+      router = await createRouter(config);
 
       logger.info('[error-recovery-test] Error recovery test setup completed');
     } catch (error) {
@@ -82,23 +64,6 @@ describe('Error Scenario and Recovery Tests', () => {
           google: 'invalid-google-key',
         },
       };
-
-      // Create temporary server for invalid config test
-      const tempServer = new Server(
-        {
-          name: 'test-server',
-          version: '1.0.0',
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
-
-      const invalidRouter = await createRouter(tempServer, invalidConfig);
 
       const result = await tools.chat(
         {
@@ -299,22 +264,7 @@ describe('Error Scenario and Recovery Tests', () => {
         },
       };
 
-      // Create temporary server for invalid config test
-      const tempServer2 = new Server(
-        {
-          name: 'test-server-2',
-          version: '1.0.0',
-        },
-        {
-          capabilities: {
-            tools: {},
-            prompts: {},
-            resources: {},
-          },
-        },
-      );
-
-      const invalidRouter = await createRouter(tempServer2, invalidConfig);
+      const invalidRouter = await createRouter(invalidConfig);
 
       const result = await invalidRouter.callTool({
         name: 'chat',

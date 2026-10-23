@@ -6,20 +6,12 @@
  * JSON-RPC protocol interference issues.
  */
 
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { randomUUID } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import {
-  createHTTPTransport,
-  HTTPTransportServer,
-} from '../../src/transport/httpTransport.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { createHTTPTransport } from '../../src/transport/httpTransport.js';
 import { createRouter } from '../../src/router.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { createServerFactory } from '../../src/serverFactory.js';
 
 /**
  * HTTP MCP Server Manager for testing scenarios
@@ -47,7 +39,7 @@ export class HTTPMCPServerManager {
     };
 
     this.httpTransport = null;
-    this.mcpServer = null;
+    this.serverFactory = null;
     this.client = null;
     this.clientTransport = null;
     this.sessionId = null;
@@ -94,17 +86,8 @@ export class HTTPMCPServerManager {
         await validateRuntimeConfig(this.config);
         const mcpConfig = getMcpClientConfig(this.config);
 
-        // Create MCP server instance
-        this.mcpServer = new Server(
-          {
-            name: mcpConfig.name,
-            version: mcpConfig.version,
-          },
-          mcpConfig,
-        );
-
-        // Set up router with server and config
-        await createRouter(this.mcpServer, this.config);
+        const router = await createRouter(this.config);
+        this.serverFactory = createServerFactory(router, mcpConfig);
 
         // Get HTTP transport config
         const httpConfig = getHttpTransportConfig(this.config);
@@ -118,7 +101,7 @@ export class HTTPMCPServerManager {
 
         // Create HTTP transport
         this.httpTransport = await createHTTPTransport(
-          this.mcpServer,
+          this.serverFactory,
           httpConfig,
         );
 
@@ -339,7 +322,7 @@ export class HTTPMCPServerManager {
     this.httpTransport = null;
     this.clientTransport = null;
     this.client = null;
-    this.mcpServer = null;
+    this.serverFactory = null;
 
     // Reset environment variables that were overridden
     if (this.options.env.ASYNC_MEMORY_TTL_MS) {

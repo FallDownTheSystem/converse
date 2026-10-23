@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createRouter } from '../../../src/router.js';
 import { loadConfig } from '../../../src/config.js';
 import { logger } from '../../../src/utils/logger.js';
@@ -8,29 +7,12 @@ import { parseJsonResponse } from '../../utils/responseParser.js';
 describe('MCP Protocol Workflow Tests', () => {
   let config;
   let router;
-  let server;
 
   beforeAll(async () => {
     // Load configuration
     config = await loadConfig();
 
-    // Create MCP server instance
-    server = new Server(
-      {
-        name: config.mcp.serverName,
-        version: config.mcp.serverVersion,
-      },
-      {
-        capabilities: {
-          tools: {},
-          prompts: {},
-          resources: {},
-        },
-      },
-    );
-
-    // Create router with server and config
-    router = await createRouter(server, config);
+    router = await createRouter(config);
 
     logger.info('[mcp-protocol-test] MCP Protocol test setup completed');
   });
