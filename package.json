@@ -93,9 +93,9 @@
     ".env.example"
   ],
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.3.303",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.304",
     "@anthropic-ai/sdk": "^0.135.0",
-    "@github/copilot-sdk": "^1.0.22",
+    "@github/copilot-sdk": "^1.0.23",
     "@google/genai": "^2.30.0",
     "@lydell/node-pty": "1.2.0-beta.15",
     "@mistralai/mistralai": "^2.7.0",
