@@ -24,8 +24,8 @@ importers:
         specifier: 1.2.0-beta.18
         version: 1.2.0-beta.18
       '@mistralai/mistralai':
-        specifier: ^2.7.0
-        version: 2.7.0(@opentelemetry/api@1.9.1)
+        specifier: ^3.2.0
+        version: 3.2.0(@opentelemetry/api@1.9.1)
       '@modelcontextprotocol/node':
         specifier: ^2.1.2
         version: 2.1.2(@modelcontextprotocol/server@2.4.0)
@@ -434,14 +434,36 @@ packages:
   '@lydell/node-pty@1.2.0-beta.18':
     resolution: {integrity: sha512-ryy4liRcw6QBBKWDIbJgTW7Pw8NI2xjri/5s/LZg/jJ8ZVg8MgA1xI/vjpT5qTvDvPjUpU5NybJBrKRgK/QvlA==}
 
-  '@mistralai/mistralai@2.7.0':
-    resolution: {integrity: sha512-zCrx6MtNpcz+EL/Nqvg55QubSgmfwJfBmd3d3wSYfJGfnvlNnWcJYlxEW5xQpS3KR6A5qK9KUyRBwMDIWnyVGA==}
+  '@mistralai/mistralai@3.2.0':
+    resolution: {integrity: sha512-1R+c+oHZ5xjKpHOali2sZpx1OnSXYsst/CNWrlJiU5syFxW1UTDlZ4jhilvapSyrJvbBDe7PuEOniHPh4n0A/w==}
     peerDependencies:
+      '@aws-sdk/client-s3': ^3.300.0
+      '@azure/identity': ^4.0.0
+      '@azure/storage-blob': ^12.24.0
+      '@google-cloud/storage': ^7.0.0 || ^8.0.0
+      '@hpcc-js/wasm-zstd': ^1.16.0
+      '@livekit/rtc-node': ^0.13.28
+      '@msgpack/msgpack': ^3.0.0
       '@opentelemetry/api': ^1.9.0
       '@opentelemetry/exporter-trace-otlp-http': ^0.220.0
       '@opentelemetry/resources': ^2.9.0
       '@opentelemetry/sdk-trace-base': ^2.9.0
+      livekit-client: ^2.19.0
     peerDependenciesMeta:
+      '@aws-sdk/client-s3':
+        optional: true
+      '@azure/identity':
+        optional: true
+      '@azure/storage-blob':
+        optional: true
+      '@google-cloud/storage':
+        optional: true
+      '@hpcc-js/wasm-zstd':
+        optional: true
+      '@livekit/rtc-node':
+        optional: true
+      '@msgpack/msgpack':
+        optional: true
       '@opentelemetry/api':
         optional: true
       '@opentelemetry/exporter-trace-otlp-http':
@@ -449,6 +471,8 @@ packages:
       '@opentelemetry/resources':
         optional: true
       '@opentelemetry/sdk-trace-base':
+        optional: true
+      livekit-client:
         optional: true
 
   '@modelcontextprotocol/core@2.4.0':
@@ -1995,8 +2019,9 @@ snapshots:
       '@lydell/node-pty-win32-arm64': 1.2.0-beta.18
       '@lydell/node-pty-win32-x64': 1.2.0-beta.18
 
-  '@mistralai/mistralai@2.7.0(@opentelemetry/api@1.9.1)':
+  '@mistralai/mistralai@3.2.0(@opentelemetry/api@1.9.1)':
     dependencies:
+      '@modelcontextprotocol/sdk': 1.32.2(zod@4.6.7)
       '@opentelemetry/semantic-conventions': 1.43.0
       ws: 8.22.0
       zod: 4.6.7
@@ -2004,7 +2029,9 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
     transitivePeerDependencies:
+      - '@cfworker/json-schema'
       - bufferutil
+      - supports-color
       - utf-8-validate
 
   '@modelcontextprotocol/core@2.4.0':
