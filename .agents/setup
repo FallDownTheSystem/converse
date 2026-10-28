@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Amp orb setup: install the toolchain and dependencies the repo's checks need.
+# Finite and idempotent; no secrets or credentials. Mirrors .github/workflows/ci.yml.
+set -euo pipefail
+
+node_major=$(node -p 'process.versions.node.split(".")[0]')
+if [ "$node_major" -lt 24 ]; then
+  echo "Node >=24 required (package.json engines); found $(node -v)" >&2
+  exit 1
+fi
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  corepack enable pnpm
+fi
+
+# pnpm 11+ enables the minimumReleaseAge gate by default; CI and release opt out.
+PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 pnpm install --frozen-lockfile
