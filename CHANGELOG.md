@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.9.3](https://github.com/FallDownTheSystem/converse/compare/v4.9.2...v4.9.3) (2026-10-28)
+
+
+### Dependencies
+
+* **deps:** bump @lydell/node-pty from 1.2.0-beta.15 to 1.2.0-beta.18 ([#127](https://github.com/FallDownTheSystem/converse/issues/127)) ([d4a7ce6](https://github.com/FallDownTheSystem/converse/commit/d4a7ce6474d1a4571d8b5971db1458d9fd848fef))
+
 ## [4.9.2](https://github.com/FallDownTheSystem/converse/compare/v4.9.1...v4.9.2) (2026-10-27)
 
 
