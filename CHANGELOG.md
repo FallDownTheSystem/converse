@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.9.5](https://github.com/FallDownTheSystem/converse/compare/v4.9.4...v4.9.5) (2026-10-28)
+
+
+### Dependencies
+
+* **deps:** bump @mistralai/mistralai from 2.7.0 to 3.2.0 ([#125](https://github.com/FallDownTheSystem/converse/issues/125)) ([ebf078e](https://github.com/FallDownTheSystem/converse/commit/ebf078e0d675d8d9c76edff87c2dfaf315844c52))
+
 ## [4.9.4](https://github.com/FallDownTheSystem/converse/compare/v4.9.3...v4.9.4) (2026-10-28)
 
 
