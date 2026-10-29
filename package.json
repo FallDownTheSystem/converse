@@ -98,7 +98,7 @@
     "@github/copilot-sdk": "^1.0.26",
     "@google/genai": "^2.31.0",
     "@lydell/node-pty": "1.2.0-beta.18",
-    "@mistralai/mistralai": "^3.2.0",
+    "@mistralai/mistralai": "^3.3.0",
     "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/server": "^2.4.0",
     "@openai/codex-sdk": "^0.164.0",

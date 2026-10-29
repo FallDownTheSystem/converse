@@ -24,8 +24,8 @@ importers:
         specifier: 1.2.0-beta.18
         version: 1.2.0-beta.18
       '@mistralai/mistralai':
-        specifier: ^3.2.0
-        version: 3.2.0(@opentelemetry/api@1.9.1)
+        specifier: ^3.3.0
+        version: 3.3.0(@opentelemetry/api@1.9.1)
       '@modelcontextprotocol/node':
         specifier: ^2.1.2
         version: 2.1.2(@modelcontextprotocol/server@2.4.0)
@@ -434,8 +434,8 @@ packages:
   '@lydell/node-pty@1.2.0-beta.18':
     resolution: {integrity: sha512-ryy4liRcw6QBBKWDIbJgTW7Pw8NI2xjri/5s/LZg/jJ8ZVg8MgA1xI/vjpT5qTvDvPjUpU5NybJBrKRgK/QvlA==}
 
-  '@mistralai/mistralai@3.2.0':
-    resolution: {integrity: sha512-1R+c+oHZ5xjKpHOali2sZpx1OnSXYsst/CNWrlJiU5syFxW1UTDlZ4jhilvapSyrJvbBDe7PuEOniHPh4n0A/w==}
+  '@mistralai/mistralai@3.3.0':
+    resolution: {integrity: sha512-b5NSkQ8lFBxwZfA4Vj5oHxs7Jw7VrZRI2E9g95sigQiTi3NsQ//o6y3nDXjKUPWjksfagjH3STEFCYBg19SMvg==}
     peerDependencies:
       '@aws-sdk/client-s3': ^3.300.0
       '@azure/identity': ^4.0.0
@@ -2024,7 +2024,7 @@ snapshots:
       '@lydell/node-pty-win32-arm64': 1.2.0-beta.18
       '@lydell/node-pty-win32-x64': 1.2.0-beta.18
 
-  '@mistralai/mistralai@3.2.0(@opentelemetry/api@1.9.1)':
+  '@mistralai/mistralai@3.3.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.2(zod@4.6.7)
       '@opentelemetry/semantic-conventions': 1.43.0
