@@ -18,8 +18,8 @@ importers:
         specifier: ^1.0.29
         version: 1.0.29
       '@google/genai':
-        specifier: ^2.32.0
-        version: 2.32.0(@modelcontextprotocol/sdk@1.32.2(zod@4.6.7))
+        specifier: ^3.0.0
+        version: 3.0.0(@modelcontextprotocol/sdk@1.32.2(zod@4.6.7))
       '@lydell/node-pty':
         specifier: 1.2.0-beta.18
         version: 1.2.0-beta.18
@@ -257,9 +257,9 @@ packages:
     resolution: {integrity: sha512-oyK/z1CdXAUwx8j84CFD0h90ZNuzOD7eYMrSsqpjAhk3OBcBGWytvt1z3zgDsK069XflP5FcgsGpxFYMXbxG+w==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
-  '@google/genai@2.32.0':
-    resolution: {integrity: sha512-60c79uXpR0a47bmGqDxbXEBuQUalNmwo5mx5kqb91jIW4FoqpsLSt86DeVhRhtH5+s/16Wqxt3sXzFQn2U1OHQ==}
-    engines: {node: '>=20.0.0'}
+  '@google/genai@3.0.0':
+    resolution: {integrity: sha512-0o2uBXPWBNUu0jWg2Id5iBtCnsd7lnxKPQfnijKvNublG/zj40CToERvz/eyfNjzzXt2kwuvxpouLUrRCZ2WUQ==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.25.2
     peerDependenciesMeta:
@@ -1904,7 +1904,7 @@ snapshots:
       '@github/copilot-sdk-win32-arm64': 1.0.29
       '@github/copilot-sdk-win32-x64': 1.0.29
 
-  '@google/genai@2.32.0(@modelcontextprotocol/sdk@1.32.2(zod@4.6.7))':
+  '@google/genai@3.0.0(@modelcontextprotocol/sdk@1.32.2(zod@4.6.7))':
     dependencies:
       google-auth-library: 10.9.1
       p-retry: 4.6.2
