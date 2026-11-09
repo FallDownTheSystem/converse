@@ -35,7 +35,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveSessionModel('claude-sonnet-5-5')).toBe('claude-sonnet-5.5');
       expect(resolveSessionModel('haiku')).toBe('claude-haiku-5.5');
       expect(resolveSessionModel('claude-haiku-5-5')).toBe('claude-haiku-5.5');
-      expect(resolveSessionModel('fable')).toBe('claude-fable-5.1');
+      expect(resolveSessionModel('fable')).toBe('claude-fable-5.2');
+      expect(resolveSessionModel('claude-fable-5-2')).toBe('claude-fable-5.2');
       expect(resolveSessionModel('claude-fable-5-1')).toBe('claude-fable-5.1');
       expect(resolveSessionModel('opus')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude')).toBe('claude-opus-5.5');
@@ -55,7 +56,7 @@ describe('Copilot Provider - Model Selection', () => {
     it('is case-insensitive', () => {
       expect(resolveSessionModel('GPT-5')).toBe('gpt-6.1-sol');
       expect(resolveSessionModel('Sonnet')).toBe('claude-sonnet-5.5');
-      expect(resolveSessionModel('FABLE')).toBe('claude-fable-5.1');
+      expect(resolveSessionModel('FABLE')).toBe('claude-fable-5.2');
       expect(resolveSessionModel('CLAUDE-OPUS-4.8')).toBe('claude-opus-4.8');
     });
 
@@ -152,11 +153,11 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('advertises exactly the 16 curated IDs', () => {
+    it('advertises exactly the 17 curated IDs', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
-      expect(keys).toHaveLength(16);
+      expect(keys).toHaveLength(17);
       expect(keys).toEqual(
         [
           'gpt-6.1-sol',
@@ -166,6 +167,7 @@ describe('Copilot Provider - Model Selection', () => {
           'gpt-5.6-terra',
           'gpt-5.6-luna',
           'claude-opus-5.5',
+          'claude-fable-5.2',
           'claude-fable-5.1',
           'claude-fable-5',
           'claude-sonnet-5.5',
@@ -254,7 +256,7 @@ describe('Copilot Namespace Routing - resolveModelSpec', () => {
   });
 
   it('routes copilot:alias to copilot provider with the canonical ID', () => {
-    expectCopilot('copilot:fable', 'claude-fable-5.1');
+    expectCopilot('copilot:fable', 'claude-fable-5.2');
     expectCopilot('copilot:claude-fable-5', 'claude-fable-5');
     expectCopilot('copilot:sonnet', 'claude-sonnet-5.5');
     expectCopilot('copilot:gpt-5', 'gpt-6.1-sol');

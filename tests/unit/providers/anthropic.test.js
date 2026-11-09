@@ -118,12 +118,36 @@ describe('Anthropic Provider', () => {
     });
 
     it('should resolve Claude Fable 5 by various aliases', () => {
-      const aliases = ['fable', 'fable-5', 'fable5', 'claude-fable'];
+      const aliases = ['fable-5', 'fable5', 'claude-5-fable'];
 
       aliases.forEach((alias) => {
         const config = anthropicProvider.getModelConfig(alias);
         expect(config).toBeDefined();
         expect(config.modelName).toBe('claude-fable-5');
+      });
+    });
+
+    it('should get Claude Fable 5.2 config with correct specifications', () => {
+      const config = anthropicProvider.getModelConfig('claude-fable-5-2');
+
+      expect(config).toBeDefined();
+      expect(config.modelName).toBe('claude-fable-5-2');
+      expect(config.friendlyName).toBe('Claude Fable 5.2');
+      expect(config.contextWindow).toBe(1000000);
+      expect(config.maxOutputTokens).toBe(128000);
+      expect(config.supportsAdaptiveThinking).toBe(true);
+      expect(config.supportsEffort).toBe(true);
+      expect(config.effortGA).toBe(true);
+      expect(config.effortTiers).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    });
+
+    it('should point the bare fable aliases at Claude Fable 5.2', () => {
+      const aliases = ['fable', 'claude-fable', 'fable-5.2', 'fable-5-2', 'claude-fable-5.2'];
+
+      aliases.forEach((alias) => {
+        const config = anthropicProvider.getModelConfig(alias);
+        expect(config).toBeDefined();
+        expect(config.modelName).toBe('claude-fable-5-2');
       });
     });
 

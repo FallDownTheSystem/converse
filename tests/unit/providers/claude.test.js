@@ -69,6 +69,7 @@ describe('Claude SDK Provider', () => {
       const models = claudeProvider.getSupportedModels();
 
       expect(Object.keys(models)).toEqual([
+        'claude-fable-5-2',
         'claude-opus-5-5',
         'claude-opus-5',
         'claude-fable-5-1',
@@ -86,8 +87,11 @@ describe('Claude SDK Provider', () => {
       expect(models['claude-opus-5'].aliases).toEqual(
         expect.arrayContaining(['opus-5', 'opus5']),
       );
+      expect(models['claude-fable-5-2'].aliases).toEqual(
+        expect.arrayContaining(['fable', 'claude-fable', 'claude-fable-5.2', 'fable-5-2', 'fable-5.2']),
+      );
       expect(models['claude-fable-5-1'].aliases).toEqual(
-        expect.arrayContaining(['fable', 'claude-fable', 'claude-fable-5.1', 'fable-5-1', 'fable-5.1']),
+        ['claude-fable-5.1', 'fable-5-1', 'fable-5.1'],
       );
       expect(models['claude-fable-5'].aliases).toEqual(
         expect.arrayContaining(['fable-5', 'fable5']),
@@ -100,8 +104,8 @@ describe('Claude SDK Provider', () => {
       );
     });
 
-    it('should expose Claude Opus 5.5 as the default model', () => {
-      expect(claudeProvider.defaultModel).toBe('claude-opus-5-5');
+    it('should expose Claude Fable 5.2 as the default model', () => {
+      expect(claudeProvider.defaultModel).toBe('claude-fable-5-2');
     });
 
     it('should not treat router namespaces or empty names as models', () => {
@@ -132,7 +136,7 @@ describe('Claude SDK Provider', () => {
 
     it('should resolve bare fable/opus names', () => {
       expect(claudeProvider.getModelConfig('fable').modelName).toBe(
-        'claude-fable-5-1',
+        'claude-fable-5-2',
       );
       expect(claudeProvider.getModelConfig('opus').modelName).toBe(
         'claude-opus-5-5',
@@ -146,19 +150,21 @@ describe('Claude SDK Provider', () => {
 
   describe('Router resolution of the claude namespace', () => {
     const cases = [
-      ['claude', 'claude-opus-5-5'],
-      ['claude-sdk', 'claude-opus-5-5'],
-      ['claude-code', 'claude-opus-5-5'],
-      ['claude:', 'claude-opus-5-5'],
-      ['claude: ', 'claude-opus-5-5'],
+      ['claude', 'claude-fable-5-2'],
+      ['claude-sdk', 'claude-fable-5-2'],
+      ['claude-code', 'claude-fable-5-2'],
+      ['claude:', 'claude-fable-5-2'],
+      ['claude: ', 'claude-fable-5-2'],
       ['claude:opus', 'claude-opus-5-5'],
       ['claude:opus-5.5', 'claude-opus-5-5'],
       ['claude:claude-opus-5-5', 'claude-opus-5-5'],
       ['CLAUDE:OPUS-5.5', 'claude-opus-5-5'],
       ['claude:opus-5', 'claude-opus-5'],
       ['claude:claude-opus-5', 'claude-opus-5'],
-      ['claude:fable', 'claude-fable-5-1'],
-      ['claude:claude-fable', 'claude-fable-5-1'],
+      ['claude:fable', 'claude-fable-5-2'],
+      ['claude:claude-fable', 'claude-fable-5-2'],
+      ['claude:fable-5.2', 'claude-fable-5-2'],
+      ['claude:claude-fable-5-2', 'claude-fable-5-2'],
       ['claude:fable-5', 'claude-fable-5'],
       ['claude:claude-fable-5', 'claude-fable-5'],
       ['claude:fable-5.1', 'claude-fable-5-1'],
@@ -183,10 +189,10 @@ describe('Claude SDK Provider', () => {
 
     it('should honor the configured default-model override for bare "claude"', () => {
       const result = resolveModelSpec('claude', providersWithClaudeAvailable(), {
-        providers: { claudedefaultmodel: 'fable' },
+        providers: { claudedefaultmodel: 'opus' },
       });
       expect(result.status).toBe('ok');
-      expect(result.resolvedModel).toBe('claude-fable-5-1');
+      expect(result.resolvedModel).toBe('claude-opus-5-5');
     });
 
     it('should reject unknown claude: models with suggestions', () => {
@@ -257,7 +263,9 @@ describe('Claude SDK Provider', () => {
 
   describe('Model resolution in invoke', () => {
     const cases = [
-      ['', 'claude-opus-5-5'],
+      ['', 'claude-fable-5-2'],
+      ['claude-fable-5-2', 'claude-fable-5-2'],
+      ['fable-5.2', 'claude-fable-5-2'],
       ['claude-opus-5-5', 'claude-opus-5-5'],
       ['opus', 'claude-opus-5-5'],
       ['opus-5.5', 'claude-opus-5-5'],
@@ -265,8 +273,8 @@ describe('Claude SDK Provider', () => {
       ['claude-opus-5', 'claude-opus-5'],
       ['opus-5', 'claude-opus-5'],
       ['claude-fable-5-1', 'claude-fable-5-1'],
-      ['fable', 'claude-fable-5-1'],
-      ['claude-fable', 'claude-fable-5-1'],
+      ['fable', 'claude-fable-5-2'],
+      ['claude-fable', 'claude-fable-5-2'],
       ['fable-5.1', 'claude-fable-5-1'],
       ['fable-5-1', 'claude-fable-5-1'],
       ['claude-fable-5.1', 'claude-fable-5-1'],
@@ -299,13 +307,13 @@ describe('Claude SDK Provider', () => {
       });
     });
 
-    it('should default to Claude Opus 5.5 when no model is specified', async () => {
+    it('should default to Claude Fable 5.2 when no model is specified', async () => {
       await claudeProvider.invoke([{ role: 'user', content: 'Hi' }], {
         config: mockConfig,
       });
 
       const queryArgs = mockQuery.mock.calls[0][0];
-      expect(queryArgs.options.model).toBe('claude-opus-5-5');
+      expect(queryArgs.options.model).toBe('claude-fable-5-2');
     });
 
     it.each(['claude-sonnet-4-6', 'claude:opus', 'claude'])(

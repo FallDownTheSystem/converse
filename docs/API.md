@@ -551,7 +551,8 @@ Provide models as plain name strings in the `models` array. Each entry is `auto`
 | Model | Aliases | Context | Output | Notes |
 |-------|---------|---------|--------|-------|
 | `claude-opus-5-5` | `opus`, `opus-5.5`, `claude-opus` | 1M | 128K | Default. Flagship Opus, always-on adaptive thinking + effort (no compaction yet) |
-| `claude-fable-5` | `fable`, `fable-5` | 1M | 128K | Most capable, adaptive thinking + effort, images, caching, compaction |
+| `claude-fable-5-2` | `fable`, `claude-fable`, `fable-5.2` | 1M | 128K | Most capable, always-on adaptive thinking + effort, images, caching; needs 30-day data retention |
+| `claude-fable-5` | `fable-5` | 1M | 128K | First Fable generation, adaptive thinking + effort, images, caching, compaction |
 | `claude-opus-5` | `opus-5` | 1M | 128K | Previous Opus, adaptive thinking + effort, compaction |
 | `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` | `opus-4.8`, `opus-4.7`, `opus-4.6` | 200K (1M beta) | 128K | Previous Opus generations |
 | `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` | `opus-4.5`, `opus-4.1` | 200K | 64K / 32K | Earlier Opus tiers |
@@ -560,7 +561,7 @@ Provide models as plain name strings in the `models` array. Each entry is `auto`
 | `claude-haiku-5-5` | `haiku`, `haiku-5.5`, `claude-haiku` | 1M | 128K | Current Haiku, adaptive thinking + effort, compaction |
 | `claude-haiku-4-5-20251001` | `haiku-4.5` | 200K | 64K | Previous Haiku, extended thinking |
 
-Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
+Models with adaptive thinking control depth via `reasoning_effort`, which is passed by name to Anthropic's `effort` parameter and clamped to what each model accepts: Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5, Opus 5, Opus 4.8, and Opus 4.7 take `low`–`max`; Opus 4.6 and Sonnet 4.6 lack `xhigh` (it becomes `max`); Opus 4.5 tops out at `high`. `none` and `minimal` become `low` everywhere. System prompts are automatically cached for 1 hour; cache stats appear in response metadata as `cache_creation_input_tokens` / `cache_read_input_tokens`.
 
 ### Mistral Models
 
@@ -622,8 +623,8 @@ All three are uncensored ("abliterated") reasoning models using Abliteration's O
 
 **Claude** is available through the Claude Agent SDK, using Claude Code CLI authentication instead of an API key:
 
-- **Model**: `claude` (namespaces: `claude`, `claude-code`, `claude-sdk`) — defaults to Claude Opus 5.5 (`claude-opus-5-5`), or `CLAUDE_DEFAULT_MODEL`
-- **Model selection**: `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-fable-5-1` (`fable`, `claude-fable`, `fable-5.1`), `claude-fable-5` (`fable-5`), `claude-sonnet-5-5` (`sonnet`, `claude-sonnet`, `sonnet-5.5`), `claude-haiku-5-5` (`haiku`, `claude-haiku`, `haiku-5.5`), e.g. `claude:opus`, `claude:fable`, `claude:sonnet`, `claude:haiku`. Other names are rejected with suggestions.
+- **Model**: `claude` (namespaces: `claude`, `claude-code`, `claude-sdk`) — defaults to Claude Fable 5.2 (`claude-fable-5-2`), or `CLAUDE_DEFAULT_MODEL`
+- **Model selection**: `claude-fable-5-2` (`fable`, `claude-fable`, `fable-5.2`), `claude-fable-5-1` (`fable-5.1`), `claude-fable-5` (`fable-5`), `claude-opus-5-5` (`opus`, `claude-opus`, `opus-5.5`), `claude-opus-5` (`opus-5`), `claude-sonnet-5-5` (`sonnet`, `claude-sonnet`, `sonnet-5.5`), `claude-haiku-5-5` (`haiku`, `claude-haiku`, `haiku-5.5`), e.g. `claude:opus`, `claude:fable`, `claude:sonnet`, `claude:haiku`. Other names are rejected with suggestions.
 - **Authentication**: `claude login` — no `ANTHROPIC_API_KEY` needed
 - **Availability**: the Claude Agent SDK is installed and `~/.claude/.credentials.json` exists (`$CLAUDE_CONFIG_DIR` when set), or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY` is in the environment; on macOS the Keychain login is assumed. An expired login is caught at call time and bare-name/`auto` routing fails over.
 - **Permissions**: runs with `bypassPermissions`
@@ -664,7 +665,7 @@ agy
 Reach these only with the `copilot:` namespace (also `github-copilot:`, `copilot-sdk:`; e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Available when the Copilot SDK is installed; uses your GitHub Copilot subscription (`gh auth login`) — no API key needed:
 
 - **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all accept `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.2` (alias: `fable`), `claude-fable-5.1`, `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-4-argon` (aliases: `gemini`, `argon`, `gemini-4`), `gemini-3.8-flash` (alias: `gemini-flash`)
 - Any other `copilot:<id>` is rejected with suggestions
 
@@ -675,7 +676,7 @@ Every entry in `models` takes one of four forms:
 - **`auto`** — the first available provider's default model.
 - **`provider`** — that provider's default model (hardcoded, or `<PROVIDER>_DEFAULT_MODEL`). Namespaces: `codex`; `gemini`/`agy`/`antigravity`/`gemini-cli` (Antigravity CLI); `claude`/`claude-code`/`claude-sdk` (Claude Agent SDK); `copilot`/`github-copilot`/`copilot-sdk`; `openai`; `google`; `xai`; `anthropic`; `mistral`; `deepseek`; `openrouter`; `abliteration`; `ablit`.
 - **`provider:model`** — that model on that provider only; the model must be in that provider's list.
-- **Bare `model`** — the first provider, in the order `codex`, `gemini-cli`, `claude`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, `abliteration`, whose list contains the ID or alias and that is set up (API key for API providers; SDK plus login for Codex and the Claude Agent SDK; the `agy` binary for Antigravity). On an authentication or availability error, the next set-up provider serving **the same model** takes over; a provider whose alias points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API). Copilot never serves bare names.
+- **Bare `model`** — the first provider, in the order `codex`, `gemini-cli`, `claude`, `openai`, `google`, `xai`, `anthropic`, `mistral`, `deepseek`, `openrouter`, `abliteration`, whose list contains the ID or alias and that is set up (API key for API providers; SDK plus login for Codex and the Claude Agent SDK; the `agy` binary for Antigravity). On an authentication or availability error, the next set-up provider serving **the same model** takes over; a provider whose alias points at a different model is never substituted (bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API). Copilot never serves bare names.
 
 **Unknown names are rejected**, never forwarded: the error lists up to three close matches, e.g. `Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`. The exception is OpenRouter: a full `vendor/model` slug (bare or `openrouter:`) is validated against OpenRouter's live catalog.
 
@@ -692,11 +693,11 @@ Every entry in `models` takes one of four forms:
 "z-ai/glm-5.2"             // OpenRouter (full slug)
 "z-ai/glm-5.2:online"      // OpenRouter with web search opt-in
 "ablit"                    // Abliteration (-> abliterated-model-large-v2)
-"fable"                    // Claude Agent SDK (-> claude-fable-5-1) when set up, otherwise Anthropic API (-> claude-fable-5)
+"fable"                    // Claude Agent SDK (-> claude-fable-5-2), else Anthropic API
 "opus"                     // Claude Agent SDK (-> claude-opus-5-5), else Anthropic API
 "anthropic:opus"           // Anthropic API only
-"claude"                   // Claude Agent SDK (-> Claude Opus 5.5)
-"claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
+"claude"                   // Claude Agent SDK (-> Claude Fable 5.2)
+"claude:opus"              // Claude Agent SDK (Claude Opus 5.5)
 "codex:luna"               // Codex (GPT-6 Luna)
 "gemini"                   // Antigravity CLI (Gemini 4 Argon)
 "copilot:gpt-6.1-sol"      // GitHub Copilot SDK
@@ -746,7 +747,7 @@ Each provider's default model (used for its bare provider name and for `auto`) c
 
 ```bash
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
-CLAUDE_DEFAULT_MODEL=claude-opus-5-5
+CLAUDE_DEFAULT_MODEL=claude-fable-5-2
 AGY_DEFAULT_MODEL=gemini-4-argon             # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL is honored as a legacy fallback
 OPENAI_DEFAULT_MODEL=gpt-6.1-sol

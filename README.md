@@ -276,7 +276,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 ### Anthropic Models
 
 - **claude-opus-5-5** (default; aliases: `opus`, `opus-5.5`, `claude-opus`): Flagship Opus for complex agentic coding and deep reasoning; thinking always on, effort `low`–`max` (1M context, 128K output)
-- **claude-fable-5** (alias: `fable`): Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
+- **claude-fable-5-2** (aliases: `fable`, `claude-fable`, `fable-5.2`): Most capable model for demanding reasoning and long-horizon agentic work; needs 30-day data retention on the workspace (1M context, 128K output)
+- **claude-fable-5** (alias: `fable-5`): First Fable generation (1M context, 128K output)
 - **claude-opus-5** (alias: `opus-5`): Previous Opus generation (1M context, 128K output)
 - **claude-opus-4-8** / **claude-opus-4-7** / **claude-opus-4-6**: Earlier Opus generations with adaptive thinking (200K context, 1M via beta, 128K output)
 - **claude-opus-4-5** / **claude-opus-4-1**: Legacy Opus models with extended thinking (64K / 32K output)
@@ -335,10 +336,10 @@ OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Ast
 
 ### Claude Agent SDK Models
 
-Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `CLAUDE_DEFAULT_MODEL`); `claude:<model>` picks one:
+Claude via the Claude Agent SDK. `claude` uses its default model (Fable 5.2, or `CLAUDE_DEFAULT_MODEL`); `claude:<model>` picks one:
 
-- **claude-opus-5-5** (default; aliases: `opus`, `claude-opus`, `opus-5.5`), **claude-opus-5** (`opus-5`)
-- **claude-fable-5-1** (aliases: `fable`, `claude-fable`, `fable-5.1`), **claude-fable-5** (`fable-5`)
+- **claude-fable-5-2** (default; aliases: `fable`, `claude-fable`, `fable-5.2`), **claude-fable-5-1** (`fable-5.1`), **claude-fable-5** (`fable-5`)
+- **claude-opus-5-5** (aliases: `opus`, `claude-opus`, `opus-5.5`), **claude-opus-5** (`opus-5`)
 - **claude-sonnet-5-5** (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`)
 - **claude-haiku-5-5** (aliases: `haiku`, `claude-haiku`, `haiku-5.5`)
 - Uses Claude Code CLI authentication (`claude login`) - no API key needed
@@ -349,7 +350,7 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Opus 5.5, or `
 Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
 - **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
-- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+- **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.2` (alias: `fable`), `claude-fable-5.1`, `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-4-argon` (aliases: `gemini`, `argon`, `gemini-4`), `gemini-3.8-flash` (alias: `gemini-flash`)
 
 ## 📚 Help & Documentation
@@ -410,7 +411,7 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 # `openai`, ...) and for "auto". Must be a model or alias from that provider's
 # list; startup fails with suggestions otherwise.
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL still works as a fallback
-CLAUDE_DEFAULT_MODEL=claude-opus-5-5
+CLAUDE_DEFAULT_MODEL=claude-fable-5-2
 AGY_DEFAULT_MODEL=gemini-4-argon             # Requires Google AI Ultra; other plans can use gemini:flash or set AGY_DEFAULT_MODEL=gemini-3.8-flash
 COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL still works as a fallback
 OPENAI_DEFAULT_MODEL=gpt-6.1-sol
@@ -482,7 +483,7 @@ Every entry in `models` takes one of four forms:
 
 // A provider: its default model (hardcoded, or <PROVIDER>_DEFAULT_MODEL)
 "codex"; // -> Codex (GPT-6 Astra)
-"claude"; // -> Claude Agent SDK (Claude Opus 5.5)
+"claude"; // -> Claude Agent SDK (Claude Fable 5.2)
 "gemini"; // -> Antigravity CLI (Gemini 4 Argon)
 "openai"; // -> OpenAI API (GPT-6.1 Sol)
 
@@ -502,7 +503,7 @@ Every entry in `models` takes one of four forms:
 "z-ai/glm-5.2"; // -> OpenRouter (any vendor/model slug)
 ```
 
-**Bare model names** go to the first provider, in the order below, whose model list contains the name and that is set up (API key present; for Codex and Claude, a login file or token; for Antigravity, the `agy` binary). If that provider then fails with an authentication or availability error, the next provider that serves **the same model** takes over — a provider whose alias of that name points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API, so it does not fail over between them). Copilot is never picked for bare names; use `copilot:<model>`.
+**Bare model names** go to the first provider, in the order below, whose model list contains the name and that is set up (API key present; for Codex and Claude, a login file or token; for Antigravity, the `agy` binary). If that provider then fails with an authentication or availability error, the next provider that serves **the same model** takes over — a provider whose alias of that name points at a different model is never substituted (bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API, so it does not fail over between them). Copilot is never picked for bare names; use `copilot:<model>`.
 
 **Unknown names are rejected**, never guessed: a typo or an unlisted model returns an error with up to three close matches, e.g. `Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`. OpenRouter is the exception for full `vendor/model` slugs, which are checked against OpenRouter's live catalog.
 
@@ -516,7 +517,7 @@ Provider priority order (subscription-based local providers first, then API-key 
 
 1. Codex (`codex` → GPT-6 Astra)
 2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 4 Argon)
-3. Claude Agent SDK (`claude` → Claude Opus 5.5)
+3. Claude Agent SDK (`claude` → Claude Fable 5.2)
 4. Copilot (`copilot` → GPT-6.1 Sol; `auto` only, never bare names)
 5. OpenAI (`openai` → GPT-6.1 Sol)
 6. Google (`google` → Gemini 4 Argon)

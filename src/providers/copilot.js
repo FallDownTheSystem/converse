@@ -125,6 +125,18 @@ const SUPPORTED_MODELS = {
     description: 'Anthropic Claude Opus 5.5 via Copilot subscription',
     aliases: ['opus', 'claude', 'claude-opus-5-5'],
   },
+  'claude-fable-5.2': {
+    modelName: 'claude-fable-5.2',
+    friendlyName: 'Claude Fable 5.2 (via Copilot)',
+    contextWindow: 200000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description: 'Anthropic Claude Fable 5.2 via Copilot subscription',
+    aliases: ['fable', 'claude-fable-5-2'],
+  },
   'claude-fable-5.1': {
     modelName: 'claude-fable-5.1',
     friendlyName: 'Claude Fable 5.1 (via Copilot)',
@@ -135,7 +147,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 1800000,
     description: 'Anthropic Claude Fable 5.1 via Copilot subscription',
-    aliases: ['fable', 'claude-fable-5-1'],
+    aliases: ['claude-fable-5-1'],
   },
   'claude-fable-5': {
     modelName: 'claude-fable-5',

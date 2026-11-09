@@ -51,7 +51,8 @@ This guide documents all supported AI providers in the Converse MCP Server and t
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Supported Models**:
   - `claude-opus-5-5` (aliases `opus`, `opus-5.5`, `claude-opus`) - Default. Flagship Opus for complex agentic coding and deep reasoning; thinking is always on, effort `low`–`max` (1M context, 128K output)
-  - `claude-fable-5` (alias `fable`) - Most capable model for demanding reasoning and long-horizon agentic work (1M context, 128K output)
+  - `claude-fable-5-2` (aliases `fable`, `claude-fable`, `fable-5.2`) - Most capable model for demanding reasoning and long-horizon agentic work; thinking is always on, and the workspace must keep 30-day data retention (1M context, 128K output)
+  - `claude-fable-5` (alias `fable-5`) - First Fable generation (1M context, 128K output)
   - `claude-opus-5` (alias `opus-5`) - Previous Opus generation (1M context, 128K output)
   - `claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6` - Earlier Opus generations with adaptive thinking (128K output)
   - `claude-opus-4-5-20251101`, `claude-opus-4-1-20250805` - Legacy Opus models (64K / 32K output)
@@ -223,13 +224,14 @@ agy
 - **Setup Required**: Authenticate once with `claude login` (Claude Code CLI)
 - **Availability**: The Claude Agent SDK is installed and a credential is present: `~/.claude/.credentials.json` (`$CLAUDE_CONFIG_DIR/.credentials.json` when set), or `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` in the environment. On macOS the login lives in the Keychain and is assumed present. An expired login is caught at call time, and bare-name/`auto` routing fails over to the next provider.
 - **Environment Variables**:
-  - `CLAUDE_DEFAULT_MODEL` - Model used for bare `claude` and `auto` (default: `claude-opus-5-5`)
+  - `CLAUDE_DEFAULT_MODEL` - Model used for bare `claude` and `auto` (default: `claude-fable-5-2`)
 - **Supported Models** (namespaces: `claude`, `claude-code`, `claude-sdk`):
-  - `claude` - Defaults to Claude Opus 5.5 (`claude-opus-5-5`)
+  - `claude` - Defaults to Claude Fable 5.2 (`claude-fable-5-2`)
+  - `claude-fable-5-2` (aliases: `fable`, `claude-fable`, `fable-5.2`) - Claude Fable 5.2 (`claude:fable`). Depending on the plan, Claude Code can bill Fable usage to usage credits without asking.
+  - `claude-fable-5-1` (alias: `fable-5.1`) - Claude Fable 5.1
+  - `claude-fable-5` (alias: `fable-5`) - Claude Fable 5.0
   - `claude-opus-5-5` (aliases: `opus`, `claude-opus`, `opus-5.5`) - Claude Opus 5.5 (`claude:opus`)
   - `claude-opus-5` (alias: `opus-5`) - Claude Opus 5
-  - `claude-fable-5-1` (aliases: `fable`, `claude-fable`, `fable-5.1`) - Claude Fable 5.1 (`claude:fable`)
-  - `claude-fable-5` (alias: `fable-5`) - Claude Fable 5.0
   - `claude-sonnet-5-5` (aliases: `sonnet`, `claude-sonnet`, `sonnet-5.5`) - Claude Sonnet 5.5 (`claude:sonnet`)
   - `claude-haiku-5-5` (aliases: `haiku`, `claude-haiku`, `haiku-5.5`) - Claude Haiku 5.5 (`claude:haiku`)
   - Names outside this catalog are rejected with suggestions (e.g. `claude:sonnet-4.6` suggests `anthropic:sonnet-4.6`)
@@ -245,7 +247,7 @@ agy
 **Differences from Anthropic API Provider:**
 - **Authentication**: Claude Code login vs `ANTHROPIC_API_KEY`
 - **Billing**: Claude subscription vs pay-per-use API
-- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`opus`, `sonnet`, `haiku`, `claude-opus-5-5`, `claude-opus-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5`) → SDK first, then the API on authentication/availability failure; bare names only the API serves (e.g., `haiku-4.5`, `sonnet-4.6`) → API provider. Bare `fable` is Fable 5.1 on the SDK but Fable 5 on the API, so it does not fail over between them.
+- **Model Routing**: `claude` and `claude:<model>` → SDK provider; `anthropic:<model>` → API provider; bare names both serve as the same model (`fable`, `opus`, `sonnet`, `haiku`, `claude-fable-5-2`, `claude-fable-5`, `claude-opus-5-5`, `claude-opus-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`) → SDK first, then the API on authentication/availability failure; bare names only one of them serves (e.g., `haiku-4.5`, `sonnet-4.6` on the API; `fable-5.1` on the SDK) → that provider.
 - **Permissions**: The SDK runs with `bypassPermissions`, and bare names and `auto` reach it whenever it is available. Use `anthropic:<model>` to keep a request on the plain API.
 
 ### GitHub Copilot SDK
@@ -257,7 +259,7 @@ agy
 - **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6.1-sol`; Copilot never serves bare model names):
   - `copilot` - GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`
   - OpenAI: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`
-  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5.1` (alias: `fable`), `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
+  - Anthropic: `claude-opus-5.5` (aliases: `opus`, `claude`; Copilot Pro+/Max/Business/Enterprise), `claude-fable-5.2` (alias: `fable`), `claude-fable-5.1`, `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
   - Google: `gemini-4-argon` (aliases: `gemini`, `argon`, `gemini-4`), `gemini-3.8-flash` (alias: `gemini-flash`)
 - **Reasoning**: The GPT-6 and GPT-5.6 tiers accept `reasoning_effort` (clamped onto Copilot's `low`–`xhigh`).
 - **Unknown IDs**: Any other `copilot:<id>` is rejected with suggestions; only the IDs and aliases above are accepted.
@@ -297,7 +299,7 @@ Each provider has a `<PROVIDER>_DEFAULT_MODEL` variable that sets the model used
 
 ```bash
 CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL is honored as a legacy fallback
-CLAUDE_DEFAULT_MODEL=claude-opus-5-5
+CLAUDE_DEFAULT_MODEL=claude-fable-5-2
 AGY_DEFAULT_MODEL=gemini-4-argon             # Antigravity CLI (gemini)
 COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL is honored as a legacy fallback
 OPENAI_DEFAULT_MODEL=gpt-6.1-sol
@@ -354,7 +356,7 @@ All providers support streaming responses for real-time output.
 - **Google**:
   - Gemini 3.0 Pro: Thinking levels (low/high) via `reasoning_effort` - always enabled
   - Gemini 2.5 Pro/Flash: Thinking budget (token-based) via `reasoning_effort`
-- **Anthropic**: Claude Fable 5, Opus 4.6+, and Sonnet 4.6+ use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
+- **Anthropic**: Claude Fable 5 and 5.2, Opus 4.6+, and Sonnet 4.6+ use adaptive thinking (depth controlled by `reasoning_effort` via Anthropic's `effort` parameter); older Claude 4 models use budget-based extended thinking
 - **X.AI**: Grok 4.5 maps `reasoning_effort` to `low`/`medium`/`high` and always reasons (cannot be disabled)
 - **Mistral**: `mistral-medium-3-5` and `mistral-small-2603` map `reasoning_effort` to `high` (enabled) or `none` (disabled); `mistral-large-2512` has no adjustable reasoning
 - **DeepSeek**: V4 models use thinking mode via `reasoning_effort` (`none` disables; enabled levels use `high`, `max` uses `max`)
@@ -387,7 +389,7 @@ Routing is derived entirely from each provider's model list (canonical IDs plus 
 
 3. **Bare `model`** — an ID or alias without a namespace goes to the first provider, in this order, whose list contains the name and that is set up: Codex, Antigravity CLI, Claude Agent SDK, OpenAI, Google, X.AI, Anthropic, Mistral, DeepSeek, OpenRouter, Abliteration.
    - "Set up" means an API key for API providers; for Codex, the SDK plus a login file or `CODEX_API_KEY`; for the Claude Agent SDK, the SDK plus a login file, a macOS login, or `CLAUDE_CODE_OAUTH_TOKEN`/`ANTHROPIC_API_KEY`; for Antigravity, the `agy` binary.
-   - If that provider fails with an authentication or availability error (including an expired login, which is only detected at call time), the next set-up provider that serves **the same model** takes over. A provider whose alias of that name points at a different model is never substituted (bare `fable` is Fable 5.1 on the Claude Agent SDK and Fable 5 on the Anthropic API; bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API).
+   - If that provider fails with an authentication or availability error (including an expired login, which is only detected at call time), the next set-up provider that serves **the same model** takes over. A provider whose alias of that name points at a different model is never substituted (bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API).
    - Copilot never serves bare names; use `copilot:<model>`.
 
 4. **`auto`** — the first available provider's default model, in the priority order above with Copilot between the Claude Agent SDK and OpenAI.
@@ -403,12 +405,12 @@ Examples:
 ```text
 "gpt-6"                    // Codex (gpt-6.1-sol), else OpenAI API
 "openai:gpt-6"             // OpenAI API only
-"fable"                    // Claude Agent SDK (claude-fable-5-1) when set up, otherwise Anthropic API (claude-fable-5)
+"fable"                    // Claude Agent SDK (claude-fable-5-2), else Anthropic API
 "opus"                     // Claude Agent SDK (claude-opus-5-5), else Anthropic API
 "anthropic:opus"           // Anthropic API only
 "sonnet"                   // Claude Agent SDK (claude-sonnet-5-5), else Anthropic API
-"claude"                   // Claude Agent SDK (defaults to Claude Opus 5.5)
-"claude:fable"             // Claude Agent SDK (Claude Fable 5.1)
+"claude"                   // Claude Agent SDK (defaults to Claude Fable 5.2)
+"claude:opus"              // Claude Agent SDK (Claude Opus 5.5)
 "pro"                      // Antigravity CLI (gemini-4-argon), else Google API
 "google:pro"               // Google API only
 "gemini-2.5-pro"           // Google API
@@ -444,7 +446,7 @@ Examples:
 ### Model Not Found
 - Use model identifiers or aliases as listed above; anything else is rejected with up to three "Did you mean" suggestions
 - Check the namespace: a model must be in that provider's list (`openai:spark` fails and suggests `codex:spark`)
-- Aliases can differ per provider (e.g., bare "fable" → "claude-fable-5-1" on the Claude Agent SDK, `anthropic:fable` → "claude-fable-5")
+- Aliases can differ per provider (e.g., `gemini:flash` → "gemini-3.8-flash" on the Antigravity CLI, `google:flash` → "gemini-2.5-flash")
 - Note: bare "claude" routes to the Claude Agent SDK provider, not the Anthropic API
 - A "none is available" error means the model exists but no provider serving it is set up; the message names the setup step for each
 - Check provider documentation for model availability in your region

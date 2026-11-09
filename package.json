@@ -93,9 +93,9 @@
     ".env.example"
   ],
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.3.319",
-    "@anthropic-ai/sdk": "^1.6.0",
-    "@github/copilot-sdk": "^1.0.29",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.321",
+    "@anthropic-ai/sdk": "^1.7.0",
+    "@github/copilot-sdk": "^1.0.30",
     "@google/genai": "^3.0.0",
     "@lydell/node-pty": "1.2.0-beta.18",
     "@mistralai/mistralai": "^3.5.0",
@@ -107,9 +107,9 @@
     "express": "^5.3.0",
     "lru-cache": "^11.5.3",
     "nanoid": "^6.0.2",
-    "openai": "^7.53.0",
+    "openai": "^7.54.0",
     "p-limit": "^7.3.3",
-    "vite": "^8.3.6",
+    "vite": "^8.3.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {

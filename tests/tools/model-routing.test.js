@@ -62,7 +62,7 @@ describe('Model Routing', () => {
     it('uses each provider\'s hardcoded default', () => {
       const providers = providersWith();
       expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6-astra');
-      expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-opus-5-5');
+      expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-fable-5-2');
       expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-4-argon');
       expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6.1-sol');
       expect(getDefaultModelForProvider('openai', providers, {})).toBe('gpt-6.1-sol');
@@ -130,7 +130,7 @@ describe('Model Routing', () => {
       expect(getAutoModelSpecs(providersWith(), {}, { limit: 3 })).toEqual([
         'codex:gpt-6-astra',
         'gemini:gemini-4-argon',
-        'claude:claude-opus-5-5',
+        'claude:claude-fable-5-2',
       ]);
     });
   });
@@ -141,7 +141,7 @@ describe('Model Routing', () => {
       expect(candidatesOf(route('openai:gpt-6-astra'))).toEqual(['openai:gpt-6-astra']);
       expect(candidatesOf(route('gemini:pro'))).toEqual(['gemini-cli:gemini-4-argon']);
       expect(candidatesOf(route('agy:flash'))).toEqual(['gemini-cli:gemini-3.8-flash']);
-      expect(candidatesOf(route('claude:fable'))).toEqual(['claude:claude-fable-5-1']);
+      expect(candidatesOf(route('claude:fable'))).toEqual(['claude:claude-fable-5-2']);
       expect(candidatesOf(route('copilot:sonnet'))).toEqual(['copilot:claude-sonnet-5.5']);
     });
 
@@ -180,6 +180,10 @@ describe('Model Routing', () => {
         'claude:claude-opus-5-5',
         'anthropic:claude-opus-5-5',
       ]);
+      expect(candidatesOf(route('fable'))).toEqual([
+        'claude:claude-fable-5-2',
+        'anthropic:claude-fable-5-2',
+      ]);
       expect(candidatesOf(route('sonnet'))).toEqual([
         'claude:claude-sonnet-5-5',
         'anthropic:claude-sonnet-5-5',
@@ -201,10 +205,10 @@ describe('Model Routing', () => {
     });
 
     it('never fails over to a provider whose alias names a different model', () => {
-      // claude's `fable` is Fable 5.1; anthropic's is Fable 5.
-      expect(candidatesOf(route('fable'))).toEqual(['claude:claude-fable-5-1']);
-      expect(candidatesOf(route('fable', { unavailable: ['claude'] }))).toEqual([
-        'anthropic:claude-fable-5',
+      // gemini-cli's `flash` is Gemini 3.8 Flash; google's is Gemini 2.5 Flash.
+      expect(candidatesOf(route('flash'))).toEqual(['gemini-cli:gemini-3.8-flash']);
+      expect(candidatesOf(route('flash', { unavailable: ['gemini-cli'] }))).toEqual([
+        'google:gemini-2.5-flash',
       ]);
     });
 

@@ -22,16 +22,16 @@ import {
   isPackageResolvable,
 } from '../utils/localProviderAuth.js';
 
-const DEFAULT_MODEL = 'claude-opus-5-5';
+const DEFAULT_MODEL = 'claude-fable-5-2';
 const SDK_EFFORT_TIERS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const CLAUDE_SDK_PACKAGE = '@anthropic-ai/claude-agent-sdk';
 
 // Keyed by the model ID the Agent SDK accepts, which is also the canonical ID
 // the router resolves to.
 const SUPPORTED_MODELS = {
-  'claude-opus-5-5': {
-    modelName: 'claude-opus-5-5',
-    friendlyName: 'Claude Opus 5.5 (via Agent SDK)',
+  'claude-fable-5-2': {
+    modelName: 'claude-fable-5-2',
+    friendlyName: 'Claude Fable 5.2 (via Agent SDK)',
     contextWindow: 1000000,
     maxOutputTokens: 128000,
     supportsStreaming: true,
@@ -39,7 +39,26 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false, // SDK accesses files directly, not web
     timeout: 1800000, // 30 minutes
     description:
-      'Claude Opus 5.5 via Agent SDK (default) - requires claude login authentication',
+      'Claude Fable 5.2 via Agent SDK (default) - requires claude login authentication',
+    aliases: [
+      'fable',
+      'claude-fable',
+      'claude-fable-5.2',
+      'fable-5-2',
+      'fable-5.2',
+    ],
+  },
+  'claude-opus-5-5': {
+    modelName: 'claude-opus-5-5',
+    friendlyName: 'Claude Opus 5.5 (via Agent SDK)',
+    contextWindow: 1000000,
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description:
+      'Claude Opus 5.5 via Agent SDK - requires claude login authentication',
     aliases: [
       'opus',
       'claude-opus',
@@ -72,13 +91,7 @@ const SUPPORTED_MODELS = {
     timeout: 1800000,
     description:
       'Claude Fable 5.1 via Agent SDK - requires claude login authentication',
-    aliases: [
-      'fable',
-      'claude-fable',
-      'claude-fable-5.1',
-      'fable-5-1',
-      'fable-5.1',
-    ],
+    aliases: ['claude-fable-5.1', 'fable-5-1', 'fable-5.1'],
   },
   'claude-fable-5': {
     modelName: 'claude-fable-5',

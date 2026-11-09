@@ -53,6 +53,38 @@ const SUPPORTED_MODELS = {
       'claude-opus',
     ],
   },
+  'claude-fable-5-2': {
+    modelName: 'claude-fable-5-2',
+    friendlyName: 'Claude Fable 5.2',
+    contextWindow: 1000000, // 1M context by default - no beta header required
+    maxOutputTokens: 128000,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    supportsAdaptiveThinking: true, // Thinking is always on; "enabled" and "disabled" both return 400
+    timeout: 1800000,
+    supportsEffort: true,
+    effortGA: true,
+    effortTiers: EFFORT_TIERS_FULL,
+    // Anthropic lists only on-demand compaction for this model, which is a
+    // different beta from the automatic compact-2026-01-12 header.
+    supportsCompaction: false,
+    description:
+      'Claude Fable 5.2 - Most capable model for the most demanding reasoning and long-horizon agentic work (requires 30-day data retention)',
+    aliases: [
+      'claude-fable-5-2',
+      'claude-fable-5.2',
+      'claude-5.2-fable',
+      'claude-5-2-fable',
+      'fable-5.2',
+      'fable-5-2',
+      'fable5.2',
+      'fable5-2',
+      'fable',
+      'claude-fable',
+    ],
+  },
   'claude-fable-5': {
     modelName: 'claude-fable-5',
     friendlyName: 'Claude Fable 5',
@@ -69,14 +101,12 @@ const SUPPORTED_MODELS = {
     effortTiers: EFFORT_TIERS_FULL,
     supportsCompaction: true,
     description:
-      'Claude Fable 5 - Most capable model for the most demanding reasoning and long-horizon agentic work',
+      'Claude Fable 5 - First Fable generation for demanding reasoning and long-horizon agentic work',
     aliases: [
       'claude-fable-5',
-      'claude-fable',
       'claude-5-fable',
       'fable-5',
       'fable5',
-      'fable',
     ],
   },
   'claude-opus-5': {
