@@ -3,8 +3,50 @@
  * Tests the unified interface implementation without making real API calls
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { googleProvider } from '../../../src/providers/google.js';
+
+// @google/genai 3.x defaults the Gemini Developer API to v1 (was v1beta), and
+// some models and features exist only on v1beta. The provider must keep
+// sending v1beta unless GOOGLE_API_VERSION says otherwise.
+describe('Google Provider API version (real SDK)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requests v1beta by default and honors a configured version', async () => {
+    const urls = [];
+    vi.stubGlobal('fetch', async (input, init) => {
+      urls.push(new Request(input, init).url);
+      return Response.json({
+        candidates: [
+          {
+            content: { role: 'model', parts: [{ text: 'Hello' }] },
+            finishReason: 'STOP',
+            index: 0,
+          },
+        ],
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+      });
+    });
+    const apiKeys = { google: 'A'.repeat(39) };
+    const messages = [{ role: 'user', content: 'Say hello' }];
+
+    await googleProvider.invoke(messages, {
+      config: { apiKeys, providers: {} },
+      model: 'gemini-2.5-flash',
+    });
+    await googleProvider.invoke(messages, {
+      config: { apiKeys, providers: { googleapiversion: 'v1' } },
+      model: 'gemini-2.5-flash',
+    });
+
+    expect(new URL(urls[0]).pathname).toBe(
+      '/v1beta/models/gemini-2.5-flash:generateContent',
+    );
+    expect(new URL(urls[1]).pathname).toMatch(/^\/v1\/models\//);
+  });
+});
 
 describe('Google Provider', () => {
   describe('validateConfig', () => {
