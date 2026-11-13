@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.10.1](https://github.com/FallDownTheSystem/converse/compare/v4.10.0...v4.10.1) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** bump @anthropic-ai/claude-agent-sdk ([#146](https://github.com/FallDownTheSystem/converse/issues/146)) ([857f20a](https://github.com/FallDownTheSystem/converse/commit/857f20a4b446208d9462be8c527b0c61e7f26635))
+
 ## [4.10.0](https://github.com/FallDownTheSystem/converse/compare/v4.9.12...v4.10.0) (2026-11-09)
 
 
