@@ -178,18 +178,28 @@ describe('Google Provider', () => {
       expect(gemini31Model.supportsWebSearch).toBe(true);
     });
 
-    it('should include Gemini 4 Argon with correct configuration', () => {
-      const argon = googleProvider.getSupportedModels()['gemini-4-argon'];
+    it('should include Gemini 4 Carbon with correct configuration', () => {
+      const carbon = googleProvider.getSupportedModels()['gemini-4-carbon'];
 
-      expect(argon.modelName).toBe('gemini-4-argon');
-      expect(argon.friendlyName).toBe('Gemini (4 Argon)');
-      expect(argon.contextWindow).toBe(1048576);
-      expect(argon.maxOutputTokens).toBe(65536);
-      expect(argon.supportsThinking).toBe(true);
-      expect(argon.thinkingMode).toBe('level');
-      expect(argon.thinkingLevels).toEqual(['low', 'medium', 'high']);
-      expect(argon.supportsImages).toBe(true);
-      expect(argon.supportsWebSearch).toBe(true);
+      expect(carbon.modelName).toBe('gemini-4-carbon');
+      expect(carbon.friendlyName).toBe('Gemini (4 Carbon)');
+      expect(carbon.contextWindow).toBe(1048576);
+      expect(carbon.maxOutputTokens).toBe(65536);
+      expect(carbon.supportsThinking).toBe(true);
+      expect(carbon.thinkingMode).toBe('level');
+      expect(carbon.thinkingLevels).toEqual(['low', 'medium', 'high']);
+      expect(carbon.supportsImages).toBe(true);
+      expect(carbon.supportsWebSearch).toBe(true);
+    });
+
+    it('should include Gemini 4 Hydrogen with the xhigh thinking level', () => {
+      const hydrogen = googleProvider.getModelConfig('hydrogen');
+
+      expect(hydrogen.modelName).toBe('gemini-4-hydrogen');
+      expect(hydrogen.contextWindow).toBe(1048576);
+      expect(hydrogen.maxOutputTokens).toBe(65536);
+      expect(hydrogen.thinkingMode).toBe('level');
+      expect(hydrogen.thinkingLevels).toEqual(['low', 'medium', 'high', 'xhigh']);
     });
   });
 
@@ -220,13 +230,13 @@ describe('Google Provider', () => {
       }
     });
 
-    it('should return config for Pro-tier aliases (pointing to Gemini 4 Argon)', () => {
-      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'argon', 'gemini-4'];
+    it('should return config for Pro-tier aliases (pointing to Gemini 4 Carbon)', () => {
+      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'carbon', 'gemini-4'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-4-argon');
+        expect(config.modelName).toBe('gemini-4-carbon');
       }
     });
 
@@ -402,8 +412,8 @@ describe('Google Provider', () => {
   });
 
   describe('default model selection', () => {
-    it('should default to gemini-4-argon', () => {
-      expect(googleProvider.defaultModel).toBe('gemini-4-argon');
+    it('should default to gemini-4-carbon', () => {
+      expect(googleProvider.defaultModel).toBe('gemini-4-carbon');
       expect(googleProvider.getModelConfig(googleProvider.defaultModel)).toBeTruthy();
     });
 

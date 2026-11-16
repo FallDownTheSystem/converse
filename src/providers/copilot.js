@@ -223,17 +223,29 @@ const SUPPORTED_MODELS = {
   },
 
   // Google models
-  'gemini-4-argon': {
-    modelName: 'gemini-4-argon',
-    friendlyName: 'Gemini 4 Argon (via Copilot)',
+  'gemini-4-carbon': {
+    modelName: 'gemini-4-carbon',
+    friendlyName: 'Gemini 4 Carbon (via Copilot)',
     contextWindow: 1048576,
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: false,
     supportsWebSearch: false,
     timeout: 1800000,
-    description: 'Google Gemini 4 Argon via Copilot subscription',
-    aliases: ['gemini', 'argon', 'gemini-4'],
+    description: 'Google Gemini 4 Carbon via Copilot subscription',
+    aliases: ['gemini', 'carbon', 'gemini-4'],
+  },
+  'gemini-4-hydrogen': {
+    modelName: 'gemini-4-hydrogen',
+    friendlyName: 'Gemini 4 Hydrogen (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description: 'Google Gemini 4 Hydrogen via Copilot subscription',
+    aliases: ['hydrogen'],
   },
   'gemini-3.8-flash': {
     modelName: 'gemini-3.8-flash',

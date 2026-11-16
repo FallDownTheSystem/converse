@@ -100,10 +100,10 @@ const SUPPORTED_MODELS = {
       '3.1-pro',
     ],
   },
-  'gemini-4-argon': {
-    modelName: 'gemini-4-argon',
-    friendlyName: 'Gemini (4 Argon)',
-    contextWindow: 1048576, // 1M tokens
+  'gemini-4-carbon': {
+    modelName: 'gemini-4-carbon',
+    friendlyName: 'Gemini (4 Carbon)',
+    contextWindow: 1048576, // 1M tokens, shared by input and output
     maxOutputTokens: 65536,
     supportsStreaming: true,
     supportsImages: true,
@@ -113,18 +113,41 @@ const SUPPORTED_MODELS = {
     thinkingLevels: ['low', 'medium', 'high'],
     timeout: 900000,
     description:
-      'Gemini 4 Argon - Flagship reasoning model for complex software engineering and agentic work (1M context)',
+      'Gemini 4 Carbon - Strongest Gemini model for long-horizon software engineering, scientific reasoning and agentic work (1M context)',
     aliases: [
-      'argon',
-      'gemini-argon',
-      'gemini argon',
+      'carbon',
+      'gemini-carbon',
+      'gemini carbon',
       'gemini-4',
       'gemini4',
-      'gemini 4 argon',
-      '4-argon',
+      'gemini 4 carbon',
+      '4-carbon',
       'gemini pro',
       'gemini-pro',
       'pro',
+    ],
+  },
+  'gemini-4-hydrogen': {
+    modelName: 'gemini-4-hydrogen',
+    friendlyName: 'Gemini (4 Hydrogen)',
+    contextWindow: 1048576, // 1M tokens, shared by input and output
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    thinkingMode: 'level',
+    // Hydrogen adds an xhigh level above high (its default).
+    thinkingLevels: ['low', 'medium', 'high', 'xhigh'],
+    timeout: 900000,
+    description:
+      'Gemini 4 Hydrogen - Fast Gemini 4 model for everyday coding and agentic workflows, available on every API tier (1M context)',
+    aliases: [
+      'hydrogen',
+      'gemini-hydrogen',
+      'gemini hydrogen',
+      'gemini 4 hydrogen',
+      '4-hydrogen',
     ],
   },
   'gemini-3.5-flash': {
@@ -458,7 +481,7 @@ async function retryWithBackoff(fn, maxRetries = 4) {
 /**
  * Main Google provider implementation
  */
-const DEFAULT_MODEL = 'gemini-4-argon';
+const DEFAULT_MODEL = 'gemini-4-carbon';
 
 export const googleProvider = {
   defaultModel: DEFAULT_MODEL,

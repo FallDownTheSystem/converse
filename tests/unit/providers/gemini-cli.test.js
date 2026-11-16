@@ -106,18 +106,18 @@ describe('Gemini CLI Provider - cleanAgyOutput', () => {
 });
 
 describe('Gemini CLI Provider - resolveAgyModel', () => {
-  it('maps argon names (and an omitted model) to Gemini 4 Argon with effort suffix', () => {
-    expect(resolveAgyModel('gemini-4-argon')).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel('argon')).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel('gemini-4')).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel()).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel('')).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel('  ')).toBe('Gemini 4 Argon (High)');
+  it('maps carbon names (and an omitted model) to Gemini 4 Carbon with effort suffix', () => {
+    expect(resolveAgyModel('gemini-4-carbon')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('carbon')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('gemini-4')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel()).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('  ')).toBe('Gemini 4 Carbon (High)');
   });
 
-  it('maps pro names to Gemini 4 Argon', () => {
-    expect(resolveAgyModel('pro')).toBe('Gemini 4 Argon (High)');
-    expect(resolveAgyModel('gemini-pro')).toBe('Gemini 4 Argon (High)');
+  it('maps pro names to Gemini 4 Carbon', () => {
+    expect(resolveAgyModel('pro')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('gemini-pro')).toBe('Gemini 4 Carbon (High)');
   });
 
   it('maps flash names to Gemini 3.8 Flash', () => {
@@ -138,27 +138,37 @@ describe('Gemini CLI Provider - resolveAgyModel', () => {
     expect(resolveAgyModel('flash', 'medium')).toBe('Gemini 3.8 Flash (Medium)');
   });
 
-  it('applies the same suffix table to Argon', () => {
-    expect(resolveAgyModel('argon', 'none')).toBe('Gemini 4 Argon (Low)');
-    expect(resolveAgyModel('argon', 'medium')).toBe('Gemini 4 Argon (Medium)');
-    expect(resolveAgyModel('argon', 'max')).toBe('Gemini 4 Argon (High)');
+  it('applies the same suffix table to Carbon', () => {
+    expect(resolveAgyModel('carbon', 'none')).toBe('Gemini 4 Carbon (Low)');
+    expect(resolveAgyModel('carbon', 'medium')).toBe('Gemini 4 Carbon (Medium)');
+    expect(resolveAgyModel('carbon', 'xhigh')).toBe('Gemini 4 Carbon (High)');
+    expect(resolveAgyModel('carbon', 'max')).toBe('Gemini 4 Carbon (High)');
+  });
+
+  it('gives Hydrogen its extra XHigh variant', () => {
+    expect(resolveAgyModel('gemini-4-hydrogen')).toBe('Gemini 4 Hydrogen (High)');
+    expect(resolveAgyModel('hydrogen', 'none')).toBe('Gemini 4 Hydrogen (Low)');
+    expect(resolveAgyModel('hydrogen', 'high')).toBe('Gemini 4 Hydrogen (High)');
+    expect(resolveAgyModel('hydrogen', 'xhigh')).toBe('Gemini 4 Hydrogen (XHigh)');
+    expect(resolveAgyModel('hydrogen', 'max')).toBe('Gemini 4 Hydrogen (XHigh)');
   });
 
   it('is case-insensitive on catalog names', () => {
     expect(resolveAgyModel('FLASH', 'max')).toBe('Gemini 3.8 Flash (High)');
-    expect(resolveAgyModel('GEMINI-4-ARGON', 'max')).toBe(
-      'Gemini 4 Argon (High)',
+    expect(resolveAgyModel('GEMINI-4-CARBON', 'max')).toBe(
+      'Gemini 4 Carbon (High)',
     );
   });
 
   it('rejects agy display names, namespaced specs and unknown names', () => {
     for (const name of [
       'Gemini 3.8 Flash (Low)',
-      'Gemini 4 Argon (High)',
+      'Gemini 4 Carbon (High)',
       'gemini:flash',
       'gemini:pro',
       'gemini',
       'gemini-3.1-pro-preview',
+      'gemini-4-argon',
       'gpt-5',
     ]) {
       expect(() => resolveAgyModel(name)).toThrow(
@@ -187,10 +197,10 @@ describe('Gemini CLI Provider - router resolution', () => {
     const providers = providersWithAgy(true);
     const cases = [
       ['gemini:flash', 'gemini-3.8-flash'],
-      ['gemini:pro', 'gemini-4-argon'],
-      ['gemini:argon', 'gemini-4-argon'],
+      ['gemini:pro', 'gemini-4-carbon'],
+      ['gemini:carbon', 'gemini-4-carbon'],
       ['GEMINI:FLASH', 'gemini-3.8-flash'],
-      ['agy:pro', 'gemini-4-argon'],
+      ['agy:pro', 'gemini-4-carbon'],
     ];
     for (const [spec, model] of cases) {
       const result = resolveModelSpec(spec, providers, {});
@@ -206,7 +216,7 @@ describe('Gemini CLI Provider - router resolution', () => {
       const result = resolveModelSpec(spec, providers, {});
       expect(result.status).toBe('ok');
       expect(result.providerName).toBe('gemini-cli');
-      expect(result.resolvedModel).toBe('gemini-4-argon');
+      expect(result.resolvedModel).toBe('gemini-4-carbon');
     }
   });
 
@@ -220,11 +230,11 @@ describe('Gemini CLI Provider - router resolution', () => {
 
   it('prefers gemini-cli for shared bare Gemini IDs, with google as failover', () => {
     const providers = providersWithAgy(true);
-    for (const spec of ['gemini-pro', 'argon', 'gemini-4-argon']) {
+    for (const spec of ['gemini-pro', 'carbon', 'gemini-4-carbon']) {
       const result = resolveModelSpec(spec, providers, {});
       expect(result.status).toBe('ok');
       expect(result.providerName).toBe('gemini-cli');
-      expect(result.resolvedModel).toBe('gemini-4-argon');
+      expect(result.resolvedModel).toBe('gemini-4-carbon');
       expect(result.candidates.map((c) => c.providerName)).toEqual([
         'gemini-cli',
         'google',
@@ -237,7 +247,7 @@ describe('Gemini CLI Provider - router resolution', () => {
     const pro = resolveModelSpec('gemini-pro', providers, {});
     expect(pro.status).toBe('ok');
     expect(pro.providerName).toBe('google');
-    expect(pro.resolvedModel).toBe('gemini-4-argon');
+    expect(pro.resolvedModel).toBe('gemini-4-carbon');
 
     const legacyPro = resolveModelSpec('gemini-3.1-pro-preview', providers, {});
     expect(legacyPro.status).toBe('ok');
@@ -269,31 +279,31 @@ describe('Gemini CLI Provider - getModelConfig', () => {
       'gemini-3.8-flash',
     );
     expect(
-      geminiCliProvider.getModelConfig('gemini-4-argon')?.modelName,
-    ).toBe('gemini-4-argon');
+      geminiCliProvider.getModelConfig('gemini-4-carbon')?.modelName,
+    ).toBe('gemini-4-carbon');
     expect(geminiCliProvider.getModelConfig('flash')?.modelName).toBe(
       'gemini-3.8-flash',
     );
     expect(geminiCliProvider.getModelConfig('pro')?.modelName).toBe(
-      'gemini-4-argon',
+      'gemini-4-carbon',
     );
     expect(geminiCliProvider.getModelConfig('Gemini-Pro')?.modelName).toBe(
-      'gemini-4-argon',
+      'gemini-4-carbon',
     );
   });
 
-  it('defaults to Gemini 4 Argon', () => {
-    expect(geminiCliProvider.defaultModel).toBe('gemini-4-argon');
+  it('defaults to Gemini 4 Carbon', () => {
+    expect(geminiCliProvider.defaultModel).toBe('gemini-4-carbon');
     const config = geminiCliProvider.getModelConfig(
       geminiCliProvider.defaultModel,
     );
-    expect(config.agyModelBase).toBe('Gemini 4 Argon');
-    expect(config.friendlyName).toContain('Gemini 4 Argon');
+    expect(config.agyModelBase).toBe('Gemini 4 Carbon');
+    expect(config.friendlyName).toContain('Gemini 4 Carbon');
   });
 
   it('does not match agy display names or namespaced specs', () => {
     expect(geminiCliProvider.getModelConfig('Gemini 3.8 Flash (High)')).toBeNull();
-    expect(geminiCliProvider.getModelConfig('Gemini 4 Argon (High)')).toBeNull();
+    expect(geminiCliProvider.getModelConfig('Gemini 4 Carbon (High)')).toBeNull();
     expect(geminiCliProvider.getModelConfig('gemini:flash')).toBeNull();
     expect(geminiCliProvider.getModelConfig('gemini')).toBeNull();
   });
@@ -301,10 +311,11 @@ describe('Gemini CLI Provider - getModelConfig', () => {
   it('is keyed by the same model IDs as the google provider', () => {
     const models = geminiCliProvider.getSupportedModels();
     expect(Object.keys(models)).toEqual([
-      'gemini-4-argon',
+      'gemini-4-carbon',
+      'gemini-4-hydrogen',
       'gemini-3.8-flash',
     ]);
-    expect(models['gemini-4-argon'].agyModelBase).toBe('Gemini 4 Argon');
+    expect(models['gemini-4-carbon'].agyModelBase).toBe('Gemini 4 Carbon');
     expect(models['gemini-3.8-flash'].agyModelBase).toBe('Gemini 3.8 Flash');
     for (const id of Object.keys(models)) {
       expect(getProviders().google.getModelConfig(id)).toBeTruthy();
@@ -404,7 +415,7 @@ describe('Gemini CLI Provider - runAgy (mocked PTY)', () => {
     const bigPrompt = 'x'.repeat(30000);
     const promise = runAgy({
       prompt: bigPrompt,
-      model: 'Gemini 4 Argon (High)',
+      model: 'Gemini 4 Carbon (High)',
       timeoutMs: 5000,
       ptyLib: fake.ptyLib,
       agyPath: 'C:/fake/agy.exe',
@@ -545,7 +556,7 @@ describe('Gemini CLI Provider - invoke error mapping (mocked PTY)', () => {
       });
       await vi.waitFor(() => expect(fake.calls.length).toBe(1));
       fake.emitData(
-        'error: invalid model selection (--model "Gemini 4 Argon (High)" --effort ""): model Gemini 4 Argon (High) is not recognized as a known model or custom model in settings\r\nAvailable models:\r\n  Gemini 3.8 Flash (High)\r\n',
+        'error: invalid model selection (--model "Gemini 4 Carbon (High)" --effort ""): model Gemini 4 Carbon (High) is not recognized as a known model or custom model in settings\r\nAvailable models:\r\n  Gemini 3.8 Flash (High)\r\n',
       );
       fake.emitExit(1);
       await expect(promise).rejects.toMatchObject({
