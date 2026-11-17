@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.12.0](https://github.com/FallDownTheSystem/converse/compare/v4.11.0...v4.12.0) (2026-11-17)
+
+
+### Features
+
+* add GPT-6.2 Astra and Sol and make them the OpenAI-family defaults ([0d85217](https://github.com/FallDownTheSystem/converse/commit/0d85217f91425d18ded9152ebbed9f5c5196981d))
+
 ## [4.11.0](https://github.com/FallDownTheSystem/converse/compare/v4.10.2...v4.11.0) (2026-11-16)
 
 
