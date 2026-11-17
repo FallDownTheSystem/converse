@@ -234,10 +234,12 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 ### OpenAI Models
 
-- **gpt-6.1-sol** (default; aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`): GPT-6.1 Sol (1M context, 128K output) - Near-Astra coding, computer use, and professional work at a fifth of the Astra price; effort `low`–`max`
-- **gpt-6-sol**: Previous GPT-6 Sol (1M context, 128K output), reachable by versioned name only; effort `none`–`max`
+- **gpt-6.2-sol** (default; aliases: `gpt-6`, `gpt-6.2`, `gpt-5`, `sol`): GPT-6.2 Sol (1M context, 128K output) - Everyday coding, agentic workflows, and professional work at a quarter of the Astra price; effort `low`–`max`
+- **gpt-6.2-astra** (alias: `astra`): Frontier GPT-6 flagship (1M context, 128K output) - Hardest end-to-end work; effort `low`–`max` (EXPENSIVE: 4x Sol)
+- **gpt-6.1-sol** (alias: `gpt-6.1`): Previous GPT-6.1 Sol (1M context, 128K output), reachable by versioned name only; effort `low`–`max`
+- **gpt-6-sol**: Original GPT-6 Sol (1M context, 128K output), reachable by versioned name only; effort `none`–`max`
 - **gpt-6-luna** (alias: `luna`): Most efficient GPT-6 (1M context, 128K output) - Focused, high-volume tasks; effort `none`–`max`
-- **gpt-6-astra** (alias: `astra`): Frontier GPT-6 flagship (1M context, 128K output) - Hardest end-to-end work; effort `low`–`max` (EXPENSIVE: 5x Sol)
+- **gpt-6-astra**: Previous GPT-6 Astra (1M context, 128K output), reachable by versioned name only; effort `low`–`max` (EXPENSIVE: 5x Sol)
 - **gpt-5.6-sol** (alias: `gpt-5.6`): Previous flagship GPT-5.6 (1M context, 128K output)
 - **gpt-5.6-terra** (alias: `terra`): Lower-cost GPT-5.6 (400K context, 128K output) - Performance competitive with GPT-5.5 at half the price
 - **gpt-5.6-luna**: Fastest, most affordable GPT-5.6 (400K context, 128K output)
@@ -324,11 +326,11 @@ All models reason by default and return reasoning traces (`reasoning_content`), 
 
 ### Codex Models
 
-OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6 Astra, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
+OpenAI Codex agentic coding assistant. `codex` uses its default model (GPT-6.2 Astra, or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks one (e.g. `codex:luna`, `codex:astra`, `codex:gpt-5.6-terra`):
 
-- **gpt-6.1-sol** (`sol`, `gpt-6`), **gpt-6-sol**, **gpt-6-luna** (`luna`), **gpt-6-astra** (`astra`)
+- **gpt-6.2-astra** (`astra`), **gpt-6.2-sol** (`sol`, `gpt-6`), **gpt-6.1-sol**, **gpt-6-sol**, **gpt-6-luna** (`luna`), **gpt-6-astra**
 - **gpt-5.6-sol** (`gpt-5.6`), **gpt-5.6-terra** (`terra`), **gpt-5.6-luna**, **gpt-5.5**, **gpt-5.3-codex-spark** (`spark`)
-  - `reasoning_effort` maps onto the tiers the chosen backend accepts (versioned GPT-6 Sol, Luna, and GPT-5.6: `none` through `max`; GPT-6.1 Sol and GPT-6 Astra: `low` through `max`, no `none`)
+  - `reasoning_effort` maps onto the tiers the chosen backend accepts (GPT-6 Sol, Luna, and GPT-5.6: `none` through `max`; GPT-6.2 Astra/Sol, GPT-6.1 Sol and GPT-6 Astra: `low` through `max`, no `none`)
   - Thread-based sessions with persistent context
   - Direct filesystem access from working directory
   - Typical response time: 6-20 seconds (longer for complex tasks)
@@ -348,9 +350,9 @@ Claude via the Claude Agent SDK. `claude` uses its default model (Fable 5.2, or 
 
 ### GitHub Copilot SDK Models
 
-Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.1-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.1 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
+Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.2-sol`) — Copilot never serves bare model names. `copilot` alone uses GPT-6.2 Sol, or `COPILOT_DEFAULT_MODEL`. Uses your GitHub Copilot subscription (`gh auth login`) - no API key needed:
 
-- **OpenAI**: `gpt-6.1-sol` (aliases: `gpt-6`, `gpt-6.1`, `gpt-5`, `sol`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
+- **OpenAI**: `gpt-6.2-sol` (aliases: `gpt-6`, `gpt-6.2`, `gpt-5`, `sol`), `gpt-6.2-astra` (alias: `astra`), `gpt-6.1-sol` (alias: `gpt-6.1`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
 - **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.2` (alias: `fable`), `claude-fable-5.1`, `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
 - **Google**: `gemini-4-carbon` (aliases: `gemini`, `carbon`, `gemini-4`), `gemini-4-hydrogen` (alias: `hydrogen`), `gemini-3.8-flash` (alias: `gemini-flash`)
 
@@ -411,11 +413,11 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 # Optional: per-provider default model, used for a bare provider name (`codex`,
 # `openai`, ...) and for "auto". Must be a model or alias from that provider's
 # list; startup fails with suggestions otherwise.
-CODEX_DEFAULT_MODEL=gpt-6-astra              # CODEX_MODEL still works as a fallback
+CODEX_DEFAULT_MODEL=gpt-6.2-astra            # CODEX_MODEL still works as a fallback
 CLAUDE_DEFAULT_MODEL=claude-fable-5-2
 AGY_DEFAULT_MODEL=gemini-4-carbon             # Requires Google AI Ultra; other plans can use gemini:hydrogen or set AGY_DEFAULT_MODEL=gemini-4-hydrogen
-COPILOT_DEFAULT_MODEL=gpt-6.1-sol            # COPILOT_MODEL still works as a fallback
-OPENAI_DEFAULT_MODEL=gpt-6.1-sol
+COPILOT_DEFAULT_MODEL=gpt-6.2-sol            # COPILOT_MODEL still works as a fallback
+OPENAI_DEFAULT_MODEL=gpt-6.2-sol
 GOOGLE_DEFAULT_MODEL=gemini-4-carbon
 XAI_DEFAULT_MODEL=grok-4.5
 ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
@@ -483,21 +485,21 @@ Every entry in `models` takes one of four forms:
 "auto";
 
 // A provider: its default model (hardcoded, or <PROVIDER>_DEFAULT_MODEL)
-"codex"; // -> Codex (GPT-6 Astra)
+"codex"; // -> Codex (GPT-6.2 Astra)
 "claude"; // -> Claude Agent SDK (Claude Fable 5.2)
 "gemini"; // -> Antigravity CLI (Gemini 4 Carbon)
-"openai"; // -> OpenAI API (GPT-6.1 Sol)
+"openai"; // -> OpenAI API (GPT-6.2 Sol)
 
 // provider:model — that model on that provider only
-"codex:astra"; // -> Codex (GPT-6 Astra)
-"openai:gpt-6-astra"; // -> OpenAI API, even when Codex is available
+"codex:astra"; // -> Codex (GPT-6.2 Astra)
+"openai:gpt-6.2-astra"; // -> OpenAI API, even when Codex is available
 "gemini:pro"; // -> Antigravity CLI (Gemini 4 Carbon)
 "google:gemini-3.1-pro-preview"; // -> Google API
 "copilot:sonnet"; // -> GitHub Copilot (Claude Sonnet 5.5)
 "openrouter:z-ai/glm-5.2:online"; // -> OpenRouter with web search opt-in
 
 // A bare model ID or alias — the first configured provider that offers it
-"gpt-6-astra"; // -> Codex, else OpenAI API
+"gpt-6.2-astra"; // -> Codex, else OpenAI API
 "opus"; // -> Claude Agent SDK, else Anthropic API
 "pro"; // -> Antigravity CLI (gemini-4-carbon), else Google API
 "grok"; // -> grok-4.5 (XAI)
@@ -506,7 +508,7 @@ Every entry in `models` takes one of four forms:
 
 **Bare model names** go to the first provider, in the order below, whose model list contains the name and that is set up (API key present; for Codex and Claude, a login file or token; for Antigravity, the `agy` binary). If that provider then fails with an authentication or availability error, the next provider that serves **the same model** takes over — a provider whose alias of that name points at a different model is never substituted (bare `flash` is Gemini 3.8 Flash on Antigravity and Gemini 2.5 Flash on the Google API, so it does not fail over between them). Copilot is never picked for bare names; use `copilot:<model>`.
 
-**Unknown names are rejected**, never guessed: a typo or an unlisted model returns an error with up to three close matches, e.g. `Unknown model "gtp-6-astra". Did you mean: gpt-6-astra?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`. OpenRouter is the exception for full `vendor/model` slugs, which are checked against OpenRouter's live catalog.
+**Unknown names are rejected**, never guessed: a typo or an unlisted model returns an error with up to three close matches, e.g. `Unknown model "gtp-6-luna". Did you mean: gpt-6-luna, copilot:gpt-6-luna, gpt-5.6-luna?` or `Unknown openai model "spark" in "openai:spark". Did you mean: codex:spark?`. OpenRouter is the exception for full `vendor/model` slugs, which are checked against OpenRouter's live catalog.
 
 **Auto Model Behavior:**
 
@@ -516,11 +518,11 @@ Every entry in `models` takes one of four forms:
 
 Provider priority order (subscription-based local providers first, then API-key providers), used by both `auto` and bare model names:
 
-1. Codex (`codex` → GPT-6 Astra)
+1. Codex (`codex` → GPT-6.2 Astra)
 2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 4 Carbon)
 3. Claude Agent SDK (`claude` → Claude Fable 5.2)
-4. Copilot (`copilot` → GPT-6.1 Sol; `auto` only, never bare names)
-5. OpenAI (`openai` → GPT-6.1 Sol)
+4. Copilot (`copilot` → GPT-6.2 Sol; `auto` only, never bare names)
+5. OpenAI (`openai` → GPT-6.2 Sol)
 6. Google (`google` → Gemini 4 Carbon)
 7. XAI (`xai` → Grok 4.5)
 8. Anthropic (`anthropic` → Claude Opus 5.5)
@@ -529,7 +531,7 @@ Provider priority order (subscription-based local providers first, then API-key 
 11. OpenRouter (`openrouter` → GLM 5.2)
 12. Abliteration (`abliteration` / `ablit` → `abliterated-model-large-v2`)
 
-**Local agent permissions:** Bare model names and `auto` reach the local agent providers whenever they are set up, not only when named explicitly. The Antigravity CLI runs `agy` with `--dangerously-skip-permissions` because headless calls cannot prompt for tool approval — every tool request is auto-approved, including shell commands and file writes. The Claude Agent SDK runs with `bypassPermissions`. Codex uses `CODEX_SANDBOX_MODE` (read-only by default). A read-only prompt is not an enforced security boundary for these providers, so use them only with trusted prompts and context. To keep a request on a plain API, name the provider: `google:pro`, `anthropic:opus`, `openai:gpt-6-astra`.
+**Local agent permissions:** Bare model names and `auto` reach the local agent providers whenever they are set up, not only when named explicitly. The Antigravity CLI runs `agy` with `--dangerously-skip-permissions` because headless calls cannot prompt for tool approval — every tool request is auto-approved, including shell commands and file writes. The Claude Agent SDK runs with `bypassPermissions`. Codex uses `CODEX_SANDBOX_MODE` (read-only by default). A read-only prompt is not an enforced security boundary for these providers, so use them only with trusted prompts and context. To keep a request on a plain API, name the provider: `google:pro`, `anthropic:opus`, `openai:gpt-6.2-astra`.
 
 ### Advanced Configuration
 

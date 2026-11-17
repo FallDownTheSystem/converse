@@ -21,7 +21,7 @@ import { clampReasoningEffort } from '../utils/reasoningEffort.js';
 import { findCatalogEntry, findCatalogId } from '../utils/modelCatalog.js';
 import { isPackageResolvable } from '../utils/localProviderAuth.js';
 
-const DEFAULT_MODEL = 'gpt-6.1-sol';
+const DEFAULT_MODEL = 'gpt-6.2-sol';
 
 // Keyed by the SDK model ID, which is also the canonical ID the router
 // resolves to. Every name here is reached only through the `copilot:`
@@ -29,9 +29,35 @@ const DEFAULT_MODEL = 'gpt-6.1-sol';
 const SUPPORTED_MODELS = {
   // OpenAI models
   // `gpt-6` / `gpt-5.6` point at that generation's latest Sol, matching
-  // Copilot's own bare-alias behavior; `sol`/`luna` and the legacy `gpt-5`
+  // Copilot's own bare-alias behavior; `sol`/`astra`/`luna` and the legacy `gpt-5`
   // shortcut follow the current release of each tier. `codex` and `gpt` point
   // at the latest GPT tier.
+  'gpt-6.2-sol': {
+    modelName: 'gpt-6.2-sol',
+    friendlyName: 'GPT-6.2 Sol (via Copilot)',
+    contextWindow: 1050000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoningEffort: true,
+    timeout: 1800000,
+    description: 'OpenAI GPT-6.2 Sol via Copilot subscription',
+    aliases: ['gpt-6', 'gpt-6.2', 'gpt-5', 'gpt', 'codex', 'sol'],
+  },
+  'gpt-6.2-astra': {
+    modelName: 'gpt-6.2-astra',
+    friendlyName: 'GPT-6.2 Astra (via Copilot)',
+    contextWindow: 1050000,
+    maxOutputTokens: 32768,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsReasoningEffort: true,
+    timeout: 1800000,
+    description: 'OpenAI GPT-6.2 Astra via Copilot subscription',
+    aliases: ['astra'],
+  },
   'gpt-6.1-sol': {
     modelName: 'gpt-6.1-sol',
     friendlyName: 'GPT-6.1 Sol (via Copilot)',
@@ -43,7 +69,7 @@ const SUPPORTED_MODELS = {
     supportsReasoningEffort: true,
     timeout: 1800000,
     description: 'OpenAI GPT-6.1 Sol via Copilot subscription',
-    aliases: ['gpt-6', 'gpt-6.1', 'gpt-5', 'gpt', 'codex', 'sol'],
+    aliases: ['gpt-6.1'],
   },
   'gpt-6-sol': {
     modelName: 'gpt-6-sol',

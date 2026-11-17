@@ -470,8 +470,8 @@ ${toolsSection}
 Every entry in \`models\` takes one of these forms:
 
 - **\`provider\`** — that provider's default model (e.g. \`codex\`, \`claude\`, \`gemini\`, \`openai\`). Override a default with \`<PROVIDER>_DEFAULT_MODEL\` (see Environment Variables).
-- **\`provider:model\`** — that model on that provider only (e.g. \`codex:astra\`, \`openai:gpt-6-astra\`, \`gemini:pro\`, \`copilot:sonnet\`). \`model\` is a model ID or alias from the provider's list below.
-- **\`model\`** — a bare model ID or alias (e.g. \`gpt-6-astra\`, \`opus\`). It goes to the first configured provider that offers it, in this order: ${BARE_NAME_PRIORITY.join(', ')}. When that provider fails with an auth or availability error, the next provider offering the same model takes over. Copilot is reachable only as \`copilot:model\`.
+- **\`provider:model\`** — that model on that provider only (e.g. \`codex:astra\`, \`openai:gpt-6.2-astra\`, \`gemini:pro\`, \`copilot:sonnet\`). \`model\` is a model ID or alias from the provider's list below.
+- **\`model\`** — a bare model ID or alias (e.g. \`gpt-6.2-astra\`, \`opus\`). It goes to the first configured provider that offers it, in this order: ${BARE_NAME_PRIORITY.join(', ')}. When that provider fails with an auth or availability error, the next provider offering the same model takes over. Copilot is reachable only as \`copilot:model\`.
 - **\`auto\`** — the default model of the first available provider (${PROVIDER_PRIORITY.join(', ')}).
 
 Provider namespaces: ${Object.entries(PROVIDER_NAMESPACES)

@@ -31,11 +31,12 @@ import {
  * catalog key is the canonical model ID the router resolves to. The reasoning tiers are the ones each model's API accepts, verified
  * against the API's own rejection messages (gpt-6-astra and gpt-6.1-sol:
  * "Supported values are: 'low', 'medium', 'high', 'xhigh', and 'max'"; the
- * GPT-6 and GPT-5.6 Sol/Luna tiers accept 'none' as well). The SDK's
- * ModelReasoningEffort type is the union across models, so the backend is the
- * authority and requests are clamped per model.
+ * GPT-6 and GPT-5.6 Sol/Luna tiers accept 'none' as well). The GPT-6.2 tiers
+ * come from the model pages, which state that the API rejects 'none'. The
+ * SDK's ModelReasoningEffort type is the union across models, so the backend
+ * is the authority and requests are clamped per model.
  *
- * Bare tier names (sol, luna) and the bare generation (gpt-6) point at the
+ * Bare tier names (sol, astra, luna) and the bare generation (gpt-6) point at the
  * current release of each tier; older releases stay reachable by full slug.
  *
  * Codex also exposes 'ultra' above 'max', but that tier turns on automatic
@@ -63,8 +64,17 @@ function codexModel(slug, friendlyName, { aliases, contextWindow = 272000, suppo
 }
 
 const SUPPORTED_MODELS = {
+  'gpt-6.2-astra': codexModel('gpt-6.2-astra', 'GPT-6.2 Astra', {
+    aliases: ['astra', 'gpt6.2-astra'],
+    supportedEfforts: NO_NONE_EFFORTS,
+  }),
+  'gpt-6.2-sol': codexModel('gpt-6.2-sol', 'GPT-6.2 Sol', {
+    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt-6.2', 'gpt6.2', 'gpt6.2-sol', 'gpt-6-codex'],
+    contextWindow: 500000,
+    supportedEfforts: NO_NONE_EFFORTS,
+  }),
   'gpt-6.1-sol': codexModel('gpt-6.1-sol', 'GPT-6.1 Sol', {
-    aliases: ['sol', 'gpt-6', 'gpt6', 'gpt-6.1', 'gpt6.1', 'gpt6.1-sol', 'gpt-6-codex'],
+    aliases: ['gpt-6.1', 'gpt6.1', 'gpt6.1-sol'],
     supportedEfforts: NO_NONE_EFFORTS,
   }),
   'gpt-6-sol': codexModel('gpt-6-sol', 'GPT-6 Sol', {
@@ -74,7 +84,7 @@ const SUPPORTED_MODELS = {
     aliases: ['luna', 'gpt6-luna'],
   }),
   'gpt-6-astra': codexModel('gpt-6-astra', 'GPT-6 Astra', {
-    aliases: ['astra', 'gpt6-astra'],
+    aliases: ['gpt6-astra'],
     supportedEfforts: NO_NONE_EFFORTS,
   }),
   'gpt-5.6-sol': codexModel('gpt-5.6-sol', 'GPT-5.6 Sol', {
@@ -97,7 +107,7 @@ const SUPPORTED_MODELS = {
   }),
 };
 
-const DEFAULT_MODEL = 'gpt-6-astra';
+const DEFAULT_MODEL = 'gpt-6.2-astra';
 
 /**
  * Custom error class for Codex provider errors

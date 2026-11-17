@@ -85,7 +85,7 @@ Use `provider:model` to run a model on one provider only, or a provider name alo
   "tool": "chat",
   "arguments": {
     "prompt": "Compare these two approaches to request batching",
-    "models": ["openai:gpt-6-astra", "google:pro", "anthropic:opus", "codex:luna", "copilot:sonnet"]
+    "models": ["openai:gpt-6.2-astra", "google:pro", "anthropic:opus", "codex:luna", "copilot:sonnet"]
   }
 }
 ```
@@ -446,7 +446,7 @@ Codex maintains conversation history through threads in `chat` mode:
 
 ### Choosing the Codex Model
 
-`codex` uses GPT-6 Astra (or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks another model from the Codex list:
+`codex` uses GPT-6.2 Astra (or `CODEX_DEFAULT_MODEL`); `codex:<model>` picks another model from the Codex list:
 
 ```json
 {
