@@ -5,6 +5,13 @@ All notable changes to the Converse MCP Server project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.13.0](https://github.com/FallDownTheSystem/converse/compare/v4.12.0...v4.13.0) (2026-11-19)
+
+
+### Features
+
+* add Gemini 4 Neon and make it the default Gemini model ([8dcaa1d](https://github.com/FallDownTheSystem/converse/commit/8dcaa1da53454654606d5917253c8ba0d1aab71e))
+
 ## [4.12.0](https://github.com/FallDownTheSystem/converse/compare/v4.11.0...v4.12.0) (2026-11-17)
 
 
