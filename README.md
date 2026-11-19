@@ -261,7 +261,8 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 
 **Supported Models**:
 
-- **gemini-4-carbon** (default; aliases: `carbon`, `pro`, `gemini-pro`): Strongest Gemini model for long-horizon software engineering, scientific reasoning and agentic work; thinking levels low/medium/high; paid API tier only (1M unified context, 65K output)
+- **gemini-4-neon** (default; aliases: `neon`, `pro`, `gemini-pro`): Frontier-level reasoning with fast task completion for complex coding, knowledge work and science; thinking levels low/medium/high/xhigh (default high); paid API tier only (1M unified context, 65K output)
+- **gemini-4-carbon** (alias: `carbon`): Strongest Gemini model for long-horizon software engineering, scientific reasoning and agentic work; thinking levels low/medium/high; paid API tier only (1M unified context, 65K output)
 - **gemini-4-hydrogen** (alias: `hydrogen`): Fast Gemini 4 model for everyday coding and agentic workflows; thinking levels low/medium/high/xhigh (`reasoning_effort: "xhigh"`); available on every API tier (1M unified context, 65K output)
 - **gemini-3.1-pro-preview** (aliases: `gemini-3.1-pro`, `gemini-3`): Gemini 3.1 Pro reasoning with expanded thinking levels (1M context, 64K output)
 - **gemini-3.5-flash** (aliases: `gemini-3.5`, `flash-3.5`): Frontier-level agentic and coding performance at Flash speed (1M context, 65K output)
@@ -270,7 +271,7 @@ SUMMARIZATION_MODEL=gpt-5-nano        # Default: gpt-5-nano
 - **gemini-2.5-flash** (alias: `flash`): Ultra-fast (1M context, 65K output)
 - **gemini-2.5-flash-lite** (alias: `flash-lite`): Lightweight fast model (1M context, 65K output)
 
-**Note**: The Antigravity CLI provider serves `gemini-4-carbon`, `gemini-4-hydrogen` and `gemini-3.8-flash`. Bare `pro` and `gemini-pro` resolve to Gemini 4 Carbon on Antigravity first, then the Google API as failover; bare `gemini-3.1-pro-preview` routes to the Google API only. Bare `flash` and `gemini-3.8-flash` route to Antigravity first when it is installed (see [Model Selection](#model-selection)). Use `google:<model>` to always use the Google API.
+**Note**: The Antigravity CLI provider serves `gemini-4-neon`, `gemini-4-carbon`, `gemini-4-hydrogen` and `gemini-3.8-flash`. Bare `pro` and `gemini-pro` resolve to Gemini 4 Neon on Antigravity first, then the Google API as failover; bare `gemini-3.1-pro-preview` routes to the Google API only. Bare `flash` and `gemini-3.8-flash` route to Antigravity first when it is installed (see [Model Selection](#model-selection)). Use `google:<model>` to always use the Google API.
 
 ### X.AI/Grok Models
 
@@ -354,7 +355,7 @@ Reach these only with the `copilot:` namespace (e.g. `copilot:gpt-6.2-sol`) — 
 
 - **OpenAI**: `gpt-6.2-sol` (aliases: `gpt-6`, `gpt-6.2`, `gpt-5`, `sol`), `gpt-6.2-astra` (alias: `astra`), `gpt-6.1-sol` (alias: `gpt-6.1`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna` (all support `reasoning_effort`)
 - **Anthropic**: `claude-opus-5.5` (aliases: `opus`, `claude`), `claude-fable-5.2` (alias: `fable`), `claude-fable-5.1`, `claude-fable-5`, `claude-sonnet-5.5` (alias: `sonnet`), `claude-haiku-5.5` (alias: `haiku`), `claude-sonnet-5`, `claude-opus-5`, `claude-opus-4.8`
-- **Google**: `gemini-4-carbon` (aliases: `gemini`, `carbon`, `gemini-4`), `gemini-4-hydrogen` (alias: `hydrogen`), `gemini-3.8-flash` (alias: `gemini-flash`)
+- **Google**: `gemini-4-neon` (aliases: `gemini`, `neon`, `gemini-4`), `gemini-4-carbon` (alias: `carbon`), `gemini-4-hydrogen` (alias: `hydrogen`), `gemini-3.8-flash` (alias: `gemini-flash`)
 
 ## 📚 Help & Documentation
 
@@ -415,10 +416,10 @@ CODEX_APPROVAL_POLICY=never                  # never (default), untrusted, on-fa
 # list; startup fails with suggestions otherwise.
 CODEX_DEFAULT_MODEL=gpt-6.2-astra            # CODEX_MODEL still works as a fallback
 CLAUDE_DEFAULT_MODEL=claude-fable-5-2
-AGY_DEFAULT_MODEL=gemini-4-carbon             # Requires Google AI Ultra; other plans can use gemini:hydrogen or set AGY_DEFAULT_MODEL=gemini-4-hydrogen
+AGY_DEFAULT_MODEL=gemini-4-neon               # Requires a paid Google AI Pro or Ultra plan; Free and Plus plans can use gemini:flash or set AGY_DEFAULT_MODEL=gemini-3.8-flash
 COPILOT_DEFAULT_MODEL=gpt-6.2-sol            # COPILOT_MODEL still works as a fallback
 OPENAI_DEFAULT_MODEL=gpt-6.2-sol
-GOOGLE_DEFAULT_MODEL=gemini-4-carbon
+GOOGLE_DEFAULT_MODEL=gemini-4-neon
 XAI_DEFAULT_MODEL=grok-4.5
 ANTHROPIC_DEFAULT_MODEL=claude-opus-5-5
 MISTRAL_DEFAULT_MODEL=mistral-medium-3-5
@@ -487,13 +488,13 @@ Every entry in `models` takes one of four forms:
 // A provider: its default model (hardcoded, or <PROVIDER>_DEFAULT_MODEL)
 "codex"; // -> Codex (GPT-6.2 Astra)
 "claude"; // -> Claude Agent SDK (Claude Fable 5.2)
-"gemini"; // -> Antigravity CLI (Gemini 4 Carbon)
+"gemini"; // -> Antigravity CLI (Gemini 4 Neon)
 "openai"; // -> OpenAI API (GPT-6.2 Sol)
 
 // provider:model — that model on that provider only
 "codex:astra"; // -> Codex (GPT-6.2 Astra)
 "openai:gpt-6.2-astra"; // -> OpenAI API, even when Codex is available
-"gemini:pro"; // -> Antigravity CLI (Gemini 4 Carbon)
+"gemini:pro"; // -> Antigravity CLI (Gemini 4 Neon)
 "google:gemini-3.1-pro-preview"; // -> Google API
 "copilot:sonnet"; // -> GitHub Copilot (Claude Sonnet 5.5)
 "openrouter:z-ai/glm-5.2:online"; // -> OpenRouter with web search opt-in
@@ -501,7 +502,7 @@ Every entry in `models` takes one of four forms:
 // A bare model ID or alias — the first configured provider that offers it
 "gpt-6.2-astra"; // -> Codex, else OpenAI API
 "opus"; // -> Claude Agent SDK, else Anthropic API
-"pro"; // -> Antigravity CLI (gemini-4-carbon), else Google API
+"pro"; // -> Antigravity CLI (gemini-4-neon), else Google API
 "grok"; // -> grok-4.5 (XAI)
 "z-ai/glm-5.2"; // -> OpenRouter (any vendor/model slug)
 ```
@@ -519,11 +520,11 @@ Every entry in `models` takes one of four forms:
 Provider priority order (subscription-based local providers first, then API-key providers), used by both `auto` and bare model names:
 
 1. Codex (`codex` → GPT-6.2 Astra)
-2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 4 Carbon)
+2. Gemini via Antigravity CLI (`gemini` / `agy` → Gemini 4 Neon)
 3. Claude Agent SDK (`claude` → Claude Fable 5.2)
 4. Copilot (`copilot` → GPT-6.2 Sol; `auto` only, never bare names)
 5. OpenAI (`openai` → GPT-6.2 Sol)
-6. Google (`google` → Gemini 4 Carbon)
+6. Google (`google` → Gemini 4 Neon)
 7. XAI (`xai` → Grok 4.5)
 8. Anthropic (`anthropic` → Claude Opus 5.5)
 9. Mistral (`mistral` → Mistral Medium 3.5)

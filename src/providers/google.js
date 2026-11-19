@@ -100,6 +100,34 @@ const SUPPORTED_MODELS = {
       '3.1-pro',
     ],
   },
+  'gemini-4-neon': {
+    modelName: 'gemini-4-neon',
+    friendlyName: 'Gemini (4 Neon)',
+    contextWindow: 1048576, // 1M tokens, shared by input and output
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: true,
+    supportsThinking: true,
+    supportsWebSearch: true,
+    thinkingMode: 'level',
+    // Like Hydrogen, Neon adds an xhigh level above high (its default).
+    thinkingLevels: ['low', 'medium', 'high', 'xhigh'],
+    timeout: 900000,
+    description:
+      'Gemini 4 Neon - Frontier-level reasoning with fast task completion for complex coding, knowledge work and science; paid API tier only (1M context)',
+    aliases: [
+      'neon',
+      'gemini-neon',
+      'gemini neon',
+      'gemini-4',
+      'gemini4',
+      'gemini 4 neon',
+      '4-neon',
+      'gemini pro',
+      'gemini-pro',
+      'pro',
+    ],
+  },
   'gemini-4-carbon': {
     modelName: 'gemini-4-carbon',
     friendlyName: 'Gemini (4 Carbon)',
@@ -118,13 +146,8 @@ const SUPPORTED_MODELS = {
       'carbon',
       'gemini-carbon',
       'gemini carbon',
-      'gemini-4',
-      'gemini4',
       'gemini 4 carbon',
       '4-carbon',
-      'gemini pro',
-      'gemini-pro',
-      'pro',
     ],
   },
   'gemini-4-hydrogen': {
@@ -481,7 +504,7 @@ async function retryWithBackoff(fn, maxRetries = 4) {
 /**
  * Main Google provider implementation
  */
-const DEFAULT_MODEL = 'gemini-4-carbon';
+const DEFAULT_MODEL = 'gemini-4-neon';
 
 export const googleProvider = {
   defaultModel: DEFAULT_MODEL,

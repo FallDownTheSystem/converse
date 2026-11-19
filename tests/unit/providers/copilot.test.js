@@ -43,7 +43,8 @@ describe('Copilot Provider - Model Selection', () => {
       expect(resolveSessionModel('opus')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude')).toBe('claude-opus-5.5');
       expect(resolveSessionModel('claude-opus-5-5')).toBe('claude-opus-5.5');
-      expect(resolveSessionModel('gemini')).toBe('gemini-4-carbon');
+      expect(resolveSessionModel('gemini')).toBe('gemini-4-neon');
+      expect(resolveSessionModel('neon')).toBe('gemini-4-neon');
       expect(resolveSessionModel('carbon')).toBe('gemini-4-carbon');
       expect(resolveSessionModel('hydrogen')).toBe('gemini-4-hydrogen');
       expect(resolveSessionModel('gemini-flash')).toBe('gemini-3.8-flash');
@@ -156,11 +157,11 @@ describe('Copilot Provider - Model Selection', () => {
       }
     });
 
-    it('advertises exactly the 20 curated IDs', () => {
+    it('advertises exactly the 21 curated IDs', () => {
       const models = copilotProvider.getSupportedModels();
       const keys = Object.keys(models).sort();
 
-      expect(keys).toHaveLength(20);
+      expect(keys).toHaveLength(21);
       expect(keys).toEqual(
         [
           'gpt-6.2-sol',
@@ -180,6 +181,7 @@ describe('Copilot Provider - Model Selection', () => {
           'claude-sonnet-5',
           'claude-opus-5',
           'claude-opus-4.8',
+          'gemini-4-neon',
           'gemini-4-carbon',
           'gemini-4-hydrogen',
           'gemini-3.8-flash',

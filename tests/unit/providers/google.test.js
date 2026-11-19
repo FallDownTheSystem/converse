@@ -192,6 +192,16 @@ describe('Google Provider', () => {
       expect(carbon.supportsWebSearch).toBe(true);
     });
 
+    it('should include Gemini 4 Neon with the xhigh thinking level', () => {
+      const neon = googleProvider.getModelConfig('neon');
+
+      expect(neon.modelName).toBe('gemini-4-neon');
+      expect(neon.contextWindow).toBe(1048576);
+      expect(neon.maxOutputTokens).toBe(65536);
+      expect(neon.thinkingMode).toBe('level');
+      expect(neon.thinkingLevels).toEqual(['low', 'medium', 'high', 'xhigh']);
+    });
+
     it('should include Gemini 4 Hydrogen with the xhigh thinking level', () => {
       const hydrogen = googleProvider.getModelConfig('hydrogen');
 
@@ -230,14 +240,15 @@ describe('Google Provider', () => {
       }
     });
 
-    it('should return config for Pro-tier aliases (pointing to Gemini 4 Carbon)', () => {
-      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'carbon', 'gemini-4'];
+    it('should return config for Pro-tier aliases (pointing to Gemini 4 Neon)', () => {
+      const aliases = ['pro', 'gemini pro', 'gemini-pro', 'neon', 'gemini-4'];
 
       for (const alias of aliases) {
         const config = googleProvider.getModelConfig(alias);
         expect(config).toBeTruthy(); // Should find config for alias: ${alias}
-        expect(config.modelName).toBe('gemini-4-carbon');
+        expect(config.modelName).toBe('gemini-4-neon');
       }
+      expect(googleProvider.getModelConfig('carbon').modelName).toBe('gemini-4-carbon');
     });
 
     it('should return config for Gemini 3.1 specific aliases', () => {
@@ -412,8 +423,8 @@ describe('Google Provider', () => {
   });
 
   describe('default model selection', () => {
-    it('should default to gemini-4-carbon', () => {
-      expect(googleProvider.defaultModel).toBe('gemini-4-carbon');
+    it('should default to gemini-4-neon', () => {
+      expect(googleProvider.defaultModel).toBe('gemini-4-neon');
       expect(googleProvider.getModelConfig(googleProvider.defaultModel)).toBeTruthy();
     });
 

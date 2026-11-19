@@ -249,6 +249,18 @@ const SUPPORTED_MODELS = {
   },
 
   // Google models
+  'gemini-4-neon': {
+    modelName: 'gemini-4-neon',
+    friendlyName: 'Gemini 4 Neon (via Copilot)',
+    contextWindow: 1048576,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    timeout: 1800000,
+    description: 'Google Gemini 4 Neon via Copilot subscription',
+    aliases: ['gemini', 'neon', 'gemini-4'],
+  },
   'gemini-4-carbon': {
     modelName: 'gemini-4-carbon',
     friendlyName: 'Gemini 4 Carbon (via Copilot)',
@@ -259,7 +271,7 @@ const SUPPORTED_MODELS = {
     supportsWebSearch: false,
     timeout: 1800000,
     description: 'Google Gemini 4 Carbon via Copilot subscription',
-    aliases: ['gemini', 'carbon', 'gemini-4'],
+    aliases: ['carbon'],
   },
   'gemini-4-hydrogen': {
     modelName: 'gemini-4-hydrogen',

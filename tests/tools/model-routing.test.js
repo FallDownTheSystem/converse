@@ -63,10 +63,10 @@ describe('Model Routing', () => {
       const providers = providersWith();
       expect(getDefaultModelForProvider('codex', providers, {})).toBe('gpt-6.2-astra');
       expect(getDefaultModelForProvider('claude', providers, {})).toBe('claude-fable-5-2');
-      expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-4-carbon');
+      expect(getDefaultModelForProvider('gemini-cli', providers, {})).toBe('gemini-4-neon');
       expect(getDefaultModelForProvider('copilot', providers, {})).toBe('gpt-6.2-sol');
       expect(getDefaultModelForProvider('openai', providers, {})).toBe('gpt-6.2-sol');
-      expect(getDefaultModelForProvider('google', providers, {})).toBe('gemini-4-carbon');
+      expect(getDefaultModelForProvider('google', providers, {})).toBe('gemini-4-neon');
       expect(getDefaultModelForProvider('xai', providers, {})).toBe('grok-4.5');
       expect(getDefaultModelForProvider('anthropic', providers, {})).toBe('claude-opus-5-5');
       expect(getDefaultModelForProvider('mistral', providers, {})).toBe('mistral-medium-3-5');
@@ -84,7 +84,7 @@ describe('Model Routing', () => {
       const r = route('codex');
       expect(r.status).toBe('ok');
       expect(candidatesOf(r)).toEqual(['codex:gpt-6.2-astra']);
-      expect(candidatesOf(route('gemini'))).toEqual(['gemini-cli:gemini-4-carbon']);
+      expect(candidatesOf(route('gemini'))).toEqual(['gemini-cli:gemini-4-neon']);
       expect(candidatesOf(route('openai'))).toEqual(['openai:gpt-6.2-sol']);
     });
 
@@ -129,7 +129,7 @@ describe('Model Routing', () => {
     it('expands auto into namespaced default specs in priority order', () => {
       expect(getAutoModelSpecs(providersWith(), {}, { limit: 3 })).toEqual([
         'codex:gpt-6.2-astra',
-        'gemini:gemini-4-carbon',
+        'gemini:gemini-4-neon',
         'claude:claude-fable-5-2',
       ]);
     });
@@ -141,7 +141,7 @@ describe('Model Routing', () => {
       expect(candidatesOf(route('openai:gpt-6.2-astra'))).toEqual(['openai:gpt-6.2-astra']);
       expect(candidatesOf(route('openai:gpt-6-astra'))).toEqual(['openai:gpt-6-astra']);
       expect(candidatesOf(route('copilot:astra'))).toEqual(['copilot:gpt-6.2-astra']);
-      expect(candidatesOf(route('gemini:pro'))).toEqual(['gemini-cli:gemini-4-carbon']);
+      expect(candidatesOf(route('gemini:pro'))).toEqual(['gemini-cli:gemini-4-neon']);
       expect(candidatesOf(route('agy:flash'))).toEqual(['gemini-cli:gemini-3.8-flash']);
       expect(candidatesOf(route('claude:fable'))).toEqual(['claude:claude-fable-5-2']);
       expect(candidatesOf(route('copilot:sonnet'))).toEqual(['copilot:claude-sonnet-5.5']);
@@ -200,6 +200,10 @@ describe('Model Routing', () => {
       expect(candidatesOf(route('gemini-4-carbon'))).toEqual([
         'gemini-cli:gemini-4-carbon',
         'google:gemini-4-carbon',
+      ]);
+      expect(candidatesOf(route('pro'))).toEqual([
+        'gemini-cli:gemini-4-neon',
+        'google:gemini-4-neon',
       ]);
       expect(candidatesOf(route('hydrogen'))).toEqual([
         'gemini-cli:gemini-4-hydrogen',

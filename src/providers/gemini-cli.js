@@ -19,9 +19,10 @@
  *   establishes workspace trust for the user's home directory.
  *
  * The provider registry key remains 'gemini-cli'; its namespaces are `gemini:`
- * and `agy:`. Gemini 4 Carbon is the default; Antigravity serves it only on
- * Google AI Ultra plans, so other plans select `gemini:hydrogen` (or set
- * AGY_DEFAULT_MODEL). Antigravity no longer offers Gemini 3.1 Pro.
+ * and `agy:`. Gemini 4 Neon is the default; Antigravity serves it on paid
+ * Google AI Pro and Ultra plans (Carbon only on Ultra), so Free and Plus plans
+ * select `gemini:flash` (or set AGY_DEFAULT_MODEL). Antigravity no longer
+ * offers Gemini 3.1 Pro.
  */
 
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -60,6 +61,36 @@ const PTY_COLS = 1000;
  * channel).
  */
 const SUPPORTED_MODELS = {
+  'gemini-4-neon': {
+    modelName: 'gemini-4-neon',
+    friendlyName: 'Gemini 4 Neon (via Antigravity CLI)',
+    // Antigravity caps Neon at 512K, half of the Gemini API window.
+    contextWindow: 524288,
+    maxOutputTokens: 65536,
+    supportsStreaming: true,
+    supportsImages: false,
+    supportsWebSearch: false,
+    supportsThinking: true,
+    timeout: DEFAULT_TIMEOUT_MS,
+    description:
+      'Gemini 4 Neon via Antigravity CLI (agy, default) - requires Antigravity Google OAuth login on a paid Google AI Pro or Ultra plan',
+    aliases: [
+      'neon',
+      'gemini-neon',
+      'gemini neon',
+      'gemini-4',
+      'gemini4',
+      'gemini 4 neon',
+      '4-neon',
+      'pro',
+      'gemini-pro',
+      'gemini pro',
+    ],
+    // agy display-name base; reasoning_effort selects one of agyEffortTiers
+    // as the parenthesized variant
+    agyModelBase: 'Gemini 4 Neon',
+    agyEffortTiers: ['low', 'medium', 'high', 'xhigh'],
+  },
   'gemini-4-carbon': {
     modelName: 'gemini-4-carbon',
     friendlyName: 'Gemini 4 Carbon (via Antigravity CLI)',
@@ -71,21 +102,14 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 4 Carbon via Antigravity CLI (agy, default) - requires Antigravity Google OAuth login on a Google AI Ultra plan',
+      'Gemini 4 Carbon via Antigravity CLI (agy) - requires Antigravity Google OAuth login on a Google AI Ultra plan',
     aliases: [
       'carbon',
       'gemini-carbon',
       'gemini carbon',
-      'gemini-4',
-      'gemini4',
       'gemini 4 carbon',
       '4-carbon',
-      'pro',
-      'gemini-pro',
-      'gemini pro',
     ],
-    // agy display-name base; reasoning_effort selects one of agyEffortTiers
-    // as the parenthesized variant
     agyModelBase: 'Gemini 4 Carbon',
     agyEffortTiers: ['low', 'medium', 'high'],
   },
@@ -100,7 +124,7 @@ const SUPPORTED_MODELS = {
     supportsThinking: true,
     timeout: DEFAULT_TIMEOUT_MS,
     description:
-      'Gemini 4 Hydrogen via Antigravity CLI (agy) - requires Antigravity Google OAuth login; available on every plan',
+      'Gemini 4 Hydrogen via Antigravity CLI (agy) - requires Antigravity Google OAuth login on a paid Google AI Pro or Ultra plan',
     aliases: [
       'hydrogen',
       'gemini-hydrogen',
@@ -139,7 +163,7 @@ const SUPPORTED_MODELS = {
   },
 };
 
-const DEFAULT_MODEL = 'gemini-4-carbon';
+const DEFAULT_MODEL = 'gemini-4-neon';
 
 /**
  * Custom error class for Gemini CLI (agy) provider errors
@@ -687,11 +711,12 @@ async function executeAgy(messages, options) {
   const cleaned = cleanAgyOutput(output);
 
   if (exitCode !== 0) {
-    // agy's model list is per-plan (Gemini 4 Carbon is Ultra-only), so a
-    // catalog model can still be missing for the signed-in account.
+    // agy's model list is per-plan (Neon and Hydrogen need a paid plan,
+    // Carbon needs Ultra), so a catalog model can still be missing for the
+    // signed-in account.
     if (/not recognized as a known model/i.test(cleaned)) {
       throw new GeminiCliProviderError(
-        `Antigravity CLI (agy) does not offer "${agyModel}" to the signed-in account (Gemini 4 Carbon requires a Google AI Ultra plan). Use gemini:hydrogen, or set AGY_DEFAULT_MODEL to change the default. agy output: ${cleaned.slice(0, 800)}`,
+        `Antigravity CLI (agy) does not offer "${agyModel}" to the signed-in account (Gemini 4 Neon and Hydrogen require a paid Google AI Pro or Ultra plan; Gemini 4 Carbon requires Ultra). Use gemini:flash, which every plan offers, or set AGY_DEFAULT_MODEL to change the default. agy output: ${cleaned.slice(0, 800)}`,
         ErrorCodes.MODEL_NOT_FOUND,
       );
     }

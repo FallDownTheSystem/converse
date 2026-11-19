@@ -277,7 +277,7 @@ export const config = {
   models: {
     aliases: {
       'flash': 'gemini-2.5-flash',
-      'pro': 'gemini-4-carbon',
+      'pro': 'gemini-4-neon',
       'grok': 'grok-4.5'
     }
   }
