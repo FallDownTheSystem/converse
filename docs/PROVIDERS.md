@@ -259,9 +259,10 @@ agy
 ### GitHub Copilot SDK
 - **Authentication**: GitHub Copilot subscription via the Copilot CLI (`gh auth login` with an active Copilot subscription) — no API key needed
 - **Setup Required**: Authenticate the GitHub CLI and ensure your account has an active Copilot subscription
-- **Availability**: The Copilot SDK (`@github/copilot-sdk`) is installed
+- **Availability**: The Copilot SDK (`@microsoft/copilot-sdk`) is installed
 - **Environment Variables**:
   - `COPILOT_DEFAULT_MODEL` - Model used for bare `copilot` and `auto` (default: `gpt-6.2-sol`). The legacy name `COPILOT_MODEL` is honored when `COPILOT_DEFAULT_MODEL` is unset.
+  - `COPILOT_CLI_PATH` - Optional path to a v2-compatible Copilot runtime executable. When set, the runtime runs as a separate stdio process; otherwise the SDK loads its native runtime into the server process (set `COPILOT_SDK_DEFAULT_CONNECTION=stdio` to spawn the SDK's own runtime instead).
 - **Supported Models** (namespace-only: reach them with `copilot:`, `github-copilot:` or `copilot-sdk:`, e.g. `copilot:gpt-6.2-sol`; Copilot never serves bare model names):
   - `copilot` - GPT-6.2 Sol, or `COPILOT_DEFAULT_MODEL`
   - OpenAI: `gpt-6.2-sol` (aliases: `gpt-6`, `gpt-6.2`, `gpt-5`, `sol`), `gpt-6.2-astra` (alias: `astra`), `gpt-6.1-sol` (alias: `gpt-6.1`), `gpt-6-sol`, `gpt-6-luna` (alias: `luna`), `gpt-5.6-sol` (alias: `gpt-5.6`), `gpt-5.6-terra`, `gpt-5.6-luna`

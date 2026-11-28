@@ -594,7 +594,7 @@ const LOCAL_PROVIDER_SETUP_HINTS = {
   claude: 'run `claude login` or set CLAUDE_CODE_OAUTH_TOKEN',
   'gemini-cli':
     'install the Antigravity CLI and run `agy` once to log in (https://antigravity.google)',
-  copilot: 'install @github/copilot-sdk and sign in to GitHub Copilot',
+  copilot: 'install @microsoft/copilot-sdk and sign in to GitHub Copilot',
 };
 
 /**

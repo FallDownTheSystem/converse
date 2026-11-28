@@ -327,7 +327,7 @@ const CONFIG_SCHEMA = {
       type: 'string',
       required: false,
       description:
-        'Explicit path to the Copilot CLI runtime (index.js or copilot binary). Overrides automatic resolution.',
+        'Path to a v2-compatible Copilot runtime executable. When set, the runtime runs as a spawned stdio process instead of in-process.',
     },
 
     // Per-provider default models: the model a bare provider name (`codex`,
@@ -710,7 +710,7 @@ export async function loadConfig() {
     const sdkPackages = {
       codex: '@openai/codex-sdk',
       claude: '@anthropic-ai/claude-agent-sdk',
-      copilot: '@github/copilot-sdk',
+      copilot: '@microsoft/copilot-sdk',
     };
     let hasSdkProvider = Object.values(sdkPackages).some((pkg) => {
       try {

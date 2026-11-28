@@ -1,20 +1,18 @@
 /**
  * Copilot SDK Provider
  *
- * Provider implementation for GitHub Copilot models using the @github/copilot-sdk.
+ * Provider implementation for GitHub Copilot models using the @microsoft/copilot-sdk.
  * Implements the unified interface: async invoke(messages, options) => { content, stop_reason, rawResponse }
  *
  * Key differences from traditional providers:
  * - Uses GitHub Copilot CLI subscription authentication - NOT API keys
- * - Manages a singleton CopilotClient (spawns CLI process via JSON-RPC)
+ * - Manages a singleton CopilotClient (native runtime hosted in-process by default)
  * - Creates a fresh CopilotSession per request, disconnected after each request
  * - Bridges SDK push-based events to pull-based async generator for streaming
  * - Requires GitHub CLI authenticated (gh auth login) with active Copilot subscription
  */
 
 import { existsSync } from 'node:fs';
-import { delimiter, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { debugLog, debugError } from '../utils/console.js';
 import { ProviderError, ErrorCodes, StopReasons } from './interface.js';
 import { clampReasoningEffort } from '../utils/reasoningEffort.js';
@@ -312,7 +310,7 @@ class CopilotProviderError extends ProviderError {
 async function getCopilotSDK() {
   try {
     const { CopilotClient, RuntimeConnection } = await import(
-      '@github/copilot-sdk'
+      '@microsoft/copilot-sdk'
     );
     return { CopilotClient, RuntimeConnection };
   } catch (error) {
@@ -325,74 +323,19 @@ async function getCopilotSDK() {
 }
 
 /**
- * Locate a runnable `copilot` executable on PATH (e.g. a winget or global
- * install). On Windows only real executables (.exe/.com) qualify — .cmd/.bat
- * shims can't be spawned without a shell, and the SDK spawns the CLI without
- * one, so handing it a shim would fail.
- */
-function findCopilotBinaryOnPath() {
-  const pathDirs = (process.env.PATH || process.env.Path || '')
-    .split(delimiter)
-    .filter(Boolean);
-  const exts = process.platform === 'win32' ? ['.exe', '.com'] : [''];
-  for (const dir of pathDirs) {
-    for (const ext of exts) {
-      const candidate = join(dir, `copilot${ext}`);
-      if (existsSync(candidate)) return candidate;
-    }
-  }
-  return null;
-}
-
-/**
- * Resolve the Copilot CLI runtime path deterministically.
- *
- * The SDK's built-in resolver (getBundledCliPath) reconstructs
- * `<@github/copilot root>/index.js` from the package's `./sdk` export. That
- * assumption breaks across layouts — pnpm stores with multiple versions, global
- * installs, and loader-style `@github/copilot` variants that ship no root
- * `index.js` — and there is no escape hatch wired up, so a wrong/missing
- * bundled copy takes down the whole provider (the "Copilot CLI not found at
- * ...@github\index.js" failure). We own discovery here and hand the SDK an
- * explicit, verified path so that entire class of resolution failures can't
- * occur.
- *
- * Precedence: explicit override → bundled npm CLI (index.js, run via node) →
- * `copilot` on PATH. Returns null to let the SDK fall back to its own
- * resolution as a last resort (preserves behavior on flat installs).
+ * Explicit Copilot runtime executable (COPILOT_CLI_PATH via config or env).
+ * The SDK hosts its native runtime in this process by default; a path set here
+ * switches the client to a spawned stdio runtime instead. SDK v2 speaks
+ * protocol 4, so the executable must be a v2-compatible Copilot runtime.
+ * Returns null when unset or the path does not exist.
  */
 function resolveCopilotCliPath(config) {
-  // 1. Explicit override (COPILOT_CLI_PATH via config or env)
   const override =
     config?.providers?.copilotclipath || process.env.COPILOT_CLI_PATH;
   if (override && existsSync(override)) {
     debugLog('[Copilot SDK] Using configured CLI path: %s', override);
     return override;
   }
-
-  // 2. Bundled npm CLI: resolve the @github/copilot/sdk export, walk to the
-  // package root, and use its index.js. A .js path is spawned via `node`, which
-  // also sidesteps Windows .cmd/.bat shim issues.
-  try {
-    const sdkEntry = fileURLToPath(import.meta.resolve('@github/copilot/sdk'));
-    const candidate = join(dirname(dirname(sdkEntry)), 'index.js');
-    if (existsSync(candidate)) {
-      debugLog('[Copilot SDK] Using bundled CLI: %s', candidate);
-      return candidate;
-    }
-  } catch {
-    // @github/copilot not resolvable from here — fall through.
-  }
-
-  // 3. Standalone `copilot` binary on PATH.
-  const binary = findCopilotBinaryOnPath();
-  if (binary) {
-    debugLog('[Copilot SDK] Using copilot binary from PATH: %s', binary);
-    return binary;
-  }
-
-  // 4. Nothing found — defer to the SDK's own resolution.
-  debugLog('[Copilot SDK] No CLI path resolved — deferring to SDK default');
   return null;
 }
 
@@ -401,10 +344,11 @@ let clientInstance = null;
 let clientInitPromise = null;
 
 /**
- * Get or create the singleton CopilotClient
- * The client manages the CLI process lifecycle via JSON-RPC
+ * Get or create the singleton CopilotClient.
+ * Without COPILOT_CLI_PATH the SDK default applies: the native runtime is
+ * loaded into this process (COPILOT_SDK_DEFAULT_CONNECTION=stdio overrides it).
  */
-async function getCopilotClient(cwd, config) {
+async function getCopilotClient(config) {
   if (clientInstance) {
     return clientInstance;
   }
@@ -415,20 +359,21 @@ async function getCopilotClient(cwd, config) {
 
   clientInitPromise = (async () => {
     const { CopilotClient, RuntimeConnection } = await getCopilotSDK();
-    const workingDirectory = cwd || process.cwd();
+    // coding-agent keeps v1's implicit defaults; tool use is still gated by
+    // the session permission handler.
     const clientOptions = {
-      useLoggedInUser: true,
-      workingDirectory,
+      mode: 'coding-agent',
+      github: { useLoggedInUser: true },
     };
 
     const cliPath = resolveCopilotCliPath(config);
     if (cliPath) {
-      clientOptions.connection = RuntimeConnection.forStdio({ path: cliPath });
+      clientOptions.runtime = RuntimeConnection.forSpawnedStdio({ path: cliPath });
     }
 
     clientInstance = new CopilotClient(clientOptions);
     await clientInstance.start();
-    debugLog('[Copilot SDK] Client started (cwd: %s)', workingDirectory);
+    debugLog('[Copilot SDK] Client started (%s)', cliPath ? 'spawned stdio' : 'default runtime');
     return clientInstance;
   })();
 
@@ -591,15 +536,16 @@ async function checkReasoningSupport(client, modelId) {
 }
 
 async function* createStreamingGenerator(client, prompt, options, signal, config) {
-  const { model, timeout = 1800000, reasoning_effort } = options;
+  const { model, timeout = 1800000, reasoning_effort, cwd } = options;
 
   const sessionModel = resolveSessionModel(model);
   const accessLevel = getToolAccessLevel(config);
 
   const sessionConfig = {
-    streaming: true,
-    onPermissionRequest: createPermissionHandler(accessLevel),
     model: sessionModel,
+    workingDirectory: cwd,
+    events: { streaming: true },
+    permissions: { onRequest: createPermissionHandler(accessLevel) },
   };
 
   if (reasoning_effort) {
@@ -618,13 +564,13 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
       }
 
       if (supported === true) {
-        sessionConfig.reasoningEffort = mapped;
+        sessionConfig.inference = { reasoningEffort: mapped };
         debugLog(`[Copilot SDK] Setting reasoningEffort: ${mapped} (from ${reasoning_effort})`);
       } else if (supported === false) {
         debugLog(`[Copilot SDK] Model "${effectiveModel}" does not support reasoningEffort (ignored)`);
       } else {
         // Could not determine — try optimistically, retry without on failure
-        sessionConfig.reasoningEffort = mapped;
+        sessionConfig.inference = { reasoningEffort: mapped };
         debugLog(`[Copilot SDK] Model "${effectiveModel}" support unknown — trying reasoningEffort: ${mapped}`);
       }
     }
@@ -635,11 +581,11 @@ async function* createStreamingGenerator(client, prompt, options, signal, config
     session = await client.createSession(sessionConfig);
   } catch (err) {
     if (
-      sessionConfig.reasoningEffort &&
+      sessionConfig.inference &&
       /does not support reasoning effort/i.test(err.message)
     ) {
       debugLog('[Copilot SDK] Model rejected reasoningEffort — retrying without it');
-      delete sessionConfig.reasoningEffort;
+      delete sessionConfig.inference;
       session = await client.createSession(sessionConfig);
     } else {
       throw err;
@@ -797,12 +743,12 @@ export const copilotProvider = {
       );
     }
 
-    // Validated before the client spawns the Copilot CLI.
+    // Validated before the client starts the Copilot runtime.
     const sessionModel = resolveSessionModel(model);
 
     try {
       const cwd = config.server?.client_cwd || process.cwd();
-      const client = await getCopilotClient(cwd, config);
+      const client = await getCopilotClient(config);
       const prompt = convertMessagesToPrompt(messages);
 
       const modelConfig = SUPPORTED_MODELS[sessionModel];
@@ -810,6 +756,7 @@ export const copilotProvider = {
         model: sessionModel,
         timeout: modelConfig.timeout,
         reasoning_effort,
+        cwd,
       };
 
       if (stream) {
@@ -866,7 +813,9 @@ export const copilotProvider = {
         error.message?.includes('not authenticated') ||
         error.message?.includes('authentication failed') ||
         error.message?.includes('not logged in') ||
-        error.message?.includes('login required')
+        error.message?.includes('login required') ||
+        // SDK v2 wording when no GitHub credential is available
+        error.message?.includes('credential authority error')
       ) {
         throw new CopilotProviderError(
           `Copilot SDK authentication failed. Ensure GitHub CLI is authenticated (gh auth login) and you have an active Copilot subscription. Original error: ${error.message}`,
@@ -910,7 +859,7 @@ export const copilotProvider = {
    * Returns true optimistically — auth errors surface at runtime
    */
   validateConfig(_config) {
-    return isPackageResolvable('@github/copilot-sdk');
+    return isPackageResolvable('@microsoft/copilot-sdk');
   },
 
   isAvailable(config) {
