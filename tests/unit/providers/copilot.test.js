@@ -5,8 +5,42 @@
  * getModelConfig, resolveSessionModel, and edge cases.
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
+
+// Records what the provider hands @microsoft/copilot-sdk v2, whose client and
+// session options are nested (mode, github, events, permissions, inference)
+// where v1 took flat fields that v2 rejects or ignores.
+const sdkCalls = vi.hoisted(() => ({ client: [], sessions: [] }));
+vi.mock('@microsoft/copilot-sdk', () => {
+  function CopilotClient(options) {
+    sdkCalls.client.push(options);
+    this.start = async () => {};
+    this.createSession = async (sessionOptions) => {
+      sdkCalls.sessions.push(sessionOptions);
+      let handler;
+      return {
+        on: (fn) => {
+          handler = fn;
+          return () => {};
+        },
+        send: async () => {
+          handler({ type: 'assistant.message_delta', data: { deltaContent: 'Hel' } });
+          handler({ type: 'assistant.message_delta', data: { deltaContent: 'lo' } });
+          handler({ type: 'assistant.usage', data: { inputTokens: 7, outputTokens: 2 } });
+          handler({ type: 'session.idle', data: {} });
+        },
+        disconnect: async () => {},
+      };
+    };
+  }
+  return {
+    CopilotClient,
+    RuntimeConnection: {
+      forSpawnedStdio: (opts) => ({ kind: 'spawned-stdio', ...opts }),
+    },
+  };
+});
 import {
   copilotProvider,
   resolveCopilotCliPath,
@@ -361,10 +395,41 @@ describe('Copilot Provider - CLI path resolution', () => {
     expect(resolveCopilotCliPath(config)).not.toBe(missingPath);
   });
 
-  it('returns null or a real path when nothing is configured', () => {
-    const result = resolveCopilotCliPath(undefined);
-    // Environment-dependent: null (defer to SDK), the bundled index.js, or a
-    // copilot binary on PATH — never a fabricated/non-existent path.
-    expect(result === null || typeof result === 'string').toBe(true);
+  it('returns null when nothing is configured, leaving the SDK default runtime', () => {
+    expect(resolveCopilotCliPath(undefined)).toBeNull();
+  });
+});
+
+describe('Copilot Provider - SDK v2 options', () => {
+  it('starts an in-process coding-agent client and passes nested session options', async () => {
+    const result = await copilotProvider.invoke(
+      [{ role: 'user', content: 'Say hello' }],
+      {
+        config: { providers: {}, server: { client_cwd: '/work/project' } },
+        model: 'gpt-6.2-sol',
+        reasoning_effort: 'max',
+      },
+    );
+
+    expect(result.content).toBe('Hello');
+    expect(result.metadata.usage).toMatchObject({ input_tokens: 7, output_tokens: 2 });
+    expect(sdkCalls.client).toEqual([
+      { mode: 'coding-agent', github: { useLoggedInUser: true } },
+    ]);
+
+    const session = sdkCalls.sessions[0];
+    expect(session).toMatchObject({
+      model: 'gpt-6.2-sol',
+      workingDirectory: '/work/project',
+      events: { streaming: true },
+      inference: { reasoningEffort: 'xhigh' },
+    });
+    expect(session).not.toHaveProperty('reasoningEffort');
+    expect(session).not.toHaveProperty('onPermissionRequest');
+
+    // Default tool access is read-only.
+    const onRequest = session.permissions.onRequest;
+    expect(onRequest({ kind: 'read' })).toEqual({ kind: 'approved' });
+    expect(onRequest({ kind: 'write' })).toEqual({ kind: 'denied-by-rules' });
   });
 });

@@ -134,7 +134,7 @@ const API_KEY_CONFIGS = {
         const fs = require('fs');
         const path = require('path');
         const pkgPath = path.resolve(
-          'node_modules/@github/copilot-sdk/package.json',
+          'node_modules/@microsoft/copilot-sdk/package.json',
         );
         return fs.existsSync(pkgPath);
       } catch {

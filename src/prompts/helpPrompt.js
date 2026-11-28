@@ -531,7 +531,7 @@ These providers use local CLI tools and don't require API keys:
 - **codex**: Requires ChatGPT login (\`codex login\`) or CODEX_API_KEY environment variable
 - **claude**: Requires \`claude login\` command (Claude Code CLI authentication) or CLAUDE_CODE_OAUTH_TOKEN
 - **gemini-cli**: Requires the Antigravity CLI (\`agy\`) installed and authenticated via Google OAuth (run \`agy\` once interactively to log in)
-- **copilot**: Requires @github/copilot-sdk and a GitHub Copilot subscription
+- **copilot**: Requires @microsoft/copilot-sdk and a GitHub Copilot subscription
 
 Codex and Claude count as available only when their login file or token is present; an expired login is detected at call time and routing fails over to the next provider.
 
